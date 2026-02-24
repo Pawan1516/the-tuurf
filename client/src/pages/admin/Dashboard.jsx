@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
-import { LogOut, TrendingUp, Calendar, Users, Activity, ChevronRight, PieChart, Download, ArrowUpRight, Database, Settings, LayoutDashboard, Briefcase, ArrowDownRight, X, Zap } from 'lucide-react';
+import { LogOut, TrendingUp, Calendar, Users, Activity, ChevronRight, PieChart, Download, Database, Settings, LayoutDashboard, Briefcase, ArrowDownRight, X, Zap } from 'lucide-react';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ const AdminDashboard = () => {
     // Start polling for "Alarm" every 10 seconds
     const pollTimer = setInterval(fetchStats, 10000);
     return () => clearInterval(pollTimer);
-  }, [period, lastBookingCount]);
+  }, [period, lastBookingCount, fetchStats]);
 
   const handleLogout = () => {
     logout();

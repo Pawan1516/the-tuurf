@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { bookingsAPI } from '../../api/client';
-import { LogOut, Check, X, Database, ChevronRight, Search, Phone, MoreVertical, ShieldCheck, Clock, LayoutDashboard, Calendar, Activity, Briefcase, PieChart, MessageSquare, ChevronDown, Zap, Plus } from 'lucide-react';
+import { LogOut, Check, X, Database, ChevronRight, Search, MoreVertical, LayoutDashboard, Calendar, Activity, Briefcase, PieChart, MessageSquare, Zap, Plus } from 'lucide-react';
 import { adminAPI } from '../../api/client';
 
 const AdminBookings = () => {

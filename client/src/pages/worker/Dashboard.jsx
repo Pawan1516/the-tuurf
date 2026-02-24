@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { bookingsAPI } from '../../api/client';
-import { LogOut, Download, FileText, Calendar, Clock, Phone, CheckCircle, XCircle, AlertCircle, ChevronRight, LayoutDashboard, Search, Filter, Check, X } from 'lucide-react';
+import { LogOut, Download, FileText, Calendar, Clock, CheckCircle, XCircle, AlertCircle, ChevronRight, LayoutDashboard, Search, Filter, Check, X } from 'lucide-react';
 
 const WorkerDashboard = () => {
   const navigate = useNavigate();
@@ -115,7 +115,6 @@ const WorkerDashboard = () => {
     const matchesSearch = b.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.userPhone?.includes(searchTerm);
 
-    const bookingDate = b.slot?.date ? new Date(b.slot.date) : new Date();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
