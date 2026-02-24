@@ -1,0 +1,101 @@
+const express = require('express');
+const router = express.Router();
+const { processCricBotCommand } = require('../services/aiAgent');
+const Slot = require('../models/Slot');
+const { createBookingEntry } = require('../services/bookingService');
+
+/**
+ * @route   POST /api/chatbot
+ * @desc    Public Chatbot for customers
+ * @access  Public
+ */
+router.post('/', async (req, res) => {
+    console.log('🤖 Chatbot Request Received:', req.body.message);
+    try {
+        const { message, context = {} } = req.body;
+        if (!message) return res.status(400).json({ success: false, message: 'Message is required' });
+
+        // Fetch context: Free slots for the next 7 days
+        console.log('⏳ Fetching free slots for context...');
+        const freeSlots = await Slot.find({
+            date: {
+                $gte: new Date().toISOString().split('T')[0],
+                $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            },
+            status: 'free'
+        }).sort({ date: 1, startTime: 1 }).limit(20).lean();
+        console.log(`✅ Found ${freeSlots.length} free slots.`);
+
+        // Process using CricBot System Prompt
+        console.log('🧠 Processing command with CricBot AI...');
+        const aiResponse = await processCricBotCommand(message, {
+            availableSlots: freeSlots,
+            platform: 'chatbot',
+            ...context
+        });
+
+        if (!aiResponse) {
+            console.error('❌ AI Response was null');
+            return res.status(500).json({ success: false, message: 'CricBot is currently offline. Please try again later.' });
+        }
+
+        // Handle automated booking creation if AI detected full details
+        if (aiResponse.type === 'CHATBOT_BOOKING' || aiResponse.type === 'MANUAL_BOOKING') {
+            try {
+                const { name, phone, date, startTime, duration } = aiResponse.data;
+
+                // Calculate end time and amount
+                const hoursToAdd = duration.includes('2') ? 2 : 1;
+                const [h, m] = startTime.split(':').map(Number);
+                const endH = h + hoursToAdd;
+                const endTime = `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+
+                let amount = 0;
+                if (hoursToAdd === 1) {
+                    amount = h < 18 ? 800 : 1200;
+                } else {
+                    if (h < 18 && endH <= 18) amount = 1600;
+                    else if (h >= 18) amount = 2400;
+                    else amount = 2000;
+                }
+
+                const booking = await createBookingEntry({
+                    userName: name,
+                    userPhone: phone,
+                    amount,
+                    date,
+                    startTime,
+                    endTime,
+                    platform: 'chatbot' // Created as PENDING
+                });
+
+                console.log('✅ Pending Booking Created via Chatbot:', booking._id);
+
+                return res.json({
+                    success: true,
+                    reply: aiResponse.reply,
+                    type: 'BOOKING_INITIATED',
+                    bookingId: booking._id
+                });
+            } catch (err) {
+                console.error('❌ Failed to create pending booking:', err.message);
+                // Fallback to chat response if booking creation fails (e.g. overlap)
+            }
+        }
+
+        // Chatbot doesn't handle MANUAL_BOOKING directly for users (it should guide them to book)
+        // But if the AI returns a booking flow response, we just return the reply.
+        console.log('✅ AI Response received:', aiResponse.type);
+        res.json({
+            success: true,
+            reply: aiResponse.reply,
+            type: aiResponse.type
+        });
+
+    } catch (error) {
+        console.error('❌ Chatbot Error:', error);
+        res.status(500).json({ success: false, message: 'Internal Server Error', error: error.message });
+    }
+});
+
+module.exports = router;

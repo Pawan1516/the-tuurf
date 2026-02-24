@@ -1,0 +1,10 @@
+{
+  "PORT": "5000",
+  "MONGODB_URI_DEFINED": true,
+  "MONGODB_URI_MASKED": "mongodb+srv://****:****@cluster0.itzk1ia.mongodb.net/the-turf?retryWrites=true&w=majority",
+  "NODE_ENV": "development",
+  "FRONTEND_URL": "http://localhost:3000",
+  "CWD": "C:\\Users\\Pawan\\OneDrive\\Desktop\\The Turf\\server",
+  "ENV_PATH": "C:\\Users\\Pawan\\OneDrive\\Desktop\\The Turf\\server\\.env",
+  "ENV_EXISTS": true
+}
