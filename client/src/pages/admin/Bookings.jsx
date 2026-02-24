@@ -95,18 +95,7 @@ const AdminBookings = () => {
     }
   };
 
-  const handleResendNotification = async (bookingId) => {
-    try {
-      await bookingsAPI.resendNotification(bookingId);
-      alert('WhatsApp notification sent successfully!');
-      // Refresh to update the icon
-      const response = await bookingsAPI.getAll(filter !== 'all' ? { status: filter } : {});
-      setBookings(response.data.bookings || []);
-    } catch (error) {
-      console.error('Notification error:', error);
-      alert(error.response?.data?.message || 'Failed to send WhatsApp message');
-    }
-  };
+
 
   const handleDirectChat = (b) => {
     let cleaned = b.userPhone.toString().replace(/\D/g, '');
