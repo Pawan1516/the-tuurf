@@ -16,25 +16,31 @@ router.get('/', async (req, res) => {
     let query = {};
 
     if (date) {
-      const startOfDay = new Date(date);
-      startOfDay.setUTCHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
+      console.log('Slots Query Date Parameter:', date);
+      // Ensure date is parsed correctly regardless of environment locale
+      let startOfDay;
+      if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        startOfDay = new Date(`${date}T00:00:00.000Z`);
+      } else {
+        startOfDay = new Date(date);
+        startOfDay.setUTCHours(0, 0, 0, 0);
+      }
+
+      const endOfDay = new Date(startOfDay);
       endOfDay.setUTCHours(23, 59, 59, 999);
 
       const today = new Date();
       today.setUTCHours(0, 0, 0, 0);
 
-      // If requested date is today, show current and future slots
-      if (startOfDay.getTime() === today.getTime()) {
-        const now = new Date();
-        const hour = now.getHours().toString().padStart(2, '0');
-        const min = now.getMinutes().toString().padStart(2, '0');
-        const currentTime = `${hour}:${min}`;
+      console.log('Calculated startOfDay:', startOfDay.toISOString());
+      console.log('Today (UTC midnight):', today.toISOString());
 
+      // If requested date is today, show future slots (IST reference)
+      if (startOfDay.getTime() === today.getTime()) {
         query.date = { $gte: startOfDay, $lte: endOfDay };
-        // Show current hour's slot too (e.g. if it's 22:50, show the 22:00 slot)
-        // By subtracting a bit or just being more lenient
-        query.startTime = { $gte: `${Math.max(0, now.getHours() - 1).toString().padStart(2, '0')}:00` };
+        // TEMPORARILY DISABLED startTime filter to see if slots appear
+        // const now = new Date();
+        // query.startTime = { $gte: `${Math.max(0, now.getHours() - 1).toString().padStart(2, '0')}:00` };
       } else {
         query.date = { $gte: startOfDay, $lte: endOfDay };
       }

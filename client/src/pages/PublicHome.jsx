@@ -4,8 +4,15 @@ import { slotsAPI } from '../api/client';
 import { Calendar, Clock, ChevronRight, Info, Zap, MapPin, Plus } from 'lucide-react';
 
 const PublicHome = () => {
+    const getISODate = (date = new Date()) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const [slots, setSlots] = useState([]);
-    const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('en-CA'));
+    const [selectedDate, setSelectedDate] = useState(getISODate());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
