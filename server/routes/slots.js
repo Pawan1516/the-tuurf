@@ -17,12 +17,12 @@ router.get('/', async (req, res) => {
 
     if (date) {
       const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
+      startOfDay.setUTCHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
+      endOfDay.setUTCHours(23, 59, 59, 999);
 
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      today.setUTCHours(0, 0, 0, 0);
 
       // If requested date is today, show current and future slots
       if (startOfDay.getTime() === today.getTime()) {

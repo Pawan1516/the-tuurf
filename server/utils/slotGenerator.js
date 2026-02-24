@@ -13,7 +13,7 @@ const autoGenerateSlots = async (daysAhead = 30) => {
 
         // 1. Cleanup: Delete slots from previous days
         const yesterday = new Date();
-        yesterday.setHours(0, 0, 0, 0);
+        yesterday.setUTCHours(0, 0, 0, 0);
         const deleted = await Slot.deleteMany({ date: { $lt: yesterday }, status: 'free' });
         if (deleted.deletedCount > 0) {
             console.log(`🧹 Cleaned up ${deleted.deletedCount} past slots.`);
@@ -23,7 +23,7 @@ const autoGenerateSlots = async (daysAhead = 30) => {
         for (let i = 0; i < daysAhead; i++) {
             const date = new Date();
             date.setDate(date.getDate() + i);
-            date.setHours(0, 0, 0, 0);
+            date.setUTCHours(0, 0, 0, 0);
 
             const nextDay = new Date(date);
             nextDay.setDate(nextDay.getDate() + 1);

@@ -48,7 +48,7 @@ const seedData = async () => {
         for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
             const date = new Date();
             date.setDate(date.getDate() + dayOffset);
-            date.setHours(0, 0, 0, 0);
+            date.setUTCHours(0, 0, 0, 0);
 
             for (let hour = 7; hour < 23; hour++) {
                 slots.push({
