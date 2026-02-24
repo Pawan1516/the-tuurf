@@ -1,13 +1,18 @@
 {
     "version": 2,
-    "buildCommand": "npm run build",
-    "outputDirectory": "client/build",
-    "framework": "create-react-app",
-    "cleanUrls": true,
-    "routes": [
+    "builds": [
         {
-            "src": "/(.*)",
-            "dest": "/index.html"
+            "src": "client/package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "build"
+            }
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
         }
     ]
 }
