@@ -16,7 +16,7 @@ const {
 } = require('../services/whatsapp');
 const Worker = require('../models/Worker');
 const { generateBookingReport, createPDF } = require('../services/pdfReport');
-const { analyzeBookingAndGenerateMessage } = require('../services/aiAgent');
+const { analyzeBookingAndGenerateMessage, getAIInsights } = require('../services/aiService');
 
 // Create booking (PUBLIC or AUTHENTICATED)
 router.post('/', async (req, res) => {
@@ -642,7 +642,7 @@ router.get('/:id/ai-insights', verifyToken, roleGuard(['admin', 'worker']), asyn
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
-    const { getAIInsights } = require('../services/aiAgent');
+    // getAIInsights is already imported at the top
 
     // Get user history based on phone number
     const historyData = await Booking.find({ userPhone: booking.userPhone }).lean();

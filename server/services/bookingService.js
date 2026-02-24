@@ -1,6 +1,6 @@
 const Booking = require('../models/Booking');
 const Slot = require('../models/Slot');
-const { analyzeBookingAndGenerateMessage } = require('./aiAgent');
+const { analyzeBookingAndGenerateMessage } = require('./aiService');
 const { sendConfirmationMessage } = require('./whatsapp');
 const mongoose = require('mongoose');
 
