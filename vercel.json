@@ -3,10 +3,11 @@
     "buildCommand": "npm run build",
     "outputDirectory": "client/build",
     "framework": "create-react-app",
-    "rewrites": [
+    "cleanUrls": true,
+    "routes": [
         {
-            "source": "/(.*)",
-            "destination": "/index.html"
+            "src": "/(.*)",
+            "dest": "/index.html"
         }
     ]
 }
