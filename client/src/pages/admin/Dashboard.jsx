@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
@@ -24,7 +24,7 @@ const AdminDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await adminAPI.getRevenue(period);
       const newStats = response.data;
@@ -41,7 +41,7 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  };
+  }, [period, lastBookingCount]);
 
   useEffect(() => {
     fetchStats();
