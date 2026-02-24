@@ -61,6 +61,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'Server is running' });
 });
 
+app.get('/', (req, res) => {
+  res.json({ success: true, message: 'The Turf Backend is running' });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
