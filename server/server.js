@@ -77,7 +77,18 @@ app.use('/api/whatsapp-simple', whatsappSimpleRoutes); // Simple WhatsApp webhoo
 
 // Health check route
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'Server is running' });
+  const mongoose = require('mongoose');
+  const dbState = mongoose.connection.readyState;
+  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+
+  res.json({
+    status: 'Server is running',
+    database: {
+      state: states[dbState] || 'unknown',
+      readyState: dbState,
+      hasUri: !!process.env.MONGODB_URI
+    }
+  });
 });
 
 app.get('/', (req, res) => {
