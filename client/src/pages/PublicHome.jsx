@@ -42,7 +42,9 @@ const PublicHome = () => {
                 setLoading(false);
             } catch (err) {
                 console.error('Error fetching slots:', err);
-                setError('Terminal synchronization failure');
+                const baseUrl = slotsAPI.getAll.toString().includes('apiClient.get') ? 'Config Error' : 'Unknown';
+                // We'll import apiClient to get the actual base URL
+                setError(`Terminal synchronization failure. Attempting to reach: ${process.env.REACT_APP_API_URL || 'localhost'}`);
                 setLoading(false);
             }
         };

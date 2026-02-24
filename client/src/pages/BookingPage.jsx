@@ -115,7 +115,8 @@ const BookingPage = () => {
         } catch (err) {
             console.error('Booking error:', err);
             const serverMessage = err.response?.data?.message;
-            setError(serverMessage || 'Synchronization Error. Target may be unstable.');
+            const targetUrl = process.env.REACT_APP_API_URL || 'localhost (Spec Violation)';
+            setError(serverMessage || `Synchronization Error. Target [${targetUrl}] may be unstable.`);
             setSubmitting(false);
         }
     };
