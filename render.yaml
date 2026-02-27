@@ -2,6 +2,44 @@ services:
   - type: web
     name: the-turf-backend
     env: node
+    plan: free
     rootDir: server
     buildCommand: npm install
     startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      - key: PORT
+        value: 5001
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://the-turf-frontend.vercel.app
+      - key: WA_PHONE_NUMBER_ID
+        sync: false
+      - key: WA_ACCESS_TOKEN
+        sync: false
+      - key: WA_VERIFY_TOKEN
+        sync: false
+      - key: TURF_LOCATION
+        value: "The Turf Stadium"
+      - key: TURF_OPEN_HOUR
+        value: "7"
+      - key: TURF_CLOSE_HOUR
+        value: "23"
+      - key: PRICE_DAY
+        value: "500"
+      - key: PRICE_NIGHT
+        value: "700"
+      - key: PRICE_TRANSITION_HOUR
+        value: "18"

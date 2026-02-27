@@ -2,17 +2,21 @@
     "version": 2,
     "builds": [
         {
-            "src": "package.json",
+            "src": "client/package.json",
             "use": "@vercel/static-build",
             "config": {
-                "distDir": "client/build"
+                "distDir": "build"
             }
         }
     ],
-    "rewrites": [
+    "routes": [
         {
-            "source": "/(.*)",
-            "destination": "/index.html"
+            "src": "/api/(.*)",
+            "dest": "https://the-turf-backend.onrender.com/api/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/client/$1"
         }
     ]
 }
