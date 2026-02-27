@@ -1,17 +1,34 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import AuthContext from '../../context/AuthContext';
-import { adminAPI, bookingsAPI } from '../../api/client';
 import {
-    ArrowLeft, Edit3, ShieldCheck, Database, ChevronRight, LogOut,
-    LayoutDashboard, Calendar, Activity, Briefcase, PieChart,
-    CheckCircle, XCircle, Clock, MessageCircle, Loader2, Zap
+    LayoutDashboard,
+    Calendar,
+    Activity,
+    Briefcase,
+    PieChart,
+    LogOut,
+    ChevronRight,
+    ArrowLeft,
+    XCircle,
+    CheckCircle,
+    Edit3,
+    Zap,
+    ShieldCheck,
+    Loader2,
+    MessageCircle,
+    Database,
+    Clock,
+    Phone,
+    MapPin
 } from 'lucide-react';
+import AuthContext from '../../context/AuthContext';
+import { bookingsAPI, adminAPI } from '../../api/client';
+import MobileNav from '../../components/MobileNav';
 
 const AdminBookingDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { logout } = useContext(AuthContext);
+    const { user, logout } = useContext(AuthContext);
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
     const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -24,6 +41,14 @@ const AdminBookingDetail = () => {
     const [error, setError] = useState('');
     const [aiInsights, setAiInsights] = useState(null);
     const [fetchingAI, setFetchingAI] = useState(false);
+
+    const navItems = [
+        { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
+        { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
+        { to: '/admin/workers', label: 'Workers', icon: Briefcase },
+        { to: '/admin/report', label: 'Report', icon: PieChart },
+    ];
 
     const handleLogout = () => {
         logout();
@@ -182,8 +207,10 @@ const AdminBookingDetail = () => {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-            {/* Sidebar */}
-            <aside className="w-full md:w-80 bg-white border-r border-gray-100 flex flex-col sticky top-0 md:h-screen z-50">
+            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Turf Ops" />
+
+            {/* Sidebar (Desktop) */}
+            <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen z-50">
                 <div className="p-8 border-b border-gray-50 flex items-center gap-4">
                     <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
                         <Database size={24} />
@@ -213,143 +240,145 @@ const AdminBookingDetail = () => {
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
-                <header className="bg-white/80 backdrop-blur-md px-10 h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-                    <button onClick={() => navigate('/admin/bookings')} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 transition-colors">
-                        <ArrowLeft size={16} /> All Bookings
+                <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
+                    <button onClick={() => navigate('/admin/bookings')} className="flex items-center gap-2 md:gap-3 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 transition-colors">
+                        <ArrowLeft size={16} /> <span className="hidden md:inline">Return to Registry</span> <span className="md:hidden">Back</span>
                     </button>
                     <div className="flex flex-col items-end">
-                        <h2 className="text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">Booking #{booking._id?.slice(-6)}</h2>
-                        <span className={`mt-1 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${statusBadge(booking.bookingStatus)}`}>
+                        <h2 className="text-sm md:text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">Booking #{booking._id?.slice(-4)}</h2>
+                        <span className={`mt-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2 md:px-3 py-1 rounded-full border ${statusBadge(booking.bookingStatus)}`}>
                             {booking.bookingStatus}
                         </span>
                         {booking.aiRiskLevel && (
-                            <span className={`mt-2 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${booking.aiRiskLevel === 'LOW' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                            <span className={`mt-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2 md:px-3 py-1 rounded-full border ${booking.aiRiskLevel === 'LOW' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                 booking.aiRiskLevel === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                                     'bg-red-100 text-red-700 border-red-200 animate-pulse'
                                 }`}>
-                                AI RISK: {booking.aiRiskLevel}
+                                RISK: {booking.aiRiskLevel}
                             </span>
                         )}
                     </div>
                 </header>
 
-                <div className="p-10 space-y-10">
+                <div className="p-4 md:p-10 space-y-6 md:space-y-10">
                     {/* Alerts */}
                     {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold px-6 py-4 rounded-2xl flex items-center gap-3">
+                        <div className="bg-red-50 border border-red-200 text-red-700 text-[10px] md:text-xs font-bold px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl flex items-center gap-3">
                             <XCircle size={16} /> {error}
                         </div>
                     )}
                     {msgSuccess && (
-                        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-6 py-4 rounded-2xl flex items-center gap-3">
+                        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] md:text-xs font-bold px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl flex items-center gap-3">
                             <CheckCircle size={16} /> {msgSuccess}
                         </div>
                     )}
 
-                    <div className="grid lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 space-y-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                        <div className="lg:col-span-2 space-y-6 md:space-y-8">
                             {/* Customer Info Card */}
-                            <div className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
-                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-10">Customer Info</h3>
-                                <div className="space-y-10">
+                            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
+                                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 md:mb-10">Customer Info</h3>
+                                <div className="space-y-6 md:space-y-10">
                                     <div>
-                                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">Name</p>
+                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Legally Designated Name</p>
                                         {editingName ? (
-                                            <div className="flex gap-2">
-                                                <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} className="bg-gray-50 border-2 border-emerald-500 p-4 rounded-xl outline-none font-black text-gray-900 w-full" />
-                                                <button onClick={handleUserNameUpdate} className="bg-emerald-600 text-white px-6 rounded-xl font-black uppercase text-[10px]">Save</button>
-                                                <button onClick={() => { setUserName(booking.userName); setEditingName(false); }} className="bg-gray-100 text-gray-500 px-6 rounded-xl font-black uppercase text-[10px]">Cancel</button>
+                                            <div className="flex flex-col md:flex-row gap-2">
+                                                <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} className="bg-gray-50 border-2 border-emerald-500 p-3 md:p-4 rounded-xl outline-none font-black text-gray-900 w-full text-sm md:text-base" />
+                                                <div className="flex gap-2">
+                                                    <button onClick={handleUserNameUpdate} className="flex-1 bg-emerald-600 text-white px-4 md:px-6 py-2 rounded-xl font-black uppercase text-[10px]">Save</button>
+                                                    <button onClick={() => { setUserName(booking.userName); setEditingName(false); }} className="flex-1 bg-gray-100 text-gray-500 px-4 md:px-6 py-2 rounded-xl font-black uppercase text-[10px]">Cancel</button>
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className="flex justify-between items-center group">
-                                                <p className="text-3xl font-black text-gray-900 tracking-tight uppercase leading-none">{booking.userName}</p>
+                                                <p className="text-xl md:text-3xl font-black text-gray-900 tracking-tight uppercase leading-none">{booking.userName}</p>
                                                 <button onClick={() => setEditingName(true)} className="text-emerald-600 p-2 hover:bg-emerald-50 rounded-lg"><Edit3 size={20} /></button>
                                             </div>
                                         )}
                                     </div>
-                                    <div className="grid md:grid-cols-2 gap-10">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
                                         <div>
-                                            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">Phone</p>
-                                            <p className="text-lg font-black text-gray-900">+91 {booking.userPhone}</p>
+                                            <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Secure Line</p>
+                                            <p className="text-sm md:text-lg font-black text-gray-900">+91 {booking.userPhone}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">Location</p>
-                                            <p className="text-lg font-black text-gray-900">{booking.turfLocation || 'The Turf'}</p>
+                                            <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Site Location</p>
+                                            <p className="text-sm md:text-lg font-black text-gray-900">{booking.turfLocation || 'Primary Unit'}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
-                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-10">Slot Details</h3>
-                                <div className="grid md:grid-cols-4 gap-10">
+                            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
+                                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 md:mb-10">Slot Matrix</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
                                     <div>
-                                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">Date</p>
-                                        <p className="text-lg font-black text-gray-900">
-                                            {booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD'}
+                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Date</p>
+                                        <p className="text-xs md:text-lg font-black text-gray-900 leading-tight">
+                                            {booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'TBD'}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">Time</p>
-                                        <p className="text-lg font-black text-emerald-600">
-                                            {booking.slot?.startTime || '00:00'} – {booking.slot?.endTime || '00:00'}
+                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Time</p>
+                                        <p className="text-xs md:text-lg font-black text-emerald-600 leading-none">
+                                            {booking.slot?.startTime}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">Slot ID</p>
-                                        <p className="text-lg font-black text-gray-900 italic truncate">
-                                            #{booking.slot?._id?.slice(-8) || '--------'}
+                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Slot Registry</p>
+                                        <p className="text-xs md:text-lg font-black text-gray-900 italic truncate leading-none">
+                                            #{booking.slot?._id?.slice(-4) || '---'}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">Worker</p>
-                                        <p className="text-lg font-black text-gray-900">{booking.slot?.assignedWorker?.name || 'Unassigned'}</p>
+                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Operative</p>
+                                        <p className="text-xs md:text-lg font-black text-gray-900 leading-none">{booking.slot?.assignedWorker?.name?.split(' ')[0] || 'Unassigned'}</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* AI INTELLIGENCE INTEL */}
-                            <div className="bg-emerald-950 rounded-[3rem] p-10 text-white relative overflow-hidden group border border-white/5">
-                                <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                            <div className="bg-emerald-950 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 text-white relative overflow-hidden group border border-white/5">
+                                <div className="absolute top-0 right-0 p-8 md:p-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
                                     <Zap size={100} className="text-emerald-400" />
                                 </div>
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="bg-emerald-500/20 p-4 rounded-2xl border border-emerald-500/20">
+                                <div className="flex items-center gap-4 mb-6 md:mb-8">
+                                    <div className="bg-emerald-500/20 p-3 md:p-4 rounded-xl md:rounded-2xl border border-emerald-500/20">
                                         <ShieldCheck className="text-emerald-400" size={24} />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-black tracking-tighter uppercase leading-none">AI Intelligence Intel</h3>
-                                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mt-1">Behavioral Pattern Analysis</p>
+                                        <h3 className="text-lg md:text-xl font-black tracking-tighter uppercase leading-none">Behavioral Intel</h3>
+                                        <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mt-1">AI Pattern Analysis</p>
                                     </div>
                                 </div>
 
                                 {fetchingAI ? (
-                                    <div className="flex items-center gap-3 text-emerald-400/60 font-black uppercase text-[10px]">
+                                    <div className="flex items-center gap-3 text-emerald-400/60 font-black uppercase text-[8px] md:text-[10px]">
                                         <Loader2 size={14} className="animate-spin" /> Scanning Repository...
                                     </div>
                                 ) : aiInsights ? (
-                                    <div className="space-y-8">
-                                        <div className="bg-white/5 rounded-2xl p-6 border border-white/5 backdrop-blur-sm">
-                                            <p className="text-emerald-400/60 text-[10px] font-black uppercase tracking-widest mb-3">Executive Summary</p>
-                                            <p className="text-sm font-medium leading-relaxed italic text-emerald-50">"{aiInsights.insights}"</p>
+                                    <div className="space-y-6 md:space-y-8">
+                                        <div className="bg-white/5 rounded-2xl p-4 md:p-6 border border-white/5 backdrop-blur-sm">
+                                            <p className="text-emerald-400/60 text-[8px] md:text-[10px] font-black uppercase tracking-widest mb-2 md:mb-3">Executive Summary</p>
+                                            <p className="text-xs md:text-sm font-medium leading-relaxed italic text-emerald-50">"{aiInsights.insights}"</p>
                                         </div>
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                                <p className="text-emerald-400/40 text-[8px] font-black uppercase mb-1">Total History</p>
-                                                <p className="text-xl font-black">{aiInsights.stats?.total || 0}</p>
+                                        <div className="grid grid-cols-3 gap-3 md:gap-4">
+                                            <div className="bg-white/5 p-3 md:p-4 rounded-xl border border-white/5">
+                                                <p className="text-emerald-400/40 text-[7px] md:text-[8px] font-black uppercase mb-1">Total</p>
+                                                <p className="text-base md:text-xl font-black">{aiInsights.stats?.total || 0}</p>
                                             </div>
-                                            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                                <p className="text-emerald-500/40 text-[8px] font-black uppercase mb-1">Confirmed</p>
-                                                <p className="text-xl font-black text-emerald-400">{aiInsights.stats?.confirmed || 0}</p>
+                                            <div className="bg-white/5 p-3 md:p-4 rounded-xl border border-white/5">
+                                                <p className="text-emerald-500/40 text-[7px] md:text-[8px] font-black uppercase mb-1">Conf</p>
+                                                <p className="text-base md:text-xl font-black text-emerald-400">{aiInsights.stats?.confirmed || 0}</p>
                                             </div>
-                                            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                                <p className="text-red-400/40 text-[8px] font-black uppercase mb-1">No-Shows</p>
-                                                <p className="text-xl font-black text-red-400">{aiInsights.stats?.noShow || 0}</p>
+                                            <div className="bg-white/5 p-3 md:p-4 rounded-xl border border-white/5">
+                                                <p className="text-red-400/40 text-[7px] md:text-[8px] font-black uppercase mb-1">Flops</p>
+                                                <p className="text-base md:text-xl font-black text-red-400">{aiInsights.stats?.noShow || 0}</p>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-emerald-400/40 text-[10px] font-black uppercase italic">No behavioral data retrieved from node.</p>
+                                    <p className="text-emerald-400/40 text-[8px] md:text-[10px] font-black uppercase italic">No behavioral data retrieved from node.</p>
                                 )}
                             </div>
                         </div>
@@ -357,14 +386,14 @@ const AdminBookingDetail = () => {
                         {/* Right Panel — Actions */}
                         <div className="space-y-6">
                             {/* Payment Card */}
-                            <div className="bg-emerald-950 rounded-[3rem] p-8 text-white shadow-2xl shadow-emerald-950/20">
-                                <h3 className="text-[10px] font-black text-emerald-400/60 uppercase tracking-[0.2em] mb-6">Payment</h3>
+                            <div className="bg-emerald-950 rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 text-white shadow-2xl shadow-emerald-950/20">
+                                <h3 className="text-[10px] font-black text-emerald-400/60 uppercase tracking-[0.2em] mb-6">Payment Status</h3>
                                 <div className="space-y-5">
-                                    <div className="bg-white/5 border border-white/5 p-5 rounded-2xl">
-                                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Amount</p>
-                                        <p className="text-4xl font-black tracking-tighter">₹{booking.amount?.toLocaleString()}</p>
+                                    <div className="bg-white/5 border border-white/5 p-4 md:p-5 rounded-2xl">
+                                        <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Fee Amount</p>
+                                        <p className="text-2xl md:text-4xl font-black tracking-tighter">₹{booking.amount?.toLocaleString()}</p>
                                     </div>
-                                    <div className={`p-4 rounded-xl border-2 text-center text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${booking.paymentStatus === 'verified' ? 'border-emerald-500 text-emerald-400' : booking.paymentStatus === 'submitted' ? 'border-purple-400 text-purple-400' : 'border-yellow-500 text-yellow-400'}`}>
+                                    <div className={`p-4 rounded-xl border-2 text-center text-[8px] md:text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${booking.paymentStatus === 'verified' ? 'border-emerald-500 text-emerald-400' : booking.paymentStatus === 'submitted' ? 'border-purple-400 text-purple-400' : 'border-yellow-500 text-yellow-400'}`}>
                                         {booking.paymentStatus === 'verified' && <ShieldCheck size={14} />}
                                         {booking.paymentStatus === 'submitted' ? `TX: ${booking.transactionId}` : booking.paymentStatus}
                                     </div>
@@ -378,37 +407,37 @@ const AdminBookingDetail = () => {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-xl space-y-3">
-                                <h3 className="text-xs font-black text-gray-900 uppercase tracking-[0.15em] mb-6">Booking Actions</h3>
+                            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 border border-gray-100 shadow-xl space-y-3">
+                                <h3 className="text-[10px] md:text-xs font-black text-gray-900 uppercase tracking-[0.15em] mb-4 md:mb-6">System Protocol</h3>
 
                                 {/* Confirm */}
                                 <button
                                     onClick={() => handleStatusChange('confirmed')}
                                     disabled={updatingStatus || booking.bookingStatus === 'confirmed'}
-                                    className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1"
+                                    className="w-full bg-emerald-600 text-white py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1"
                                 >
                                     {updatingStatus ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                    ✅ Confirm Booking
+                                    Finalize Slot
                                 </button>
 
                                 {/* Reject */}
                                 <button
                                     onClick={() => handleStatusChange('rejected')}
                                     disabled={updatingStatus || booking.bookingStatus === 'rejected'}
-                                    className="w-full bg-red-50 text-red-600 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-100 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-red-200 active:border-b-0 active:translate-y-1"
+                                    className="w-full bg-red-50 text-red-600 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-red-100 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-red-200 active:border-b-0 active:translate-y-1"
                                 >
                                     <XCircle size={16} />
-                                    ❌ Reject Booking
+                                    Reject Entry
                                 </button>
 
                                 {/* Hold */}
                                 <button
                                     onClick={() => handleStatusChange('hold')}
                                     disabled={updatingStatus || booking.bookingStatus === 'hold'}
-                                    className="w-full bg-yellow-50 text-yellow-700 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-yellow-100 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-yellow-200 active:border-b-0 active:translate-y-1"
+                                    className="w-full bg-yellow-50 text-yellow-700 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-yellow-100 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-yellow-200 active:border-b-0 active:translate-y-1"
                                 >
                                     <Clock size={16} />
-                                    ⏳ Put on Hold
+                                    Neutralize Hold
                                 </button>
 
                                 <div className="border-t border-gray-100 pt-3">
@@ -416,31 +445,31 @@ const AdminBookingDetail = () => {
                                     <button
                                         onClick={handleSendWhatsApp}
                                         disabled={sendingMsg || !['confirmed', 'rejected', 'hold'].includes(booking.bookingStatus)}
-                                        className="w-full bg-[#25D366] text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-[#1ebe5c] transition-all disabled:opacity-30 flex items-center justify-center gap-3 shadow-lg shadow-green-200"
+                                        className="w-full bg-[#25D366] text-white py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-[#1ebe5c] transition-all disabled:opacity-30 flex items-center justify-center gap-3 shadow-lg shadow-green-200"
                                     >
                                         {sendingMsg ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
-                                        📱 Send Status WhatsApp
+                                        WhatsApp Alert
                                     </button>
-                                    <p className="text-[9px] text-gray-400 text-center mt-2 font-medium">
-                                        Resends status message to {booking.userPhone}
+                                    <p className="text-[8px] text-gray-400 text-center mt-2 font-medium">
+                                        Status alert to +91 {booking.userPhone}
                                     </p>
                                 </div>
 
-                                <div className="border-t border-gray-100 pt-6 mt-3 space-y-4">
-                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Custom Message</h4>
+                                <div className="border-t border-gray-100 pt-4 md:pt-6 mt-3 space-y-3 md:space-y-4">
+                                    <h4 className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Custom Broadcast</h4>
                                     <textarea
                                         value={customMsg}
                                         onChange={(e) => setCustomMsg(e.target.value)}
-                                        placeholder="Type a custom message..."
-                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 text-xs font-medium outline-none focus:border-emerald-500 focus:bg-white transition-all min-h-[100px] resize-none"
+                                        placeholder="Transmit custom payload..."
+                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 text-[10px] md:text-xs font-medium outline-none focus:border-emerald-500 focus:bg-white transition-all min-h-[80px] md:min-h-[100px] resize-none"
                                     />
                                     <button
                                         onClick={handleSendCustomWhatsApp}
                                         disabled={sendingCustomMsg || !customMsg.trim()}
-                                        className="w-full bg-emerald-100 text-emerald-700 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-emerald-200 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-emerald-300 active:border-b-0 active:translate-y-1"
+                                        className="w-full bg-emerald-100 text-emerald-700 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-emerald-200 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-emerald-300 active:border-b-0 active:translate-y-1"
                                     >
                                         {sendingCustomMsg ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                                        Send Custom WhatsApp
+                                        Send Payload
                                     </button>
                                 </div>
                             </div>

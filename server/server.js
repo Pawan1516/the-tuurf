@@ -26,12 +26,16 @@ const initServer = async () => {
 
   // Auto-generate real slots for the next 30 days in DB
   const { autoGenerateSlots } = require('./utils/slotGenerator');
-  const { cleanupExpiredHolds } = require('./utils/slotMaintenance');
+  const { cleanupExpiredHolds, markPastSlotsExpired } = require('./utils/slotMaintenance');
 
   autoGenerateSlots(30);
 
+  // Run immediately on startup to expire any already-past slots
+  markPastSlotsExpired();
+
   // Run maintenance tasks
-  setInterval(cleanupExpiredHolds, 1 * 60 * 1000); // Check for expired holds every 1 minute
+  setInterval(cleanupExpiredHolds, 1 * 60 * 1000);      // Release expired holds every 1 min
+  setInterval(markPastSlotsExpired, 1 * 60 * 1000);     // Expire past slots every 1 min
   setInterval(() => autoGenerateSlots(30), 24 * 60 * 60 * 1000); // Refresh slots daily
 };
 

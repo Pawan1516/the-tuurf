@@ -1,13 +1,33 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Calendar,
+  Activity,
+  Briefcase,
+  PieChart,
+  LogOut,
+  ChevronRight,
+  Search,
+  Sparkles,
+  Command,
+  Plus,
+  Filter,
+  Check,
+  X,
+  MessageSquare,
+  MoreVertical,
+  CalendarDays,
+  Database,
+  Zap
+} from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
-import { bookingsAPI } from '../../api/client';
-import { LogOut, Check, X, Database, ChevronRight, Search, MoreVertical, LayoutDashboard, Calendar, Activity, Briefcase, PieChart, MessageSquare, Zap, Plus } from 'lucide-react';
-import { adminAPI } from '../../api/client';
+import { bookingsAPI, adminAPI } from '../../api/client';
+import MobileNav from '../../components/MobileNav';
 
 const AdminBookings = () => {
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -22,6 +42,14 @@ const AdminBookings = () => {
     startTime: '18:00',
     endTime: '19:00'
   });
+
+  const navItems = [
+    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
+    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
+    { to: '/admin/workers', label: 'Workers', icon: Briefcase },
+    { to: '/admin/report', label: 'Report', icon: PieChart },
+  ];
 
   useEffect(() => {
     if (manualData.startTime && manualData.endTime) {
@@ -206,8 +234,10 @@ const AdminBookings = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-80 bg-white border-r border-gray-100 flex flex-col sticky top-0 md:h-screen z-50">
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Turf Ops" />
+
+      {/* Sidebar (Desktop) */}
+      <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
         <div className="p-8 border-b border-gray-50 flex items-center gap-4">
           <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
             <Database size={24} />
@@ -239,35 +269,35 @@ const AdminBookings = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <header className="bg-white/80 backdrop-blur-md px-10 h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
+        <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
           <div className="flex flex-col">
-            <h2 className="text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Operational Log</h2>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Universal Booking Registry & Audit Trail</p>
+            <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Ops Log</h2>
+            <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Booking Registry</p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={() => setShowManualModal(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shadow-xl shadow-emerald-200"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white p-3 md:px-8 md:py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shadow-xl shadow-emerald-200"
             >
               <Plus size={18} />
-              Add Manual Booking
+              <span className="hidden md:inline">Add Manual Booking</span>
             </button>
-            <div className="relative w-80">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <div className="relative w-40 md:w-80">
+              <Search className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="Search Registry..."
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-3 pl-14 rounded-2xl outline-none transition-all font-bold text-sm"
+                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-2 pl-10 md:p-3 md:pl-14 rounded-xl md:rounded-2xl outline-none transition-all font-bold text-xs md:text-sm"
               />
             </div>
           </div>
         </header>
 
-        <div className="p-10 pb-0">
-          <div className="bg-gray-900 rounded-[3rem] p-8 shadow-2xl relative overflow-hidden group">
+        <div className="p-4 md:p-10 pb-0">
+          <div className="bg-gray-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
               <Zap size={120} className="text-emerald-400" />
             </div>
@@ -277,23 +307,23 @@ const AdminBookings = () => {
                   <Zap size={20} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-white font-black uppercase tracking-widest text-sm">CricBot Command Center</h3>
-                  <p className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1">AI-Powered Rapid Deployment</p>
+                  <h3 className="text-white font-black uppercase tracking-widest text-xs md:text-sm">CricBot Command</h3>
+                  <p className="text-emerald-400 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] mt-1">AI-Powered Deployment</p>
                 </div>
               </div>
 
-              <form onSubmit={handleAICommand} className="relative">
+              <form onSubmit={handleAICommand} className="relative flex flex-col md:block gap-4">
                 <input
                   type="text"
-                  placeholder='e.g. "MANUAL: Ravi, 9123456789, 28 Feb, 7 PM, 2hr, Paid"'
+                  placeholder='MANUAL: Ravi, 9123456789, 28 Feb, 7 PM'
                   value={aiCommand}
                   onChange={(e) => setAiCommand(e.target.value)}
-                  className="w-full bg-white/10 border-2 border-white/5 focus:border-emerald-500/50 p-6 rounded-[2rem] outline-none text-white font-bold text-lg placeholder:text-white/20 transition-all pr-40"
+                  className="w-full bg-white/10 border-2 border-white/5 focus:border-emerald-500/50 p-4 md:p-6 rounded-2xl md:rounded-[2rem] outline-none text-white font-bold text-sm md:text-lg placeholder:text-white/20 transition-all md:pr-40"
                 />
                 <button
                   type="submit"
                   disabled={aiLoading}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="md:absolute right-4 md:top-1/2 md:-translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl md:rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {aiLoading ? 'Processing...' : (
                     <>
@@ -338,14 +368,14 @@ const AdminBookings = () => {
         </div>
         {/* Manual Booking Modal */}
         {showManualModal && (
-          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-            <div className="bg-white rounded-[3rem] p-10 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-300">
+          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-300">
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Direct System Entry</h3>
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Manual Allocation Protocol</p>
+                  <h3 className="text-lg md:text-xl font-black text-gray-900 uppercase tracking-tight">System Entry</h3>
+                  <p className="text-[8px] md:text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Manual Allocation</p>
                 </div>
-                <button onClick={() => setShowManualModal(false)} className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all">
+                <button onClick={() => setShowManualModal(false)} className="p-2 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-500 transition-all">
                   <X size={20} />
                 </button>
               </div>
@@ -463,14 +493,14 @@ const AdminBookings = () => {
           </div>
         )}
 
-        <div className="p-10 space-y-10">
+        <div className="p-4 md:p-10 space-y-8 md:space-y-10">
 
-          <div className="bg-white p-4 rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex flex-wrap gap-2">
-            {['all', 'pending', 'submitted', 'confirmed', 'rejected', 'hold', 'no-show', 'cancelled', 'history'].map(s => (
+          <div className="bg-white p-2 md:p-4 rounded-2xl md:rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex flex-wrap gap-1 md:gap-2">
+            {['all', 'pending', 'confirmed', 'rejected', 'hold', 'history'].map(s => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
-                className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === s
+                className={`px-3 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all ${filter === s
                   ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200'
                   : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}`}
               >
@@ -479,102 +509,156 @@ const AdminBookings = () => {
             ))}
           </div>
 
-          {/* Operational Data Table */}
-          <div className="bg-white rounded-[3rem] border border-gray-100 shadow-2xl shadow-emerald-900/5 overflow-hidden">
-            <div className="overflow-x-auto">
-              {loading ? (
-                <div className="py-40 flex flex-col items-center gap-6">
-                  <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Decrypting Logs...</p>
-                </div>
-              ) : filteredBookings.length === 0 ? (
-                <div className="py-40 text-center">
-                  <h4 className="font-black text-gray-300 uppercase tracking-widest text-sm">Registry Entry Empty</h4>
-                </div>
-              ) : (
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-900 text-white text-[10px] font-black uppercase tracking-[0.2em]">
-                      <th className="px-6 py-6 text-center">sl no</th>
-                      <th className="px-6 py-6">name</th>
-                      <th className="px-6 py-6">mobile number</th>
-                      <th className="px-6 py-6">slot</th>
-                      <th className="px-6 py-6 text-center">status</th>
-                      <th className="px-6 py-6 text-center">money</th>
-                      <th className="px-6 py-6 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredBookings.map((b, index) => (
-                      <tr key={b._id} className="hover:bg-emerald-50/20 transition-colors group">
-                        <td className="px-6 py-8 text-center font-black text-gray-400">
-                          {index + 1}
-                        </td>
-                        <td className="px-6 py-8">
-                          <div className="flex flex-col">
-                            <span className="font-black text-gray-900 uppercase tracking-tight">{b.userName}</span>
-                            <span className="text-[8px] font-mono text-gray-300 mt-1">ID: {b._id.slice(-8)}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-8 text-[10px] font-bold text-gray-600 tracking-widest">
-                          +91 {b.userPhone}
-                        </td>
-                        <td className="px-6 py-8">
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black text-gray-700 tracking-tight">
-                              {b.slot?.date ? new Date(b.slot.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) : 'N/A'}
-                            </span>
-                            <span className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest mt-1">
-                              {formatTime12h(b.slot?.startTime) || '00:00'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-8 text-center">
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${getStatusTheme(b.bookingStatus)}`}>
-                            {b.bookingStatus}
-                          </span>
-                        </td>
-                        <td className="px-6 py-8 text-center">
-                          <span className="text-lg font-black text-gray-900 tracking-tighter">₹{b.amount.toLocaleString()}</span>
-                        </td>
-                        <td className="px-6 py-8">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => handleStatusChange(b._id, 'confirmed')}
-                              className={`p-2 rounded-lg transition-all ${b.bookingStatus === 'confirmed' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-600'}`}
-                              title="Confirm"
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleStatusChange(b._id, 'rejected')}
-                              className={`p-2 rounded-lg transition-all ${b.bookingStatus === 'rejected' ? 'bg-red-500 text-white' : 'bg-red-50 text-red-400'}`}
-                              title="Reject"
-                            >
-                              <X size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDirectChat(b)}
-                              className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
-                              title="WhatsApp"
-                            >
-                              <MessageSquare size={16} />
-                            </button>
-                            <button
-                              onClick={() => navigate(`/admin/bookings/${b._id}`)}
-                              className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-900 hover:text-white transition-all"
-                              title="View"
-                            >
-                              <MoreVertical size={16} />
-                            </button>
-                          </div>
-                        </td>
+          {/* Operational Data Table / Cards */}
+          <div className="bg-white rounded-[2rem] md:rounded-[3rem] border border-gray-100 shadow-2xl shadow-emerald-900/5 overflow-hidden">
+            {loading ? (
+              <div className="py-20 md:py-40 flex flex-col items-center gap-6">
+                <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Decrypting Logs...</p>
+              </div>
+            ) : filteredBookings.length === 0 ? (
+              <div className="py-20 md:py-40 text-center">
+                <h4 className="font-black text-gray-300 uppercase tracking-widest text-sm">Registry Entry Empty</h4>
+              </div>
+            ) : (
+              <>
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-900 text-white text-[10px] font-black uppercase tracking-[0.2em]">
+                        <th className="px-6 py-6 text-center">sl no</th>
+                        <th className="px-6 py-6">name</th>
+                        <th className="px-6 py-6">mobile number</th>
+                        <th className="px-6 py-6">slot</th>
+                        <th className="px-6 py-6 text-center">status</th>
+                        <th className="px-6 py-6 text-center">money</th>
+                        <th className="px-6 py-6 text-center">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredBookings.map((b, index) => (
+                        <tr key={b._id} className="hover:bg-emerald-50/20 transition-colors group">
+                          <td className="px-6 py-8 text-center font-black text-gray-400">
+                            {index + 1}
+                          </td>
+                          <td className="px-6 py-8">
+                            <div className="flex flex-col">
+                              <span className="font-black text-gray-900 uppercase tracking-tight">{b.userName}</span>
+                              <span className="text-[8px] font-mono text-gray-300 mt-1">ID: {b._id.slice(-8)}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-8 text-[10px] font-bold text-gray-600 tracking-widest">
+                            +91 {b.userPhone}
+                          </td>
+                          <td className="px-6 py-8">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-black text-gray-700 tracking-tight">
+                                {b.slot?.date ? new Date(b.slot.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) : 'N/A'}
+                              </span>
+                              <span className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest mt-1">
+                                {formatTime12h(b.slot?.startTime) || '00:00'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-8 text-center">
+                            <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${getStatusTheme(b.bookingStatus)}`}>
+                              {b.bookingStatus}
+                            </span>
+                          </td>
+                          <td className="px-6 py-8 text-center">
+                            <span className="text-lg font-black text-gray-900 tracking-tighter">₹{b.amount.toLocaleString()}</span>
+                          </td>
+                          <td className="px-6 py-8">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleStatusChange(b._id, 'confirmed')}
+                                className={`p-2 rounded-lg transition-all ${b.bookingStatus === 'confirmed' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-600'}`}
+                                title="Confirm"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(b._id, 'rejected')}
+                                className={`p-2 rounded-lg transition-all ${b.bookingStatus === 'rejected' ? 'bg-red-500 text-white' : 'bg-red-50 text-red-400'}`}
+                                title="Reject"
+                              >
+                                <X size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDirectChat(b)}
+                                className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
+                                title="WhatsApp"
+                              >
+                                <MessageSquare size={16} />
+                              </button>
+                              <button
+                                onClick={() => navigate(`/admin/bookings/${b._id}`)}
+                                className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-900 hover:text-white transition-all"
+                                title="View"
+                              >
+                                <MoreVertical size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {filteredBookings.map((b) => (
+                    <div key={b._id} className="p-6 space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-black text-gray-900 uppercase tracking-tight">{b.userName}</h4>
+                          <p className="text-[10px] font-bold text-gray-400">+91 {b.userPhone}</p>
+                        </div>
+                        <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${getStatusTheme(b.bookingStatus)}`}>
+                          {b.bookingStatus}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-end border-t border-gray-50 pt-4">
+                        <div className="space-y-1">
+                          <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Schedule</p>
+                          <p className="text-xs font-black text-gray-700">
+                            {b.slot?.date ? new Date(b.slot.date).toLocaleDateString('en-GB') : 'N/A'} @ {formatTime12h(b.slot?.startTime)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Fee</p>
+                          <p className="text-lg font-black text-gray-900 tracking-tighter">₹{b.amount.toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          onClick={() => handleStatusChange(b._id, 'confirmed')}
+                          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${b.bookingStatus === 'confirmed' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-600'}`}
+                        >
+                          <Check size={14} /> Conf
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange(b._id, 'rejected')}
+                          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${b.bookingStatus === 'rejected' ? 'bg-red-500 text-white' : 'bg-red-50 text-red-500'}`}
+                        >
+                          <X size={14} /> Rej
+                        </button>
+                        <button
+                          onClick={() => handleDirectChat(b)}
+                          className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all"
+                        >
+                          <MessageSquare size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </main>

@@ -85,7 +85,7 @@ router.post('/login', async (req, res) => {
         if (mongoose.connection.readyState !== 1) {
             return res.status(503).json({
                 success: false,
-                message: 'Database currently offline. Please try again later.'
+                message: 'Database currently offline. Please ensure your IP address is whitelisted in MongoDB Atlas.'
             });
         }
 

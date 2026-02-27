@@ -17,7 +17,7 @@ const slotSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['free', 'booked', 'hold'],
+    enum: ['free', 'booked', 'hold', 'expired'],
     default: 'free'
   },
   assignedWorker: {

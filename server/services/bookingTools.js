@@ -11,11 +11,14 @@ const checkAvailability = async (date, time) => {
     try {
         const [hours, minutes] = time.split(':').map(Number);
 
-        // Check operating hours (7 AM to 11 PM)
-        if (hours < 7 || hours >= 23) {
+        // Check operating hours from config
+        const openHour = parseInt(process.env.TURF_OPEN_HOUR) || 7;
+        const closeHour = parseInt(process.env.TURF_CLOSE_HOUR) || 23;
+
+        if (hours < openHour || hours >= closeHour) {
             return {
                 available: false,
-                message: 'Requested time is outside operating hours (7 AM - 11 PM)',
+                message: `Requested time is outside operating hours (${openHour} AM - ${closeHour % 12 || 12} PM)`,
                 alternativeSlots: []
             };
         }
@@ -39,7 +42,8 @@ const checkAvailability = async (date, time) => {
         // Generate alternatives (next 3 available slots)
         const alternatives = [];
         const startHour = hours;
-        for (let h = 7; h < 23; h++) {
+
+        for (let h = openHour; h < closeHour; h++) {
             if (h === startHour) continue;
             const t = `${String(h).padStart(2, '0')}:00`;
             const booked = await Slot.findOne({
@@ -78,8 +82,12 @@ const bookSlot = async (name, phone, date, time) => {
         const endH = h + 1;
         const endTime = `${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
-        // Calculate amount (simplified logic based on original aiAgent rules)
-        const amount = h < 18 ? 800 : 1200;
+        // Calculate amount based on config
+        const transitionHour = parseInt(process.env.PRICE_TRANSITION_HOUR) || 18;
+        const priceDay = parseInt(process.env.PRICE_DAY) || 500;
+        const priceNight = parseInt(process.env.PRICE_NIGHT) || 700;
+
+        const amount = h < transitionHour ? priceDay : priceNight;
 
         const booking = await createBookingEntry({
             userName: name,

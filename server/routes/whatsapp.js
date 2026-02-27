@@ -50,7 +50,7 @@ router.post('/webhook', async (req, res) => {
 
             try {
                 // 1. Check for UTR / Transaction ID (Simple keyword matching for immediate receipt)
-                if (text.length >= 10 && /\d{10,}/.test(text) || text.toLowerCase().includes('utr') || text.toLowerCase().includes('trans')) {
+                if ((text.length >= 10 && /\d{10,}/.test(text) || text.toLowerCase().includes('utr') || text.toLowerCase().includes('trans')) && require('mongoose').connection.readyState === 1) {
                     // Find the latest pending booking for this user
                     const lastBooking = await Booking.findOne({ userPhone: from, paymentStatus: 'pending' }).sort({ createdAt: -1 });
                     if (lastBooking) {
@@ -80,10 +80,10 @@ router.post('/webhook', async (req, res) => {
                     await sendWhatsAppNotification(from, aiResponse.reply);
 
                     // Generate and send UPI details
-                    const qrResult = await generateUPIQRCode(bookingInfo.amount || 800, bookingInfo.bookingId);
+                    const qrResult = await generateUPIQRCode(bookingInfo.amount || 500, bookingInfo.bookingId);
                     if (qrResult.success) {
                         const paymentMsg = `💳 *Payment Required to Confirm:* \n\n` +
-                            `Please pay *₹${bookingInfo.amount || 800}* via UPI to lock your slot.\n\n` +
+                            `Please pay *₹${bookingInfo.amount || 500}* via UPI to lock your slot.\n\n` +
                             `🔗 *UPI Link:* ${qrResult.upiLink}\n\n` +
                             `ID: ${bookingInfo.bookingId}\n\n` +
                             `⚠️ Slot held for *15 minutes*.\n` +

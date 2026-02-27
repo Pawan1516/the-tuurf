@@ -71,7 +71,7 @@ const PaymentPage = () => {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] pb-24">
-            <div className="max-w-2xl mx-auto px-6 py-12">
+            <div className="max-w-2xl mx-auto px-4 md:px-6 py-8 md:py-12">
 
                 <button
                     onClick={() => navigate('/')}
@@ -83,24 +83,24 @@ const PaymentPage = () => {
                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Cancel Transaction</span>
                 </button>
 
-                <div className="bg-white rounded-[3.5rem] shadow-2xl shadow-emerald-950/[0.03] overflow-hidden border border-gray-100">
-                    <div className="p-12 text-center border-b border-gray-100 bg-[#0F172A] text-white relative">
+                <div className="bg-white rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl shadow-emerald-950/[0.03] overflow-hidden border border-gray-100">
+                    <div className="p-8 md:p-12 text-center border-b border-gray-100 bg-[#0F172A] text-white relative">
                         <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
                             <div className="absolute top-[-50px] left-[-50px] w-64 h-64 bg-emerald-500 rounded-full blur-[100px]"></div>
                         </div>
 
-                        <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 text-emerald-400 border border-emerald-500/20 relative z-10">
+                        <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-500/10 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-4 md:mb-6 text-emerald-400 border border-emerald-500/20 relative z-10">
                             <QrCode size={36} />
                         </div>
-                        <h2 className="text-3xl font-black tracking-tighter mb-2 uppercase relative z-10">Transfer <span className="text-emerald-400">Initiated</span></h2>
-                        <div className="flex items-center justify-center gap-3 opacity-60 relative z-10">
-                            <div className="h-[1px] w-8 bg-emerald-400"></div>
-                            <p className="font-black uppercase text-[9px] tracking-[0.3em]">Phase Two: Secure Transfer</p>
-                            <div className="h-[1px] w-8 bg-emerald-400"></div>
+                        <h2 className="text-2xl md:text-3xl font-black tracking-tighter mb-2 uppercase relative z-10">Transfer <span className="text-emerald-400">Initiated</span></h2>
+                        <div className="flex items-center justify-center gap-2 md:gap-3 opacity-60 relative z-10">
+                            <div className="h-[1px] w-6 md:w-8 bg-emerald-400"></div>
+                            <p className="font-black uppercase text-[8px] md:text-[9px] tracking-[0.2em] md:tracking-[0.3em]">Phase Two: Secure Transfer</p>
+                            <div className="h-[1px] w-6 md:w-8 bg-emerald-400"></div>
                         </div>
                     </div>
 
-                    <div className="p-12 space-y-12">
+                    <div className="p-8 md:p-12 space-y-10 md:space-y-12">
                         {/* QR Section */}
                         <div className="flex flex-col items-center">
                             <div className="bg-white p-8 rounded-[2.5rem] border-2 border-emerald-50 inline-block shadow-2xl shadow-emerald-900/5 relative group">
@@ -122,33 +122,33 @@ const PaymentPage = () => {
                         </div>
 
                         {/* Order Summary */}
-                        <div className="bg-gray-50 rounded-[2rem] p-10 space-y-6 border border-gray-100 relative overflow-hidden group">
+                        <div className="bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-10 space-y-6 border border-gray-100 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-150 transition-transform duration-700">
                                 <Zap size={80} className="text-gray-900" />
                             </div>
-                            <div className="flex justify-between items-center text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                            <div className="flex justify-between items-center text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
                                 <span className="flex items-center gap-2"><Clock size={12} /> Allocation Window</span>
                                 <span className="text-gray-900">
                                     {formatTime12h(booking?.slot.startTime)} – {formatTime12h(booking?.slot.endTime)}
                                 </span>
                             </div>
-                            <div className="flex justify-between items-center text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none pt-2">
+                            <div className="flex justify-between items-center text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none pt-2">
                                 <span className="flex items-center gap-2"><Hash size={12} /> Unique Booking ID</span>
                                 <span className="text-gray-900 tracking-tighter">{booking?._id.slice(-12).toUpperCase()}</span>
                             </div>
                             <div className="pt-6 border-t border-gray-200 flex justify-between items-end">
-                                <span className="font-black text-gray-900 uppercase text-xs tracking-widest">Total Settle Amount</span>
-                                <span className="text-4xl font-black text-emerald-600 tracking-tighter">₹{booking?.amount}</span>
+                                <span className="font-black text-gray-900 uppercase text-[10px] md:text-xs tracking-widest">Total Settle Amount</span>
+                                <span className="text-3xl md:text-4xl font-black text-emerald-600 tracking-tighter">₹{booking?.amount}</span>
                             </div>
                         </div>
 
                         {/* Form */}
-                        <form onSubmit={handleManualPaymentSubmit} className="space-y-8">
+                        <form onSubmit={handleManualPaymentSubmit} className="space-y-6 md:space-y-8">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Validation Token (Transaction ID / UTR)</label>
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-tighter cursor-pointer hover:opacity-70">
-                                        Where to find? <Info size={12} />
+                                    <label className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Validation Token (Transaction ID / UTR)</label>
+                                    <div className="flex items-center gap-1 text-[8px] md:text-[10px] font-black text-emerald-600 uppercase tracking-tighter cursor-pointer hover:opacity-70">
+                                        Manual Guide <Info size={12} />
                                     </div>
                                 </div>
                                 <div className="relative group">
@@ -156,7 +156,7 @@ const PaymentPage = () => {
                                     <input
                                         type="text"
                                         placeholder="ENTER 12-DIGIT UTR"
-                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-6 pl-16 rounded-[1.5rem] outline-none transition-all font-black text-sm text-gray-900 placeholder:text-gray-200 tracking-[0.2em] shadow-inner"
+                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-5 md:p-6 pl-14 md:pl-16 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-gray-900 placeholder:text-gray-200 tracking-[0.15em] md:tracking-[0.2em] shadow-inner"
                                         value={transactionId}
                                         onChange={(e) => setTransactionId(e.target.value.toUpperCase())}
                                         required

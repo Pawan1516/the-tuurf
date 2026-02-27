@@ -75,7 +75,7 @@ const PublicHome = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
             {/* HERO SECTION WITH BACKGROUND IMAGE SLIDER */}
-            <section className="relative h-[480px] w-full flex flex-col items-center justify-center overflow-hidden">
+            <section className="relative h-[400px] md:h-[480px] w-full flex flex-col items-center justify-center overflow-hidden">
                 {heroImages.map((img, idx) => (
                     <div
                         key={idx}
@@ -87,21 +87,21 @@ const PublicHome = () => {
                     ></div>
                 ))}
 
-                <div className="relative z-10 text-center space-y-4 px-4">
-                    <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-2xl">
+                <div className="relative z-10 text-center space-y-4 px-6 md:px-4">
+                    <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-2xl">
                         Feel Free <span className="text-emerald-400"> Play Better</span>
                     </h1>
-                    <p className="text-xs md:text-sm font-black text-white/80 uppercase tracking-[0.6em] md:tracking-[1em] mb-12 drop-shadow-lg">
+                    <p className="text-[10px] md:text-sm font-black text-white/80 uppercase tracking-[0.4em] md:tracking-[1em] mb-8 md:mb-12 drop-shadow-lg">
                         Select your squad. Lock your slot
                     </p>
 
                     {/* SLIDER DOTS */}
-                    <div className="flex justify-center gap-3">
+                    <div className="flex justify-center gap-2 md:gap-3">
                         {heroImages.map((_, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => setCurrentImageIndex(idx)}
-                                className={`h-1.5 rounded-full transition-all duration-500 ${idx === currentImageIndex ? 'w-8 bg-emerald-400' : 'w-2 bg-white/30'
+                                className={`h-1 md:h-1.5 rounded-full transition-all duration-500 ${idx === currentImageIndex ? 'w-6 md:w-8 bg-emerald-400' : 'w-1.5 md:w-2 bg-white/30'
                                     }`}
                             ></button>
                         ))}
@@ -110,66 +110,66 @@ const PublicHome = () => {
             </section>
 
             {/* MAIN INTERFACE OVERLAPPING HERO */}
-            <div className="max-w-7xl mx-auto w-full px-6 -mt-32 relative z-20 mb-32">
-                <div className="grid lg:grid-cols-12 gap-8 items-start">
+            <div className="max-w-7xl mx-auto w-full px-4 md:px-6 -mt-16 md:-mt-32 relative z-20 mb-16 md:mb-32">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
 
-                    {/* DATE SIDEBAR - MATCHES SCREENSHOT */}
-                    <div className="lg:col-span-3 bg-white rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.08)] space-y-4 min-h-[500px]">
+                    {/* DATE SIDEBAR - Horizontal on Mobile, Vertical on Desktop */}
+                    <div className="lg:col-span-3 bg-white rounded-[2rem] md:rounded-[2.5rem] p-4 md:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.08)] flex lg:flex-col overflow-x-auto lg:overflow-x-visible gap-3 md:gap-4 no-scrollbar">
                         {dates.map((d) => {
                             const isActive = selectedDate === d.dateStr;
                             return (
                                 <button
                                     key={d.dateStr}
                                     onClick={() => setSelectedDate(d.dateStr)}
-                                    className={`w-full text-left p-8 rounded-[1.8rem] transition-all duration-300 flex flex-col gap-1.5 relative border-2 ${isActive
+                                    className={`flex-shrink-0 w-40 lg:w-full text-left p-4 lg:p-8 rounded-[1.5rem] lg:rounded-[1.8rem] transition-all duration-300 flex flex-col gap-1 md:gap-1.5 relative border-2 ${isActive
                                         ? 'bg-white border-emerald-500 shadow-xl shadow-emerald-500/10'
                                         : 'bg-transparent border-transparent hover:bg-slate-50'
                                         }`}
                                 >
-                                    <div className={`font-black text-xl tracking-tight leading-none ${isActive ? 'text-slate-900' : 'text-slate-400'}`}>
+                                    <div className={`font-black text-base lg:text-xl tracking-tight leading-none ${isActive ? 'text-slate-900' : 'text-slate-400'}`}>
                                         {d.display}
                                     </div>
-                                    <div className={`text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 ${isActive ? 'text-emerald-500' : 'text-slate-300'}`}>
+                                    <div className={`text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] flex items-center gap-2 ${isActive ? 'text-emerald-500' : 'text-slate-300'}`}>
                                         {d.days === 0 && <Zap size={10} className="fill-emerald-500" />} {d.label}
                                     </div>
                                     {isActive && (
-                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 w-2 h-10 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/30"></div>
+                                        <div className="hidden lg:block absolute right-6 top-1/2 -translate-y-1/2 w-2 h-10 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/30"></div>
                                     )}
                                 </button>
                             );
                         })}
                     </div>
 
-                    {/* DEPLOYMENT LOGS - MATCHES SCREENSHOT HEADER & TABLE */}
-                    <div className="lg:col-span-9 bg-white rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden min-h-[600px]">
+                    {/* SLOT LISTING */}
+                    <div className="lg:col-span-9 bg-white rounded-[2rem] md:rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden min-h-[500px] md:min-h-[600px]">
 
-                        {/* THE NAVY HEADER */}
-                        <div className="bg-[#1e293b] p-12 flex flex-col md:flex-row justify-between items-center text-white relative gap-8">
-                            <div className="space-y-1.5 flex-1">
-                                <h2 className="text-2xl font-black uppercase tracking-[0.1em] text-emerald-400 leading-none">Book Your Slot Now</h2>
-                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.4em]">
+                        {/* NAVY HEADER */}
+                        <div className="bg-[#1e293b] p-6 md:p-12 flex flex-col md:flex-row justify-between items-center text-white relative gap-6 md:gap-8">
+                            <div className="space-y-1.5 flex-1 w-full text-center md:text-left">
+                                <h2 className="text-xl md:text-2xl font-black uppercase tracking-[0.1em] text-emerald-400 leading-none">Arena Deployment</h2>
+                                <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em] md:tracking-[0.4em]">
                                     {new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-6">
+                            <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-4 md:gap-6">
                                 <Link
                                     to="/book/custom"
-                                    className="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-emerald-500/20 flex items-center gap-2"
+                                    className="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all border border-emerald-500/20 flex items-center gap-2"
                                 >
                                     <Plus size={14} /> Custom Time
                                 </Link>
-                                <div className="text-right">
-                                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-1">Pricing</p>
-                                    <p className="text-2xl font-black text-white leading-none tracking-tighter">₹500 / HR</p>
+                                <div className="text-center md:text-right">
+                                    <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1">Fee</p>
+                                    <p className="text-xl md:text-2xl font-black text-white leading-none tracking-tighter">₹500 / HR</p>
                                 </div>
-                                <div className="bg-emerald-500/10 p-4 rounded-2xl text-emerald-400 border border-emerald-500/20 shadow-inner">
+                                <div className="hidden md:flex bg-emerald-500/10 p-4 rounded-2xl text-emerald-400 border border-emerald-500/20 shadow-inner">
                                     <Zap size={24} className="fill-emerald-400" />
                                 </div>
                             </div>
                         </div>
 
-                        {/* TABLE CONTENT */}
-                        <div className="overflow-x-auto">
+                        {/* TABLE CONTENT (Hidden on Mobile) */}
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-[#1e293b] text-white/40 text-[11px] font-black uppercase tracking-[0.3em] border-t border-white/5">
@@ -184,7 +184,7 @@ const PublicHome = () => {
                                     {loading ? (
                                         <tr><td colSpan="5" className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse">Syncing Arena Data...</td></tr>
                                     ) : slots.length === 0 ? (
-                                        <tr><td colSpan="5" className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No slots available for this timeline</td></tr>
+                                        <tr><td colSpan="5" className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No entries found in this timeframe</td></tr>
                                     ) : slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((slot) => {
                                         const isFree = slot.status === 'free';
                                         const isBooked = slot.status === 'booked';
@@ -236,29 +236,71 @@ const PublicHome = () => {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                </div>
 
-                {/* NAVIGATION ARROWS AT BOTTOM */}
-                <div className="mt-12 flex items-center justify-center gap-4">
-                    <button className="w-14 h-14 bg-slate-200/50 text-slate-400 rounded-full flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-lg active:scale-90">
-                        <ChevronRight className="rotate-180" size={24} />
-                    </button>
-                    <button className="w-14 h-14 bg-slate-900 text-white rounded-full flex items-center justify-center hover:bg-emerald-600 transition-all shadow-xl active:scale-90">
-                        <ChevronRight size={24} />
-                    </button>
+                        {/* CARD LIST (Mobile Only) */}
+                        <div className="md:hidden p-4 space-y-4">
+                            {loading ? (
+                                <div className="py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">Syncing Arena Data...</div>
+                            ) : slots.length === 0 ? (
+                                <div className="py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No entries found in this timeframe</div>
+                            ) : slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((slot) => {
+                                const isFree = slot.status === 'free';
+                                const isBooked = slot.status === 'booked';
+                                return (
+                                    <div key={slot._id} className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4 relative overflow-hidden group">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex flex-col">
+                                                <span className="text-xl font-black tracking-tight text-slate-900 leading-none">
+                                                    {formatTime12h(slot.startTime)}
+                                                </span>
+                                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-1">
+                                                    Until {formatTime12h(slot.endTime)}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-lg font-black text-slate-900 tracking-tighter">₹{slot.price || 500}</span>
+                                                <div className="flex items-center gap-1.5 mt-1">
+                                                    <div className={`w-2 h-2 rounded-full ${isFree ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : isBooked ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
+                                                    <span className={`text-[8px] font-black uppercase tracking-[0.1em] ${isFree ? 'text-emerald-600' : isBooked ? 'text-rose-500' : 'text-amber-600'}`}>
+                                                        {isFree ? 'Available' : isBooked ? 'Booked Out' : 'On Hold'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between pt-2">
+                                            <span className="text-[8px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest bg-slate-900 text-teal-400">
+                                                Standard Hour
+                                            </span>
+                                            {isFree ? (
+                                                <Link
+                                                    to={`/book/${slot._id}`}
+                                                    className="inline-flex items-center gap-2 bg-emerald-600 text-white font-black px-6 py-3 rounded-xl hover:bg-emerald-700 transition-all shadow-lg text-[9px] uppercase tracking-widest"
+                                                >
+                                                    Secure <ChevronRight size={12} />
+                                                </Link>
+                                            ) : (
+                                                <div className={`px-6 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest border-2 ${isBooked ? 'border-rose-100 text-rose-200' : 'border-amber-100 text-amber-200'}`}>
+                                                    LOCKED
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* LOCATION INTEL SECTION */}
-            <div className="max-w-7xl mx-auto w-full px-6 mb-32">
-                <div className="bg-white border border-slate-100 rounded-[3rem] p-12 flex flex-col md:flex-row items-center gap-12 shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
-                    <div className="bg-emerald-600 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-emerald-600/30">
+            <div className="max-w-7xl mx-auto w-full px-4 md:px-6 mb-20 md:mb-32">
+                <div className="bg-white border border-slate-100 rounded-[2rem] md:rounded-[3rem] p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-12 shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
+                    <div className="bg-emerald-600 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] text-white shadow-2xl shadow-emerald-600/30">
                         <MapPin size={48} />
                     </div>
                     <div className="flex-1 text-center md:text-left space-y-2">
-                        <h4 className="font-black text-slate-900 text-3xl tracking-tighter uppercase leading-none">Location Intelligence</h4>
-                        <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[11px]">
+                        <h4 className="font-black text-slate-900 text-xl md:text-3xl tracking-tighter uppercase leading-none">Location Intelligence</h4>
+                        <p className="text-slate-400 font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] text-[9px] md:text-[11px]">
                             Plot no 491, Madhavapuri Hills, PJR Layout, Miyapur, Hyderabad
                         </p>
                     </div>
@@ -266,7 +308,7 @@ const PublicHome = () => {
                         href="https://www.google.com/maps/dir/?api=1&destination=Plot+no+491,+The+Turf,+Madhavapuri+Hills,+PJR+Layout,+Miyapur,+Hyderabad"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-black transition-all shadow-2xl active:scale-95 whitespace-nowrap"
+                        className="w-full md:w-auto bg-slate-900 text-white px-8 md:px-12 py-4 md:py-5 rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-[0.2em] hover:bg-black transition-all shadow-2xl active:scale-95 whitespace-nowrap text-center"
                     >
                         Get Directions
                     </a>

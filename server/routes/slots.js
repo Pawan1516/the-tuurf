@@ -13,11 +13,10 @@ router.get('/', async (req, res) => {
     }
 
     const { date } = req.query;
-    let query = {};
+    let query = { status: { $ne: 'expired' } }; // Never show expired slots to public
 
     if (date) {
       console.log('Slots Query Date Parameter:', date);
-      // Ensure date is parsed correctly regardless of environment locale
       let startOfDay;
       if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
         startOfDay = new Date(`${date}T00:00:00.000Z`);
@@ -29,21 +28,7 @@ router.get('/', async (req, res) => {
       const endOfDay = new Date(startOfDay);
       endOfDay.setUTCHours(23, 59, 59, 999);
 
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
-
-      console.log('Calculated startOfDay:', startOfDay.toISOString());
-      console.log('Today (UTC midnight):', today.toISOString());
-
-      // If requested date is today, show future slots (IST reference)
-      if (startOfDay.getTime() === today.getTime()) {
-        query.date = { $gte: startOfDay, $lte: endOfDay };
-        // TEMPORARILY DISABLED startTime filter to see if slots appear
-        // const now = new Date();
-        // query.startTime = { $gte: `${Math.max(0, now.getHours() - 1).toString().padStart(2, '0')}:00` };
-      } else {
-        query.date = { $gte: startOfDay, $lte: endOfDay };
-      }
+      query.date = { $gte: startOfDay, $lte: endOfDay };
     }
 
     const slots = await Slot.find(query)
@@ -57,6 +42,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to synchronize slots' });
   }
 });
+
 
 // Get slot by ID
 router.get('/:id', async (req, res) => {
@@ -108,7 +94,7 @@ router.put('/:id/status', verifyToken, roleGuard(['admin']), async (req, res) =>
   try {
     const { status } = req.body;
 
-    if (!['free', 'booked', 'hold'].includes(status)) {
+    if (!['free', 'booked', 'hold', 'expired'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
 

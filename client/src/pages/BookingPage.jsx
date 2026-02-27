@@ -143,34 +143,34 @@ const BookingPage = () => {
     return (
         <div className="min-h-screen bg-[#F8FAFC] pb-24">
             {/* Minimal Header for Flow */}
-            <div className="bg-white border-b border-gray-100 h-24 flex items-center px-6 sticky top-0 z-50">
+            <div className="bg-white border-b border-gray-100 h-20 md:h-24 flex items-center px-4 md:px-6 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-                    <button onClick={() => navigate('/')} className="flex items-center gap-3 text-gray-400 hover:text-emerald-600 transition-all group">
-                        <div className="bg-gray-50 p-2.5 rounded-xl group-hover:bg-emerald-50 transition-colors">
+                    <button onClick={() => navigate('/')} className="flex items-center gap-2 md:gap-3 text-gray-400 hover:text-emerald-600 transition-all group">
+                        <div className="bg-gray-50 p-2 md:p-2.5 rounded-xl group-hover:bg-emerald-50 transition-colors">
                             <ArrowLeft size={18} />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Abort Reservation</span>
+                        <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em]">Abort Reservation</span>
                     </button>
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="flex items-center gap-3 md:gap-4">
                         <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse shadow-lg shadow-emerald-500/50"></div>
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Live Node Synchronization Active</span>
+                        <span className="text-[8px] md:text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Live Node Sync</span>
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-6xl mx-auto px-6 py-16">
-                <div className="grid lg:grid-cols-2 gap-16 items-start">
+            <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 md:py-16">
+                <div className="grid lg:grid-cols-2 gap-10 md:gap-16 items-start">
 
                     {/* Left Column: Summary & Verification */}
-                    <div className="space-y-10">
-                        <div className="flex flex-col gap-4">
-                            <div className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] w-fit">
+                    <div className="space-y-8 md:space-y-10">
+                        <div className="flex flex-col gap-3 md:gap-4">
+                            <div className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] w-fit">
                                 Milestone: Slot Reservation
                             </div>
-                            <h1 className="text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">
+                            <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">
                                 Allocation <span className="text-emerald-600">Details</span>
                             </h1>
-                            <p className="text-gray-500 font-medium leading-relaxed max-w-sm">
+                            <p className="text-xs md:text-sm text-gray-500 font-medium leading-relaxed max-w-sm">
                                 System ready for slot assignment. Verify the temporal window and location identifiers before proceeding.
                             </p>
                         </div>
@@ -258,13 +258,13 @@ const BookingPage = () => {
                     </div>
 
                     {/* Right Column: Reservation Form */}
-                    <div className="bg-white rounded-[3.5rem] shadow-2xl shadow-emerald-950/5 p-12 border border-blue-50/20 relative">
-                        <div className="mb-12 flex items-center justify-between">
+                    <div className="bg-white rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl shadow-emerald-950/5 p-8 md:p-12 border border-blue-50/20 relative">
+                        <div className="mb-8 md:mb-12 flex items-center justify-between">
                             <div>
-                                <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase leading-none">Identity</h2>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-2">Operator Information</p>
+                                <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tighter uppercase leading-none">Identity</h2>
+                                <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-2">Operator Information</p>
                             </div>
-                            <div className="h-14 w-14 bg-gray-50 rounded-2xl flex items-center justify-center text-emerald-600 border border-gray-100">
+                            <div className="h-12 w-12 md:h-14 md:w-14 bg-gray-50 rounded-2xl flex items-center justify-center text-emerald-600 border border-gray-100">
                                 <User size={24} />
                             </div>
                         </div>
@@ -292,7 +292,7 @@ const BookingPage = () => {
                                                     max="23:00"
                                                     value={formData.startTime}
                                                     onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                                                    className="w-1/2 bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-6 rounded-[1.5rem] outline-none transition-all font-black text-sm text-gray-900 uppercase tracking-wider"
+                                                    className="w-1/2 bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 md:p-6 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-gray-900 uppercase tracking-wider"
                                                     required
                                                 />
                                                 <input
@@ -301,7 +301,7 @@ const BookingPage = () => {
                                                     max="23:00"
                                                     value={formData.endTime}
                                                     onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                                                    className="w-1/2 bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-6 rounded-[1.5rem] outline-none transition-all font-black text-sm text-gray-900 uppercase tracking-wider"
+                                                    className="w-1/2 bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 md:p-6 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-gray-900 uppercase tracking-wider"
                                                     required
                                                 />
                                             </div>
@@ -324,13 +324,13 @@ const BookingPage = () => {
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Identity</label>
                                     <div className="relative group">
-                                        <User className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-emerald-500 transition-colors" size={20} />
+                                        <User className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-emerald-500 transition-colors" size={18} />
                                         <input
                                             type="text"
                                             placeholder="RECIPIENT NAME"
                                             value={formData.fullName}
                                             onChange={(e) => setFormData({ ...formData, fullName: e.target.value.toUpperCase() })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-6 pl-16 rounded-[1.5rem] outline-none transition-all font-black text-sm text-gray-900 placeholder:text-gray-200 uppercase tracking-wider"
+                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-5 md:p-6 pl-14 md:pl-16 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-gray-900 placeholder:text-gray-200 uppercase tracking-wider"
                                             required
                                         />
                                     </div>
@@ -339,14 +339,14 @@ const BookingPage = () => {
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Comm-Link</label>
                                     <div className="relative group">
-                                        <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-emerald-500 transition-colors" size={20} />
+                                        <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-emerald-500 transition-colors" size={18} />
                                         <input
                                             type="tel"
                                             maxLength="10"
                                             placeholder="000 000 0000"
                                             value={formData.whatsappNumber}
                                             onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value.replace(/\D/g, '') })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-6 pl-16 rounded-[1.5rem] outline-none transition-all font-black text-sm text-gray-900 placeholder:text-gray-200 tracking-[0.2em]"
+                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-5 md:p-6 pl-14 md:pl-16 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-gray-900 placeholder:text-gray-200 tracking-[0.15em] md:tracking-[0.2em]"
                                             required
                                         />
                                     </div>

@@ -1,8 +1,29 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Calendar,
+  Activity,
+  Briefcase,
+  PieChart,
+  Database,
+  LogOut,
+  ChevronRight,
+  Bell,
+  Users,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  Zap,
+  ArrowDownRight,
+  ArrowUpRight,
+  X,
+  Download,
+  Settings
+} from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
-import { LogOut, TrendingUp, Calendar, Users, Activity, ChevronRight, PieChart, Download, Database, Settings, LayoutDashboard, Briefcase, ArrowDownRight, X, Zap } from 'lucide-react';
+import MobileNav from '../../components/MobileNav';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -12,6 +33,14 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [period, setPeriod] = useState('all');
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  const navItems = [
+    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
+    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
+    { to: '/admin/workers', label: 'Workers', icon: Briefcase },
+    { to: '/admin/report', label: 'Report', icon: PieChart },
+  ];
 
   // Audio Alarm (Base64 Chime)
   const playAlarm = () => {
@@ -92,8 +121,10 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-80 bg-white border-r border-gray-100 flex flex-col sticky top-0 md:h-screen z-50">
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Turf Admin" />
+
+      {/* Sidebar (Desktop Only) */}
+      <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
         <div className="p-8 border-b border-gray-50 flex items-center gap-4">
           <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
             <Database size={24} />
@@ -105,11 +136,9 @@ const AdminDashboard = () => {
         </div>
 
         <nav className="flex-1 p-6 space-y-2">
-          <NavItem to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} active />
-          <NavItem to="/admin/slots" label="Slot Control" icon={Calendar} />
-          <NavItem to="/admin/bookings" label="Booking Log" icon={Activity} />
-          <NavItem to="/admin/workers" label="workers" icon={Briefcase} />
-          <NavItem to="/admin/report" label="report" icon={PieChart} />
+          {navItems.map((item) => (
+            <NavItem key={item.to} to={item.to} label={item.label} icon={item.icon} active={window.location.pathname === item.to} />
+          ))}
         </nav>
 
         <div className="p-6 border-t border-gray-50">
@@ -130,7 +159,7 @@ const AdminDashboard = () => {
       <main className="flex-1 overflow-y-auto relative">
         {/* NEW BOOKING ALARM TOAST */}
         {showAlarm && (
-          <div className="fixed top-28 left-1/2 -translate-x-1/2 z-[100] w-fit min-w-[320px] animate-bounce-slow">
+          <div className="fixed top-28 left-1/2 -translate-x-1/2 z-[100] w-fit min-w-[320px] animate-bounce-slow px-4">
             <div className="bg-emerald-600 text-white p-6 rounded-[2rem] shadow-2xl shadow-emerald-500/40 border-4 border-white flex items-center gap-6">
               <div className="bg-white/20 p-4 rounded-2xl animate-pulse">
                 <Zap size={24} className="fill-white" />
@@ -146,15 +175,15 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md px-10 h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
+        {/* Header (Desktop Only) */}
+        <header className="hidden md:flex bg-white/80 backdrop-blur-md px-10 h-24 items-center justify-between sticky top-0 z-40 border-b border-gray-100">
           <div className="flex items-center gap-6">
             <div className="flex flex-col">
               <h2 className="text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Dashboard</h2>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1"></p>
             </div>
-            <div className="h-10 w-[1px] bg-gray-100 hidden md:block"></div>
-            <div className="hidden md:flex flex-col">
+            <div className="h-10 w-[1px] bg-gray-100"></div>
+            <div className="flex flex-col">
               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
               <p className="text-xl font-black text-gray-900 tracking-tighter tabular-nums">{currentTime.toLocaleTimeString()}</p>
             </div>
@@ -166,8 +195,8 @@ const AdminDashboard = () => {
               <span className="text-sm font-black text-gray-900 uppercase tracking-tight">{user?.name || 'Grand Administrator'}</span>
               <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">admin</span>
             </div>
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black overflow-hidden border border-emerald-100">
-              ADMIN
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black overflow-hidden border border-emerald-100 uppercase">
+              {user?.name?.slice(0, 2) || 'AD'}
             </div>
           </div>
         </header>

@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { bookingsAPI } from '../api/client';
-import { CheckCircle, XCircle, Phone, MapPin, Calendar, Clock, ArrowRight, User, Hash, Trophy, Zap, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
+import {
+    CheckCircle,
+    Clock4,
+    RefreshCw,
+    Trophy,
+    ShieldCheck,
+    Hash,
+    Zap,
+    ArrowRight,
+    AlertCircle,
+    XCircle
+} from 'lucide-react';
 
 const SuccessPage = () => {
     const location = useLocation();
@@ -128,116 +139,116 @@ const SuccessPage = () => {
     const slot = booking.slot || {};
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center py-20 px-6">
+        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center py-10 md:py-20 px-4 md:px-6">
             <div className="max-w-xl w-full">
-                <div className="bg-white rounded-[4rem] shadow-2xl shadow-emerald-950/5 border border-gray-100 overflow-hidden relative transition-all hover:shadow-emerald-950/10">
+                <div className="bg-white rounded-[2.5rem] md:rounded-[4rem] shadow-2xl shadow-emerald-950/5 border border-gray-100 overflow-hidden relative transition-all hover:shadow-emerald-950/10">
 
                     {/* Status Header */}
-                    <div className={`${config.headerBg} p-16 text-center text-white relative`}>
+                    <div className={`${config.headerBg} p-10 md:p-16 text-center text-white relative`}>
                         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
                             <div className="absolute top-[-40px] left-[-40px] w-64 h-64 bg-emerald-500 rounded-full blur-[100px]"></div>
                         </div>
 
-                        <div className={`w-24 h-24 ${config.badgeBg} backdrop-blur-xl rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border ${config.badgeBorder} shadow-2xl relative z-10`}>
-                            {config.icon}
+                        <div className={`w-20 h-20 md:w-24 md:h-24 ${config.badgeBg} backdrop-blur-xl rounded-2xl md:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 md:mb-8 border ${config.badgeBorder} shadow-2xl relative z-10`}>
+                            {React.cloneElement(config.icon, { size: 40 })}
                         </div>
-                        <h1 className="text-4xl font-black mb-3 tracking-tighter uppercase relative z-10">
+                        <h1 className="text-3xl md:text-4xl font-black mb-3 tracking-tighter uppercase relative z-10">
                             {config.title}
                         </h1>
-                        <div className="flex items-center justify-center gap-3 opacity-60 relative z-10">
-                            <div className="h-[1px] w-6 bg-white/40"></div>
-                            <p className="font-black uppercase text-[9px] tracking-[0.4em]">{config.subtitle}</p>
-                            <div className="h-[1px] w-6 bg-white/40"></div>
+                        <div className="flex items-center justify-center gap-2 md:gap-3 opacity-60 relative z-10">
+                            <div className="h-[1px] w-5 md:w-6 bg-white/40"></div>
+                            <p className="font-black uppercase text-[8px] md:text-[9px] tracking-[0.2em] md:tracking-[0.4em]">{config.subtitle}</p>
+                            <div className="h-[1px] w-5 md:w-6 bg-white/40"></div>
                         </div>
                     </div>
 
-                    <div className="p-12 space-y-10">
+                    <div className="p-8 md:p-12 space-y-8 md:space-y-10">
 
                         {/* Live Status Tracker */}
-                        <div className="bg-gray-50 rounded-[2rem] p-8 border border-gray-100">
+                        <div className="bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 border border-gray-100">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Live Status</h3>
+                                <h3 className="text-[9px] md:text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Live Tracking</h3>
                                 {polling && (
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
                                         <RefreshCw size={12} className="text-emerald-500 animate-spin" />
-                                        <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Auto-updating</span>
+                                        <span className="text-[7px] md:text-[8px] font-black text-emerald-500 uppercase tracking-widest">Live Sync</span>
                                     </div>
                                 )}
                             </div>
 
                             {/* Status Steps */}
-                            <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center justify-between gap-1 md:gap-2">
                                 {/* Step 1: Booked */}
-                                <div className="flex flex-col items-center gap-2 flex-1">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${['pending', 'hold', 'confirmed', 'rejected'].includes(liveStatus) ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                <div className="flex flex-col items-center gap-1.5 md:gap-2 flex-1">
+                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center ${['pending', 'hold', 'confirmed', 'rejected'].includes(liveStatus) ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
                                         <CheckCircle size={18} />
                                     </div>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Submitted</span>
+                                    <span className="text-[6px] md:text-[8px] font-black uppercase tracking-widest text-gray-500">Sent</span>
                                 </div>
 
                                 <div className={`h-[2px] flex-1 ${['hold', 'confirmed', 'rejected'].includes(liveStatus) ? 'bg-emerald-500' : 'bg-gray-200'}`}></div>
 
                                 {/* Step 2: On Hold / Under Review */}
-                                <div className="flex flex-col items-center gap-2 flex-1">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${liveStatus === 'hold' ? 'bg-blue-500 text-white animate-pulse' : ['confirmed', 'rejected'].includes(liveStatus) ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                <div className="flex flex-col items-center gap-1.5 md:gap-2 flex-1">
+                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center ${liveStatus === 'hold' ? 'bg-blue-500 text-white animate-pulse' : ['confirmed', 'rejected'].includes(liveStatus) ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
                                         <AlertCircle size={18} />
                                     </div>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Review</span>
+                                    <span className="text-[6px] md:text-[8px] font-black uppercase tracking-widest text-gray-500">Review</span>
                                 </div>
 
                                 <div className={`h-[2px] flex-1 ${['confirmed', 'rejected'].includes(liveStatus) ? (liveStatus === 'confirmed' ? 'bg-emerald-500' : 'bg-red-500') : 'bg-gray-200'}`}></div>
 
                                 {/* Step 3: Final Status */}
-                                <div className="flex flex-col items-center gap-2 flex-1">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${liveStatus === 'confirmed' ? 'bg-emerald-500 text-white' : liveStatus === 'rejected' ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                <div className="flex flex-col items-center gap-1.5 md:gap-2 flex-1">
+                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center ${liveStatus === 'confirmed' ? 'bg-emerald-500 text-white' : liveStatus === 'rejected' ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
                                         {liveStatus === 'rejected' ? <XCircle size={18} /> : <Trophy size={18} />}
                                     </div>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">
-                                        {liveStatus === 'rejected' ? 'Rejected' : 'Confirmed'}
+                                    <span className="text-[6px] md:text-[8px] font-black uppercase tracking-widest text-gray-500">
+                                        {liveStatus === 'rejected' ? 'Result' : 'Final'}
                                     </span>
                                 </div>
                             </div>
 
                             {/* Current Status Badge */}
-                            <div className="mt-6 flex items-center justify-center gap-3">
-                                <div className={`h-2 w-2 rounded-full ${config.dotColor} animate-pulse ${config.dotShadow} shadow-lg`}></div>
-                                <span className={`text-xs font-black uppercase tracking-[0.2em] ${config.statusColor}`}>
-                                    Booking: {config.statusText}
+                            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 md:gap-3">
+                                <div className={`h-1.5 w-1.5 rounded-full ${config.dotColor} animate-pulse ${config.dotShadow} shadow-lg`}></div>
+                                <span className={`text-[10px] md:text-xs font-black uppercase tracking-[0.1em] md:tracking-[0.2em] ${config.statusColor}`}>
+                                    {config.statusText}
                                 </span>
-                                <span className="text-gray-300">·</span>
-                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${config.slotBg} ${config.slotColor}`}>
-                                    Slot: {config.slotLabel}
+                                <span className="text-gray-300 hidden md:block">·</span>
+                                <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest px-2 md:px-3 py-1 rounded-lg ${config.slotBg} ${config.slotColor}`}>
+                                    {config.slotLabel}
                                 </span>
                             </div>
                         </div>
 
                         {/* Booking Details */}
-                        <div className="bg-gray-50 rounded-[2.5rem] p-10 border border-gray-100 space-y-8 relative overflow-hidden group">
+                        <div className="bg-gray-50 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 border border-gray-100 space-y-6 md:space-y-8 relative overflow-hidden group">
                             <div className="absolute top-0 left-0 w-full h-full bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                             <div className="flex justify-between items-center relative z-10">
-                                <div className="bg-emerald-500/10 p-4 rounded-3xl text-emerald-600 shadow-inner">
+                                <div className="bg-emerald-500/10 p-3 md:p-4 rounded-2xl md:rounded-3xl text-emerald-600 shadow-inner">
                                     <ShieldCheck size={32} />
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-gray-400 text-[9px] font-black uppercase tracking-[0.3em] flex items-center justify-end gap-2 mb-1">
-                                        <Hash size={12} /> Booking ID
+                                    <span className="text-gray-400 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] flex items-center justify-end gap-1.5 md:gap-2 mb-1">
+                                        <Hash size={12} /> Record ID
                                     </span>
-                                    <span className="text-gray-900 font-black text-xs bg-white border border-gray-100 px-4 py-1.5 rounded-xl shadow-sm">
+                                    <span className="text-gray-900 font-black text-[10px] md:text-xs bg-white border border-gray-100 px-3 md:px-4 py-1.5 rounded-lg md:rounded-xl shadow-sm uppercase tracking-tighter md:tracking-normal">
                                         {booking._id?.slice(-8).toUpperCase()}
                                     </span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-8 relative z-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-x-8 md:gap-y-8 relative z-10">
                                 <div className="space-y-1">
                                     <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em] flex items-center gap-2">
                                         <User size={12} /> Name
                                     </p>
                                     <p className="text-gray-900 font-black text-sm uppercase tracking-tight">{booking.userName}</p>
                                 </div>
-                                <div className="space-y-1 text-right">
-                                    <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em] flex items-center justify-end gap-2">
+                                <div className="space-y-1 md:text-right">
+                                    <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em] flex items-center md:justify-end gap-2">
                                         <Phone size={12} /> Phone
                                     </p>
                                     <p className="text-gray-900 font-black text-sm tracking-tight">+91 {booking.userPhone}</p>
@@ -250,9 +261,9 @@ const SuccessPage = () => {
                                         {slot.date ? new Date(slot.date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}
                                     </p>
                                 </div>
-                                <div className="space-y-1 text-right">
-                                    <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em] flex items-center justify-end gap-2">
-                                        <Clock size={12} /> Time
+                                <div className="space-y-1 md:text-right">
+                                    <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em] flex items-center md:justify-end gap-2">
+                                        <Clock size={12} /> Window
                                     </p>
                                     <p className="text-gray-900 font-black text-sm uppercase tracking-tight">
                                         {formatTime12h(slot.startTime)} – {formatTime12h(slot.endTime)}
@@ -264,41 +275,41 @@ const SuccessPage = () => {
                                     </p>
                                     <p className="text-gray-900 font-black text-sm uppercase tracking-tight">The Turf, Miyapur</p>
                                 </div>
-                                <div className="space-y-1 text-right">
-                                    <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em]">Amount</p>
-                                    <p className="text-emerald-600 font-black text-xl tracking-tighter">₹{booking.amount?.toLocaleString()}</p>
+                                <div className="space-y-1 md:text-right">
+                                    <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em]">Settlement</p>
+                                    <p className="text-emerald-600 font-black text-xl md:text-2xl tracking-tighter leading-none">₹{booking.amount?.toLocaleString()}</p>
                                 </div>
                             </div>
 
-                            <div className="pt-8 border-t border-gray-200 flex justify-between items-center relative z-10">
-                                <span className="text-gray-900 font-black uppercase text-[10px] tracking-widest">Payment</span>
+                            <div className="pt-6 md:pt-8 border-t border-gray-200 flex justify-between items-center relative z-10">
+                                <span className="text-gray-900 font-black uppercase text-[9px] md:text-[10px] tracking-widest">Payment Status</span>
                                 <div className="flex items-center gap-2">
                                     <div className={`h-1.5 w-1.5 rounded-full animate-pulse shadow-lg ${booking.paymentStatus === 'verified' ? 'bg-emerald-500 shadow-emerald-500/50' : booking.paymentStatus === 'submitted' ? 'bg-purple-500 shadow-purple-500/50' : 'bg-yellow-500 shadow-yellow-500/50'}`}></div>
-                                    <span className={`font-black text-[10px] uppercase tracking-widest ${booking.paymentStatus === 'verified' ? 'text-emerald-600' : booking.paymentStatus === 'submitted' ? 'text-purple-600' : 'text-yellow-600'}`}>
-                                        {booking.paymentStatus === 'verified' ? 'Verified' : booking.paymentStatus === 'submitted' ? 'Under Review' : 'Pending'}
+                                    <span className={`font-black text-[9px] md:text-[10px] uppercase tracking-widest ${booking.paymentStatus === 'verified' ? 'text-emerald-600' : booking.paymentStatus === 'submitted' ? 'text-purple-600' : 'text-yellow-600'}`}>
+                                        {booking.paymentStatus === 'verified' ? 'Verified' : booking.paymentStatus === 'submitted' ? 'Validating' : 'Pending'}
                                     </span>
                                 </div>
                             </div>
                         </div>
 
                         {/* WhatsApp Notification */}
-                        <div className="bg-emerald-900 p-8 rounded-[2rem] flex items-start gap-6 shadow-2xl shadow-emerald-950/20 relative group">
-                            <div className="bg-emerald-400/10 p-4 rounded-2xl text-emerald-400 border border-emerald-400/20 shadow-inner group-hover:scale-110 transition-transform">
+                        <div className="bg-emerald-900 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] flex items-start gap-4 md:gap-6 shadow-2xl shadow-emerald-950/20 relative group">
+                            <div className="bg-emerald-400/10 p-3 md:p-4 rounded-xl md:rounded-2xl text-emerald-400 border border-emerald-400/20 shadow-inner group-hover:scale-110 transition-transform">
                                 <Zap size={24} className="fill-emerald-400" />
                             </div>
-                            <div className="space-y-2">
-                                <h4 className="font-black text-white text-[10px] uppercase tracking-[0.3em]">WhatsApp Notification</h4>
-                                <p className="text-emerald-100/60 text-xs font-medium leading-relaxed">
-                                    Status updates will be sent to <span className="text-white font-black">+91 {booking.userPhone}</span> via WhatsApp.
+                            <div className="space-y-1 md:space-y-2">
+                                <h4 className="font-black text-white text-[9px] md:text-[10px] uppercase tracking-[0.2em] md:tracking-[0.3em]">Notification Active</h4>
+                                <p className="text-emerald-100/60 text-[10px] md:text-xs font-medium leading-relaxed">
+                                    Updates transmitted to <span className="text-white font-black">+91 {booking.userPhone}</span> via WhatsApp.
                                 </p>
                             </div>
                         </div>
 
                         <button
                             onClick={() => navigate('/')}
-                            className="w-full bg-gray-900 hover:bg-black text-white font-black py-7 rounded-[2rem] shadow-2xl shadow-gray-900/10 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-4 text-xs uppercase tracking-[0.3em] group"
+                            className="w-full bg-gray-900 hover:bg-black text-white font-black py-5 md:py-7 rounded-xl md:rounded-[2rem] shadow-2xl shadow-gray-900/10 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 md:gap-4 text-[11px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] group"
                         >
-                            Book Another Slot <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+                            Back To Arena <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
                         </button>
                     </div>
                 </div>

@@ -35,8 +35,11 @@ const autoGenerateSlots = async (daysAhead = 30) => {
             const existingStarts = new Set(existingSlots.map(s => s.startTime));
 
             const newSlots = [];
-            // Target: 7 AM to 11 PM (07:00 to 22:00 starts)
-            for (let hour = 7; hour < 23; hour++) {
+            // Target: Configured hours
+            const openHour = parseInt(process.env.TURF_OPEN_HOUR) || 7;
+            const closeHour = parseInt(process.env.TURF_CLOSE_HOUR) || 23;
+
+            for (let hour = openHour; hour < closeHour; hour++) {
                 const startTime = `${hour.toString().padStart(2, '0')}:00`;
                 const endTime = `${(hour + 1).toString().padStart(2, '0')}:00`;
 
@@ -45,7 +48,9 @@ const autoGenerateSlots = async (daysAhead = 30) => {
                         date: date,
                         startTime,
                         endTime,
-                        price: 500,
+                        price: hour < (parseInt(process.env.PRICE_TRANSITION_HOUR) || 18)
+                            ? (parseInt(process.env.PRICE_DAY) || 500)
+                            : (parseInt(process.env.PRICE_NIGHT) || 700),
                         status: 'free'
                     });
                 }
