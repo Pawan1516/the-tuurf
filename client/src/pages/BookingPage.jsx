@@ -8,7 +8,6 @@ const BookingPage = () => {
     const { slotId } = useParams();
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
-    const [slot, setSlot] = useState(null);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         fullName: user?.name || '',
@@ -60,7 +59,6 @@ const BookingPage = () => {
             try {
                 const res = await slotsAPI.getById(slotId);
                 const s = res.data.slot || res.data;
-                setSlot(s);
                 // Sync formData with slot data
                 setFormData(prev => ({
                     ...prev,

@@ -42,7 +42,6 @@ const SuccessPage = () => {
                 const updated = res.data.booking || res.data;
                 setBooking(updated);
                 setLiveStatus(updated.bookingStatus);
-                setSlotStatus(updated.slot?.status || 'hold');
 
                 // Stop polling if final state reached
                 if (['confirmed', 'rejected'].includes(updated.bookingStatus)) {

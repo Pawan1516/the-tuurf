@@ -17,19 +17,19 @@ const BookSlot = () => {
   const [amount] = useState(500); // Fixed amount for now
 
   useEffect(() => {
+    const fetchSlot = async () => {
+      try {
+        const response = await slotsAPI.getById(slotId);
+        setSlot(response.data.slot);
+      } catch (error) {
+        setError('Slot not found');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchSlot();
   }, [slotId]);
-
-  const fetchSlot = async () => {
-    try {
-      const response = await slotsAPI.getById(slotId);
-      setSlot(response.data.slot);
-    } catch (error) {
-      setError('Slot not found');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;

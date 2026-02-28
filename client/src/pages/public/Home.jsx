@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { slotsAPI } from '../../api/client';
 import { Calendar, Clock } from 'lucide-react';
-import ImageCarousel from '../../components/ImageCarousel';
 
 const Home = () => {
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {

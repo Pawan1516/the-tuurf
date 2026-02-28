@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { slotsAPI } from '../api/client';
-import { Calendar, ChevronRight, Zap, MapPin, Plus } from 'lucide-react';
+import { ChevronRight, Zap, MapPin, Plus } from 'lucide-react';
 
 const PublicHome = () => {
     const getISODate = (date = new Date()) => {
@@ -14,7 +14,6 @@ const PublicHome = () => {
     const [slots, setSlots] = useState([]);
     const [selectedDate, setSelectedDate] = useState(getISODate());
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const heroImages = [
@@ -35,14 +34,12 @@ const PublicHome = () => {
         const fetchSlots = async () => {
             try {
                 setLoading(true);
-                setError(null);
                 const res = await slotsAPI.getAll(selectedDate);
                 if (Array.isArray(res.data)) setSlots(res.data);
                 else setSlots([]);
                 setLoading(false);
             } catch (err) {
                 console.error('Error fetching slots:', err);
-                setError(`Terminal synchronization failure. Attempting to reach: ${process.env.REACT_APP_API_URL || 'localhost'}`);
                 setLoading(false);
             }
         };

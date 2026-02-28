@@ -6,19 +6,19 @@ const SlotGrid = () => {
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [loading, setLoading] = useState(true);
 
-    const fetchSlots = async () => {
-        try {
-            setLoading(true);
-            const res = await axios.get(`http://localhost:5000/api/slots?date=${selectedDate}`);
-            setSlots(res.data);
-            setLoading(false);
-        } catch (err) {
-            console.error('Error fetching slots:', err);
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
+        const fetchSlots = async () => {
+            try {
+                setLoading(true);
+                const res = await axios.get(`http://localhost:5000/api/slots?date=${selectedDate}`);
+                setSlots(res.data);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error fetching slots:', err);
+                setLoading(false);
+            }
+        };
+
         fetchSlots();
     }, [selectedDate]);
 
