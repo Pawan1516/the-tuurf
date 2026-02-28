@@ -53,7 +53,7 @@ const AdminBookingDetail = () => {
         navigate('/admin/login');
     };
 
-    const fetchAIInsights = async () => {
+    const fetchAIInsights = useCallback(async () => {
         try {
             setFetchingAI(true);
             const response = await bookingsAPI.getAIInsights(id);
@@ -63,7 +63,7 @@ const AdminBookingDetail = () => {
         } finally {
             setFetchingAI(false);
         }
-    };
+    }, [id]);
 
     const fetchBooking = useCallback(async () => {
         try {

@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
-import { User, Mail, Phone, Lock, UserPlus, AlertCircle, ChevronRight, ShieldCheck } from 'lucide-react';
+import { User, Mail, Phone, Lock, UserPlus, AlertCircle, ShieldCheck } from 'lucide-react';
 
 const Register = () => {
     const { register } = useContext(AuthContext);

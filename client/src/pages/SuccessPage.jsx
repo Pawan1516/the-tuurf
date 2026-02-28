@@ -24,7 +24,6 @@ const SuccessPage = () => {
     const initialBooking = location.state?.booking;
     const [booking, setBooking] = useState(initialBooking);
     const [liveStatus, setLiveStatus] = useState(initialBooking?.bookingStatus || 'pending');
-    const [slotStatus, setSlotStatus] = useState('hold');
     const [polling, setPolling] = useState(true);
 
     useEffect(() => {

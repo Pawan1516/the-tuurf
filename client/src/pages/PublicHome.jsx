@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { slotsAPI } from '../api/client';
-import { Calendar, Clock, ChevronRight, Info, Zap, MapPin, Plus } from 'lucide-react';
+import { Calendar, ChevronRight, Zap, MapPin, Plus } from 'lucide-react';
 
 const PublicHome = () => {
     const getISODate = (date = new Date()) => {
@@ -29,7 +29,7 @@ const PublicHome = () => {
             setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
         }, 5000);
         return () => clearInterval(timer);
-    }, []);
+    }, [heroImages.length]);
 
     useEffect(() => {
         const fetchSlots = async () => {
@@ -42,8 +42,6 @@ const PublicHome = () => {
                 setLoading(false);
             } catch (err) {
                 console.error('Error fetching slots:', err);
-                const baseUrl = slotsAPI.getAll.toString().includes('apiClient.get') ? 'Config Error' : 'Unknown';
-                // We'll import apiClient to get the actual base URL
                 setError(`Terminal synchronization failure. Attempting to reach: ${process.env.REACT_APP_API_URL || 'localhost'}`);
                 setLoading(false);
             }
