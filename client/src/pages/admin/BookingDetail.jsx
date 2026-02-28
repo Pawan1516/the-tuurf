@@ -53,19 +53,19 @@ const AdminBookingDetail = () => {
         navigate('/admin/login');
     };
 
-    const fetchAIInsights = useCallback(async () => {
-        try {
-            setFetchingAI(true);
-            const response = await bookingsAPI.getAIInsights(id);
-            setAiInsights(response.data);
-        } catch (err) {
-            console.error('AI Insights Error:', err);
-        } finally {
-            setFetchingAI(false);
-        }
-    }, [id]);
-
     const fetchBooking = useCallback(async () => {
+        const fetchAIInsights = async () => {
+            try {
+                setFetchingAI(true);
+                const response = await bookingsAPI.getAIInsights(id);
+                setAiInsights(response.data);
+            } catch (err) {
+                console.error('AI Insights Error:', err);
+            } finally {
+                setFetchingAI(false);
+            }
+        };
+
         try {
             setLoading(true);
             const response = await bookingsAPI.getById(id);
@@ -79,7 +79,7 @@ const AdminBookingDetail = () => {
         } finally {
             setLoading(false);
         }
-    }, [id, fetchAIInsights]);
+    }, [id]);
 
     useEffect(() => { fetchBooking(); }, [id, fetchBooking]);
 
