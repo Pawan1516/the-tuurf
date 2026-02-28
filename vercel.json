@@ -12,7 +12,7 @@
     "routes": [
         {
             "src": "/api/(.*)",
-            "dest": "https://the-turf-backend.onrender.com/api/$1"
+            "dest": "https://the-turf-in.onrender.com/api/$1"
         },
         {
             "src": "/(.*)",
@@ -20,6 +20,6 @@
         }
     ],
     "env": {
-        "REACT_APP_API_URL": "https://the-turf-backend.onrender.com"
+        "REACT_APP_API_URL": "https://the-turf-in.onrender.com"
     }
 }
