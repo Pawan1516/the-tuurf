@@ -10,36 +10,50 @@ services:
       - key: NODE_VERSION
         value: 18.0.0
       - key: PORT
-        value: 5001
+        value: 10000
+      - key: NODE_ENV
+        value: production
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: RAZORPAY_KEY_ID
-        sync: false
-      - key: RAZORPAY_KEY_SECRET
-        sync: false
       - key: FRONTEND_URL
-        value: https://the-turf-frontend.vercel.app
-      - key: WA_PHONE_NUMBER_ID
-        sync: false
-      - key: WA_ACCESS_TOKEN
-        sync: false
-      - key: WA_VERIFY_TOKEN
-        sync: false
+        value: https://the-turf.vercel.app
       - key: TURF_LOCATION
-        value: "The Turf Stadium"
+        value: "Plot no 491, The Turf, Miyapur, Hyderabad"
       - key: TURF_OPEN_HOUR
-        value: "7"
+        value: "6"
       - key: TURF_CLOSE_HOUR
-        value: "23"
+        value: "22"
       - key: PRICE_DAY
         value: "500"
       - key: PRICE_NIGHT
         value: "700"
       - key: PRICE_TRANSITION_HOUR
         value: "18"
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        value: "whatsapp:+14155238886"
+      - key: TWILIO_SMS_FROM
+        sync: false
+      - key: ADMIN_PHONE
+        sync: false
+      - key: OWNER_WHATSAPP
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: UPI_ID
+        sync: false
+      - key: UPI_NAME
+        value: "The Turf Stadium"
+      - key: PUBLIC_URL
+        sync: false

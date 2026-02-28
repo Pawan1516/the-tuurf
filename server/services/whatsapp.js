@@ -1,89 +1,75 @@
-const axios = require('axios');
+const twilio = require('twilio');
 const WhatsAppLog = require('../models/WhatsAppLog');
 
-// Meta WhatsApp Cloud API credentials from .env
-const PHONE_NUMBER_ID = process.env.WA_PHONE_NUMBER_ID;
-const ACCESS_TOKEN = process.env.WA_ACCESS_TOKEN?.trim();
-const API_VERSION = 'v20.0';
-const META_API_URL = `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}/messages`;
+// Twilio Credentials from .env
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const fromPhone = process.env.TWILIO_WHATSAPP_FROM; // e.g., 'whatsapp:+19204826360'
 
-console.log('🚀 WhatsApp Service Initialized: Using Meta Cloud API');
-if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-  console.log('⚠️ WhatsApp Warning: Meta Credentials missing in .env');
+let client = null;
+
+if (accountSid && authToken) {
+  client = twilio(accountSid, authToken);
+  console.log('🚀 WhatsApp Service Initialized: Using Twilio API');
 } else {
-  console.log(`📡 WhatsApp Config: Version ${API_VERSION}, Token Length: ${ACCESS_TOKEN.length} chars`);
+  console.log('⚠️ WhatsApp Warning: Twilio Credentials missing in .env');
 }
 
+/**
+ * ─── Core send function: WhatsApp first, SMS fallback ──────────────────────────
+ */
+const sendWhatsAppNotification = async (phoneNumber, message, bookingId = null, messageType = 'custom', mediaUrl = null) => {
+  // 1. Clean and Format recipient number
+  let cleanNumber = String(phoneNumber).trim();
+  if (cleanNumber.startsWith('whatsapp:')) cleanNumber = cleanNumber.substring(9);
+  let digits = cleanNumber.replace(/\D/g, '');
+  if (digits.length === 10) digits = '91' + digits; // Default to India prefix
 
-// ─── Core send function ───────────────────────────────────────────────────────
-const sendWhatsAppNotification = async (phoneNumber, message, bookingId = null, messageType = 'custom') => {
-  // Clean and format phone number to E.164 (e.g. 919876543210)
-  let cleaned = phoneNumber.toString().replace(/\D/g, '');
-  if (cleaned.length === 10) cleaned = '91' + cleaned;
-  else if (cleaned.length === 11 && cleaned.startsWith('0')) cleaned = '91' + cleaned.substring(1);
-  // Remove leading '+' if present (Meta API wants digits only)
-  if (cleaned.startsWith('+')) cleaned = cleaned.substring(1);
+  const toWhatsApp = `whatsapp:+${digits}`;
+  const toSMS = `+${digits}`;
+  const from = fromPhone || 'whatsapp:+14155238886';
 
-  // If Meta credentials are not set, do a mock log
-  if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-    console.log(`[Mock WhatsApp] To: +${cleaned}\nMessage: ${message}`);
+  // If Twilio client is not set, do a mock log
+  if (!client) {
+    console.log(`[Mock WhatsApp] To: ${toWhatsApp}\nMessage: ${message}`);
     try {
-      await WhatsAppLog.create({
-        booking: bookingId,
-        userPhone: `+${cleaned}`,
-        messageType,
-        status: 'sent',
-        messageSid: 'mock-no-credentials',
-        body: message
-      });
+      await WhatsAppLog.create({ booking: bookingId, userPhone: toWhatsApp, messageType, status: 'sent', messageSid: 'mock-no-credentials', body: message });
     } catch (_) { }
     return { success: true, messageSid: 'mock-no-credentials' };
   }
 
+  // ── ATTEMPT 1: WhatsApp ─────────────────────────────────────────────────
   try {
-    const response = await axios.post(
-      META_API_URL,
-      {
-        messaging_product: 'whatsapp',
-        to: cleaned,
-        type: 'text',
-        text: { body: message }
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${ACCESS_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
+    const payload = { body: message, from, to: toWhatsApp };
+    if (mediaUrl) payload.mediaUrl = [mediaUrl];
+    const response = await client.messages.create(payload);
+    console.log(`✅ WhatsApp→ ${toWhatsApp} | SID: ${response.sid}`);
+    await WhatsAppLog.create({ booking: bookingId, userPhone: toWhatsApp, messageType, status: 'sent', messageSid: response.sid, body: `[WA] ${message}` });
+    return { success: true, channel: 'whatsapp', messageSid: response.sid };
+  } catch (waError) {
+    // Codes 63007, 63016 = "user not in sandbox" / "not opted in"
+    const isNotJoined = waError.code === 63007 || waError.code === 63016 || waError.code === 21614;
+    console.warn(`⚠️ WhatsApp failed (Code ${waError.code}) for ${toWhatsApp}. ${isNotJoined ? 'Trying SMS fallback...' : 'No SMS fallback for this error.'}`);
+
+    await WhatsAppLog.create({ booking: bookingId, userPhone: toWhatsApp, messageType, status: 'failed', error: `WA Error ${waError.code}: ${waError.message}`, body: message });
+
+    // ── ATTEMPT 2: SMS Fallback ─────────────────────────────────────────
+    const smsFrom = process.env.TWILIO_SMS_FROM;
+    if (smsFrom) {
+      try {
+        // Strip WhatsApp-specific formatting (bold, italic markers)
+        const smsBody = message.replace(/\*/g, '').replace(/_/g, '');
+        const smsResponse = await client.messages.create({ body: smsBody, from: smsFrom, to: toSMS });
+        console.log(`✅ SMS fallback→ ${toSMS} | SID: ${smsResponse.sid}`);
+        await WhatsAppLog.create({ booking: bookingId, userPhone: toSMS, messageType, status: 'sent', messageSid: smsResponse.sid, body: `[SMS] ${smsBody}` });
+        return { success: true, channel: 'sms', messageSid: smsResponse.sid };
+      } catch (smsError) {
+        console.error(`❌ SMS also failed for ${toSMS} | Code: ${smsError.code} | Msg: ${smsError.message}`);
+        await WhatsAppLog.create({ booking: bookingId, userPhone: toSMS, messageType, status: 'failed', error: `SMS Error ${smsError.code}: ${smsError.message}`, body: message });
       }
-    );
+    }
 
-    const msgId = response.data?.messages?.[0]?.id || 'unknown';
-    console.log(`✅ WhatsApp Sent to +${cleaned}. ID: ${msgId}`);
-
-    await WhatsAppLog.create({
-      booking: bookingId,
-      userPhone: `+${cleaned}`,
-      messageType,
-      status: 'sent',
-      messageSid: msgId,
-      body: message
-    });
-
-    return { success: true, messageSid: msgId };
-  } catch (error) {
-    const errMsg = error.response?.data?.error?.message || error.message;
-    console.error(`❌ WhatsApp Failed to +${cleaned}:`, errMsg);
-
-    await WhatsAppLog.create({
-      booking: bookingId,
-      userPhone: `+${cleaned}`,
-      messageType,
-      status: 'failed',
-      error: errMsg,
-      body: message
-    });
-
-    return { success: false, error: errMsg };
+    return { success: false, error: waError.message };
   }
 };
 
@@ -133,19 +119,13 @@ const sendAdminNotification = async (userName, userPhone, slotDate, timeRange, a
   const adminPhone = process.env.ADMIN_PHONE;
   if (!adminPhone) return;
 
-  let cleaned = userPhone.toString().replace(/\D/g, '');
-  if (cleaned.length === 10) cleaned = '91' + cleaned;
-
-  const waLink = `https://wa.me/${cleaned}?text=${encodeURIComponent(`Hello ${userName}, ✅ Your booking for ${slotDate} at ${timeRange} is CONFIRMED! See you on the turf 🏟️`)}`;
-
   const message =
     `📢 *NEW BOOKING RECEIVED*\n\n` +
     `👤 User: ${userName}\n` +
-    `📞 Phone: +${cleaned}\n` +
+    `📞 Phone: ${userPhone}\n` +
     `📅 Date: ${slotDate}\n` +
     `⏰ Time: ${timeRange}\n` +
-    `💰 Amount: ₹${amount}\n\n` +
-    `🔗 Quick WhatsApp reply:\n${waLink}`;
+    `💰 Amount: ₹${amount}`;
 
   return sendWhatsAppNotification(adminPhone, message, bookingId, 'admin');
 };

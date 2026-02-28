@@ -18,6 +18,14 @@ const Worker = require('../models/Worker');
 const { generateBookingReport, createPDF } = require('../services/pdfReport');
 const { analyzeBookingAndGenerateMessage, getAIInsights } = require('../services/aiService');
 
+const formatTime12h = (t) => {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+};
+
 // Create booking (PUBLIC or AUTHENTICATED)
 router.post('/', async (req, res) => {
   console.log('--- DEBUG: Create Booking Request Received ---', req.body);
@@ -89,9 +97,10 @@ router.post('/', async (req, res) => {
 
     const overlaps = await Slot.find(overlapQuery);
     if (overlaps.length > 0) {
+      const conflict = overlaps[0];
       return res.status(400).json({
         success: false,
-        message: 'This temporal segment overlaps with an existing reservation.'
+        message: `This temporal segment overlaps with an existing reservation (${conflict.startTime} to ${conflict.endTime}).`
       });
     }
 
@@ -173,13 +182,6 @@ router.post('/', async (req, res) => {
 
     const slotDate = new Date(slot.date).toLocaleDateString();
 
-    const formatTime12h = (t) => {
-      if (!t) return '';
-      const [h, m] = t.split(':').map(Number);
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const h12 = h % 12 || 12;
-      return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
-    };
 
     const timeRange = `${formatTime12h(slot.startTime)} – ${formatTime12h(slot.endTime)}`;
 
@@ -603,14 +605,7 @@ router.post('/:id/notify', verifyToken, roleGuard(['admin']), async (req, res) =
     let slotTime = 'N/A';
     if (booking.slot) {
       slotDate = new Date(booking.slot.date).toLocaleDateString();
-      const formatTime12hInner = (t) => {
-        if (!t) return '';
-        const [h, m] = t.split(':').map(Number);
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        const h12 = h % 12 || 12;
-        return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
-      };
-      slotTime = `${formatTime12hInner(booking.slot.startTime)} – ${formatTime12hInner(booking.slot.endTime)}`;
+      slotTime = `${formatTime12h(booking.slot.startTime)} – ${formatTime12h(booking.slot.endTime)}`;
     }
 
     let result;

@@ -11,7 +11,11 @@ import {
     Zap,
     ArrowRight,
     AlertCircle,
-    XCircle
+    XCircle,
+    User,
+    Phone,
+    Calendar,
+    MapPin
 } from 'lucide-react';
 
 const SuccessPage = () => {
@@ -118,7 +122,7 @@ const SuccessPage = () => {
                 };
             default: // pending
                 return {
-                    icon: <Clock size={48} className="text-yellow-400" />,
+                    icon: <Clock4 size={48} className="text-yellow-400" />,
                     title: 'Booking Pending',
                     subtitle: 'Waiting for confirmation',
                     headerBg: 'bg-[#0F172A]',
@@ -263,7 +267,7 @@ const SuccessPage = () => {
                                 </div>
                                 <div className="space-y-1 md:text-right">
                                     <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em] flex items-center md:justify-end gap-2">
-                                        <Clock size={12} /> Window
+                                        <Clock4 size={12} /> Window
                                     </p>
                                     <p className="text-gray-900 font-black text-sm uppercase tracking-tight">
                                         {formatTime12h(slot.startTime)} – {formatTime12h(slot.endTime)}

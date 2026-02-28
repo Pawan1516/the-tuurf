@@ -38,19 +38,41 @@ router.post('/', async (req, res) => {
 
         // Process using CricBot System Prompt
         console.log('🧠 Processing command with CricBot AI...');
+        const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
         const aiResponse = await processCricBotCommand(message, {
             availableSlots: freeSlots,
             platform: 'chatbot',
             ...context
-        });
+        }, userIp);
 
         if (!aiResponse) {
             console.error('❌ AI Response was null');
             return res.status(500).json({ success: false, message: 'CricBot is currently offline. Please try again later.' });
         }
 
+        // Create explicit confirmation response with payment details
+        if (aiResponse.type === 'BOOKING_CONFIRMED') {
+            const { generateUPIQRCode } = require('../services/payment');
+            const bookingInfo = aiResponse.bookingInfo;
+            const amount = bookingInfo.amount || 500;
+            const qrResult = await generateUPIQRCode(amount, bookingInfo.bookingId);
+
+            return res.json({
+                success: true,
+                reply: aiResponse.reply,
+                type: 'BOOKING_CONFIRMED',
+                bookingId: bookingInfo.bookingId,
+                amount: amount,
+                paymentData: qrResult.success ? {
+                    qrCode: qrResult.qrCodeDataUrl,
+                    upiLink: qrResult.upiLink
+                } : null
+            });
+        }
+
         // Handle automated booking creation if AI detected full details
-        if (aiResponse.type === 'CHATBOT_BOOKING' || aiResponse.type === 'MANUAL_BOOKING' || aiResponse.type === 'BOOKING_CONFIRMED') {
+        if (aiResponse.type === 'CHATBOT_BOOKING' || aiResponse.type === 'MANUAL_BOOKING') {
             try {
                 const { name, phone, date, startTime, duration } = aiResponse.data;
 

@@ -91,8 +91,8 @@ const QRCode = require('qrcode');
 
 const generateUPIQRCode = async (amount, bookingId) => {
   try {
-    const upiId = process.env.UPI_ID || 'your-upi-id@upi';
-    const name = process.env.TURF_LOCATION || 'The Turf Stadium';
+    const upiId = process.env.UPI_ID || '7993962018@ybl';
+    const name = process.env.UPI_NAME || process.env.TURF_LOCATION || 'The Turf Stadium';
     const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Booking ' + bookingId)}`;
 
     // Generate base64 QR code

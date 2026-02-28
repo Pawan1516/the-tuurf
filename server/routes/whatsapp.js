@@ -4,106 +4,97 @@ const { processCricBotCommand } = require('../services/aiAgent');
 const { sendWhatsAppNotification } = require('../services/whatsapp');
 const { generateUPIQRCode } = require('../services/payment');
 const Booking = require('../models/Booking');
-const Slot = require('../models/Slot');
-
-/**
- * @route   GET /api/whatsapp/webhook
- * @desc    Verify WhatsApp Webhook (Meta requirement)
- */
-router.get('/webhook', (req, res) => {
-    const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
-    const challenge = req.query['hub.challenge'];
-
-    const VERIFY_TOKEN = process.env.WA_VERIFY_TOKEN || 'cricket_booking_token';
-
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-        console.log('✅ WhatsApp Webhook Verified');
-        return res.status(200).send(challenge);
-    } else {
-        console.warn('❌ WhatsApp Webhook Verification Failed');
-        return res.sendStatus(403);
-    }
-});
 
 /**
  * @route   POST /api/whatsapp/webhook
- * @desc    Receive WhatsApp Messages
+ * @desc    Receive WhatsApp Messages from Twilio
  */
 router.post('/webhook', async (req, res) => {
+    // Twilio sends data in x-www-form-urlencoded format
     const body = req.body;
+    const fromFull = body.From; // e.g. 'whatsapp:+917993962018'
+    const text = body.Body || '';
+    const numMedia = parseInt(body.NumMedia || '0');
 
-    if (body.object === 'whatsapp_business_account') {
-        if (
-            body.entry &&
-            body.entry[0].changes &&
-            body.entry[0].changes[0].value.messages &&
-            body.entry[0].changes[0].value.messages[0]
-        ) {
-            const msg = body.entry[0].changes[0].value.messages[0];
-            const from = msg.from; // Sender's phone number
-            const text = msg.text ? msg.text.body : '';
+    if (!fromFull) return res.sendStatus(200);
 
-            if (!text) return res.sendStatus(200);
+    // Clean 'whatsapp:' prefix for DB lookup/Phone identification if needed
+    // However, our new whatsapp.js handles the prefix, so we can pass fromFull as userId
+    const userPhone = fromFull.replace('whatsapp:', '');
 
-            console.log(`💬 WhatsApp Received from ${from}: "${text}"`);
+    console.log(`📡 [Twilio Automachine] WhatsApp Event from ${fromFull}`);
 
-            try {
-                // 1. Check for UTR / Transaction ID (Simple keyword matching for immediate receipt)
-                if ((text.length >= 10 && /\d{10,}/.test(text) || text.toLowerCase().includes('utr') || text.toLowerCase().includes('trans')) && require('mongoose').connection.readyState === 1) {
-                    // Find the latest pending booking for this user
-                    const lastBooking = await Booking.findOne({ userPhone: from, paymentStatus: 'pending' }).sort({ createdAt: -1 });
-                    if (lastBooking) {
-                        lastBooking.paymentStatus = 'submitted';
-                        lastBooking.transactionId = text.match(/\d{10,}/)?.[0] || text;
-                        await lastBooking.save();
+    try {
+        // 1. AUTOMATED SCREENSHOT HANDLING
+        if (numMedia > 0) {
+            console.log(`📸 [Automachine] Media received from ${fromFull}`);
+            // Check if it's an image
+            const mediaType = body.MediaContentType0 || '';
+            if (mediaType.startsWith('image/')) {
+                const lastBooking = await Booking.findOne({ userPhone: userPhone, paymentStatus: 'pending' }).sort({ createdAt: -1 });
 
-                        await sendWhatsAppNotification(from, "✅ *Payment Received & Submitted!* \n\nOur team is verifying your Transaction ID/UTR. You will receive a final confirmation message shortly. 👋🏏");
-                        return res.sendStatus(200);
-                    }
-                }
+                if (lastBooking) {
+                    lastBooking.paymentStatus = 'submitted';
+                    lastBooking.transactionId = `TWILIO_IMG_${body.MessageSid}`;
+                    await lastBooking.save();
 
-                // 2. Process message using CricBot AI
-                const aiResponse = await processCricBotCommand(text, {
-                    platform: 'whatsapp',
-                    userPhone: from,
-                    chatHistory: [] // Future: Load from WhatsAppLog
-                });
-
-                if (!aiResponse) return res.sendStatus(200);
-
-                // 3. Handle Booking Confirmation
-                if (aiResponse.type === 'BOOKING_CONFIRMED') {
-                    const bookingInfo = aiResponse.bookingInfo;
-
-                    // Send AI's reply first
-                    await sendWhatsAppNotification(from, aiResponse.reply);
-
-                    // Generate and send UPI details
-                    const qrResult = await generateUPIQRCode(bookingInfo.amount || 500, bookingInfo.bookingId);
-                    if (qrResult.success) {
-                        const paymentMsg = `💳 *Payment Required to Confirm:* \n\n` +
-                            `Please pay *₹${bookingInfo.amount || 500}* via UPI to lock your slot.\n\n` +
-                            `🔗 *UPI Link:* ${qrResult.upiLink}\n\n` +
-                            `ID: ${bookingInfo.bookingId}\n\n` +
-                            `⚠️ Slot held for *15 minutes*.\n` +
-                            `Reply with *UTR number* or *screenshot* after paying! ✅`;
-
-                        await sendWhatsAppNotification(from, paymentMsg);
-                    }
+                    await sendWhatsAppNotification(fromFull, "📸 *Screenshot Received!* \n\nThank you! Our system has automatically received your payment proof. Our team will verify it and send your final confirmation shortly. 🕒🥅");
                 } else {
-                    // Regular Chat Response
-                    await sendWhatsAppNotification(from, aiResponse.reply);
+                    await sendWhatsAppNotification(fromFull, "👋 We received your image! If this is a payment screenshot, please make sure you have an active booking request first by typing 'Book'.");
                 }
-
-            } catch (err) {
-                console.error('❌ WhatsApp Process Error:', err.message);
+                return res.sendStatus(200);
             }
         }
-        return res.sendStatus(200);
-    } else {
-        return res.sendStatus(404);
+
+        // 2. TEXT PROCESSING
+        if (!text) return res.sendStatus(200);
+
+        // Automated UTR/Transaction ID detection in text
+        if (text.length >= 10 && (/\d{10,}/.test(text) || text.toLowerCase().includes('utr'))) {
+            const lastBooking = await Booking.findOne({ userPhone: userPhone, paymentStatus: 'pending' }).sort({ createdAt: -1 });
+            if (lastBooking) {
+                lastBooking.paymentStatus = 'submitted';
+                lastBooking.transactionId = text.match(/\d{10,}/)?.[0] || text;
+                await lastBooking.save();
+
+                await sendWhatsAppNotification(fromFull, "✅ *Transaction Details Logged!* \n\nOur system is now verifying your payment. You will receive a notification once the slot is confirmed! 🏏");
+                return res.sendStatus(200);
+            }
+        }
+
+        // 3. AI AGENT AUTOMATION
+        // Pass 'fromFull' as userId to maintain session with the 'whatsapp:' prefix
+        const aiResponse = await processCricBotCommand(text, {
+            platform: 'whatsapp',
+            userPhone: userPhone
+        }, fromFull);
+
+        if (!aiResponse) return res.sendStatus(200);
+
+        // Handle Automated Booking Confirmation
+        if (aiResponse.type === 'BOOKING_CONFIRMED') {
+            const bookingInfo = aiResponse.bookingInfo;
+            await sendWhatsAppNotification(fromFull, aiResponse.reply);
+
+            const qrResult = await generateUPIQRCode(bookingInfo.amount || 500, bookingInfo.bookingId);
+            if (qrResult.success) {
+                const paymentMsg = `💳 *Automated Payment Instructions:* \n\n` +
+                    `Please pay *₹${bookingInfo.amount || 500}* to lock your slot.\n\n` +
+                    `🔗 *Direct UPI Link:* ${qrResult.upiLink}\n\n` +
+                    `Booking ID: ${bookingInfo.bookingId}\n` +
+                    `Reply with a *Screenshot* or *UTR* to finish! ✅`;
+                await sendWhatsAppNotification(fromFull, paymentMsg);
+            }
+        } else {
+            // Standard AI Reply
+            await sendWhatsAppNotification(fromFull, aiResponse.reply);
+        }
+
+    } catch (err) {
+        console.error('❌ [Twilio Automachine] Process Error:', err.message);
     }
+
+    return res.sendStatus(200);
 });
 
 module.exports = router;

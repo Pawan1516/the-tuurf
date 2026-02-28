@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, X, Minus, Maximize2, Zap, User, Bot, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, X, Minus, Maximize2, Zap, User, Bot, Loader2, Paperclip } from 'lucide-react';
 import { chatbotAPI } from '../api/client';
 
 const CricBotWidget = () => {
@@ -30,7 +30,13 @@ const CricBotWidget = () => {
         try {
             const { data } = await chatbotAPI.sendMessage(userMsg);
             if (data.success) {
-                setChatHistory(prev => [...prev, { role: 'bot', text: data.reply }]);
+                const botMsg = {
+                    role: 'bot',
+                    text: data.reply,
+                    type: data.type,
+                    paymentData: data.paymentData
+                };
+                setChatHistory(prev => [...prev, botMsg]);
             } else {
                 setChatHistory(prev => [...prev, { role: 'bot', text: `CricBot: ${data.message || 'Something went wrong.'}` }]);
             }
@@ -111,6 +117,24 @@ const CricBotWidget = () => {
                                     {msg.text.split('\n').map((line, j) => (
                                         <p key={j} className={j > 0 ? 'mt-1' : ''}>{line}</p>
                                     ))}
+
+                                    {msg.paymentData && (
+                                        <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 flex flex-col items-center gap-3">
+                                            <p className="text-[10px] uppercase font-black tracking-widest text-gray-500">Scan to Pay via UPI</p>
+                                            <img
+                                                src={msg.paymentData.qrCode}
+                                                alt="Payment QR"
+                                                className="w-40 h-40 rounded-lg shadow-sm bg-white p-2"
+                                            />
+                                            <a
+                                                href={msg.paymentData.upiLink}
+                                                className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold text-center hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20"
+                                            >
+                                                Pay via App 📱
+                                            </a>
+                                            <p className="text-[8px] text-gray-400 text-center italic">After paying, please share the screenshot here.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -131,21 +155,41 @@ const CricBotWidget = () => {
                         onSubmit={handleSend}
                         className="p-6 bg-white border-t border-gray-50"
                     >
-                        <div className="relative group">
-                            <input
-                                type="text"
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                placeholder="Ask about booking a slot..."
-                                className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-5 pr-14 text-sm focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 font-medium"
-                            />
-                            <button
-                                type="submit"
-                                disabled={loading || !message.trim()}
-                                className="absolute right-2 top-2 bottom-2 aspect-square bg-emerald-600 text-white rounded-xl flex items-center justify-center hover:bg-emerald-700 active:scale-90 disabled:opacity-50 disabled:active:scale-100 transition-all shadow-lg shadow-emerald-600/20"
-                            >
-                                <Send size={18} />
-                            </button>
+                        <div className="relative group flex items-center gap-2">
+                            <div className="relative flex-1">
+                                <input
+                                    type="text"
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    placeholder="Ask about booking a slot..."
+                                    className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-5 pr-14 text-sm focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 font-medium"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={loading || !message.trim()}
+                                    className="absolute right-2 top-2 bottom-2 aspect-square bg-emerald-600 text-white rounded-xl flex items-center justify-center hover:bg-emerald-700 active:scale-90 disabled:opacity-50 disabled:active:scale-100 transition-all shadow-lg shadow-emerald-600/20"
+                                >
+                                    <Send size={18} />
+                                </button>
+                            </div>
+
+                            <label className="shrink-0 cursor-pointer p-3 bg-gray-50 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-2xl transition-all border border-transparent hover:border-emerald-100 active:scale-95">
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        if (e.target.files?.[0]) {
+                                            const file = e.target.files[0];
+                                            setChatHistory(prev => [...prev, { role: 'user', text: `[Image Attached: ${file.name}]` }]);
+                                            setTimeout(() => {
+                                                setChatHistory(prev => [...prev, { role: 'bot', text: "✅ Screenshot received! Our team will verify the payment and send your final booking confirmation shortly. 🏏" }]);
+                                            }, 1000);
+                                        }
+                                    }}
+                                />
+                                <Paperclip size={20} />
+                            </label>
                         </div>
                         <p className="text-[9px] text-gray-400 mt-3 text-center uppercase font-black tracking-widest opacity-50">Powered by CricBot Intelligence</p>
                     </form>

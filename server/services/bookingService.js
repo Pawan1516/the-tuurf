@@ -52,7 +52,10 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
             status: { $in: ['booked', 'hold'] }
         });
 
-        if (overlaps.length > 0) throw new Error('Temporal conflict detected with existing reservation.');
+        if (overlaps.length > 0) {
+            const conflict = overlaps[0];
+            throw new Error(`Temporal conflict detected with existing reservation (${conflict.startTime} – ${conflict.endTime})`);
+        }
 
         slot = await Slot.findOneAndUpdate(
             { date, startTime, status: 'free' },

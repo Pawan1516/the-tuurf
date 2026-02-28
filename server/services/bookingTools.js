@@ -23,10 +23,20 @@ const checkAvailability = async (date, time) => {
             };
         }
 
-        // Check for booked slots or holds
+        // Check for ANY booked slots or holds that overlap with this 1-hour window
+        const endHour = hours + 1;
+        const endTime = `${String(endHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
         const existingBooking = await Slot.findOne({
             date,
-            startTime: time,
+            $or: [
+                {
+                    $and: [
+                        { startTime: { $lt: endTime } },
+                        { endTime: { $gt: time } }
+                    ]
+                }
+            ],
             status: { $in: ['booked', 'hold'] }
         });
 

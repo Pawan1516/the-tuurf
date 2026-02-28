@@ -18,5 +18,8 @@
             "src": "/(.*)",
             "dest": "/client/$1"
         }
-    ]
+    ],
+    "env": {
+        "REACT_APP_API_URL": "https://the-turf-backend.onrender.com"
+    }
 }
