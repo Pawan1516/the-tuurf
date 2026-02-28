@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -8,10 +8,7 @@ import {
   PieChart,
   LogOut,
   ChevronRight,
-  Download,
   FileText,
-  RefreshCw,
-  BarChart,
   Database,
   ShieldCheck,
   TrendingUp,

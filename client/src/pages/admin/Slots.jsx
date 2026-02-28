@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Database,
@@ -13,10 +13,7 @@ import {
   X,
   TrendingUp,
   Clock,
-  User,
-  Trash2,
-  ShieldCheck,
-  CheckCircle
+  Trash2
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { slotsAPI, adminAPI } from '../../api/client';
