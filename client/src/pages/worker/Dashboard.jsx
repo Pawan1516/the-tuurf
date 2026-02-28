@@ -1,35 +1,27 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+
+import { useNavigate } from 'react-router-dom';
+
 import {
   LayoutDashboard,
   Calendar,
-  Activity,
-  Briefcase,
-  PieChart,
   LogOut,
   ChevronRight,
   Search,
-  Sparkles,
-  Command,
-  Plus,
   Filter,
   Check,
   X,
-  MessageSquare,
-  MoreVertical,
-  CalendarDays,
-  Database,
-  Users,
   Clock,
-  TrendingUp,
   FileText,
   CheckCircle,
   XCircle,
   AlertCircle,
   Download
 } from 'lucide-react';
+
 import AuthContext from '../../context/AuthContext';
-import { bookingsAPI, workerAPI } from '../../api/client';
+import { bookingsAPI } from '../../api/client';
+
 import MobileNav from '../../components/MobileNav';
 
 const WorkerDashboard = () => {
