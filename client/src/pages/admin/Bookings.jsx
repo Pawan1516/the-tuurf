@@ -9,15 +9,11 @@ import {
   LogOut,
   ChevronRight,
   Search,
-  Sparkles,
-  Command,
   Plus,
-  Filter,
   Check,
   X,
   MessageSquare,
   MoreVertical,
-  CalendarDays,
   Database,
   Zap
 } from 'lucide-react';

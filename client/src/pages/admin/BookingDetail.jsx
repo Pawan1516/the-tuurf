@@ -17,9 +17,7 @@ import {
     Loader2,
     MessageCircle,
     Database,
-    Clock,
-    Phone,
-    MapPin
+    Clock
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { bookingsAPI, adminAPI } from '../../api/client';
@@ -55,22 +53,6 @@ const AdminBookingDetail = () => {
         navigate('/admin/login');
     };
 
-    const fetchBooking = useCallback(async () => {
-        try {
-            setLoading(true);
-            const response = await bookingsAPI.getById(id);
-            setBooking(response.data.booking);
-            setUserName(response.data.booking.userName);
-
-            // Also fetch AI insights
-            fetchAIInsights();
-        } catch (err) {
-            console.error('Error fetching booking:', err);
-        } finally {
-            setLoading(false);
-        }
-    }, [id]);
-
     const fetchAIInsights = async () => {
         try {
             setFetchingAI(true);
@@ -82,6 +64,22 @@ const AdminBookingDetail = () => {
             setFetchingAI(false);
         }
     };
+
+    const fetchBooking = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await bookingsAPI.getById(id);
+            setBooking(response.data.booking);
+            setUserName(response.data.booking.userName);
+
+            // Also fetch AI insights
+            await fetchAIInsights();
+        } catch (err) {
+            console.error('Error fetching booking:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [id, fetchAIInsights]);
 
     useEffect(() => { fetchBooking(); }, [id, fetchBooking]);
 

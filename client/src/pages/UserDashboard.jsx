@@ -152,7 +152,6 @@ const UserDashboard = () => {
                             ) : (
                                 todaySlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((slot) => {
                                     const isBooked = slot.status === 'booked';
-                                    const isHold = slot.status === 'hold';
                                     return (
                                         <div
                                             key={slot._id}
