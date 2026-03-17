@@ -137,8 +137,19 @@ const PaymentPage = () => {
                                 <span className="text-gray-900 tracking-tighter">{booking?._id.slice(-12).toUpperCase()}</span>
                             </div>
                             <div className="pt-6 border-t border-gray-200 flex justify-between items-end">
-                                <span className="font-black text-gray-900 uppercase text-[10px] md:text-xs tracking-widest">Total Settle Amount</span>
-                                <span className="text-3xl md:text-4xl font-black text-emerald-600 tracking-tighter">₹{booking?.amount}</span>
+                                <div className="flex flex-col gap-1">
+                                    <span className={`font-black uppercase text-[10px] md:text-xs tracking-widest ${booking?.paymentType === 'full' ? 'text-emerald-700' : 'text-gray-900'}`}>
+                                        {booking?.paymentType === 'full' ? 'Full Payment (100%)' : 'Advance for Confirmation (40%)'}
+                                    </span>
+                                    {booking?.paymentType === 'advance' && (
+                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                                            Total Segment Value: ₹{booking?.totalAmount || booking?.amount}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className={`text-3xl md:text-4xl font-black tracking-tighter text-emerald-600`}>
+                                    ₹{booking?.amount}
+                                </span>
                             </div>
                         </div>
 

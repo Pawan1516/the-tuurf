@@ -16,20 +16,37 @@ const BookingPage = () => {
         startTime: '',
         endTime: ''
     });
-    const [calculatedPrice, setCalculatedPrice] = useState(500);
+    const [calculatedPrice, setCalculatedPrice] = useState(1000);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [paymentType, setPaymentType] = useState('advance'); // 'advance' or 'full'
 
     useEffect(() => {
-        if (formData.startTime && formData.endTime) {
+        if (formData.startTime && formData.endTime && formData.date) {
             const [sh, sm] = formData.startTime.split(':').map(Number);
             const [eh, em] = formData.endTime.split(':').map(Number);
             const duration = (eh * 60 + em) - (sh * 60 + sm);
+
             if (duration > 0) {
-                setCalculatedPrice(Math.max(200, Math.ceil((duration / 60) * 500)));
+                const bookingDate = new Date(formData.date);
+                const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
+                const isDay = sh < 18;
+                const baseRate = isWeekend ? (isDay ? 1000 : 1400) : (isDay ? 1000 : 1200);
+
+                let totalPrice = (duration / 60) * baseRate;
+
+                // If the booking crosses 6 PM (18:00) into night time
+                if (sh < 18 && (sh + duration / 60) > 18) {
+                    const dayHours = (18 * 60 - (sh * 60 + sm)) / 60;
+                    const nightHours = (duration / 60) - dayHours;
+                    const nightRate = isWeekend ? 1400 : 1200;
+                    totalPrice = (dayHours * baseRate) + (nightHours * nightRate);
+                }
+
+                setCalculatedPrice(Math.max(200, Math.ceil(totalPrice)));
             }
         }
-    }, [formData.startTime, formData.endTime]);
+    }, [formData.startTime, formData.endTime, formData.date]);
 
     const adjustEndTime = (minutes) => {
         if (!formData.startTime) return;
@@ -100,6 +117,7 @@ const BookingPage = () => {
                 endTime: formData.endTime,
                 turfLocation: 'The Turf, Miyapur',
                 amount: calculatedPrice,
+                paymentType: paymentType,
                 userId: user?.id
             };
 
@@ -333,7 +351,6 @@ const BookingPage = () => {
                                         />
                                     </div>
                                 </div>
-
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Comm-Link</label>
                                     <div className="relative group">
@@ -349,6 +366,37 @@ const BookingPage = () => {
                                         />
                                     </div>
                                 </div>
+
+                                <div className="space-y-4">
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Payment Protocol *</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentType('advance')}
+                                            className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col gap-1 text-left ${paymentType === 'advance' ? 'border-emerald-600 bg-emerald-50/50' : 'border-gray-50 bg-gray-50/50 grayscale opacity-60'}`}
+                                        >
+                                            <div className="flex justify-between items-center w-full">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${paymentType === 'advance' ? 'text-emerald-700' : 'text-gray-400'}`}>Advance Support</span>
+                                                <Zap size={14} className={paymentType === 'advance' ? 'text-emerald-600' : 'text-gray-300'} />
+                                            </div>
+                                            <span className="text-xl font-black text-gray-900 tracking-tighter">40% RESERVATION</span>
+                                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Pay ₹{Math.ceil(calculatedPrice * 0.4)} now</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentType('full')}
+                                            className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col gap-1 text-left ${paymentType === 'full' ? 'border-emerald-600 bg-emerald-50/50' : 'border-gray-50 bg-gray-50/50 grayscale opacity-60'}`}
+                                        >
+                                            <div className="flex justify-between items-center w-full">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${paymentType === 'full' ? 'text-emerald-700' : 'text-gray-400'}`}>Full Settlement</span>
+                                                <ShieldCheck size={14} className={paymentType === 'full' ? 'text-emerald-600' : 'text-gray-300'} />
+                                            </div>
+                                            <span className="text-xl font-black text-gray-900 tracking-tighter">100% PRIORITY</span>
+                                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Pay ₹{calculatedPrice} now</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="bg-gray-950 p-10 rounded-[2.5rem] space-y-6 shadow-2xl shadow-gray-950/20">
@@ -361,8 +409,19 @@ const BookingPage = () => {
                                     <span className="font-black text-white text-xs tracking-wider">₹{convenienceFee.toLocaleString()}.00</span>
                                 </div>
                                 <div className="pt-6 border-t border-white/5 flex justify-between items-center">
-                                    <span className="font-black text-white uppercase tracking-widest text-[10px]">Total Balance Due</span>
-                                    <span className="text-4xl font-black text-emerald-400 tracking-tighter">₹{calculatedPrice.toLocaleString()}.00</span>
+                                    <div className="flex flex-col">
+                                        <span className="font-black text-white/40 uppercase tracking-widest text-[9px]">
+                                            {paymentType === 'full' ? 'Priority Settlement' : 'Confirmation Token (40%)'}
+                                        </span>
+                                        {paymentType === 'advance' && (
+                                            <span className="text-[8px] font-bold text-yellow-400/60 uppercase tracking-widest">
+                                                Rest ₹{calculatedPrice - Math.ceil(calculatedPrice * 0.4)} at Arena
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-4xl font-black text-emerald-400 tracking-tighter">
+                                        ₹{paymentType === 'full' ? calculatedPrice.toLocaleString() : Math.ceil(calculatedPrice * 0.4).toLocaleString()}.00
+                                    </span>
                                 </div>
                             </div>
 

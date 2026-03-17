@@ -7,6 +7,7 @@ import {
   Briefcase,
   PieChart,
   Database,
+  CheckCircle,
   LogOut,
   ChevronRight,
   Users,
@@ -33,6 +34,7 @@ const AdminDashboard = () => {
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
+    { to: '/admin/booked-slots', label: 'Booked Slots', icon: CheckCircle },
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
     { to: '/admin/workers', label: 'Workers', icon: Briefcase },
     { to: '/admin/report', label: 'Report', icon: PieChart },

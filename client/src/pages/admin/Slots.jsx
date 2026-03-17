@@ -38,7 +38,7 @@ const AdminSlots = () => {
   const [bookingData, setBookingData] = useState({
     userName: '',
     userPhone: '',
-    amount: '500'
+    amount: '1000'
   });
 
   const navItems = [
@@ -55,8 +55,18 @@ const AdminSlots = () => {
       const [eh, em] = selectedSlot.endTime.split(':').map(Number);
       const duration = (eh * 60 + em) - (sh * 60 + sm);
       if (duration > 0) {
-        const calculated = Math.max(200, Math.ceil((duration / 60) * 500));
-        setBookingData(prev => ({ ...prev, amount: calculated.toString() }));
+        const bookingDate = new Date(selectedSlot.date);
+        const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
+        const isDay = sh < 18;
+        const baseRate = isWeekend ? (isDay ? 1000 : 1400) : (isDay ? 1000 : 1200);
+        let totalPrice = (duration / 60) * baseRate;
+        if (sh < 18 && (sh + duration / 60) > 18) {
+          const dayHours = (18 * 60 - (sh * 60 + sm)) / 60;
+          const nightHours = (duration / 60) - dayHours;
+          const nightRate = isWeekend ? 1400 : 1200;
+          totalPrice = (dayHours * baseRate) + (nightHours * nightRate);
+        }
+        setBookingData(prev => ({ ...prev, amount: Math.max(200, Math.ceil(totalPrice)).toString() }));
       }
     }
   }, [selectedSlot]);
@@ -104,7 +114,7 @@ const AdminSlots = () => {
         ...bookingData
       });
       setShowBookingModal(false);
-      setBookingData({ userName: '', userPhone: '', amount: '500' });
+      setBookingData({ userName: '', userPhone: '', amount: '1000' });
       await fetchSlots();
       alert('Booking created successfully!');
     } catch (error) {

@@ -85,7 +85,7 @@ const checkAvailability = async (date, time) => {
  * @param {string} date - Date in YYYY-MM-DD format
  * @param {string} time - Time in HH:MM format
  */
-const bookSlot = async (name, phone, date, time) => {
+const bookSlot = async (name, phone, date, time, paymentType = 'advance') => {
     try {
         // Calculate end time (default 1 hour)
         const [h, m] = time.split(':').map(Number);
@@ -94,10 +94,21 @@ const bookSlot = async (name, phone, date, time) => {
 
         // Calculate amount based on config
         const transitionHour = parseInt(process.env.PRICE_TRANSITION_HOUR) || 18;
-        const priceDay = parseInt(process.env.PRICE_DAY) || 500;
-        const priceNight = parseInt(process.env.PRICE_NIGHT) || 700;
+        const priceDay = parseInt(process.env.PRICE_DAY) || 1000;
+        const priceNight = parseInt(process.env.PRICE_NIGHT) || 1200;
+        const priceWeekendDay = parseInt(process.env.PRICE_WEEKEND_DAY) || 1000;
+        const priceWeekendNight = parseInt(process.env.PRICE_WEEKEND_NIGHT) || 1400;
 
-        const amount = h < transitionHour ? priceDay : priceNight;
+        const bookingDate = new Date(date);
+        const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
+        const isDay = h < transitionHour;
+
+        let amount;
+        if (isWeekend) {
+            amount = isDay ? priceWeekendDay : priceWeekendNight;
+        } else {
+            amount = isDay ? priceDay : priceNight;
+        }
 
         const booking = await createBookingEntry({
             userName: name,
@@ -106,6 +117,7 @@ const bookSlot = async (name, phone, date, time) => {
             date,
             startTime: time,
             endTime,
+            paymentType,
             platform: 'whatsapp'
         });
 
@@ -123,7 +135,100 @@ const bookSlot = async (name, phone, date, time) => {
     }
 };
 
+/**
+ * Fetch and format free slots from the database for a given date
+ * @param {string} targetDate - Date in YYYY-MM-DD format
+ */
+const getFreeSlots = async (targetDate) => {
+    try {
+        const slots = await Slot.find({
+            date: targetDate,
+            status: 'free'
+        }).sort({ startTime: 1 });
+
+        if (!slots || slots.length === 0) {
+            return `No free slots available for ${targetDate}.`;
+        }
+
+        const morning = [];
+        const afternoon = [];
+        const evening = [];
+
+        slots.forEach(slot => {
+            const [h, m] = slot.startTime.split(':').map(Number);
+            const start12 = `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+            // Find end time string
+            const endH = h + 1;
+            const end12 = `${endH % 12 || 12}:00 ${endH >= 12 ? 'PM' : 'AM'}`;
+            const timeRange = `${start12} - ${end12}`;
+
+            if (h < 12) morning.push(timeRange);
+            else if (h < 17) afternoon.push(timeRange);
+            else evening.push(timeRange);
+        });
+
+        let output = `Available Slots for ${targetDate}:\n`;
+        if (morning.length > 0) output += `✅ Morning : ${morning.join(', ')}\n`;
+        if (afternoon.length > 0) output += `✅ Afternoon : ${afternoon.join(', ')}\n`;
+        if (evening.length > 0) output += `✅ Evening : ${evening.join(', ')}\n`;
+
+        return output;
+    } catch (error) {
+        console.error('Error fetching free slots:', error);
+        return 'Unable to fetch free slots from the database at this time.';
+    }
+};
+
+/**
+ * Fetch and format confirmed booked slots from the database for a given date
+ * @param {string} targetDate - Date in YYYY-MM-DD format
+ */
+const getBookedSlots = async (targetDate) => {
+    try {
+        const slots = await Slot.find({
+            date: targetDate,
+            status: { $in: ['booked', 'hold'] }
+        }).sort({ startTime: 1 });
+
+        if (!slots || slots.length === 0) {
+            return `No booked slots found for ${targetDate}.`;
+        }
+
+        const slotIds = slots.map(s => s._id);
+        const mongoose = require('mongoose');
+        const Booking = mongoose.models.Booking || require('../models/Booking');
+
+        const bookings = await Booking.find({
+            slot: { $in: slotIds },
+            bookingStatus: { $in: ['confirmed', 'hold'] }
+        }).populate('slot').lean();
+
+        if (!bookings || bookings.length === 0) {
+            return `No confirmed/hold bookings found for ${targetDate}.`;
+        }
+
+        // Sort by time
+        bookings.sort((a, b) => (a.slot?.startTime || '').localeCompare(b.slot?.startTime || ''));
+
+        let output = `Booked Slots for ${targetDate}:\n`;
+        bookings.forEach(b => {
+            if (b.slot && b.slot.startTime) {
+                const [h, m] = b.slot.startTime.split(':').map(Number);
+                const start12 = `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+                output += `🔴 ${start12} : ${b.userName} (+91 ${b.userPhone}) - [${b.bookingStatus.toUpperCase()}]\n`;
+            }
+        });
+
+        return output;
+    } catch (error) {
+        console.error('Error fetching booked slots:', error);
+        return 'Unable to fetch booked slots from the database at this time.';
+    }
+};
+
 module.exports = {
     checkAvailability,
-    bookSlot
+    bookSlot,
+    getFreeSlots,
+    getBookedSlots
 };

@@ -38,6 +38,14 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Please provide amount']
   },
+  totalAmount: {
+    type: Number
+  },
+  paymentType: {
+    type: String,
+    enum: ['advance', 'full'],
+    default: 'advance'
+  },
   bookingStatus: {
     type: String,
     enum: ['pending', 'confirmed', 'rejected', 'hold', 'no-show', 'cancelled'],

@@ -115,9 +115,14 @@ const sendPendingMessage = (phoneNumber, userName, slotDate, timeRange, bookingI
   return sendWhatsAppNotification(phoneNumber, message, bookingId, 'pending');
 };
 
-const sendAdminNotification = async (userName, userPhone, slotDate, timeRange, amount, bookingId) => {
+const sendAdminNotification = async (userName, userPhone, slotDate, timeRange, totalAmount, bookingId, advanceAmount = null) => {
   const adminPhone = process.env.ADMIN_PHONE;
   if (!adminPhone) return;
+
+  let amountStr = `₹${totalAmount}`;
+  if (advanceAmount) {
+    amountStr = `₹${totalAmount} (Advance: ₹${advanceAmount})`;
+  }
 
   const message =
     `📢 *NEW BOOKING RECEIVED*\n\n` +
@@ -125,7 +130,7 @@ const sendAdminNotification = async (userName, userPhone, slotDate, timeRange, a
     `📞 Phone: ${userPhone}\n` +
     `📅 Date: ${slotDate}\n` +
     `⏰ Time: ${timeRange}\n` +
-    `💰 Amount: ₹${amount}`;
+    `💰 Amount: ${amountStr}`;
 
   return sendWhatsAppNotification(adminPhone, message, bookingId, 'admin');
 };

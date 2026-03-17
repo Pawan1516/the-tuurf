@@ -48,9 +48,16 @@ const autoGenerateSlots = async (daysAhead = 30) => {
                         date: date,
                         startTime,
                         endTime,
-                        price: hour < (parseInt(process.env.PRICE_TRANSITION_HOUR) || 18)
-                            ? (parseInt(process.env.PRICE_DAY) || 500)
-                            : (parseInt(process.env.PRICE_NIGHT) || 700),
+                        price: (() => {
+                            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                            const transitionHour = parseInt(process.env.PRICE_TRANSITION_HOUR) || 18;
+                            const isDay = hour < transitionHour;
+                            if (isWeekend) {
+                                return isDay ? (parseInt(process.env.PRICE_WEEKEND_DAY) || 1000) : (parseInt(process.env.PRICE_WEEKEND_NIGHT) || 1400);
+                            } else {
+                                return isDay ? (parseInt(process.env.PRICE_DAY) || 1000) : (parseInt(process.env.PRICE_NIGHT) || 1200);
+                            }
+                        })(),
                         status: 'free'
                     });
                 }

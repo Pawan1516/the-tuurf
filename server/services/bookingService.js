@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 /**
  * Shared logic to create a booking (used by Admin and Chatbot)
  */
-const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, startTime, endTime, platform = 'admin' }) => {
+const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, startTime, endTime, platform = 'admin', paymentType = 'advance' }) => {
     if (!userName || !userPhone || !amount) {
         throw new Error('Missing required customer fields');
     }
@@ -62,7 +62,7 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
             {
                 status: 'booked',
                 endTime,
-                price: amount || Math.max(200, Math.ceil((duration / 60) * 500)),
+                price: amount || Math.max(200, Math.ceil((duration / 60) * 1000)),
                 updatedAt: new Date()
             },
             { new: true }
@@ -74,7 +74,7 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
                 startTime,
                 endTime,
                 status: 'booked',
-                price: amount || Math.max(200, Math.ceil((duration / 60) * 500))
+                price: amount || Math.max(200, Math.ceil((duration / 60) * 1000))
             });
             await slot.save();
         }
@@ -82,12 +82,17 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
 
     if (!slot) throw new Error('Slot not found or invalid parameters');
 
+    const slotPrice = amount || (slot ? slot.price : 1000);
+    const confirmationAmount = (paymentType === 'full') ? slotPrice : Math.ceil(slotPrice * 0.4);
+
     const booking = new Booking({
         userName,
         userPhone,
         turfLocation: process.env.TURF_LOCATION || 'The Turf Stadium',
         slot: slot._id,
-        amount,
+        amount: confirmationAmount,
+        totalAmount: slotPrice,
+        paymentType: platform === 'admin' ? (paymentType || 'full') : paymentType,
         bookingStatus: platform === 'admin' ? 'confirmed' : 'pending',
         paymentStatus: platform === 'admin' ? 'verified' : 'pending',
         confirmedAt: platform === 'admin' ? Date.now() : null,
@@ -137,7 +142,27 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
         console.error('AI Risk Analysis Error:', error);
     }
 
-    // Send WhatsApp (Skip for chatbot-pending if preferred, but usually good to notify)
+    // Notify Admin (for all non-admin platforms)
+    if (platform !== 'admin') {
+        try {
+            const slotDateStr = new Date(slot.date).toLocaleDateString();
+            const formatTime12h = (t) => {
+                if (!t) return '';
+                const [h, m] = t.split(':').map(Number);
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                const h12 = h % 12 || 12;
+                return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+            };
+            const timeRange = `${formatTime12h(slot.startTime)} – ${formatTime12h(slot.endTime)}`;
+
+            const { sendAdminNotification } = require('./whatsapp');
+            await sendAdminNotification(userName, userPhone, slotDateStr, timeRange, slotPrice, booking._id, confirmationAmount);
+        } catch (err) {
+            console.error('Admin Notification Error:', err.message);
+        }
+    }
+
+    // Send WhatsApp to User (Confirmation for admin, Pending for others if preferred)
     if (platform === 'admin') {
         try {
             const slotDateStr = new Date(slot.date).toLocaleDateString();

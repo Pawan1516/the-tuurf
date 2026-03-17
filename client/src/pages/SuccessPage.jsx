@@ -278,8 +278,11 @@ const SuccessPage = () => {
                                     <p className="text-gray-900 font-black text-sm uppercase tracking-tight">The Turf, Miyapur</p>
                                 </div>
                                 <div className="space-y-1 md:text-right">
-                                    <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em]">Settlement</p>
+                                    <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em]">{booking.paymentType === 'full' ? 'Settlement (Full)' : 'Settlement (Advance)'}</p>
                                     <p className="text-emerald-600 font-black text-xl md:text-2xl tracking-tighter leading-none">₹{booking.amount?.toLocaleString()}</p>
+                                    {booking.paymentType === 'advance' && (
+                                        <p className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">Remaining: ₹{(booking.totalAmount - booking.amount)?.toLocaleString()}</p>
+                                    )}
                                 </div>
                             </div>
 

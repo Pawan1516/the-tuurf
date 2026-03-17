@@ -10,6 +10,7 @@ const Payment = () => {
   const [error, setError] = useState('');
   const bookingId = localStorage.getItem('bookingId');
   const amount = localStorage.getItem('bookingAmount');
+  const paymentType = localStorage.getItem('paymentType') || 'advance';
 
   useEffect(() => {
     if (!bookingId || !amount) {
@@ -146,10 +147,13 @@ const Payment = () => {
           )}
 
           <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6">
+            <p className={`font-bold mb-2 uppercase tracking-widest text-xs ${paymentType === 'full' ? 'text-emerald-700' : 'text-blue-700'}`}>
+              {paymentType === 'full' ? 'Full Payment (100%)' : 'Advance Payment (40%)'}
+            </p>
             <p className="text-gray-700 mb-2">
               <span className="font-medium">Booking ID:</span> {bookingId.slice(-6)}
             </p>
-            <p className="text-2xl font-bold text-blue-600">₹{amount}</p>
+            <p className={`text-4xl font-black ${paymentType === 'full' ? 'text-emerald-600' : 'text-blue-600'}`}>₹{amount}</p>
           </div>
 
           <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-lg mb-6 border border-purple-200">

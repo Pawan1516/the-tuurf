@@ -155,7 +155,7 @@ const PublicHome = () => {
                                 </Link>
                                 <div className="text-center md:text-right">
                                     <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1">Fee</p>
-                                    <p className="text-xl md:text-2xl font-black text-white leading-none tracking-tighter">₹500 / HR</p>
+                                    <p className="text-xl md:text-2xl font-black text-white leading-none tracking-tighter">From ₹1000 / HR</p>
                                 </div>
                                 <div className="hidden md:flex bg-emerald-500/10 p-4 rounded-2xl text-emerald-400 border border-emerald-500/20 shadow-inner">
                                     <Zap size={24} className="fill-emerald-400" />
@@ -209,7 +209,7 @@ const PublicHome = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-12 py-10">
-                                                    <span className="text-2xl font-black text-slate-900 tracking-tighter">₹{slot.price || 500}</span>
+                                                    <span className="text-2xl font-black text-slate-900 tracking-tighter">₹{slot.price || 1000}</span>
                                                 </td>
                                                 <td className="px-12 py-10 text-center">
                                                     {isFree ? (
@@ -253,7 +253,7 @@ const PublicHome = () => {
                                                 </span>
                                             </div>
                                             <div className="flex flex-col items-end">
-                                                <span className="text-lg font-black text-slate-900 tracking-tighter">₹{slot.price || 500}</span>
+                                                <span className="text-lg font-black text-slate-900 tracking-tighter">₹{slot.price || 1000}</span>
                                                 <div className="flex items-center gap-1.5 mt-1">
                                                     <div className={`w-2 h-2 rounded-full ${isFree ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : isBooked ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
                                                     <span className={`text-[8px] font-black uppercase tracking-[0.1em] ${isFree ? 'text-emerald-600' : isBooked ? 'text-rose-500' : 'text-amber-600'}`}>

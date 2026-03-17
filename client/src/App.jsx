@@ -11,12 +11,15 @@ import PaymentPage from './pages/PaymentPage';
 import SuccessPage from './pages/SuccessPage';
 import WorkerDashboard from './pages/worker/Dashboard';
 import WorkerBookingDetail from './pages/worker/BookingDetail';
+import WorkerBookedSlots from './pages/worker/BookedSlots';
+import WorkerAssignedSlots from './pages/worker/AssignedSlots';
 import WorkerReport from './pages/worker/Report';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminSlots from './pages/admin/Slots';
 import AdminBookings from './pages/admin/Bookings';
 import AdminWorkers from './pages/admin/Workers';
 import AdminReport from './pages/admin/Report';
+import AdminBookedSlots from './pages/admin/BookedSlots';
 import AdminBookingDetail from './pages/admin/BookingDetail';
 import UserDashboard from './pages/UserDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -42,7 +45,6 @@ const Layout = ({ children }) => (
       </div>
     </nav>
     <main>{children}</main>
-    <CricBotWidget />
     <footer className="bg-gray-900 text-white py-20 mt-20">
 
       <div className="max-w-7xl mx-auto px-4 text-center">
@@ -84,6 +86,16 @@ function App() {
               <WorkerDashboard />
             </ProtectedRoute>
           } />
+          <Route path="/worker/booked-slots" element={
+            <ProtectedRoute allowedRoles={['worker']}>
+              <WorkerBookedSlots />
+            </ProtectedRoute>
+          } />
+          <Route path="/worker/assigned-slots" element={
+            <ProtectedRoute allowedRoles={['worker']}>
+              <WorkerAssignedSlots />
+            </ProtectedRoute>
+          } />
           <Route path="/worker/booking/:id" element={
             <ProtectedRoute allowedRoles={['worker']}>
               <WorkerBookingDetail />
@@ -104,6 +116,11 @@ function App() {
           <Route path="/admin/slots" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminSlots />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/booked-slots" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminBookedSlots />
             </ProtectedRoute>
           } />
           <Route path="/admin/bookings" element={
@@ -127,6 +144,7 @@ function App() {
             </ProtectedRoute>
           } />
         </Routes>
+        <CricBotWidget />
       </AuthProvider>
     </Router>
   );

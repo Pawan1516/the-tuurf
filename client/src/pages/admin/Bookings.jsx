@@ -33,31 +33,43 @@ const AdminBookings = () => {
   const [manualData, setManualData] = useState({
     userName: '',
     userPhone: '',
-    amount: '500',
+    amount: '1000',
     date: new Date().toISOString().split('T')[0],
     startTime: '18:00',
-    endTime: '19:00'
+    endTime: '19:00',
+    paymentType: 'full'
   });
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
+    { to: '/admin/booked-slots', label: 'Booked Slots', icon: Database },
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
     { to: '/admin/workers', label: 'Workers', icon: Briefcase },
     { to: '/admin/report', label: 'Report', icon: PieChart },
   ];
 
   useEffect(() => {
-    if (manualData.startTime && manualData.endTime) {
+    if (manualData.startTime && manualData.endTime && manualData.date) {
       const [sh, sm] = manualData.startTime.split(':').map(Number);
       const [eh, em] = manualData.endTime.split(':').map(Number);
       const duration = (eh * 60 + em) - (sh * 60 + sm);
       if (duration > 0) {
-        const calculated = Math.max(200, Math.ceil((duration / 60) * 500));
-        setManualData(prev => ({ ...prev, amount: calculated.toString() }));
+        const bookingDate = new Date(manualData.date);
+        const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
+        const isDay = sh < 18;
+        const baseRate = isWeekend ? (isDay ? 1000 : 1400) : (isDay ? 1000 : 1200);
+        let totalPrice = (duration / 60) * baseRate;
+        if (sh < 18 && (sh + duration / 60) > 18) {
+          const dayHours = (18 * 60 - (sh * 60 + sm)) / 60;
+          const nightHours = (duration / 60) - dayHours;
+          const nightRate = isWeekend ? 1400 : 1200;
+          totalPrice = (dayHours * baseRate) + (nightHours * nightRate);
+        }
+        setManualData(prev => ({ ...prev, amount: Math.max(200, Math.ceil(totalPrice)).toString() }));
       }
     }
-  }, [manualData.startTime, manualData.endTime]);
+  }, [manualData.startTime, manualData.endTime, manualData.date]);
 
   const handleManualBookingSubmit = async (e) => {
     e.preventDefault();
@@ -72,10 +84,11 @@ const AdminBookings = () => {
       setManualData({
         userName: '',
         userPhone: '',
-        amount: '500',
+        amount: '1000',
         date: new Date().toISOString().split('T')[0],
         startTime: '18:00',
-        endTime: '19:00'
+        endTime: '19:00',
+        paymentType: 'full'
       });
       // Refresh
       const response = await bookingsAPI.getAll(filter !== 'all' ? { status: filter } : {});
@@ -247,6 +260,7 @@ const AdminBookings = () => {
         <nav className="flex-1 p-6 space-y-2">
           <NavItem to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} />
           <NavItem to="/admin/slots" label="Slot Control" icon={Calendar} />
+          <NavItem to="/admin/booked-slots" label="Booked Slots" icon={Database} />
           <NavItem to="/admin/bookings" label="Booking Log" icon={Activity} active />
           <NavItem to="/admin/workers" label="Workers" icon={Briefcase} />
           <NavItem to="/admin/report" label="Report" icon={PieChart} />
@@ -477,6 +491,26 @@ const AdminBookings = () => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Payment Protocol</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setManualData({ ...manualData, paymentType: 'full' })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black uppercase text-[10px] transition-all ${manualData.paymentType === 'full' ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-gray-100 text-gray-400'}`}
+                    >
+                      Full (100%)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setManualData({ ...manualData, paymentType: 'advance' })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black uppercase text-[10px] transition-all ${manualData.paymentType === 'advance' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-100 text-gray-400'}`}
+                    >
+                      Advance (40%)
+                    </button>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   disabled={submitting}
@@ -563,7 +597,13 @@ const AdminBookings = () => {
                             </span>
                           </td>
                           <td className="px-6 py-8 text-center">
-                            <span className="text-lg font-black text-gray-900 tracking-tighter">₹{b.amount.toLocaleString()}</span>
+                            <div className="flex flex-col items-center">
+                              <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest mb-1 ${b.paymentType === 'full' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {b.paymentType || 'full'}
+                              </span>
+                              <span className="text-lg font-black text-gray-900 tracking-tighter">₹{b.amount.toLocaleString()}</span>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">/ ₹{b.totalAmount || b.amount}</span>
+                            </div>
                           </td>
                           <td className="px-6 py-8">
                             <div className="flex items-center justify-center gap-1.5">
@@ -625,8 +665,13 @@ const AdminBookings = () => {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Fee</p>
-                          <p className="text-lg font-black text-gray-900 tracking-tighter">₹{b.amount.toLocaleString()}</p>
+                          <div className="flex justify-end mb-1">
+                            <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${b.paymentType === 'full' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                              {b.paymentType || 'full'}
+                            </span>
+                          </div>
+                          <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Fee (Paid/Total)</p>
+                          <p className="text-lg font-black text-gray-900 tracking-tighter">₹{b.amount.toLocaleString()} / ₹{b.totalAmount || b.amount}</p>
                         </div>
                       </div>
 

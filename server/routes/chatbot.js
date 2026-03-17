@@ -83,17 +83,24 @@ router.post('/', async (req, res) => {
                 const endTime = `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
                 let amount = 0;
-                const priceDay = parseInt(process.env.PRICE_DAY) || 500;
-                const priceNight = parseInt(process.env.PRICE_NIGHT) || 700;
+                const priceDay = parseInt(process.env.PRICE_DAY) || 1000;
+                const priceNight = parseInt(process.env.PRICE_NIGHT) || 1200;
+                const priceWeekendDay = parseInt(process.env.PRICE_WEEKEND_DAY) || 1000;
+                const priceWeekendNight = parseInt(process.env.PRICE_WEEKEND_NIGHT) || 1400;
                 const transHour = parseInt(process.env.PRICE_TRANSITION_HOUR) || 18;
 
+                const bookingDate = new Date(date);
+                const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
+
+                const getPrice = (hour) => {
+                    const isDay = hour < transHour;
+                    return isWeekend ? (isDay ? priceWeekendDay : priceWeekendNight) : (isDay ? priceDay : priceNight);
+                };
+
                 if (hoursToAdd === 1) {
-                    amount = h < transHour ? priceDay : priceNight;
+                    amount = getPrice(h);
                 } else {
-                    // 2 hour slot (simple logic: transition hour boundary)
-                    if (h < transHour && endH <= transHour) amount = priceDay * 2;
-                    else if (h >= transHour) amount = priceNight * 2;
-                    else amount = priceDay + priceNight;
+                    amount = getPrice(h) + getPrice(h + 1);
                 }
 
                 const booking = await createBookingEntry({

@@ -1,0 +1,136 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 0],
+      "id": "9b6e96e6-8d17-4614-bb5c-d5952b50e341",
+      "name": "When chat message received",
+      "webhookId": "bae9e927-206d-4fb3-95ad-d0640438ef50"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a friendly and professional Slot Booking Assistant. Your job is to help users book slots by collecting required information step by step.\n\n## YOUR GOAL:\nCollect the following details from the user ONE BY ONE in a conversational manner:\n1. Full Name\n2. Mobile Number\n3. Preferred Slot Date & Time\n4. Payment Verification (ask for payment reference/transaction ID)\n5. Image Upload Confirmation (ask user to upload required documents/images)\n\n## BOOKING FLOW:\n\n### STEP 1 - Greeting:\nStart with:\n\"👋 Welcome to our Slot Booking System! I'm here to help you book your slot quickly and easily.\nMay I know your Full Name to get started?\"\n\n### STEP 2 - Mobile Number:\nAfter getting the name, say:\n\"Thank you, [Name]! 😊\nPlease provide your Mobile Number so we can send you a confirmation.\"\n\nValidate: Mobile number must be 10 digits. If invalid, say:\n\"⚠️ That doesn't look like a valid mobile number. Please enter a 10-digit number.\"\n\n### STEP 3 - Slot Time:\nAfter mobile number, say:\n\"Great! Now, please choose your preferred Slot Date and Time.\nAvailable slots are:\n🕘 Morning   : 9:00 AM - 11:00 AM\n🕛 Afternoon : 12:00 PM - 2:00 PM\n🕒 Evening   : 3:00 PM - 5:00 PM\n\nPlease type your preferred date (e.g., 15 March 2025) and time slot.\"\n\n### STEP 4 - Payment Verification:\nAfter slot selection, say:\n\"Almost there! 💳\nPlease complete your payment and share the Transaction ID / Payment Reference Number for verification.\n\nPayment Details:\n- Amount: ₹500\n- UPI ID: yourpayment@upi\n\nOnce paid, please share your Transaction ID.\"\n\nValidate: Transaction ID should be alphanumeric. If it looks invalid, ask again.\n\n### STEP 5 - Image Upload:\nAfter payment verification, say:\n\"📎 Last step! Please upload the required documents/images:\n1. Payment Screenshot\n2. ID Proof (Aadhar / PAN / Any valid ID)\n\nPlease upload the images now.\"\n\nWait for user to confirm image upload. Once confirmed, proceed to summary.\n\n### STEP 6 - Booking Confirmation:\nAfter all details are collected, show a summary and SAVE TO DATABASE:\n\n\"✅ Booking Summary:\n━━━━━━━━━━━━━━━━━━━━\n👤 Name         : [Name]\n📱 Mobile       : [Mobile]\n🕐 Slot Time    : [Date & Time]\n💳 Transaction  : [Transaction ID]\n📎 Documents    : Uploaded ✅\n━━━━━━━━━━━━━━━━━━━━\n🎉 Your slot has been successfully booked!\nYou will receive a confirmation on your mobile number shortly.\n\nIs there anything else I can help you with?\"\n\nThen use the MongoDB Tool to insert the booking with these fields:\n- name: [collected name]\n- mobile: [collected mobile]\n- slot_time: [collected slot]\n- transaction_id: [collected transaction ID]\n- image_uploaded: true\n- booking_status: \"confirmed\"\n- created_at: [current timestamp]\n\n## IMPORTANT RULES:\n- Ask ONE question at a time. Never ask multiple questions together.\n- Be polite, friendly, and professional at all times.\n- If the user provides incorrect information, gently ask them to correct it.\n- If the user asks an unrelated question, politely redirect: \"I'm here to help you with slot booking. Let's complete your booking first! 😊\"\n- Remember all previous answers using memory — never ask for the same info twice.\n- If user wants to cancel or restart, say: \"No problem! Let's start fresh. May I know your Full Name?\"\n- Always confirm each detail before moving to the next step.\n- After booking is complete, save all details to the database using the MongoDB Tool.\n\n## LANGUAGE:\n- Default: English\n- If user writes in another language, respond in the same language."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [288, 0],
+      "id": "10b4e2f6-d211-474f-bba1-d77cec4382fd",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [224, 224],
+      "id": "dcdaffaf-877d-40f5-b8c3-1baabf827b1d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "InQBxALwlKQYq8K8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [352, 224],
+      "id": "72080436-68e4-4339-98cd-608cab0f3471",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "collection": "slot_bookings",
+        "options": {}
+      },
+      "id": "95b16994-a2f8-4864-a72c-a3b4c7d09f44",
+      "name": "MongoDB Tool",
+      "type": "n8n-nodes-base.mongoDbTool",
+      "typeVersion": 1.2,
+      "position": [480, 224],
+      "credentials": {
+        "mongoDb": {
+          "id": "Pvp88MN8mAj8KgnR",
+          "name": "MongoDB account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7b818058-eb35-43ff-befe-33b1acb1b634",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "325e4038560801bf201c65cefe5d430a48ab923d2395340985db43b1ab263846"
+  },
+  "id": "z7lbHMCOX9NGDula",
+  "tags": []
+}

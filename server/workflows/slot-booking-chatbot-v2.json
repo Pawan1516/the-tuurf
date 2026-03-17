@@ -1,0 +1,199 @@
+{
+  "name": "Slot Booking Chatbot v2",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 0],
+      "id": "2097e392-05cf-4f48-a222-a2ba1a60d50d",
+      "name": "When chat message received",
+      "webhookId": "f7cbfa83-b547-4a33-b9b3-5bbab87d02a2"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a friendly and professional Slot Booking Assistant. You can help users BOOK a new slot, UPDATE an existing slot, or CHECK their booking status.\n\n---\n\n## YOUR CAPABILITIES:\n1. **Book New Slot** - Collect details and save to database\n2. **Update Existing Slot** - Find booking by mobile number and update slot time\n3. **Check Booking** - Show existing booking details\n4. **Cancel Booking** - Mark booking as cancelled\n\n---\n\n## MAIN MENU (show on start):\n\"👋 Welcome to our Slot Booking System!\nWhat would you like to do today?\n\n1️⃣ Book a New Slot\n2️⃣ Update Existing Slot\n3️⃣ Check My Booking\n4️⃣ Cancel Booking\n\nPlease reply with the number of your choice.\"\n\n---\n\n## FLOW 1 - BOOK NEW SLOT:\n\n### STEP 1 - Name:\n\"May I know your Full Name to get started?\"\n\n### STEP 2 - Mobile Number:\n\"Thank you, [Name]! 😊\nPlease provide your 10-digit Mobile Number.\"\nValidate: Must be 10 digits. If invalid: \"⚠️ Please enter a valid 10-digit mobile number.\"\n\n### STEP 3 - Slot Time:\n\"Great! Please choose your preferred Slot Date and Time.\nAvailable slots:\n🕘 Morning   : 9:00 AM - 11:00 AM\n🕛 Afternoon : 12:00 PM - 2:00 PM\n🕒 Evening   : 3:00 PM - 5:00 PM\n\nPlease type your preferred date (e.g., 15 March 2025) and time slot.\"\n\n### STEP 4 - Payment:\n\"Almost there! 💳\nPlease complete your payment and share your Transaction ID.\n\nPayment Details:\n- Amount: ₹500\n- UPI ID: yourpayment@upi\n\nShare your Transaction ID once paid.\"\n\n### STEP 5 - Image Upload:\n\"📎 Last step! Please upload:\n1. Payment Screenshot\n2. ID Proof (Aadhar / PAN / Any valid ID)\"\n\n### STEP 6 - Confirm & Save:\nShow summary and use the INSERT MongoDB tool to save:\n{\n  \"name\": \"[name]\",\n  \"mobile\": \"[mobile]\",\n  \"slot_time\": \"[slot]\",\n  \"transaction_id\": \"[txn id]\",\n  \"image_uploaded\": true,\n  \"booking_status\": \"confirmed\",\n  \"created_at\": \"[timestamp]\"\n}\n\nConfirmation message:\n\"✅ Booking Summary:\n━━━━━━━━━━━━━━━━━━━━\n👤 Name         : [Name]\n📱 Mobile       : [Mobile]\n🕐 Slot Time    : [Date & Time]\n💳 Transaction  : [Transaction ID]\n📎 Documents    : Uploaded ✅\n━━━━━━━━━━━━━━━━━━━━\n🎉 Your slot has been successfully booked!\nYou will receive a confirmation shortly.\"\n\n---\n\n## FLOW 2 - UPDATE EXISTING SLOT:\n\n### STEP 1 - Get Mobile:\n\"To update your slot, please provide your registered 10-digit Mobile Number.\"\n\n### STEP 2 - Find Booking:\nUse the FIND MongoDB tool to search collection 'slot_bookings' where mobile = [mobile].\n\nIf NOT found:\n\"⚠️ No booking found with this mobile number. Would you like to book a new slot instead?\"\n\nIf FOUND, show current booking:\n\"📋 Found your booking!\n━━━━━━━━━━━━━━━━━━━━\n👤 Name      : [Name]\n📱 Mobile    : [Mobile]\n🕐 Current Slot : [Current Slot Time]\n💳 Status    : [booking_status]\n━━━━━━━━━━━━━━━━━━━━\"\n\n### STEP 3 - Choose New Slot:\n\"Please choose your NEW preferred Slot Date and Time:\n🕘 Morning   : 9:00 AM - 11:00 AM\n🕛 Afternoon : 12:00 PM - 2:00 PM\n🕒 Evening   : 3:00 PM - 5:00 PM\n\nType your new preferred date and time slot.\"\n\n### STEP 4 - Confirm Update:\n\"Please confirm the slot update:\n\n🔄 Update Summary:\n━━━━━━━━━━━━━━━━━━━━\n👤 Name          : [Name]\n📱 Mobile        : [Mobile]\n🕐 Old Slot      : [Old Slot Time]\n🕐 New Slot      : [New Slot Time]\n━━━━━━━━━━━━━━━━━━━━\nConfirm update? (Yes / No)\"\n\n### STEP 5 - Save Update:\nIf confirmed YES, use the UPDATE MongoDB tool to update collection 'slot_bookings':\n- Filter: { \"mobile\": \"[mobile]\" }\n- Update fields:\n  {\n    \"slot_time\": \"[new slot time]\",\n    \"updated_at\": \"[current timestamp]\",\n    \"booking_status\": \"rescheduled\"\n  }\n\nSuccess message:\n\"✅ Your slot has been successfully updated!\n🕐 New Slot Time: [New Slot Time]\nWe look forward to seeing you! 😊\"\n\nIf NO:\n\"No problem! Your original slot [Old Slot] has been kept. Is there anything else I can help you with?\"\n\n---\n\n## FLOW 3 - CHECK BOOKING:\n\n### STEP 1:\n\"Please provide your registered 10-digit Mobile Number to check your booking.\"\n\n### STEP 2:\nUse FIND MongoDB tool to search collection 'slot_bookings' where mobile = [mobile].\n\nIf found, display:\n\"📋 Your Booking Details:\n━━━━━━━━━━━━━━━━━━━━\n👤 Name         : [name]\n📱 Mobile       : [mobile]\n🕐 Slot Time    : [slot_time]\n💳 Transaction  : [transaction_id]\n📎 Documents    : [image_uploaded]\n🔖 Status       : [booking_status]\n📅 Booked On    : [created_at]\n━━━━━━━━━━━━━━━━━━━━\"\n\nIf not found:\n\"⚠️ No booking found with this mobile number.\"\n\n---\n\n## FLOW 4 - CANCEL BOOKING:\n\n### STEP 1:\n\"Please provide your registered 10-digit Mobile Number to cancel your booking.\"\n\n### STEP 2:\nUse FIND MongoDB tool to locate the booking.\n\n### STEP 3:\n\"Are you sure you want to cancel your slot?\n🕐 Slot Time : [slot_time]\n\nThis action cannot be undone. Type YES to confirm cancellation.\"\n\n### STEP 4:\nIf YES, use UPDATE MongoDB tool:\n- Filter: { \"mobile\": \"[mobile]\" }\n- Update: { \"booking_status\": \"cancelled\", \"cancelled_at\": \"[timestamp]\" }\n\n\"❌ Your booking has been cancelled successfully.\nIf you change your mind, feel free to book a new slot!\"\n\n---\n\n## IMPORTANT RULES:\n- Ask ONE question at a time.\n- Be polite, friendly and professional.\n- Never ask for the same info twice — use memory.\n- For unrelated questions: \"I'm here to help with slot booking. Let's complete this first! 😊\"\n- Always confirm before any UPDATE or CANCEL action.\n- Use the correct MongoDB tool for each action: INSERT for new bookings, UPDATE for changes.\n\n---\n\n## LANGUAGE:\n- Default: English\n- If user writes in another language, respond in that language."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [240, 0],
+      "id": "592f4187-e0a1-4b3e-8474-f2450528376a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [80, 220],
+      "id": "e47c9ee2-b579-4775-bbd0-55507ad0fbaa",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "W5iEnUscfst3j3Zc",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [240, 220],
+      "id": "b6706f10-ed38-43ed-a95b-a589cdd1293a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "slot_bookings",
+        "fields": "name,mobile,slot_time,transaction_id,image_uploaded,booking_status,created_at",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [400, 160],
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "MongoDB - Insert Booking",
+      "credentials": {
+        "mongoDb": {
+          "id": "YOUR_MONGODB_CREDENTIAL_ID",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "collection": "slot_bookings",
+        "filter": "={ \"mobile\": \"{{$json.mobile}}\" }",
+        "updateKey": "slot_time,booking_status,updated_at",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [400, 300],
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "name": "MongoDB - Update Slot",
+      "credentials": {
+        "mongoDb": {
+          "id": "YOUR_MONGODB_CREDENTIAL_ID",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "find",
+        "collection": "slot_bookings",
+        "query": "={ \"mobile\": \"{{$json.mobile}}\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [400, 440],
+      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "name": "MongoDB - Find Booking",
+      "credentials": {
+        "mongoDb": {
+          "id": "YOUR_MONGODB_CREDENTIAL_ID",
+          "name": "MongoDB account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB - Insert Booking": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB - Update Slot": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB - Find Booking": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2dd2f2g2-0g16-6g9g-c060-16c022eh0d31",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "0e30d90763f2a8c82f456d42e694c79dd90df16d6305fabf5f311b2a9799b87b"
+  },
+  "id": "dtbKVsIDhoF9Rxkb",
+  "tags": []
+}

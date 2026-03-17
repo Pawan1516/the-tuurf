@@ -388,12 +388,24 @@ const AdminBookingDetail = () => {
                                 <h3 className="text-[10px] font-black text-emerald-400/60 uppercase tracking-[0.2em] mb-6">Payment Status</h3>
                                 <div className="space-y-5">
                                     <div className="bg-white/5 border border-white/5 p-4 md:p-5 rounded-2xl">
-                                        <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Fee Amount</p>
+                                        <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">{booking.paymentType === 'full' ? 'Full Fee Paid' : 'Advance Paid (40%)'}</p>
                                         <p className="text-2xl md:text-4xl font-black tracking-tighter">₹{booking.amount?.toLocaleString()}</p>
+                                        {booking.paymentType === 'advance' && (
+                                            <p className="text-[10px] font-black text-yellow-400 uppercase tracking-widest mt-2 flex justify-between">
+                                                <span>Pending Matrix:</span>
+                                                <span>₹{(booking.totalAmount - booking.amount)?.toLocaleString()}</span>
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="bg-white/5 border border-white/5 p-4 md:p-5 rounded-2xl">
+                                        <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Payment UTR No.</p>
+                                        <p className="text-xs md:text-sm font-black tracking-widest break-all text-white">
+                                            {booking.transactionId || booking.paymentId || 'Pending'}
+                                        </p>
                                     </div>
                                     <div className={`p-4 rounded-xl border-2 text-center text-[8px] md:text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${booking.paymentStatus === 'verified' ? 'border-emerald-500 text-emerald-400' : booking.paymentStatus === 'submitted' ? 'border-purple-400 text-purple-400' : 'border-yellow-500 text-yellow-400'}`}>
                                         {booking.paymentStatus === 'verified' && <ShieldCheck size={14} />}
-                                        {booking.paymentStatus === 'submitted' ? `TX: ${booking.transactionId}` : booking.paymentStatus}
+                                        {booking.paymentStatus === 'submitted' ? `STATUS: SUBMITTED` : booking.paymentStatus}
                                     </div>
                                     {booking.paymentStatus === 'submitted' && (
                                         <button onClick={handleVerifyPayment} disabled={updatingStatus} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2">

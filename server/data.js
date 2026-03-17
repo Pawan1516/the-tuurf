@@ -5,9 +5,7 @@
 
 const sports = {
     football: { id: 'football', name: 'Football ⚽', price: 800, emoji: '⚽' },
-    cricket: { id: 'cricket', name: 'Cricket 🏏', price: 1000, emoji: '🏏' },
-    basketball: { id: 'basketball', name: 'Basketball 🏀', price: 600, emoji: '🏀' },
-    badminton: { id: 'badminton', name: 'Badminton 🏸', price: 400, emoji: '🏸' }
+    cricket: { id: 'cricket', name: 'Cricket 🏏', price: 1000, emoji: '🏏' }
 };
 
 // Generate 15 hourly slots (6:00 AM to 10:00 PM)

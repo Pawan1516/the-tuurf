@@ -14,13 +14,15 @@ const BookSlot = () => {
     userPhone: ''
   });
   const [error, setError] = useState('');
-  const [amount] = useState(500); // Fixed amount for now
+  const [amount, setAmount] = useState(1000);
+  const [paymentOption, setPaymentOption] = useState('advance'); // 'advance' or 'full'
 
   useEffect(() => {
     const fetchSlot = async () => {
       try {
         const response = await slotsAPI.getById(slotId);
         setSlot(response.data.slot);
+        setAmount(response.data.slot.price || 1000);
       } catch (error) {
         setError('Slot not found');
       } finally {
@@ -60,12 +62,14 @@ const BookSlot = () => {
         userName: formData.userName,
         userPhone: formData.userPhone,
         slotId: slotId,
-        amount: amount
+        amount: amount,
+        paymentType: paymentOption
       });
 
       // Store booking ID and proceed to payment
       localStorage.setItem('bookingId', response.data.booking._id);
-      localStorage.setItem('bookingAmount', amount);
+      localStorage.setItem('bookingAmount', response.data.booking.amount);
+      localStorage.setItem('paymentType', paymentOption);
       navigate('/payment');
     } catch (error) {
       setError(error.response?.data?.message || 'Error creating booking');
@@ -122,7 +126,10 @@ const BookSlot = () => {
               <span className="font-medium">Time:</span> {slot.startTime} - {slot.endTime}
             </p>
             <p className="text-gray-700">
-              <span className="font-medium">Amount:</span> ₹{amount}
+              <span className="font-medium">Total Amount:</span> ₹{amount}
+            </p>
+            <p className="text-emerald-700 font-bold">
+              <span className="font-bold">Advance for Confirmation (40%):</span> ₹{Math.ceil(amount * 0.4)}
             </p>
           </div>
 
@@ -159,6 +166,42 @@ const BookSlot = () => {
                 pattern="[0-9]{10}"
                 required
               />
+            </div>
+
+            <div className="form-group space-y-3">
+              <label className="form-label font-bold text-gray-700">Choose Payment Method *</label>
+
+              <div
+                className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentOption === 'advance' ? 'border-blue-600 bg-blue-50' : 'border-gray-100 hover:border-gray-200'}`}
+                onClick={() => setPaymentOption('advance')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentOption === 'advance' ? 'border-blue-600' : 'border-gray-300'}`}>
+                    {paymentOption === 'advance' && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">Pay Advance (40%)</p>
+                    <p className="text-xs text-gray-500">Confirm your slot now</p>
+                  </div>
+                </div>
+                <p className="font-black text-blue-600">₹{Math.ceil(amount * 0.4)}</p>
+              </div>
+
+              <div
+                className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentOption === 'full' ? 'border-emerald-600 bg-emerald-50' : 'border-gray-100 hover:border-gray-200'}`}
+                onClick={() => setPaymentOption('full')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentOption === 'full' ? 'border-emerald-600' : 'border-gray-300'}`}>
+                    {paymentOption === 'full' && <div className="w-2.5 h-2.5 bg-emerald-600 rounded-full"></div>}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">Pay Full (100%)</p>
+                    <p className="text-xs text-gray-500">Hassle-free settlement</p>
+                  </div>
+                </div>
+                <p className="font-black text-emerald-600">₹{amount}</p>
+              </div>
             </div>
 
             <button

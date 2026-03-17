@@ -30,7 +30,7 @@ const formatTime12h = (t) => {
 router.post('/', async (req, res) => {
   console.log('--- DEBUG: Create Booking Request Received ---', req.body);
   try {
-    let { userName, userPhone, turfLocation, slotId, amount, userId, date, startTime, endTime } = req.body;
+    let { userName, userPhone, turfLocation, slotId, amount, userId, date, startTime, endTime, paymentType = 'advance' } = req.body;
 
     if (!userName || !userPhone || !amount) {
       return res.status(400).json({
@@ -100,7 +100,7 @@ router.post('/', async (req, res) => {
       const conflict = overlaps[0];
       return res.status(400).json({
         success: false,
-        message: `This temporal segment overlaps with an existing reservation (${conflict.startTime} to ${conflict.endTime}).`
+        message: `This temporal segment overlaps with an existing reservation (${conflict.startTime} to ${conflict.endTime}) and this slot is already booked.`
       });
     }
 
@@ -156,13 +156,18 @@ router.post('/', async (req, res) => {
 
     slotId = slot._id; // Ensure slotId is set for the rest of the logic
 
+    const slotPrice = amount;
+    const confirmationAmount = paymentType === 'full' ? slotPrice : Math.ceil(slotPrice * 0.4);
+
     // Create booking object
     const bookingData = {
       userName,
       userPhone,
       turfLocation: turfLocation || process.env.TURF_LOCATION || 'The Turf Stadium',
       slot: slotId,
-      amount,
+      amount: confirmationAmount,
+      totalAmount: slotPrice,
+      paymentType,
       bookingStatus: 'pending',
       paymentStatus: 'pending',
       createdAt: new Date(),
@@ -181,8 +186,6 @@ router.post('/', async (req, res) => {
     const savedBooking = await booking.save();
 
     const slotDate = new Date(slot.date).toLocaleDateString();
-
-
     const timeRange = `${formatTime12h(slot.startTime)} – ${formatTime12h(slot.endTime)}`;
 
     // AI AGENT: Analyze Risk and Generate Personalized Message
@@ -222,7 +225,7 @@ router.post('/', async (req, res) => {
     }
 
     // Send notification to Admin
-    await sendAdminNotification(userName, userPhone, slotDate, timeRange, amount, savedBooking._id);
+    await sendAdminNotification(userName, userPhone, slotDate, timeRange, slotPrice, savedBooking._id, confirmationAmount);
 
     // Send notification to Worker (if assigned)
     if (slot.assignedWorker) {
@@ -296,8 +299,12 @@ router.get('/my-slots', verifyToken, roleGuard(['worker']), async (req, res) => 
       return res.status(503).json({ success: false, message: 'Database offline' });
     }
 
-    // Workers can see ALL bookings to manage confirm/reject/hold
-    const bookings = await Booking.find({})
+    // Find slots assigned to this worker
+    const assignedSlots = await Slot.find({ assignedWorker: req.user.id }).select('_id');
+    const slotIds = assignedSlots.map(s => s._id);
+
+    // Workers can see ONLY bookings assigned to them
+    const bookings = await Booking.find({ slot: { $in: slotIds } })
       .populate('slot')
       .sort({ createdAt: -1 })
       .maxTimeMS(2000);

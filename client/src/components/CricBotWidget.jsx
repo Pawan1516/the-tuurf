@@ -18,11 +18,12 @@ const CricBotWidget = () => {
         }
     }, [chatHistory, isOpen, isMinimized]);
 
-    const handleSend = async (e) => {
-        e.preventDefault();
-        if (!message.trim()) return;
+    const handleSend = async (e, overrideMsg = null) => {
+        if (e) e.preventDefault();
+        const msgToSend = overrideMsg || message;
+        if (!msgToSend.trim()) return;
 
-        const userMsg = message.trim();
+        const userMsg = msgToSend.trim();
         setChatHistory(prev => [...prev, { role: 'user', text: userMsg }]);
         setMessage('');
         setLoading(true);
@@ -34,7 +35,8 @@ const CricBotWidget = () => {
                     role: 'bot',
                     text: data.reply,
                     type: data.type,
-                    paymentData: data.paymentData
+                    paymentData: data.paymentData,
+                    suggestedActions: data.suggestedActions
                 };
                 setChatHistory(prev => [...prev, botMsg]);
             } else {
@@ -135,6 +137,21 @@ const CricBotWidget = () => {
                                             <p className="text-[8px] text-gray-400 text-center italic">After paying, please share the screenshot here.</p>
                                         </div>
                                     )}
+
+                                    {msg.role === 'bot' && msg.suggestedActions && msg.suggestedActions.length > 0 && (
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            {msg.suggestedActions.map((action, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => handleSend(null, action.value)}
+                                                    className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all transform active:scale-95 shadow-sm border border-transparent ${action.color || 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                                        } ${action.color?.includes('bg-emerald-600') || action.color?.includes('bg-blue-600') ? 'text-white' : ''}`}
+                                                >
+                                                    {action.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -152,7 +169,7 @@ const CricBotWidget = () => {
 
                     {/* Input Area */}
                     <form
-                        onSubmit={handleSend}
+                        onSubmit={(e) => handleSend(e)}
                         className="p-6 bg-white border-t border-gray-50"
                     >
                         <div className="relative group flex items-center gap-2">
