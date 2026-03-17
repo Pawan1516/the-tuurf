@@ -20,6 +20,8 @@
         }
     ],
     "env": {
-        "REACT_APP_API_URL": "https://the-turf-in.onrender.com"
+        "REACT_APP_API_URL": "https://the-turf-in.onrender.com",
+        "CI": "false",
+        "NODE_OPTIONS": "--max-old-space-size=4096"
     }
 }
