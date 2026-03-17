@@ -1,22 +1,23 @@
 {
-    "version": 2,
-    "buildCommand": "npm run build",
-    "outputDirectory": "client/build",
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "https://the-turf-in.onrender.com/api/$1"
-        },
-        { "handle": "filesystem" },
-        {
-            "src": "/(.*)",
-            "dest": "/index.html"
-        }
-    ],
-    "env": {
-        "REACT_APP_API_URL": "https://the-turf-in.onrender.com",
-        "CI": "false",
-        "NODE_OPTIONS": "--max-old-space-size=4096",
-        "GENERATE_SOURCEMAP": "false"
+  "version": 2,
+  "name": "the-turf-monorepo",
+  "buildCommand": "npm run build",
+  "outputDirectory": "client/build",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://the-turf-in.onrender.com/api/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "https://the-turf-in.onrender.com",
+    "CI": "false",
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "GENERATE_SOURCEMAP": "false"
+  }
 }
