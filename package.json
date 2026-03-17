@@ -10,7 +10,6 @@
         "build": "CI=false npm install --prefix client && CI=false npm run build --prefix client",
         "install-server": "npm install --prefix server",
         "install-client": "npm install --prefix client",
-        "install-all": "npm install --prefix server && npm install --prefix client",
-        "postinstall": "npm install --prefix server"
+        "install-all": "npm install --prefix server && npm install --prefix client"
     }
 }
