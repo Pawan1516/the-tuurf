@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { slotsAPI, bookingsAPI } from '../api/client';
 import AuthContext from '../context/AuthContext';
@@ -72,14 +72,7 @@ const BookingPage = () => {
         setFormData(prev => ({ ...prev, endTime: newEndTime }));
     };
 
-    useEffect(() => {
-        const init = async () => {
-            await Promise.all([fetchSlot(), fetchSettings()]);
-        };
-        init();
-    }, [slotId]);
-
-    const fetchSettings = async () => {
+    const fetchSettings = useCallback(async () => {
         try {
             const res = await slotsAPI.getSettings();
             if (res.data.success) {
@@ -88,9 +81,9 @@ const BookingPage = () => {
         } catch (err) {
             console.error('Error fetching settings:', err);
         }
-    };
+    }, []);
 
-    const fetchSlot = async () => {
+    const fetchSlot = useCallback(async () => {
         if (!slotId || slotId === 'custom') {
             setFormData(prev => ({
                 ...prev,
@@ -117,7 +110,14 @@ const BookingPage = () => {
             setError('Failed to load slot details.');
             setLoading(false);
         }
-    };
+    }, [slotId]);
+
+    useEffect(() => {
+        const init = async () => {
+            await Promise.all([fetchSlot(), fetchSettings()]);
+        };
+        init();
+    }, [fetchSlot, fetchSettings]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
