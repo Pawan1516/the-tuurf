@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Activity, Briefcase, PieChart, LogOut, ChevronRight, Database, CheckCircle, Clock, CalendarCheck } from 'lucide-react';
+import { LayoutDashboard, Calendar, LogOut, ChevronRight, CheckCircle, Clock, CalendarCheck } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { bookingsAPI, slotsAPI } from '../../api/client';
 import MobileNav from '../../components/MobileNav';

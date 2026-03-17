@@ -88,16 +88,6 @@ const AdminBookings = () => {
     }
   }, [manualData.startTime, manualData.endTime, manualData.date, settings]);
 
-  const fetchSettings = async () => {
-    try {
-      const response = await adminAPI.getSettings();
-      if (response.data.success) {
-        setSettings(prev => ({ ...prev, ...response.data.settings }));
-      }
-    } catch (e) {
-      console.error('Error fetching settings:', e);
-    }
-  };
 
   const handleManualBookingSubmit = async (e) => {
     e.preventDefault();
