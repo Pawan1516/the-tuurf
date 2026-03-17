@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LayoutDashboard, Calendar, Activity, Briefcase, PieChart, LogOut, ChevronRight, Database, CheckCircle, Clock } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
-import { bookingsAPI } from '../../api/client';
+import { bookingsAPI, adminAPI } from '../../api/client';
 import MobileNav from '../../components/MobileNav';
 
 const AdminBookedSlots = () => {
@@ -11,6 +11,7 @@ const AdminBookedSlots = () => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+    const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
     const navItems = [
         { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -47,7 +48,19 @@ const AdminBookedSlots = () => {
             }
         };
         fetchBookings();
+        fetchSettings();
     }, []);
+
+    const fetchSettings = async () => {
+        try {
+            const { data } = await adminAPI.getSettings();
+            if (data.success) {
+                setSettings(prev => ({ ...prev, ...data.settings }));
+            }
+        } catch (err) {
+            console.error('Settings fetch error:', err);
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -68,7 +81,7 @@ const AdminBookedSlots = () => {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Turf Ops" />
+            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
             {/* Sidebar (Desktop) */}
             <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
@@ -77,7 +90,7 @@ const AdminBookedSlots = () => {
                         <Database size={24} />
                     </div>
                     <div>
-                        <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">The Turf</h1>
+                        <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
                         <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin OS v2.0</p>
                     </div>
                 </div>

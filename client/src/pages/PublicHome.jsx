@@ -14,6 +14,7 @@ const PublicHome = () => {
     const [slots, setSlots] = useState([]);
     const [selectedDate, setSelectedDate] = useState(getISODate());
     const [loading, setLoading] = useState(true);
+    const [settings, setSettings] = useState({ PRICE_DAY: 1000 });
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const heroImages = [
@@ -31,19 +32,25 @@ const PublicHome = () => {
     }, [heroImages.length]);
 
     useEffect(() => {
-        const fetchSlots = async () => {
+        const init = async () => {
             try {
                 setLoading(true);
-                const res = await slotsAPI.getAll(selectedDate);
-                if (Array.isArray(res.data)) setSlots(res.data);
+                const [slotsRes, settingsRes] = await Promise.all([
+                    slotsAPI.getAll(selectedDate),
+                    slotsAPI.getSettings()
+                ]);
+                if (Array.isArray(slotsRes.data)) setSlots(slotsRes.data);
                 else setSlots([]);
+                if (settingsRes.data.success) {
+                    setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
+                }
                 setLoading(false);
             } catch (err) {
-                console.error('Error fetching slots:', err);
+                console.error('Error fetching data:', err);
                 setLoading(false);
             }
         };
-        fetchSlots();
+        init();
     }, [selectedDate]);
 
     const formatTime12h = (time24) => {
@@ -155,7 +162,7 @@ const PublicHome = () => {
                                 </Link>
                                 <div className="text-center md:text-right">
                                     <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1">Fee</p>
-                                    <p className="text-xl md:text-2xl font-black text-white leading-none tracking-tighter">From ₹1000 / HR</p>
+                                    <p className="text-xl md:text-2xl font-black text-white leading-none tracking-tighter">From ₹{settings.PRICE_DAY} / HR</p>
                                 </div>
                                 <div className="hidden md:flex bg-emerald-500/10 p-4 rounded-2xl text-emerald-400 border border-emerald-500/20 shadow-inner">
                                     <Zap size={24} className="fill-emerald-400" />
@@ -296,11 +303,11 @@ const PublicHome = () => {
                     <div className="flex-1 text-center md:text-left space-y-2">
                         <h4 className="font-black text-slate-900 text-xl md:text-3xl tracking-tighter uppercase leading-none">Location Intelligence</h4>
                         <p className="text-slate-400 font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] text-[9px] md:text-[11px]">
-                            Plot no 491, Madhavapuri Hills, PJR Layout, Miyapur, Hyderabad
+                            {settings.TURF_LOCATION}
                         </p>
                     </div>
                     <a
-                        href="https://www.google.com/maps/dir/?api=1&destination=Plot+no+491,+The+Turf,+Madhavapuri+Hills,+PJR+Layout,+Miyapur,+Hyderabad"
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(settings.TURF_LOCATION)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full md:w-auto bg-slate-900 text-white px-8 md:px-12 py-4 md:py-5 rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-[0.2em] hover:bg-black transition-all shadow-2xl active:scale-95 whitespace-nowrap text-center"

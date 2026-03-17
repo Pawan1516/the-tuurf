@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { bookingsAPI } from '../api/client';
+import { bookingsAPI, slotsAPI } from '../api/client';
 import {
     CheckCircle,
     Clock4,
@@ -23,6 +23,7 @@ const SuccessPage = () => {
     const navigate = useNavigate();
     const initialBooking = location.state?.booking;
     const [booking, setBooking] = useState(initialBooking);
+    const [settings, setSettings] = useState({ TURF_NAME: 'The Turf', TURF_LOCATION: 'The Turf Stadium' });
     const [liveStatus, setLiveStatus] = useState(initialBooking?.bookingStatus || 'pending');
     const [polling, setPolling] = useState(true);
 
@@ -56,6 +57,20 @@ const SuccessPage = () => {
         const interval = setInterval(pollStatus, 5000);
         return () => clearInterval(interval);
     }, [initialBooking]);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const { data } = await slotsAPI.getSettings();
+                if (data.success) {
+                    setSettings(prev => ({ ...prev, ...data.settings }));
+                }
+            } catch (err) {
+                console.error('Settings fetch error:', err);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     if (!booking) return null;
 
@@ -275,7 +290,7 @@ const SuccessPage = () => {
                                     <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em] flex items-center gap-2">
                                         <MapPin size={12} /> Venue
                                     </p>
-                                    <p className="text-gray-900 font-black text-sm uppercase tracking-tight">The Turf, Miyapur</p>
+                                    <p className="text-gray-900 font-black text-sm uppercase tracking-tight">{settings.TURF_LOCATION}</p>
                                 </div>
                                 <div className="space-y-1 md:text-right">
                                     <p className="text-gray-400 text-[8px] font-black uppercase tracking-[0.3em]">{booking.paymentType === 'full' ? 'Settlement (Full)' : 'Settlement (Advance)'}</p>
@@ -314,7 +329,7 @@ const SuccessPage = () => {
                             onClick={() => navigate('/')}
                             className="w-full bg-gray-900 hover:bg-black text-white font-black py-5 md:py-7 rounded-xl md:rounded-[2rem] shadow-2xl shadow-gray-900/10 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 md:gap-4 text-[11px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] group"
                         >
-                            Back To Arena <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+                            Back To {settings.TURF_NAME} <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
                         </button>
                     </div>
                 </div>

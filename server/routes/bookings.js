@@ -73,10 +73,19 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid window. Start must be before End.' });
     }
 
-    if (startM < 7 * 60 || endM > 23 * 60) {
+    // Fetch settings for operation hours and hold duration
+    const Setting = require('../models/Setting');
+    const settings = await Setting.find();
+    const config = settings.reduce((acc, s) => { acc[s.key] = s.value; return acc; }, {});
+    
+    const openHour = config.TURF_OPEN_HOUR || 7;
+    const closeHour = config.TURF_CLOSE_HOUR || 23;
+    const holdDuration = config.HOLD_DURATION_MINUTES || 5;
+
+    if (startM < openHour * 60 || endM > closeHour * 60) {
       return res.status(400).json({
         success: false,
-        message: 'Operational window violation. The arena is only accessible between 07:00 AM and 11:00 PM.'
+        message: `Operational window violation. The arena is only accessible between ${openHour.toString().padStart(2, '0')}:00 and ${closeHour.toString().padStart(2, '0')}:00.`
       });
     }
 
@@ -114,7 +123,7 @@ router.post('/', async (req, res) => {
           status: 'hold',
           startTime: startTimeClean,
           endTime: endTimeClean,
-          holdExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
+          holdExpiresAt: new Date(Date.now() + holdDuration * 60 * 1000),
           updatedAt: new Date()
         },
         { new: true }
@@ -128,7 +137,7 @@ router.post('/', async (req, res) => {
         {
           status: 'hold',
           endTime: endTimeClean,
-          holdExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
+          holdExpiresAt: new Date(Date.now() + holdDuration * 60 * 1000),
           updatedAt: new Date()
         },
         { new: true }
@@ -140,7 +149,7 @@ router.post('/', async (req, res) => {
           startTime: startTimeClean,
           endTime: endTimeClean,
           status: 'hold',
-          holdExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
+          holdExpiresAt: new Date(Date.now() + holdDuration * 60 * 1000),
           price: amount
         });
         await slot.save();

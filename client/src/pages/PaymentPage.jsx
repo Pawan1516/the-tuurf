@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { bookingsAPI } from '../api/client';
+import { bookingsAPI, slotsAPI } from '../api/client';
 import { Lock, ArrowLeft, Info, QrCode, ShieldCheck, Zap, Hash, Clock } from 'lucide-react';
 
 const PaymentPage = () => {
@@ -11,20 +11,27 @@ const PaymentPage = () => {
     const [error, setError] = useState('');
     const [transactionId, setTransactionId] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [settings, setSettings] = useState({ TURF_NAME: 'The Turf', UPI_ID: 'theturf@upi' });
 
     useEffect(() => {
-        const fetchBooking = async () => {
+        const fetchInitialData = async () => {
             try {
-                const res = await bookingsAPI.getById(bookingId);
-                setBooking(res.data.booking);
+                const [bookingRes, settingsRes] = await Promise.all([
+                    bookingsAPI.getById(bookingId),
+                    slotsAPI.getSettings()
+                ]);
+                setBooking(bookingRes.data.booking);
+                if (settingsRes.data.success) {
+                    setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
+                }
                 setLoading(false);
             } catch (err) {
-                console.error('Error fetching booking:', err);
-                setError('Failed to load booking details.');
+                console.error('Error fetching data:', err);
+                setError('Failed to load transaction details.');
                 setLoading(false);
             }
         };
-        fetchBooking();
+        fetchInitialData();
     }, [bookingId]);
 
     const handleManualPaymentSubmit = async (e) => {
@@ -106,14 +113,14 @@ const PaymentPage = () => {
                             <div className="bg-white p-8 rounded-[2.5rem] border-2 border-emerald-50 inline-block shadow-2xl shadow-emerald-900/5 relative group">
                                 <div className="absolute inset-0 bg-emerald-500/5 scale-0 group-hover:scale-100 transition-transform duration-500 rounded-[2.5rem]"></div>
                                 <img
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=theturf@upi&pn=The%20Turf&am=${booking?.amount}&cu=INR`}
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=${settings.UPI_ID}&pn=${encodeURIComponent(settings.TURF_NAME)}&am=${booking?.amount}&cu=INR`}
                                     alt="Payment QR"
                                     className="w-56 h-56 mx-auto relative z-10 rounded-xl"
                                 />
                             </div>
 
                             <div className="mt-8 text-center space-y-2">
-                                <p className="text-gray-900 font-black text-2xl tracking-tighter uppercase leading-none">theturf@upi</p>
+                                <p className="text-gray-900 font-black text-2xl tracking-tighter uppercase leading-none">{settings.UPI_ID}</p>
                                 <div className="flex items-center justify-center gap-2">
                                     <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                                     <p className="text-gray-400 font-black text-[9px] uppercase tracking-[0.3em]">Verified Settlement Hub</p>

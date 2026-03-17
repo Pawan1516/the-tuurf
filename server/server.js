@@ -26,9 +26,14 @@ const paymentRoutes = require('./routes/payments');
 const chatbotRoutes = require('./routes/chatbot');
 const whatsappRoutes = require('./routes/whatsapp');
 
+const seedSettings = require('./utils/settingsSeeder');
+
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB Connected Successfully'))
+  .then(async () => {
+    console.log('✅ MongoDB Connected Successfully');
+    await seedSettings();
+  })
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 const app = express();

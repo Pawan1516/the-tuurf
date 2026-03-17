@@ -8,6 +8,7 @@ const verifyToken = require('../middleware/verifyToken');
 const roleGuard = require('../middleware/roleGuard');
 const { generateBookingReport, createPDF } = require('../services/pdfReport');
 const { createBookingEntry } = require('../services/bookingService');
+const Setting = require('../models/Setting');
 
 // Create Worker (ADMIN ONLY)
 router.post('/workers', verifyToken, roleGuard(['admin']), async (req, res) => {
@@ -353,14 +354,28 @@ router.post('/ai-command', verifyToken, roleGuard(['admin']), async (req, res) =
       const endH = h + hoursToAdd;
       const endTime = `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
-      // Calculate amount based on prompt rules
+      // Calculate amount based on system settings
+      const settings = await Setting.find();
+      const config = settings.reduce((acc, s) => { acc[s.key] = s.value; return acc; }, {});
+      
+      const priceDay = config.PRICE_DAY || 1000;
+      const priceNight = config.PRICE_NIGHT || 1200;
+      const priceWeekendDay = config.PRICE_WEEKEND_DAY || 1000;
+      const priceWeekendNight = config.PRICE_WEEKEND_NIGHT || 1400;
+      const transHour = config.PRICE_TRANSITION_HOUR || 18;
+
+      const bookingDate = new Date(date);
+      const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
+      
       let amount = 0;
-      if (hoursToAdd === 1) {
-        amount = h < 18 ? 800 : 1200;
-      } else {
-        if (h < 18 && endH <= 18) amount = 1600;
-        else if (h >= 18) amount = 2400;
-        else amount = 2000;
+      for (let i = 0; i < hoursToAdd; i++) {
+        const currentHour = h + i;
+        const isDay = currentHour < transHour;
+        if (isWeekend) {
+          amount += isDay ? priceWeekendDay : priceWeekendNight;
+        } else {
+          amount += isDay ? priceDay : priceNight;
+        }
       }
 
       try {
@@ -398,6 +413,41 @@ router.post('/ai-command', verifyToken, roleGuard(['admin']), async (req, res) =
       reply: aiResponse.reply
     });
 
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET Settings (ADMIN ONLY)
+router.get('/settings', verifyToken, roleGuard(['admin']), async (req, res) => {
+  try {
+    const settings = await Setting.find();
+    // Transform to an object for easier frontend use
+    const config = settings.reduce((acc, s) => {
+      acc[s.key] = s.value;
+      return acc;
+    }, {});
+    res.json({ success: true, settings: config });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update Settings (Bulk) (ADMIN ONLY)
+router.post('/settings/bulk', verifyToken, roleGuard(['admin']), async (req, res) => {
+  try {
+    const { settings } = req.body; // Expecting { key: value, ... }
+
+    const operations = Object.entries(settings).map(([key, value]) => ({
+      updateOne: {
+        filter: { key },
+        update: { value },
+        upsert: true
+      }
+    }));
+
+    await Setting.bulkWrite(operations);
+    res.json({ success: true, message: 'Settings synchronization complete.' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

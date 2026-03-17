@@ -16,6 +16,15 @@ const BookingPage = () => {
         startTime: '',
         endTime: ''
     });
+    const [settings, setSettings] = useState({
+        PRICE_DAY: 1000,
+        PRICE_NIGHT: 1200,
+        PRICE_WEEKEND_DAY: 1000,
+        PRICE_WEEKEND_NIGHT: 1400,
+        PRICE_TRANSITION_HOUR: 18,
+        TURF_NAME: 'The Turf',
+        TURF_LOCATION: 'Plot no 491, Madhavapuri Hills, PJR Enclave, PJR Layout, Miyapur, Hyderabad'
+    });
     const [calculatedPrice, setCalculatedPrice] = useState(1000);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -30,23 +39,25 @@ const BookingPage = () => {
             if (duration > 0) {
                 const bookingDate = new Date(formData.date);
                 const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
-                const isDay = sh < 18;
-                const baseRate = isWeekend ? (isDay ? 1000 : 1400) : (isDay ? 1000 : 1200);
+                const isDay = sh < settings.PRICE_TRANSITION_HOUR;
+                const baseRate = isWeekend 
+                    ? (isDay ? settings.PRICE_WEEKEND_DAY : settings.PRICE_WEEKEND_NIGHT) 
+                    : (isDay ? settings.PRICE_DAY : settings.PRICE_NIGHT);
 
                 let totalPrice = (duration / 60) * baseRate;
 
-                // If the booking crosses 6 PM (18:00) into night time
-                if (sh < 18 && (sh + duration / 60) > 18) {
-                    const dayHours = (18 * 60 - (sh * 60 + sm)) / 60;
+                // Handle split pricing if booking crosses transition hour
+                if (sh < settings.PRICE_TRANSITION_HOUR && (sh + duration / 60) > settings.PRICE_TRANSITION_HOUR) {
+                    const dayHours = (settings.PRICE_TRANSITION_HOUR * 60 - (sh * 60 + sm)) / 60;
                     const nightHours = (duration / 60) - dayHours;
-                    const nightRate = isWeekend ? 1400 : 1200;
+                    const nightRate = isWeekend ? settings.PRICE_WEEKEND_NIGHT : settings.PRICE_NIGHT;
                     totalPrice = (dayHours * baseRate) + (nightHours * nightRate);
                 }
 
                 setCalculatedPrice(Math.max(200, Math.ceil(totalPrice)));
             }
         }
-    }, [formData.startTime, formData.endTime, formData.date]);
+    }, [formData.startTime, formData.endTime, formData.date, settings]);
 
     const adjustEndTime = (minutes) => {
         if (!formData.startTime) return;
@@ -62,36 +73,51 @@ const BookingPage = () => {
     };
 
     useEffect(() => {
-        const fetchSlot = async () => {
-            if (!slotId || slotId === 'custom') {
-                setFormData(prev => ({
-                    ...prev,
-                    date: new Date().toISOString().split('T')[0],
-                    startTime: '10:00',
-                    endTime: '11:00'
-                }));
-                setLoading(false);
-                return;
-            }
-            try {
-                const res = await slotsAPI.getById(slotId);
-                const s = res.data.slot || res.data;
-                // Sync formData with slot data
-                setFormData(prev => ({
-                    ...prev,
-                    date: s.date ? new Date(s.date).toISOString().split('T')[0] : '',
-                    startTime: s.startTime || '',
-                    endTime: s.endTime || ''
-                }));
-                setLoading(false);
-            } catch (err) {
-                console.error('Error fetching slot:', err);
-                setError('Failed to load slot details.');
-                setLoading(false);
-            }
+        const init = async () => {
+            await Promise.all([fetchSlot(), fetchSettings()]);
         };
-        fetchSlot();
+        init();
     }, [slotId]);
+
+    const fetchSettings = async () => {
+        try {
+            const res = await slotsAPI.getSettings();
+            if (res.data.success) {
+                setSettings(prev => ({ ...prev, ...res.data.settings }));
+            }
+        } catch (err) {
+            console.error('Error fetching settings:', err);
+        }
+    };
+
+    const fetchSlot = async () => {
+        if (!slotId || slotId === 'custom') {
+            setFormData(prev => ({
+                ...prev,
+                date: new Date().toISOString().split('T')[0],
+                startTime: '10:00',
+                endTime: '11:00'
+            }));
+            setLoading(false);
+            return;
+        }
+        try {
+            const res = await slotsAPI.getById(slotId);
+            const s = res.data.slot || res.data;
+            // Sync formData with slot data
+            setFormData(prev => ({
+                ...prev,
+                date: s.date ? new Date(s.date).toISOString().split('T')[0] : '',
+                startTime: s.startTime || '',
+                endTime: s.endTime || ''
+            }));
+            setLoading(false);
+        } catch (err) {
+            console.error('Error fetching slot:', err);
+            setError('Failed to load slot details.');
+            setLoading(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -115,7 +141,7 @@ const BookingPage = () => {
                 date: formData.date,
                 startTime: formData.startTime,
                 endTime: formData.endTime,
-                turfLocation: 'The Turf, Miyapur',
+                turfLocation: `${settings.TURF_NAME}, ${settings.TURF_LOCATION}`,
                 amount: calculatedPrice,
                 paymentType: paymentType,
                 userId: user?.id
@@ -249,7 +275,7 @@ const BookingPage = () => {
                                     </div>
                                     <div>
                                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Venue Cluster</p>
-                                        <p className="font-black text-gray-900 text-xl uppercase tracking-tighter">The Turf, Miyapur</p>
+                                        <p className="font-black text-gray-900 text-xl uppercase tracking-tighter">{settings.TURF_LOCATION}</p>
                                         <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest mt-0.5">Arena One · Premier Surface</p>
                                     </div>
                                 </div>
@@ -299,7 +325,7 @@ const BookingPage = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Time Segment (07:00 AM - 11:00 PM)</label>
+                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Time Segment ({settings.TURF_OPEN_HOUR}:00 - {settings.TURF_CLOSE_HOUR}:00)</label>
                                         <div className="flex flex-col gap-2">
                                             <div className="flex gap-2">
                                                 <input

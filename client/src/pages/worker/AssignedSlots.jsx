@@ -11,6 +11,7 @@ const WorkerAssignedSlots = () => {
     const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+    const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
     const navItems = [
         { to: '/worker/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -50,7 +51,19 @@ const WorkerAssignedSlots = () => {
             }
         };
         fetchSlots();
+        fetchSettings();
     }, [user]);
+
+    const fetchSettings = async () => {
+        try {
+            const { data } = await slotsAPI.getSettings();
+            if (data.success) {
+                setSettings(prev => ({ ...prev, ...data.settings }));
+            }
+        } catch (err) {
+            console.error('Settings fetch error:', err);
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -71,7 +84,7 @@ const WorkerAssignedSlots = () => {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Worker Ops" />
+            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
             {/* Sidebar (Desktop Only) */}
             <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
@@ -80,7 +93,7 @@ const WorkerAssignedSlots = () => {
                         <LayoutDashboard size={24} />
                     </div>
                     <div>
-                        <h1 className="text-lg font-black text-gray-900 tracking-tight leading-none uppercase">WORKER PORTAL</h1>
+                        <h1 className="text-lg font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
                         <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Live Management</p>
                     </div>
                 </div>

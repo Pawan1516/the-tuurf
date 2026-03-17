@@ -30,6 +30,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [period, setPeriod] = useState('all');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -38,6 +39,7 @@ const AdminDashboard = () => {
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
     { to: '/admin/workers', label: 'Workers', icon: Briefcase },
     { to: '/admin/report', label: 'Report', icon: PieChart },
+    { to: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   // Audio Alarm (Base64 Chime)
@@ -69,6 +71,20 @@ const AdminDashboard = () => {
       console.error('Error fetching stats:', error);
     }
   }, [period, lastBookingCount]);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await adminAPI.getSettings();
+        if (data.success) {
+          setSettings(prev => ({ ...prev, ...data.settings }));
+        }
+      } catch (err) {
+        console.error('Error fetching settings:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     fetchStats();
@@ -119,7 +135,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Turf Admin" />
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
       {/* Sidebar (Desktop Only) */}
       <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
@@ -128,7 +144,7 @@ const AdminDashboard = () => {
             <Database size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">The Turf</h1>
+            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin</p>
           </div>
         </div>

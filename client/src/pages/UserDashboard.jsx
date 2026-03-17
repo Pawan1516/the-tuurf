@@ -22,6 +22,7 @@ const UserDashboard = () => {
     const [bookings, setBookings] = useState([]);
     const [todaySlots, setTodaySlots] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [settings, setSettings] = useState({ TURF_NAME: 'The Turf', TURF_LOCATION: 'The Turf Stadium' });
     const navigate = useNavigate();
 
     const navItems = [
@@ -37,12 +38,16 @@ const UserDashboard = () => {
         try {
             setLoading(true);
             const today = new Date().toISOString().split('T')[0];
-            const [bookingRes, slotRes] = await Promise.all([
+            const [bookingRes, slotRes, settingsRes] = await Promise.all([
                 bookingsAPI.getMyBookings(),
-                slotsAPI.getAll(today)
+                slotsAPI.getAll(today),
+                slotsAPI.getSettings()
             ]);
             setBookings(bookingRes.data.bookings || []);
             setTodaySlots(slotRes.data || []);
+            if (settingsRes.data.success) {
+                setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
+            }
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -75,7 +80,7 @@ const UserDashboard = () => {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="My Turf" />
+            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
             {/* Sidebar (Desktop Only) */}
             <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
@@ -84,7 +89,7 @@ const UserDashboard = () => {
                         <Database size={24} />
                     </div>
                     <div>
-                        <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">The Turf</h1>
+                        <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
                         <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Player Dashboard</p>
                     </div>
                 </div>
@@ -216,7 +221,7 @@ const UserDashboard = () => {
                                                     </div>
                                                     <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-black text-gray-500 uppercase tracking-tight">
                                                         <MapPin size={14} className="text-emerald-500" />
-                                                        {booking.turfLocation}
+                                                        {booking.turfLocation || settings.TURF_LOCATION}
                                                     </div>
                                                 </div>
                                             </div>

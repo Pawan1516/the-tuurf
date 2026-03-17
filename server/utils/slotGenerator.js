@@ -1,5 +1,18 @@
 const Slot = require('../models/Slot');
+const Setting = require('../models/Setting');
 const mongoose = require('mongoose');
+
+/**
+ * Helper to fetch settings with fallback
+ */
+const getSetting = async (key, fallback) => {
+    try {
+        const setting = await Setting.findOne({ key });
+        return setting ? setting.value : fallback;
+    } catch (e) {
+        return fallback;
+    }
+};
 
 /**
  * Ensures that slots for the next X days exist in the database.
@@ -10,6 +23,15 @@ const autoGenerateSlots = async (daysAhead = 30) => {
 
     try {
         console.log(`🔄 Maintenance: Syncing slots for the next ${daysAhead} days...`);
+
+        // Fetch prices from settings or env
+        const priceDay = await getSetting('PRICE_DAY', parseInt(process.env.PRICE_DAY) || 1000);
+        const priceNight = await getSetting('PRICE_NIGHT', parseInt(process.env.PRICE_NIGHT) || 1200);
+        const priceWeekendDay = await getSetting('PRICE_WEEKEND_DAY', parseInt(process.env.PRICE_WEEKEND_DAY) || 1000);
+        const priceWeekendNight = await getSetting('PRICE_WEEKEND_NIGHT', parseInt(process.env.PRICE_WEEKEND_NIGHT) || 1400);
+        const transitionHour = await getSetting('PRICE_TRANSITION_HOUR', parseInt(process.env.PRICE_TRANSITION_HOUR) || 18);
+        const openHour = await getSetting('TURF_OPEN_HOUR', parseInt(process.env.TURF_OPEN_HOUR) || 7);
+        const closeHour = await getSetting('TURF_CLOSE_HOUR', parseInt(process.env.TURF_CLOSE_HOUR) || 23);
 
         // 1. Cleanup: Delete slots from previous days
         const yesterday = new Date();
@@ -35,9 +57,6 @@ const autoGenerateSlots = async (daysAhead = 30) => {
             const existingStarts = new Set(existingSlots.map(s => s.startTime));
 
             const newSlots = [];
-            // Target: Configured hours
-            const openHour = parseInt(process.env.TURF_OPEN_HOUR) || 7;
-            const closeHour = parseInt(process.env.TURF_CLOSE_HOUR) || 23;
 
             for (let hour = openHour; hour < closeHour; hour++) {
                 const startTime = `${hour.toString().padStart(2, '0')}:00`;
@@ -50,12 +69,11 @@ const autoGenerateSlots = async (daysAhead = 30) => {
                         endTime,
                         price: (() => {
                             const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                            const transitionHour = parseInt(process.env.PRICE_TRANSITION_HOUR) || 18;
                             const isDay = hour < transitionHour;
                             if (isWeekend) {
-                                return isDay ? (parseInt(process.env.PRICE_WEEKEND_DAY) || 1000) : (parseInt(process.env.PRICE_WEEKEND_NIGHT) || 1400);
+                                return isDay ? priceWeekendDay : priceWeekendNight;
                             } else {
-                                return isDay ? (parseInt(process.env.PRICE_DAY) || 1000) : (parseInt(process.env.PRICE_NIGHT) || 1200);
+                                return isDay ? priceDay : priceNight;
                             }
                         })(),
                         status: 'free'

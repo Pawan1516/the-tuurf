@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Slot = require('../models/Slot');
 const Worker = require('../models/Worker');
+const Setting = require('../models/Setting');
 const verifyToken = require('../middleware/verifyToken');
 const roleGuard = require('../middleware/roleGuard');
 
@@ -40,6 +41,20 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Error fetching slots:', error);
     res.status(500).json({ success: false, message: 'Failed to synchronize slots' });
+  }
+});
+
+// GET Public Settings
+router.get('/settings', async (req, res) => {
+  try {
+    const settings = await Setting.find();
+    const config = settings.reduce((acc, s) => {
+      acc[s.key] = s.value;
+      return acc;
+    }, {});
+    res.json({ success: true, settings: config });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch settings' });
   }
 });
 

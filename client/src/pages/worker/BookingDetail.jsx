@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
-import { bookingsAPI } from '../../api/client';
+import { bookingsAPI, slotsAPI } from '../../api/client';
 import MobileNav from '../../components/MobileNav';
 import {
   ArrowLeft, Check, X, User, Phone, MapPin, Calendar, Clock,
@@ -22,6 +22,7 @@ const WorkerBookingDetail = () => {
   const [userName, setUserName] = useState('');
   const [editingName, setEditingName] = useState(false);
   const [error, setError] = useState('');
+  const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
   const navItems = [
     { to: '/worker/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -41,6 +42,20 @@ const WorkerBookingDetail = () => {
       setLoading(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await slotsAPI.getSettings();
+        if (data.success) {
+          setSettings(prev => ({ ...prev, ...data.settings }));
+        }
+      } catch (err) {
+        console.error('Settings fetch error:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   useEffect(() => { fetchBooking(); }, [id, fetchBooking]);
 
@@ -143,7 +158,7 @@ const WorkerBookingDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Turf Ops" />
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
       {/* Sidebar (Desktop Only) */}
       <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
@@ -152,7 +167,7 @@ const WorkerBookingDetail = () => {
             <LayoutDashboard size={24} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-gray-900 tracking-tight leading-none uppercase">WORKER PORTAL</h1>
+            <h1 className="text-lg font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Live Management</p>
           </div>
         </div>

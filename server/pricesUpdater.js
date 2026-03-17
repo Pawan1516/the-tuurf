@@ -1,11 +1,28 @@
 const mongoose = require('mongoose');
 const Slot = require('./models/Slot');
+const Setting = require('./models/Setting');
 require('dotenv').config();
+
+const getSetting = async (key, fallback) => {
+    try {
+        const setting = await Setting.findOne({ key });
+        return setting ? setting.value : fallback;
+    } catch (e) {
+        return fallback;
+    }
+};
 
 const updatePrices = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('Connected to MongoDB');
+
+        // Fetch prices from settings or env
+        const priceDay = await getSetting('PRICE_DAY', parseInt(process.env.PRICE_DAY) || 1000);
+        const priceNight = await getSetting('PRICE_NIGHT', parseInt(process.env.PRICE_NIGHT) || 1200);
+        const priceWeekendDay = await getSetting('PRICE_WEEKEND_DAY', parseInt(process.env.PRICE_WEEKEND_DAY) || 1000);
+        const priceWeekendNight = await getSetting('PRICE_WEEKEND_NIGHT', parseInt(process.env.PRICE_WEEKEND_NIGHT) || 1400);
+        const transitionHour = await getSetting('PRICE_TRANSITION_HOUR', parseInt(process.env.PRICE_TRANSITION_HOUR) || 18);
 
         const freeSlots = await Slot.find({ status: 'free' });
         console.log(`Found ${freeSlots.length} free slots to check.`);
@@ -20,13 +37,7 @@ const updatePrices = async () => {
             if (!slot.startTime) continue;
 
             const hour = parseInt(slot.startTime.split(':')[0]);
-            const transitionHour = parseInt(process.env.PRICE_TRANSITION_HOUR) || 18;
             const isDay = hour < transitionHour;
-
-            const priceDay = parseInt(process.env.PRICE_DAY) || 1000;
-            const priceNight = parseInt(process.env.PRICE_NIGHT) || 1200;
-            const priceWeekendDay = parseInt(process.env.PRICE_WEEKEND_DAY) || 1000;
-            const priceWeekendNight = parseInt(process.env.PRICE_WEEKEND_NIGHT) || 1400;
 
             let newPrice;
             if (isWeekend) {

@@ -13,7 +13,8 @@ import {
   X,
   TrendingUp,
   Clock,
-  Trash2
+  Trash2,
+  Settings
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { slotsAPI, adminAPI } from '../../api/client';
@@ -35,6 +36,16 @@ const AdminSlots = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [settings, setSettings] = useState({
+    PRICE_DAY: 1000,
+    PRICE_NIGHT: 1200,
+    PRICE_WEEKEND_DAY: 1000,
+    PRICE_WEEKEND_NIGHT: 1400,
+    PRICE_TRANSITION_HOUR: 18,
+    TURF_OPEN_HOUR: 7,
+    TURF_CLOSE_HOUR: 23,
+    TURF_NAME: 'The Turf'
+  });
   const [bookingData, setBookingData] = useState({
     userName: '',
     userPhone: '',
@@ -47,6 +58,7 @@ const AdminSlots = () => {
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
     { to: '/admin/workers', label: 'Workers', icon: Briefcase },
     { to: '/admin/report', label: 'Report', icon: PieChart },
+    { to: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   useEffect(() => {
@@ -57,26 +69,44 @@ const AdminSlots = () => {
       if (duration > 0) {
         const bookingDate = new Date(selectedSlot.date);
         const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
-        const isDay = sh < 18;
-        const baseRate = isWeekend ? (isDay ? 1000 : 1400) : (isDay ? 1000 : 1200);
+        const isDay = sh < settings.PRICE_TRANSITION_HOUR;
+        
+        const baseRate = isWeekend 
+          ? (isDay ? settings.PRICE_WEEKEND_DAY : settings.PRICE_WEEKEND_NIGHT) 
+          : (isDay ? settings.PRICE_DAY : settings.PRICE_NIGHT);
+        
         let totalPrice = (duration / 60) * baseRate;
-        if (sh < 18 && (sh + duration / 60) > 18) {
-          const dayHours = (18 * 60 - (sh * 60 + sm)) / 60;
+        
+        // Handle split between day and night pricing if slot crosses transition hour
+        if (sh < settings.PRICE_TRANSITION_HOUR && (sh + duration / 60) > settings.PRICE_TRANSITION_HOUR) {
+          const dayHours = (settings.PRICE_TRANSITION_HOUR * 60 - (sh * 60 + sm)) / 60;
           const nightHours = (duration / 60) - dayHours;
-          const nightRate = isWeekend ? 1400 : 1200;
+          const nightRate = isWeekend ? settings.PRICE_WEEKEND_NIGHT : settings.PRICE_NIGHT;
           totalPrice = (dayHours * baseRate) + (nightHours * nightRate);
         }
+        
         setBookingData(prev => ({ ...prev, amount: Math.max(200, Math.ceil(totalPrice)).toString() }));
       }
     }
-  }, [selectedSlot]);
+  }, [selectedSlot, settings]);
 
   useEffect(() => {
     const init = async () => {
-      await Promise.all([fetchSlots(), fetchWorkers()]);
+      await Promise.all([fetchSlots(), fetchWorkers(), fetchSettings()]);
     };
     init();
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await adminAPI.getSettings();
+      if (response.data.success) {
+        setSettings(prev => ({ ...prev, ...response.data.settings }));
+      }
+    } catch (e) {
+      console.error('Error fetching settings:', e);
+    }
+  };
 
   const fetchSlots = async () => {
     try {
@@ -231,7 +261,7 @@ const AdminSlots = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Turf Ops" />
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
       {/* Sidebar (Desktop Only) */}
       <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
@@ -240,7 +270,7 @@ const AdminSlots = () => {
             <Database size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">The Turf</h1>
+            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin OS v2.0</p>
           </div>
         </div>
@@ -301,11 +331,11 @@ const AdminSlots = () => {
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start T-Minus</label>
-                  <input type="time" name="startTime" min="07:00" max="23:00" value={formData.startTime} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
+                  <input type="time" name="startTime" min={`${String(settings.TURF_OPEN_HOUR).padStart(2, '0')}:00`} max={`${String(settings.TURF_CLOSE_HOUR).padStart(2, '0')}:00`} value={formData.startTime} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Phase</label>
-                  <input type="time" name="endTime" min="07:00" max="23:00" value={formData.endTime} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
+                  <input type="time" name="endTime" min={`${String(settings.TURF_OPEN_HOUR).padStart(2, '0')}:00`} max={`${String(settings.TURF_CLOSE_HOUR).padStart(2, '0')}:00`} value={formData.endTime} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
                 </div>
                 <div className="flex flex-col gap-4">
                   <div className="flex gap-2">

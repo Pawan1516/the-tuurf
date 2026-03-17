@@ -56,7 +56,8 @@ export const slotsAPI = {
     apiClient.put(`/slots/${id}/status`, { status }),
   assignWorker: (id, workerId) =>
     apiClient.put(`/slots/${id}/assign`, { workerId }),
-  delete: (id) => apiClient.delete(`/slots/${id}`)
+  delete: (id) => apiClient.delete(`/slots/${id}`),
+  getSettings: () => apiClient.get('/slots/settings')
 };
 
 // Bookings APIs
@@ -116,7 +117,9 @@ export const adminAPI = {
     apiClient.post('/admin/bookings/manual', data),
   getSystemStatus: () => apiClient.get('/admin/system/status'),
   syncSlots: () => apiClient.post('/admin/system/sync-slots'),
-  aiCommand: (message) => apiClient.post('/admin/ai-command', { message })
+  aiCommand: (message) => apiClient.post('/admin/ai-command', { message }),
+  getSettings: () => apiClient.get('/admin/settings'),
+  saveSettings: (settings) => apiClient.post('/admin/settings/bulk', { settings })
 };
 
 // Chatbot APIs

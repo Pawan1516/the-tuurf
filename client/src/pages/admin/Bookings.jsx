@@ -15,7 +15,8 @@ import {
   MessageSquare,
   MoreVertical,
   Database,
-  Zap
+  Zap,
+  Settings
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { bookingsAPI, adminAPI } from '../../api/client';
@@ -30,6 +31,14 @@ const AdminBookings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showManualModal, setShowManualModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [settings, setSettings] = useState({
+    PRICE_DAY: 1000,
+    PRICE_NIGHT: 1200,
+    PRICE_WEEKEND_DAY: 1000,
+    PRICE_WEEKEND_NIGHT: 1400,
+    PRICE_TRANSITION_HOUR: 18,
+    TURF_NAME: 'The Turf'
+  });
   const [manualData, setManualData] = useState({
     userName: '',
     userPhone: '',
@@ -47,6 +56,7 @@ const AdminBookings = () => {
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
     { to: '/admin/workers', label: 'Workers', icon: Briefcase },
     { to: '/admin/report', label: 'Report', icon: PieChart },
+    { to: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   useEffect(() => {
@@ -57,19 +67,37 @@ const AdminBookings = () => {
       if (duration > 0) {
         const bookingDate = new Date(manualData.date);
         const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
-        const isDay = sh < 18;
-        const baseRate = isWeekend ? (isDay ? 1000 : 1400) : (isDay ? 1000 : 1200);
+        const isDay = sh < settings.PRICE_TRANSITION_HOUR;
+        
+        const baseRate = isWeekend 
+          ? (isDay ? settings.PRICE_WEEKEND_DAY : settings.PRICE_WEEKEND_NIGHT) 
+          : (isDay ? settings.PRICE_DAY : settings.PRICE_NIGHT);
+        
         let totalPrice = (duration / 60) * baseRate;
-        if (sh < 18 && (sh + duration / 60) > 18) {
-          const dayHours = (18 * 60 - (sh * 60 + sm)) / 60;
+        
+        // Handle split pricing if slot crosses transition hour
+        if (sh < settings.PRICE_TRANSITION_HOUR && (sh + duration / 60) > settings.PRICE_TRANSITION_HOUR) {
+          const dayHours = (settings.PRICE_TRANSITION_HOUR * 60 - (sh * 60 + sm)) / 60;
           const nightHours = (duration / 60) - dayHours;
-          const nightRate = isWeekend ? 1400 : 1200;
+          const nightRate = isWeekend ? settings.PRICE_WEEKEND_NIGHT : settings.PRICE_NIGHT;
           totalPrice = (dayHours * baseRate) + (nightHours * nightRate);
         }
+        
         setManualData(prev => ({ ...prev, amount: Math.max(200, Math.ceil(totalPrice)).toString() }));
       }
     }
-  }, [manualData.startTime, manualData.endTime, manualData.date]);
+  }, [manualData.startTime, manualData.endTime, manualData.date, settings]);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await adminAPI.getSettings();
+      if (response.data.success) {
+        setSettings(prev => ({ ...prev, ...response.data.settings }));
+      }
+    } catch (e) {
+      console.error('Error fetching settings:', e);
+    }
+  };
 
   const handleManualBookingSubmit = async (e) => {
     e.preventDefault();
@@ -84,7 +112,7 @@ const AdminBookings = () => {
       setManualData({
         userName: '',
         userPhone: '',
-        amount: '1000',
+        amount: settings.PRICE_NIGHT.toString(),
         date: new Date().toISOString().split('T')[0],
         startTime: '18:00',
         endTime: '19:00',
@@ -110,8 +138,15 @@ const AdminBookings = () => {
     const fetchBookings = async () => {
       try {
         setLoading(true);
-        const response = await bookingsAPI.getAll(filter !== 'all' ? { status: filter } : {});
-        setBookings(response.data.bookings || []);
+        const [bookingsRes, settingsRes] = await Promise.all([
+          bookingsAPI.getAll(filter !== 'all' ? { status: filter } : {}),
+          adminAPI.getSettings()
+        ]);
+        
+        setBookings(bookingsRes.data.bookings || []);
+        if (settingsRes.data.success) {
+          setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
+        }
       } catch (err) {
         console.error('Failed to fetch bookings:', err);
       } finally {
@@ -243,7 +278,7 @@ const AdminBookings = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Turf Ops" />
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
       {/* Sidebar (Desktop) */}
       <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
@@ -252,7 +287,7 @@ const AdminBookings = () => {
             <Database size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">The Turf</h1>
+            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin OS v2.0</p>
           </div>
         </div>
@@ -416,11 +451,11 @@ const AdminBookings = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start Time (Min 07:00)</label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start Time (Min {settings.TURF_OPEN_HOUR}:00)</label>
                     <input
                       type="time"
-                      min="07:00"
-                      max="23:00"
+                      min={`${String(settings.TURF_OPEN_HOUR).padStart(2, '0')}:00`}
+                      max={`${String(settings.TURF_CLOSE_HOUR).padStart(2, '0')}:00`}
                       required
                       value={manualData.startTime}
                       onChange={(e) => setManualData({ ...manualData, startTime: e.target.value })}
@@ -428,11 +463,11 @@ const AdminBookings = () => {
                     />
                   </div>
                   <div className="space-y-2 relative">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Time (Max 23:00)</label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Time (Max {settings.TURF_CLOSE_HOUR}:00)</label>
                     <input
                       type="time"
-                      min="07:00"
-                      max="23:00"
+                      min={`${String(settings.TURF_OPEN_HOUR).padStart(2, '0')}:00`}
+                      max={`${String(settings.TURF_CLOSE_HOUR).padStart(2, '0')}:00`}
                       required
                       value={manualData.endTime}
                       onChange={(e) => setManualData({ ...manualData, endTime: e.target.value })}

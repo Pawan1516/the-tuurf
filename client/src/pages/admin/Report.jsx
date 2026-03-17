@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -12,7 +12,8 @@ import {
   Database,
   ShieldCheck,
   TrendingUp,
-  Cpu
+  Cpu,
+  Settings
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
@@ -24,6 +25,7 @@ const AdminReport = () => {
   const [downloading, setDownloading] = useState(false);
   const [period, setPeriod] = useState('all');
   const [error, setError] = useState('');
+  const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,12 +33,27 @@ const AdminReport = () => {
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
     { to: '/admin/workers', label: 'Workers', icon: Briefcase },
     { to: '/admin/report', label: 'Report', icon: PieChart },
+    { to: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   const handleLogout = () => {
     logout();
     navigate('/admin/login');
   };
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await adminAPI.getSettings();
+        if (data.success) {
+          setSettings(prev => ({ ...prev, ...data.settings }));
+        }
+      } catch (err) {
+        console.error('Settings fetch error:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const handleDownloadReport = async (format = 'pdf') => {
     setDownloading(true);
@@ -78,7 +95,7 @@ const AdminReport = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="Turf Ops" />
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
       {/* Sidebar (Desktop) */}
       <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
@@ -87,7 +104,7 @@ const AdminReport = () => {
             <Database size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">The Turf</h1>
+            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin</p>
           </div>
         </div>
