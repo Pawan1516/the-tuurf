@@ -64,8 +64,17 @@ const autoGenerateSlots = async (daysAhead = 30) => {
             }
 
             if (newSlots.length > 0) {
-                await Slot.insertMany(newSlots);
-                console.log(`✅ Synced ${newSlots.length} missing segments for ${date.toDateString()}`);
+                try {
+                    const result = await Slot.insertMany(newSlots, { ordered: false });
+                    console.log(`✅ Synced ${result.length} missing segments for ${date.toDateString()}`);
+                } catch (insertErr) {
+                    // Ignore duplicate key errors (11000) — slot already exists
+                    if (insertErr.code !== 11000 && (!insertErr.writeErrors || insertErr.writeErrors.some(e => e.code !== 11000))) {
+                        throw insertErr;
+                    }
+                    const inserted = insertErr.insertedDocs?.length ?? (newSlots.length - (insertErr.writeErrors?.length ?? 0));
+                    if (inserted > 0) console.log(`✅ Synced ${inserted} new slots for ${date.toDateString()} (skipped duplicates)`);
+                }
             }
         }
     } catch (error) {
