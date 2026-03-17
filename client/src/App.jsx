@@ -26,7 +26,7 @@ import AdminSettings from './pages/admin/Settings';
 import UserDashboard from './pages/UserDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import CricBotWidget from './components/CricBotWidget';
-import { adminAPI } from './api/client';
+import { slotsAPI } from './api/client';
 
 const Layout = ({ children, turfName = "The Turf" }) => (
   <div className="min-h-screen bg-gray-50 font-sans selection:bg-emerald-100 selection:text-emerald-900">
@@ -71,7 +71,7 @@ function App() {
   React.useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { data } = await adminAPI.getSettings();
+        const { data } = await slotsAPI.getSettings();
         if (data.success) {
           setSettings(prev => ({ ...prev, ...data.settings }));
         }

@@ -30,10 +30,18 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Clear local storage if token is invalid
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      
+      // ONLY redirect if we are on a protected page
+      const protectedPaths = ['/dashboard', '/admin', '/worker'];
+      const isProtected = protectedPaths.some(p => window.location.pathname.startsWith(p));
+      const IsLoginPage = window.location.pathname.includes('login');
+
+      if (isProtected && !IsLoginPage) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
