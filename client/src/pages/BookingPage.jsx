@@ -175,7 +175,7 @@ const BookingPage = () => {
             </div>
 
             <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 md:py-16">
-                <div className="grid lg:grid-cols-2 gap-10 md:gap-16 items-start">
+                <div className="grid lg:grid-cols-2 gap-6 md:gap-16 items-start">
 
                     {/* Left Column: Summary & Verification */}
                     <div className="space-y-8 md:space-y-10">
@@ -193,7 +193,7 @@ const BookingPage = () => {
 
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex flex-col gap-4 transition-transform hover:scale-[1.02]">
+                                <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex flex-col gap-3 md:gap-4 transition-transform hover:scale-[1.02]">
                                     <div className="bg-emerald-100 p-3 rounded-2xl text-emerald-600 w-fit">
                                         <Calendar size={24} />
                                     </div>
@@ -205,7 +205,7 @@ const BookingPage = () => {
                                     </div>
                                 </div>
 
-                                <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex flex-col gap-4 transition-transform hover:scale-[1.02]">
+                                <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex flex-col gap-3 md:gap-4 transition-transform hover:scale-[1.02]">
                                     <div className="bg-emerald-100 p-3 rounded-2xl text-emerald-600 w-fit">
                                         <Clock size={24} />
                                     </div>
@@ -230,7 +230,7 @@ const BookingPage = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.03] flex items-center gap-6">
+                            <div className="bg-white p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.03] flex items-center gap-4 md:gap-6">
                                 <div className="bg-emerald-500/10 p-5 rounded-3xl text-emerald-600 border border-emerald-500/20">
                                     <Zap size={28} className="fill-emerald-600/10" />
                                 </div>
@@ -242,7 +242,7 @@ const BookingPage = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex items-center justify-between transition-transform hover:scale-[1.01]">
+                            <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex items-center justify-between transition-transform hover:scale-[1.01]">
                                 <div className="flex items-center gap-6">
                                     <div className="bg-emerald-100 p-4 rounded-3xl text-emerald-600 shadow-inner">
                                         <MapPin size={28} />
@@ -259,7 +259,7 @@ const BookingPage = () => {
                             </div>
                         </div>
 
-                        <div className="bg-[#1e293b] p-10 rounded-[3rem] shadow-2xl shadow-emerald-950/20 text-white relative overflow-hidden">
+                        <div className="bg-[#1e293b] p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-emerald-950/20 text-white relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-6 opacity-10">
                                 <ShieldCheck size={140} className="text-emerald-400" />
                             </div>
@@ -274,8 +274,8 @@ const BookingPage = () => {
                     </div>
 
                     {/* Right Column: Reservation Form */}
-                    <div className="bg-white rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl shadow-emerald-950/5 p-8 md:p-12 border border-blue-50/20 relative">
-                        <div className="mb-8 md:mb-12 flex items-center justify-between">
+                    <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] shadow-2xl shadow-emerald-950/5 p-5 md:p-12 border border-blue-50/20 relative">
+                        <div className="mb-5 md:mb-12 flex items-center justify-between">
                             <div>
                                 <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tighter uppercase leading-none">Identity</h2>
                                 <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-2">Operator Information</p>

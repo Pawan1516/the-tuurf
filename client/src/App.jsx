@@ -27,34 +27,40 @@ import CricBotWidget from './components/CricBotWidget';
 
 const Layout = ({ children }) => (
   <div className="min-h-screen bg-gray-50 font-sans selection:bg-emerald-100 selection:text-emerald-900">
-    <nav className="bg-white sticky top-0 z-[100] border-b border-gray-50 h-20 flex items-center">
-      <div className="max-w-7xl mx-auto px-6 w-full flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="bg-emerald-600 text-white p-2 rounded-xl shadow-lg shadow-emerald-200 group-hover:rotate-12 transition-transform">
-            <Briefcase size={20} />
+    {/* ── Top Nav ── */}
+    <nav className="bg-white sticky top-0 z-[100] border-b border-gray-50 h-16 md:h-20 flex items-center">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 w-full flex justify-between items-center">
+        <Link to="/" className="flex items-center gap-2 md:gap-3 group">
+          <div className="bg-emerald-600 text-white p-1.5 md:p-2 rounded-xl shadow-lg shadow-emerald-200 group-hover:rotate-12 transition-transform">
+            <Briefcase size={18} />
           </div>
-          <span className="text-xl font-black text-slate-900 tracking-tighter uppercase whitespace-nowrap">The Turf</span>
+          <span className="text-lg md:text-xl font-black text-slate-900 tracking-tighter uppercase whitespace-nowrap">The Turf</span>
         </Link>
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            <Link to="/admin/login" className="hover:text-emerald-600 transition-colors">Admin</Link>
+        <div className="flex items-center gap-3 md:gap-8">
+          <div className="flex items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-400">
+            <Link to="/login" className="hover:text-emerald-600 transition-colors">Login</Link>
             <span className="opacity-20 text-slate-900">•</span>
-            <Link to="/worker/login" className="hover:text-emerald-600 transition-colors">Worker</Link>
+            <Link to="/admin/login" className="hover:text-emerald-600 transition-colors hidden sm:block">Admin</Link>
+            <span className="opacity-20 text-slate-900 hidden sm:block">•</span>
+            <Link to="/worker/login" className="hover:text-emerald-600 transition-colors hidden sm:block">Worker</Link>
           </div>
         </div>
       </div>
     </nav>
-    <main>{children}</main>
-    <footer className="bg-gray-900 text-white py-20 mt-20">
 
+    <main>{children}</main>
+
+    {/* ── Footer ── */}
+    <footer className="bg-gray-900 text-white py-10 md:py-20 mt-10 md:mt-20 pb-safe">
       <div className="max-w-7xl mx-auto px-4 text-center">
-        <h3 className="text-2xl font-black mb-4 text-white">🏟️ THE TURF</h3>
-        <p className="text-gray-400 max-w-md mx-auto mb-8">Premium booking platform for cricket and football turfs. Elevate your game with us.</p>
+        <h3 className="text-xl md:text-2xl font-black mb-3 md:mb-4 text-white">🏟️ THE TURF</h3>
+        <p className="text-gray-400 text-sm max-w-md mx-auto mb-4 md:mb-8">Premium booking platform for cricket and football turfs. Elevate your game with us.</p>
         <p className="text-xs text-gray-600">© 2026 The Turf Inc. Built with ❤️ for sports enthusiasts.</p>
       </div>
     </footer>
   </div>
 );
+
 
 function App() {
   return (

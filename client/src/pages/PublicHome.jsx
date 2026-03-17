@@ -70,7 +70,7 @@ const PublicHome = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
             {/* HERO SECTION WITH BACKGROUND IMAGE SLIDER */}
-            <section className="relative h-[400px] md:h-[480px] w-full flex flex-col items-center justify-center overflow-hidden">
+            <section className="relative h-[280px] sm:h-[340px] md:h-[480px] w-full flex flex-col items-center justify-center overflow-hidden">
                 {heroImages.map((img, idx) => (
                     <div
                         key={idx}
@@ -83,7 +83,7 @@ const PublicHome = () => {
                 ))}
 
                 <div className="relative z-10 text-center space-y-4 px-6 md:px-4">
-                    <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-2xl">
+                    <h1 className="text-3xl sm:text-4xl md:text-8xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-2xl">
                         Feel Free <span className="text-emerald-400"> Play Better</span>
                     </h1>
                     <p className="text-[10px] md:text-sm font-black text-white/80 uppercase tracking-[0.4em] md:tracking-[1em] mb-8 md:mb-12 drop-shadow-lg">
@@ -105,7 +105,7 @@ const PublicHome = () => {
             </section>
 
             {/* MAIN INTERFACE OVERLAPPING HERO */}
-            <div className="max-w-7xl mx-auto w-full px-4 md:px-6 -mt-16 md:-mt-32 relative z-20 mb-16 md:mb-32">
+            <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-10 md:-mt-32 relative z-20 mb-8 md:mb-32">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
 
                     {/* DATE SIDEBAR - Horizontal on Mobile, Vertical on Desktop */}
@@ -139,7 +139,7 @@ const PublicHome = () => {
                     <div className="lg:col-span-9 bg-white rounded-[2rem] md:rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden min-h-[500px] md:min-h-[600px]">
 
                         {/* NAVY HEADER */}
-                        <div className="bg-[#1e293b] p-6 md:p-12 flex flex-col md:flex-row justify-between items-center text-white relative gap-6 md:gap-8">
+                        <div className="bg-[#1e293b] p-4 md:p-12 flex flex-col md:flex-row justify-between items-center text-white relative gap-3 md:gap-8">
                             <div className="space-y-1.5 flex-1 w-full text-center md:text-left">
                                 <h2 className="text-xl md:text-2xl font-black uppercase tracking-[0.1em] text-emerald-400 leading-none">Arena Deployment</h2>
                                 <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em] md:tracking-[0.4em]">
@@ -288,8 +288,8 @@ const PublicHome = () => {
             </div>
 
             {/* LOCATION INTEL SECTION */}
-            <div className="max-w-7xl mx-auto w-full px-4 md:px-6 mb-20 md:mb-32">
-                <div className="bg-white border border-slate-100 rounded-[2rem] md:rounded-[3rem] p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-12 shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
+            <div className="max-w-7xl mx-auto w-full px-3 md:px-6 mb-8 md:mb-32">
+                <div className="bg-white border border-slate-100 rounded-[1.5rem] md:rounded-[3rem] p-5 md:p-12 flex flex-col md:flex-row items-center gap-4 md:gap-12 shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
                     <div className="bg-emerald-600 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] text-white shadow-2xl shadow-emerald-600/30">
                         <MapPin size={48} />
                     </div>

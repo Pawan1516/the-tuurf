@@ -2,14 +2,43 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="The Turf - Sports Turf Booking Platform"
-    />
-    <title>The Turf - Book Your Slot</title>
+
+    <!-- ─── Viewport: no user-scaling, respect iPhone safe areas ─── -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
+    <!-- ─── PWA / Home Screen ─── -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="The Turf" />
+    <meta name="application-name" content="The Turf" />
+
+    <!-- ─── Theme ─── -->
+    <meta name="theme-color" content="#059669" />
+    <meta name="msapplication-TileColor" content="#059669" />
+
+    <!-- ─── SEO ─── -->
+    <meta name="description" content="The Turf — Premium sports turf booking platform in Miyapur, Hyderabad. Book cricket & football slots online instantly." />
+    <meta name="keywords" content="turf booking, cricket turf, football turf, Miyapur, Hyderabad, slot booking" />
+
+    <!-- ─── Open Graph (WhatsApp / social previews) ─── -->
+    <meta property="og:title" content="The Turf — Book Your Slot" />
+    <meta property="og:description" content="Book premium cricket & football slots at The Turf, Miyapur." />
+    <meta property="og:type" content="website" />
+
+    <title>The Turf — Book Your Slot</title>
+
+    <!-- Razorpay -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+      /* Smooth scrolling + prevent pull-to-refresh jank */
+      html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+      body { overscroll-behavior-y: none; }
+      /* Hide scrollbars globally for horizontal scroll lists */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
