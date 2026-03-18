@@ -6,7 +6,6 @@ import {
   Activity,
   Briefcase,
   PieChart,
-  Database,
   LogOut,
   ChevronRight,
   User,
