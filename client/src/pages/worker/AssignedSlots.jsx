@@ -10,7 +10,7 @@ const WorkerAssignedSlots = () => {
     const { user, logout } = useContext(AuthContext);
     const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+    const [filterDate, setFilterDate] = useState(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
     const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
     const navItems = [
@@ -133,8 +133,8 @@ const WorkerAssignedSlots = () => {
                     </div>
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => setFilterDate(new Date().toISOString().split('T')[0])}
-                            className={`hidden md:block px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterDate === new Date().toISOString().split('T')[0] ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
+                            onClick={() => setFilterDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))}
+                            className={`hidden md:block px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterDate === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
                         >
                             Today
                         </button>
@@ -154,11 +154,11 @@ const WorkerAssignedSlots = () => {
                         <div className="py-20 flex justify-center">
                             <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
                         </div>
-                    ) : slots.filter(s => new Date(s.date).toISOString().split('T')[0] === filterDate).length === 0 ? (
+                    ) : slots.filter(s => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(s.date)) === filterDate).length === 0 ? (
                         <div className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest">No slots assigned to you for {filterDate}.</div>
                     ) : (
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {slots.filter(s => new Date(s.date).toISOString().split('T')[0] === filterDate).map(s => (
+                            {slots.filter(s => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(s.date)) === filterDate).map(s => (
                                 <div key={s._id}
                                     onClick={() => s.booking && navigate(`/worker/booking/${s.booking._id}`)}
                                     className={`bg-white p-6 rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/5 transition-transform flex flex-col justify-between ${s.booking ? 'cursor-pointer hover:scale-[1.02]' : ''}`}>

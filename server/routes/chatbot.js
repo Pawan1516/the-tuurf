@@ -23,8 +23,8 @@ router.post('/', async (req, res) => {
             try {
                 freeSlots = await Slot.find({
                     date: {
-                        $gte: new Date().toISOString().split('T')[0],
-                        $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                        $gte: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
+                        $lte: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
                     },
                     status: 'free'
                 }).sort({ date: 1, startTime: 1 }).limit(20).lean().maxTimeMS(2000);

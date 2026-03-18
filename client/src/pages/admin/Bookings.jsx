@@ -43,7 +43,7 @@ const AdminBookings = () => {
     userName: '',
     userPhone: '',
     amount: '1000',
-    date: new Date().toISOString().split('T')[0],
+    date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
     startTime: '18:00',
     endTime: '19:00',
     paymentType: 'full'
@@ -104,7 +104,7 @@ const AdminBookings = () => {
         userName: '',
         userPhone: '',
         amount: settings.PRICE_NIGHT.toString(),
-        date: new Date().toISOString().split('T')[0],
+        date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
         startTime: '18:00',
         endTime: '19:00',
         paymentType: 'full'

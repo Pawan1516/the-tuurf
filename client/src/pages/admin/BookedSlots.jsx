@@ -10,7 +10,7 @@ const AdminBookedSlots = () => {
     const { user, logout } = useContext(AuthContext);
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+    const [filterDate, setFilterDate] = useState(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
     const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
     const navItems = [
@@ -122,8 +122,8 @@ const AdminBookedSlots = () => {
                     </div>
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => setFilterDate(new Date().toISOString().split('T')[0])}
-                            className={`hidden md:block px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterDate === new Date().toISOString().split('T')[0] ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
+                            onClick={() => setFilterDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))}
+                            className={`hidden md:block px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterDate === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
                         >
                             Today
                         </button>
@@ -147,9 +147,9 @@ const AdminBookedSlots = () => {
                         <div className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest">No booked slots found.</div>
                     ) : (
                         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {bookings.filter(b => b.slot?.date ? new Date(b.slot.date).toISOString().split('T')[0] === filterDate : false).length === 0 ? (
+                            {bookings.filter(b => b.slot?.date ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(b.slot.date)) === filterDate : false).length === 0 ? (
                                 <div className="col-span-full py-20 text-center text-gray-400 font-bold uppercase tracking-widest">No booked slots found for {filterDate}.</div>
-                            ) : bookings.filter(b => b.slot?.date ? new Date(b.slot.date).toISOString().split('T')[0] === filterDate : false).map(b => (
+                            ) : bookings.filter(b => b.slot?.date ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(b.slot.date)) === filterDate : false).map(b => (
                                 <div
                                     key={b._id}
                                     onClick={() => navigate(`/admin/bookings/${b._id}`)}

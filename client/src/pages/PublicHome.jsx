@@ -5,10 +5,7 @@ import { ChevronRight, Zap, MapPin, Plus } from 'lucide-react';
 
 const PublicHome = () => {
     const getISODate = (date = new Date()) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
     };
 
     const [slots, setSlots] = useState([]);
@@ -63,12 +60,13 @@ const PublicHome = () => {
     };
 
     const dates = [0, 1, 2, 3, 4, 5, 6].map(days => {
-        const d = new Date();
-        d.setDate(d.getDate() + days);
-        const localDateStr = d.toLocaleDateString('en-CA');
+        const timestamp = new Date().getTime() + (days * 24 * 60 * 60 * 1000);
+        const d = new Date(timestamp);
+        const localDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+        const displayDate = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short', month: 'short', day: 'numeric' }).format(d);
         return {
             dateStr: localDateStr,
-            display: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+            display: displayDate,
             label: days === 0 ? "TODAY" : days === 1 ? "TOMORROW" : "AVAILABLE",
             days
         };

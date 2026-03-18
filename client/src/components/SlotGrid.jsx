@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const SlotGrid = () => {
     const [slots, setSlots] = useState([]);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

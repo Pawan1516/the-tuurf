@@ -87,7 +87,7 @@ const BookingPage = () => {
         if (!slotId || slotId === 'custom') {
             setFormData(prev => ({
                 ...prev,
-                date: new Date().toISOString().split('T')[0],
+                date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
                 startTime: '10:00',
                 endTime: '11:00'
             }));
@@ -100,7 +100,7 @@ const BookingPage = () => {
             // Sync formData with slot data
             setFormData(prev => ({
                 ...prev,
-                date: s.date ? new Date(s.date).toISOString().split('T')[0] : '',
+                date: s.date ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(s.date)) : '',
                 startTime: s.startTime || '',
                 endTime: s.endTime || ''
             }));

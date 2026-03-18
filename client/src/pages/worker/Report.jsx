@@ -21,7 +21,7 @@ const WorkerReport = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `booking-report-${new Date().toISOString().split('T')[0]}.${format}`);
+      link.setAttribute('download', `booking-report-${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}.${format}`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);

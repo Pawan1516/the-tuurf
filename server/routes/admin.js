@@ -341,7 +341,7 @@ router.post('/ai-command', verifyToken, roleGuard(['admin']), async (req, res) =
 
     // Fetch some basic context (optional but helpful)
     const freeSlots = await Slot.find({
-      date: { $gte: new Date().toISOString().split('T')[0] },
+      date: { $gte: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) },
       status: 'free'
     }).limit(10).lean();
 
