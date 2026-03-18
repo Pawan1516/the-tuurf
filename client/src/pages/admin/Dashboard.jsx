@@ -38,6 +38,7 @@ const AdminDashboard = () => {
     { to: '/admin/booked-slots', label: 'Booked Slots', icon: CheckCircle },
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
     { to: '/admin/workers', label: 'Workers', icon: Briefcase },
+    { to: '/admin/users', label: 'Users', icon: Users },
     { to: '/admin/report', label: 'Report', icon: PieChart },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
   ];

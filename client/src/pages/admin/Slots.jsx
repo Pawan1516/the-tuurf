@@ -57,6 +57,7 @@ const AdminSlots = () => {
     { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
     { to: '/admin/workers', label: 'Workers', icon: Briefcase },
+    { to: '/admin/users', label: 'Users', icon: Briefcase },
     { to: '/admin/report', label: 'Report', icon: PieChart },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
   ];

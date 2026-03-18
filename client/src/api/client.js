@@ -127,7 +127,8 @@ export const adminAPI = {
   syncSlots: () => apiClient.post('/admin/system/sync-slots'),
   aiCommand: (message) => apiClient.post('/admin/ai-command', { message }),
   getSettings: () => apiClient.get('/admin/settings'),
-  saveSettings: (settings) => apiClient.post('/admin/settings/bulk', { settings })
+  saveSettings: (settings) => apiClient.post('/admin/settings/bulk', { settings }),
+  getUsers: () => apiClient.get('/admin/users')
 };
 
 // Chatbot APIs

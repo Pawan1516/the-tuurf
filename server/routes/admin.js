@@ -9,6 +9,7 @@ const roleGuard = require('../middleware/roleGuard');
 const { generateBookingReport, createPDF } = require('../services/pdfReport');
 const { createBookingEntry } = require('../services/bookingService');
 const Setting = require('../models/Setting');
+const User = require('../models/User');
 
 // Create Worker (ADMIN ONLY)
 router.post('/workers', verifyToken, roleGuard(['admin']), async (req, res) => {
@@ -448,6 +449,16 @@ router.post('/settings/bulk', verifyToken, roleGuard(['admin']), async (req, res
 
     await Setting.bulkWrite(operations);
     res.json({ success: true, message: 'Settings synchronization complete.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get all users (ADMIN ONLY)
+router.get('/users', verifyToken, roleGuard(['admin']), async (req, res) => {
+  try {
+    const users = await User.find().select('name email password');
+    res.json({ success: true, users });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

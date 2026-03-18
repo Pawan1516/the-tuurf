@@ -23,6 +23,7 @@ import AdminReport from './pages/admin/Report';
 import AdminBookedSlots from './pages/admin/BookedSlots';
 import AdminBookingDetail from './pages/admin/BookingDetail';
 import AdminSettings from './pages/admin/Settings';
+import AdminUsers from './pages/admin/Users';
 import UserDashboard from './pages/UserDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import CricBotWidget from './components/CricBotWidget';
@@ -158,6 +159,11 @@ function App() {
           <Route path="/admin/workers" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminWorkers />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminUsers />
             </ProtectedRoute>
           } />
           <Route path="/admin/report" element={
