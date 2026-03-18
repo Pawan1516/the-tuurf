@@ -167,8 +167,8 @@ const UserDashboard = () => {
                                                 }`}
                                         >
                                             <p className="text-[10px] md:text-xs font-black text-gray-900 mb-1">{slot.startTime}</p>
-                                            <p className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest ${slot.status === 'free' ? 'text-emerald-600' : isBooked ? 'text-red-500' : 'text-yellow-600'}`}>
-                                                {slot.status === 'free' ? 'BOOK' : slot.status}
+                                            <p className={`text-[8px] md:text-[8px] font-black uppercase tracking-widest ${slot.status === 'free' ? 'text-emerald-600' : isBooked ? 'text-red-500' : 'text-yellow-600'}`}>
+                                                {slot.status === 'free' ? 'FREE' : isBooked ? 'ALREADY BOOKED' : slot.status.toUpperCase()}
                                             </p>
                                         </div>
                                     );

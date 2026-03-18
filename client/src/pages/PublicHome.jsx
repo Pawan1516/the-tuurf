@@ -211,7 +211,7 @@ const PublicHome = () => {
                                                     <div className="flex items-center gap-3">
                                                         <div className={`w-2.5 h-2.5 rounded-full ${isFree ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : isBooked ? 'bg-rose-500 shadow-[0_0_10px_#ef4444]' : 'bg-amber-500'}`}></div>
                                                         <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${isFree ? 'text-emerald-600' : isBooked ? 'text-rose-500' : 'text-amber-600'}`}>
-                                                            {isFree ? 'Available' : isBooked ? 'Booked Out' : 'On Hold'}
+                                                            {isFree ? 'Free' : isBooked ? 'Already Booked' : 'On Hold'}
                                                         </span>
                                                     </div>
                                                 </td>
@@ -227,8 +227,8 @@ const PublicHome = () => {
                                                             Book <ChevronRight size={16} />
                                                         </Link>
                                                     ) : (
-                                                        <div className={`inline-flex px-10 py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest border-2 leading-none ${isBooked ? 'border-rose-100 text-rose-200' : 'border-amber-100 text-amber-200'}`}>
-                                                            SECURED
+                                                        <div className={`inline-flex px-10 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 leading-none ${isBooked ? 'border-rose-100 text-rose-300' : 'border-amber-100 text-amber-200'}`}>
+                                                            ALREADY BOOKED
                                                         </div>
                                                     )}
                                                 </td>
@@ -264,7 +264,7 @@ const PublicHome = () => {
                                                 <div className="flex items-center gap-1.5 mt-1">
                                                     <div className={`w-2 h-2 rounded-full ${isFree ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : isBooked ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
                                                     <span className={`text-[8px] font-black uppercase tracking-[0.1em] ${isFree ? 'text-emerald-600' : isBooked ? 'text-rose-500' : 'text-amber-600'}`}>
-                                                        {isFree ? 'Available' : isBooked ? 'Booked Out' : 'On Hold'}
+                                                        {isFree ? 'Free' : isBooked ? 'Already Booked' : 'On Hold'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -281,8 +281,8 @@ const PublicHome = () => {
                                                     Secure <ChevronRight size={12} />
                                                 </Link>
                                             ) : (
-                                                <div className={`px-6 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest border-2 ${isBooked ? 'border-rose-100 text-rose-200' : 'border-amber-100 text-amber-200'}`}>
-                                                    LOCKED
+                                                <div className={`px-6 py-3 rounded-xl font-black uppercase text-[8px] tracking-widest border-2 ${isBooked ? 'border-rose-100 text-rose-300' : 'border-amber-100 text-amber-200'}`}>
+                                                    ALREADY BOOKED
                                                 </div>
                                             )}
                                         </div>
