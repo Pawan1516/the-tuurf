@@ -5,7 +5,6 @@ import {
   signInWithEmailAndPassword, 
   sendEmailVerification 
 } from "firebase/auth";
-import PushNotificationManager from '../components/PushNotificationManager';
 
 const FirebaseAuthTest = () => {
   const [email, setEmail] = useState('');
@@ -135,9 +134,6 @@ const FirebaseAuthTest = () => {
           </button>
         )}
       </div>
-
-      {/* Embedded Push Notification Manager below the auth block */}
-      <PushNotificationManager />
     </div>
   );
 };
