@@ -3,7 +3,7 @@ dotenv.config();
 
 const { genAI } = require('./aiService');
 const { analyzeBookingAndGenerateMessage, getAIInsights } = require('./aiService');
-const { checkAvailability, bookSlot, getFreeSlots, getBookedSlots } = require('./bookingTools');
+const { checkAvailability, bookSlot, getFreeSlots, getBookedSlots, cancelBooking, rescheduleBooking, initiateHandoff, getPricingInfo } = require('./bookingTools');
 const Setting = require('../models/Setting');
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -77,6 +77,18 @@ const getDynamicTools = (cfg) => [
         },
       },
       {
+        name: 'lock_slot',
+        description: 'Temporarily lock/reserve a slot for 2 minutes to prevent others from booking it while the user is completing details. Use this when the user picks a time.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            date: { type: 'STRING', description: 'Date in YYYY-MM-DD' },
+            time: { type: 'STRING', description: 'Time in HH:MM' },
+          },
+          required: ['date', 'time'],
+        },
+      },
+      {
         name: 'book_slot',
         description: 'Book a confirmed cricket net slot. Requires name, phone, date, and time.',
         parameters: {
@@ -84,53 +96,96 @@ const getDynamicTools = (cfg) => [
           properties: {
             name: { type: 'STRING', description: "Customer's full name" },
             phone: { type: 'STRING', description: "Customer's phone number" },
-            date: { type: 'STRING', description: 'Booking date in YYYY-MM-DD format' },
+            date: { type: 'STRING', description: 'Booking date in YYYY-MM-DD format (use current date if user asks for today)' },
             time: { type: 'STRING', description: 'Start time in HH:MM 24-hour format' },
           },
           required: ['name', 'phone', 'date', 'time'],
+        },
+      },
+      {
+        name: 'reschedule_booking',
+        description: 'Reschedule an existing booking to a new time. Requires phone, original date/time, and new date/time.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            phone: { type: 'STRING', description: "Customer's registered phone number" },
+            old_date: { type: 'STRING', description: 'Original date in YYYY-MM-DD' },
+            old_time: { type: 'STRING', description: 'Original time in HH:MM' },
+            new_date: { type: 'STRING', description: 'New date in YYYY-MM-DD' },
+            new_time: { type: 'STRING', description: 'New time in HH:MM' },
+          },
+          required: ['phone', 'old_date', 'old_time', 'new_date', 'new_time'],
+        },
+      },
+      {
+        name: 'initiate_handoff',
+        description: 'Escalate the conversation to a human support agent when the user is angry, frustrated, or has an unresolvable query.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            reason: { type: 'STRING', description: 'Brief reason for handoff' },
+          },
+          required: ['reason'],
+        },
+      },
+      {
+        name: 'cancel_booking',
+        description: 'Cancel a slot booking for a user. Requires phone number, date, and time.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            phone: { type: 'STRING', description: "Customer's registered phone number" },
+            date: { type: 'STRING', description: 'Booking date in YYYY-MM-DD format' },
+            time: { type: 'STRING', description: 'Start time in HH:MM 24-hour format' },
+          },
+          required: ['phone', 'date', 'time'],
+        },
+      },
+      {
+        name: 'get_pricing',
+        description: 'Get current pricing information for the turf booking facility.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {},
         },
       },
     ],
   },
 ];
 
-const buildSystemPrompt = (cfg) => `You are CricBot, the highly intelligent and welcoming multi-lingual assistant for The Turf Stadium.
+const buildSystemPrompt = (cfg) => `You are a professional multi-lingual turf booking assistant for The Turf Arena. 🏏⚽🏟️
 
-CRITICAL PRIORITY:
-1. If the user asks ANY question (e.g., location, parking, shoes, rain, pricing), you MUST answer it accurately and helpfully as your very first action.
-2. Only after answering the question should you ask for the next piece of booking information (if a booking is in progress).
+Your tasks:
+- Help users check availability for slots.
+- Book slots for users (requires Name, Phone, Date, and Time).
+- Answer pricing and location questions reliably.
+- Handle cancellations and rescheduling.
+- Detect customer frustration/anger and escalate to a human agent.
 
-LANGUAGE SUPPORT:
-- You support English, Telugu (తెలుగు), and Hindi (హిन्दी).
-- DETECT the user's language automatically and respond in the SAME language.
-- Always be polite and professional regardless of the language.
+CORE RULES:
+- When a user picks a specific time, immediately use 'lock_slot' to reserve it for 2 minutes while you collect their Name/Phone.
+- Always check availability for slots.
+- Confirm details before calling 'book_slot'.
+- Be short, friendly, and helpful (WhatsApp style).
+- If you are unsure or don't know something → call 'initiate_handoff' immediately.
+- If the user is angry or uses bad language → call 'initiate_handoff' immediately.
+- Today is ${new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
 
-TURF KNOWLEDGE BASE:
+TURF INFO:
 - Location: ${cfg.LOCATION}.
-- Facilities: 6 Premium artificial grass nets, high-lumen floodlights for night matches, chilled drinking water, dedicated change rooms, and free secure parking.
-- Footwear Policy: STRICTLY sports shoes only. NO spikes are allowed on the artificial turf to prevent damage.
-- Rain Policy: We offer a 100% free reschedule or a full refund if heavy rain prevents play.
-- Pricing: ₹${cfg.PRICE_DAY}/hr (Weekday Day) | ₹${cfg.PRICE_NIGHT}/hr (Weekday Night after ${cfg.TRANS_HOUR}:00) | ₹${cfg.PRICE_WEEKEND_DAY}/hr (Weekend Day) | ₹${cfg.PRICE_WEEKEND_NIGHT}/hr (Weekend Night).
-- Confirmation Policy: To secure a booking, users can choose between 40% advance payment (for confirmation) or 100% full payment (for convenience). If paying advance, the remaining 60% is due at the venue.
-- Operating Hours: ${cfg.OPEN_HOUR}:00 AM to ${cfg.CLOSE_HOUR}:00 PM daily.
+- Pricing: Use 'get_pricing' for current rates.
+- Facilities: Premium artificial grass, high-lumen lights, drinking water, change rooms, parking.
+- Rules: Sports shoes ONLY (No spikes). 100% refund for heavy rain.
 
-BOOKING PROTOCOL:
-- You need: Full Name, 10-digit Phone, Date, and Time.
-- Use 'check_availability' to verify a slot before promising it.
-- Use 'book_slot' only when the user is ready.
-- Always provide a clear summary before final booking.
-
-FORMATTING RULES FOR AVAILABLE SLOTS:
-When listing available slots to the user, you MUST ALWAYS group them and use EXACTLY this format:
-
+REQUIRED FORMAT FOR SLOTS:
 Available Slots for [Date]:
 ✅ Morning : [e.g., 9:00 AM - 10:00 AM]
-✅ Afternoon : [e.g., 12:00 PM - 1:00 PM, 2:00 PM - 3:00 PM]
+✅ Afternoon : [e.g., 12:00 PM - 1:00 PM]
 ✅ Evening : [e.g., 6:00 PM - 7:00 PM]
 
-Would you like to book any of these slots? (Please reply YES to proceed or enter a different time)
+Would you like to book any of these slots? (Please reply YES or enter a different time)
 
-TONE: Professional, enthusiastic, and concise (WhatsApp style). Use emojis 🏏🏟️✅.`;
+TONE: Enthusiastic, Concise, Professional. Use emojis ⚽🏏✅.`;
 
 // ─── Tier 1: Gemini ───────────────────────────────────────────────────────────
 const tryGemini = async (userInput, cfg, history = []) => {
@@ -165,6 +220,11 @@ const tryGemini = async (userInput, cfg, history = []) => {
         toolResult = await bookSlot(args.name, args.phone, args.date, args.time);
         if (toolResult.success) { isBookingConfirmed = true; bookingInfo = toolResult; }
       }
+      else if (name === 'lock_slot') toolResult = await lockSlot(args.date, args.time);
+      else if (name === 'cancel_booking') toolResult = await cancelBooking(args.phone, args.date, args.time);
+      else if (name === 'reschedule_booking') toolResult = await rescheduleBooking(args.phone, args.old_date, args.old_time, args.new_date, args.new_time);
+      else if (name === 'initiate_handoff') toolResult = await initiateHandoff(context.userPhone || 'web', args.reason);
+      else if (name === 'get_pricing') toolResult = await getPricingInfo();
     } catch (e) {
       toolResult = { success: false, message: 'Database error, please try again.' };
     }
@@ -185,7 +245,11 @@ const tryOpenAI = async (userInput, cfg, history = []) => {
     { type: 'function', function: { name: 'get_free_slots', description: 'Fetch free slots.', parameters: { type: 'object', properties: { date: { type: 'string' } }, required: ['date'] } } },
     { type: 'function', function: { name: 'get_booked_slots', description: 'Fetch booked slots.', parameters: { type: 'object', properties: { date: { type: 'string' } }, required: ['date'] } } },
     { type: 'function', function: { name: 'check_availability', description: 'Check slot availability.', parameters: { type: 'object', properties: { date: { type: 'string' }, time: { type: 'string' } }, required: ['date', 'time'] } } },
-    { type: 'function', function: { name: 'book_slot', description: 'Book a slot.', parameters: { type: 'object', properties: { name: { type: 'string' }, phone: { type: 'string' }, date: { type: 'string' }, time: { type: 'string' } }, required: ['name', 'phone', 'date', 'time'] } } }
+    { type: 'function', function: { name: 'book_slot', description: 'Book a slot.', parameters: { type: 'object', properties: { name: { type: 'string' }, phone: { type: 'string' }, date: { type: 'string' }, time: { type: 'string' } }, required: ['name', 'phone', 'date', 'time'] } } },
+    { type: 'function', function: { name: 'cancel_booking', description: 'Cancel a booking.', parameters: { type: 'object', properties: { phone: { type: 'string' }, date: { type: 'string' }, time: { type: 'string' } }, required: ['phone', 'date', 'time'] } } },
+    { type: 'function', function: { name: 'reschedule_booking', description: 'Reschedule a booking.', parameters: { type: 'object', properties: { phone: { type: 'string' }, old_date: { type: 'string' }, old_time: { type: 'string' }, new_date: { type: 'string' }, new_time: { type: 'string' } }, required: ['phone', 'old_date', 'old_time', 'new_date', 'new_time'] } } },
+    { type: 'function', function: { name: 'initiate_handoff', description: 'Hand off to human.', parameters: { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] } } },
+    { type: 'function', function: { name: 'get_pricing', description: 'Get pricing info.', parameters: { type: 'object', properties: {} } } }
   ];
 
   const messages = [
@@ -217,6 +281,11 @@ const tryOpenAI = async (userInput, cfg, history = []) => {
           toolResult = await bookSlot(args.name, args.phone, args.date, args.time);
           if (toolResult.success) { isBookingConfirmed = true; bookingInfo = toolResult; }
         }
+        else if (name === 'lock_slot') toolResult = await lockSlot(args.date, args.time);
+        else if (name === 'cancel_booking') toolResult = await cancelBooking(args.phone, args.date, args.time);
+        else if (name === 'reschedule_booking') toolResult = await rescheduleBooking(args.phone, args.old_date, args.old_time, args.new_date, args.new_time);
+        else if (name === 'initiate_handoff') toolResult = await initiateHandoff(context.userPhone || 'web', args.reason);
+        else if (name === 'get_pricing') toolResult = await getPricingInfo();
       } catch (e) { toolResult = { success: false, message: 'Error.' }; }
       messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(toolResult) });
     }

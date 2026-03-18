@@ -14,6 +14,7 @@ const { generateBookingPass } = require('./qrgen');
 const WhatsAppBooking = require('./models/WhatsAppBooking');
 const Booking = require('./models/Booking');
 const Slot = require('./models/Slot');
+const { processCricBotCommand } = require('./services/aiAgent');
 const cors = require('cors');
 const { sendWhatsAppNotification } = require('./services/whatsapp');
 
@@ -72,93 +73,53 @@ async function sendWA(to, body, mediaUrl = null) {
 }
 
 /**
- * ─── WHATSAPP WEBHOOK (Twilio) ───────────────────────────────
+ * ─── WHATSAPP WEBHOOK (Twilio with CricBot AI) ───────────────────────────────
  */
 app.post('/webhook', async (req, res) => {
   const fromFull = req.body.From; // e.g. whatsapp:+91799...
   const from = fromFull.replace('whatsapp:', '');
   const body = req.body.Body.trim();
-  const cmd = body.toLowerCase();
 
-  // 1. Session Management
-  let session = data.sessions[from] || { step: 'welcome' };
+  console.log(`📱 WhatsApp Message from ${from}: ${body}`);
 
-  // 2. Global Commands
-  if (cmd === 'hi' || cmd === 'hello' || cmd === 'menu' || cmd === 'start') {
-    session = { step: 'welcome' };
-  } else if (cmd === 'pricing') {
-    await sendWA(from, messages.pricing(data.sports));
-    return res.sendStatus(200);
-  } else if (cmd === 'help') {
-    await sendWA(from, messages.help());
-    return res.sendStatus(200);
-  } else if (cmd === 'my bookings') {
-    const userBookings = data.bookings.filter(b => b.userPhone === from);
-    if (userBookings.length === 0) {
-      await sendWA(from, "🏟️ You have no active bookings! Say *Book* to start.");
-    } else {
-      let info = userBookings.map(b => `🎫 ${b.id}: ${b.sport} | ${b.slot} [${b.status.toUpperCase()}]`).join('\n');
-      await sendWA(from, `🎫 *YOUR BOOKINGS:*\n\n${info}`);
-    }
-    return res.sendStatus(200);
-  } else if (cmd === 'book' || cmd === 'slots') {
-    session = { step: 'choose_sport' };
-  }
-
-  // 3. Main Conversation Flow
   try {
-    switch (session.step) {
-      case 'welcome':
-        await sendWA(from, messages.welcome());
-        session.step = 'idle';
-        break;
+    // Call the intelligent CricBot Agent
+    const aiResponse = await processCricBotCommand(body, { userPhone: from }, from);
 
-      case 'choose_sport':
-        await sendWA(from, messages.sportChoice());
-        session.step = 'awaiting_sport';
-        break;
-
-      case 'awaiting_sport':
-        const sportKey = Object.keys(data.sports).find(k => body.toLowerCase().includes(k));
-        if (sportKey) {
-          session.sport = data.sports[sportKey];
-          await sendWA(from, messages.slotChoice(session.sport.name, data.slots));
-          session.step = 'awaiting_slot';
-        } else {
-          await sendWA(from, "🏟️ Sorry, what sport? (Football, Cricket, Basketball, Badminton)");
-        }
-        break;
-
-      case 'awaiting_slot':
-        const slot = data.slots.find(s => s.id == body);
-        if (slot && slot.available) {
-          session.slot = slot;
-          await sendWA(from, messages.askName());
-          session.step = 'awaiting_name';
-        } else {
-          await sendWA(from, "🏟️ Invalid slot! Pick a number (e.g. 1)");
-        }
-        break;
-
-      case 'awaiting_name':
-        session.name = body;
-        await processBooking(from, session);
-        session = { step: 'idle' };
-        break;
-
-      default:
-        if (session.step === 'idle' && !['hi', 'hello', 'menu', 'start', 'book', 'slots'].includes(cmd)) {
-          await sendWA(from, "🏟️ Unknown command. Reply *Menu* to see options.");
-        }
-        break;
+    if (aiResponse.type === 'BOOKING_CONFIRMED') {
+      const { generateUPIQRCode } = require('./services/payment');
+      const bInfo = aiResponse.bookingInfo;
+      const qrRes = await generateUPIQRCode(bInfo.amount || 500, bInfo.bookingId);
+      
+      const reply = `${aiResponse.reply}\n\n💳 *Payment Details:*\nScan the QR code below or use this link to pay: ${qrRes.upiLink}`;
+      await sendWA(from, reply, qrRes.qrCodeDataUrl);
+    } else {
+      await sendWA(from, aiResponse.reply);
     }
-  } catch (e) {
-    console.error('Bot Flow Error:', e);
-  }
 
-  data.sessions[from] = session;
-  res.sendStatus(200);
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('WhatsApp AI Error:', error);
+    await sendWA(from, "🏟️ Sorry, I'm having a bit of trouble. Please try again or call us!");
+    res.sendStatus(500);
+  }
 });
+
+// Background Job: Auto-Release Expired Slot Holds (Every 1 minute)
+setInterval(async () => {
+    try {
+        const now = new Date();
+        const expiredHolds = await Slot.updateMany(
+            { status: 'hold', holdExpiresAt: { $lt: now } },
+            { status: 'free', holdExpiresAt: null }
+        );
+        if (expiredHolds.modifiedCount > 0) {
+            console.log(`🧹 Internal: Released ${expiredHolds.modifiedCount} expired slot holds.`);
+        }
+    } catch (err) {
+        console.error('Auto-Release Error:', err.message);
+    }
+}, 60000);
 
 async function processBooking(phone, session) {
   const bookingId = `TRF${Math.floor(10000 + Math.random() * 90000)}`;

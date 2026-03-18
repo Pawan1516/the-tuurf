@@ -136,6 +136,49 @@ const bookSlot = async (name, phone, date, time, paymentType = 'advance') => {
 };
 
 /**
+ * Temporarily lock a slot for 2 minutes to prevent double booking during checkout.
+ * @param {string} date - Date in YYYY-MM-DD
+ * @param {string} time - Start time in HH:MM
+ */
+const lockSlot = async (date, time) => {
+    try {
+        const Slot = require('../models/Slot');
+        
+        // 1. Check if already booked or held
+        const existing = await Slot.findOne({
+            date,
+            startTime: time,
+            status: { $in: ['booked', 'hold'] }
+        });
+
+        if (existing) {
+            if (existing.status === 'hold' && existing.holdExpiresAt < new Date()) {
+                // Hold expired, we can take it
+            } else {
+                return { success: false, message: "Slot is already reserved or booked." };
+            }
+        }
+
+        // 2. Lock it for 2 minutes
+        const holdExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
+        const slot = await Slot.findOneAndUpdate(
+            { date, startTime: time },
+            { status: 'hold', holdExpiresAt },
+            { new: true, upsert: true }
+        );
+
+        return { 
+            success: true, 
+            message: "Slot locked for 2 minutes. Please complete your booking.",
+            expiresAt: holdExpiresAt
+        };
+    } catch (error) {
+        console.error('Error in lockSlot tool:', error);
+        return { success: false, message: "Failed to lock slot." };
+    }
+};
+
+/**
  * Fetch and format free slots from the database for a given date
  * @param {string} targetDate - Date in YYYY-MM-DD format
  */
@@ -226,9 +269,135 @@ const getBookedSlots = async (targetDate) => {
     }
 };
 
+/**
+ * Cancel a booking for a user.
+ * @param {string} phone - User's phone number
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @param {string} time - Start time in HH:MM format
+ */
+const cancelBooking = async (phone, date, time) => {
+    try {
+        const Slot = require('../models/Slot');
+        const Booking = require('../models/Booking');
+
+        const slot = await Slot.findOne({ date, startTime: time, status: 'booked' });
+        if (!slot) {
+            return { success: false, message: `No booked slot found on ${date} at ${time}.` };
+        }
+
+        const booking = await Booking.findOne({ slot: slot._id, userPhone: phone, bookingStatus: 'confirmed' });
+        if (!booking) {
+            return { success: false, message: `No confirmed booking found for this phone number on ${date} at ${time}.` };
+        }
+
+        // Cancel the booking and free the slot
+        booking.bookingStatus = 'cancelled';
+        await booking.save();
+
+        slot.status = 'free';
+        await slot.save();
+
+        return { success: true, message: `Booking for ${booking.userName} on ${date} at ${time} has been successfully cancelled.` };
+    } catch (error) {
+        console.error('Error in cancelBooking tool:', error);
+        return { success: false, message: 'An error occurred while trying to cancel the booking.' };
+    }
+};
+
+/**
+ * Reschedule an existing booking to a new date and time.
+ * @param {string} phone - User's phone number
+ * @param {string} oldDate - Original booking date
+ * @param {string} oldTime - Original booking time
+ * @param {string} newDate - New booking date
+ * @param {string} newTime - New booking time
+ */
+const rescheduleBooking = async (phone, oldDate, oldTime, newDate, newTime) => {
+    try {
+        const Slot = require('../models/Slot');
+        const Booking = require('../models/Booking');
+
+        // 1. Find the old booking
+        const oldSlot = await Slot.findOne({ date: oldDate, startTime: oldTime, status: 'booked' });
+        if (!oldSlot) return { success: false, message: `No active booking found on ${oldDate} at ${oldTime}.` };
+
+        const booking = await Booking.findOne({ slot: oldSlot._id, userPhone: phone, bookingStatus: 'confirmed' });
+        if (!booking) return { success: false, message: `No confirmed booking found for this phone number on ${oldDate} at ${oldTime}.` };
+
+        // 2. Check if the new slot is available
+        const newSlot = await Slot.findOne({ date: newDate, startTime: newTime, status: 'free' });
+        if (!newSlot) return { success: false, message: `Sorry, the new slot on ${newDate} at ${newTime} is not available.` };
+
+        // 3. Perform rescheduling
+        oldSlot.status = 'free';
+        await oldSlot.save();
+
+        newSlot.status = 'booked';
+        await newSlot.save();
+
+        booking.slot = newSlot._id;
+        booking.updatedAt = new Date();
+        await booking.save();
+
+        return { 
+            success: true, 
+            message: `Booking for ${booking.userName} has been rescheduled from ${oldTime} (${oldDate}) to ${newTime} (${newDate}).` 
+        };
+    } catch (error) {
+        console.error('Error in rescheduleBooking tool:', error);
+        return { success: false, message: 'An error occurred during rescheduling.' };
+    }
+};
+
+/**
+ * Flag the conversation for human handoff.
+ */
+const initiateHandoff = async (phone, reason) => {
+    // In a real system, this would send a notification to an admin dashboard or Slack
+    console.log(`🚨 HUMAN HANDOFF INITIATED for ${phone}. Reason: ${reason}`);
+    return { 
+        success: true, 
+        message: "I've notified our support team. A human agent will join this chat shortly to assist you. 🙏",
+        handoffActive: true
+    };
+};
+
+/**
+ * Get the current pricing information for the turf.
+ */
+const getPricingInfo = async () => {
+    try {
+        const priceDay = process.env.PRICE_DAY || 1000;
+        const priceNight = process.env.PRICE_NIGHT || 1200;
+        const priceWeekendDay = process.env.PRICE_WEEKEND_DAY || 1000;
+        const priceWeekendNight = process.env.PRICE_WEEKEND_NIGHT || 1400;
+        const transitionHour = process.env.PRICE_TRANSITION_HOUR || 18;
+
+        return {
+            weekday: {
+                day: `₹${priceDay}/hr (before ${transitionHour % 12 || 12} PM)`,
+                night: `₹${priceNight}/hr (after ${transitionHour % 12 || 12} PM)`
+            },
+            weekend: {
+                day: `₹${priceWeekendDay}/hr (before ${transitionHour % 12 || 12} PM)`,
+                night: `₹${priceWeekendNight}/hr (after ${transitionHour % 12 || 12} PM)`
+            },
+            message: `Weekdays: ₹${priceDay} (Day) / ₹${priceNight} (Night). Weekends: ₹${priceWeekendDay} (Day) / ₹${priceWeekendNight} (Night). Night rates start at ${transitionHour % 12 || 12} PM.`
+        };
+    } catch (error) {
+        console.error('Error in getPricingInfo tool:', error);
+        return { message: 'Pricing information is currently unavailable.' };
+    }
+};
+
 module.exports = {
     checkAvailability,
     bookSlot,
     getFreeSlots,
-    getBookedSlots
+    getBookedSlots,
+    cancelBooking,
+    rescheduleBooking,
+    initiateHandoff,
+    lockSlot,
+    getPricingInfo
 };
