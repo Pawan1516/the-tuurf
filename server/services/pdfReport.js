@@ -74,29 +74,35 @@ const createPDF = (bookings, stats) => {
 
   // Table Header
   const headerY = doc.y;
-  doc.fontSize(10).font('Helvetica-Bold');
-  doc.text('Sl No', 40, headerY, { width: 30 });
-  doc.text('Name', 75, headerY, { width: 110 });
-  doc.text('Mobile Number', 190, headerY, { width: 90 });
-  doc.text('Slot', 285, headerY, { width: 100 });
-  doc.text('Status', 390, headerY, { width: 80 });
-  doc.text('Money', 475, headerY, { width: 60 });
+  doc.fontSize(9).font('Helvetica-Bold');
+  doc.text('Sl.No', 40, headerY, { width: 25 });
+  doc.text('Name', 70, headerY, { width: 90 });
+  doc.text('Mobile Number', 165, headerY, { width: 80 });
+  doc.text('Slot Timings', 250, headerY, { width: 105 });
+  doc.text('Status', 360, headerY, { width: 60 });
+  doc.text('Advance', 425, headerY, { width: 55 });
+  doc.text('Full Payment', 485, headerY, { width: 65 });
   doc.moveDown(1.5);
 
   // Table Rows
-  doc.fontSize(9).font('Helvetica');
+  doc.fontSize(8).font('Helvetica');
   bookings.forEach((booking, index) => {
     const slotDate = booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) : 'N/A';
-    const slotTime = booking.slot?.startTime || 'N/A';
-    const slotInfo = `${slotDate} ${slotTime}`;
+    const slotStartTime = booking.slot?.startTime || '??:??';
+    const slotEndTime = booking.slot?.endTime || '??:??';
+    const slotInfo = booking.slot?.date ? `${slotDate} | ${slotStartTime}-${slotEndTime}` : 'N/A';
+
+    const advPayment = booking.paymentType === 'advance' ? booking.amount : 0;
+    const fullPayment = booking.paymentType === 'full' ? booking.amount : (booking.totalAmount || 0);
 
     const currentY = doc.y;
-    doc.text(index + 1, 40, currentY, { width: 30 });
-    doc.text(booking.userName, 75, currentY, { width: 110 });
-    doc.text(booking.userPhone, 190, currentY, { width: 90 });
-    doc.text(slotInfo, 285, currentY, { width: 100 });
-    doc.text(booking.bookingStatus || 'pending', 390, currentY, { width: 80 });
-    doc.text(`Rs. ${booking.amount || 0}`, 475, currentY, { width: 60 });
+    doc.text(index + 1, 40, currentY, { width: 25 });
+    doc.text(booking.userName, 70, currentY, { width: 90 });
+    doc.text(booking.userPhone, 165, currentY, { width: 80 });
+    doc.text(slotInfo, 250, currentY, { width: 105 });
+    doc.text(booking.bookingStatus || 'pending', 360, currentY, { width: 60 });
+    doc.text(`Rs. ${advPayment}`, 425, currentY, { width: 55 });
+    doc.text(`Rs. ${fullPayment}`, 485, currentY, { width: 65 });
     doc.moveDown(1.5);
 
     // Add new page if needed

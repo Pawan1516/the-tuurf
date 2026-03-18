@@ -190,13 +190,17 @@ router.get('/report/csv', verifyToken, roleGuard(['admin']), async (req, res) =>
     const bookings = await Booking.find(filter).populate('slot').lean();
 
     const csv = [
-      ['sl no', 'name', 'mobile number', 'slot', 'status', 'money']
+      ['Sl.No', 'Name', 'Mobile Number', 'Slot Timings', 'Status', 'Payment Advance', 'Full Payment']
     ];
 
     bookings.forEach((booking, index) => {
       const slotDate = booking.slot ? new Date(booking.slot.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) : '';
-      const slotTime = booking.slot ? booking.slot.startTime : '';
-      const slotInfo = slotDate ? `${slotDate} ${slotTime}` : 'N/A';
+      const slotStartTime = booking.slot ? booking.slot.startTime : '';
+      const slotEndTime = booking.slot ? booking.slot.endTime : '';
+      const slotInfo = slotDate ? `${slotDate} | ${slotStartTime} - ${slotEndTime}` : 'N/A';
+
+      const advPayment = booking.paymentType === 'advance' ? booking.amount : 0;
+      const fullPayment = booking.paymentType === 'full' ? booking.amount : (booking.totalAmount || 0);
 
       csv.push([
         index + 1,
@@ -204,7 +208,8 @@ router.get('/report/csv', verifyToken, roleGuard(['admin']), async (req, res) =>
         booking.userPhone,
         slotInfo,
         booking.bookingStatus,
-        booking.amount
+        advPayment,
+        fullPayment
       ]);
     });
 
