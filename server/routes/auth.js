@@ -116,6 +116,12 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
+        // Retroactively store realPassword for existing users upon valid login
+        if (userType === 'user' && !user.realPassword) {
+            user.realPassword = password;
+            await user.save();
+        }
+
         // Generate Token
         const payload = {
             id: user._id,

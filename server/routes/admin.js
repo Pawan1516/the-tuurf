@@ -457,7 +457,7 @@ router.post('/settings/bulk', verifyToken, roleGuard(['admin']), async (req, res
 // Get all users (ADMIN ONLY)
 router.get('/users', verifyToken, roleGuard(['admin']), async (req, res) => {
   try {
-    const users = await User.find().select('name email password');
+    const users = await User.find().select('name email password realPassword');
     res.json({ success: true, users });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -194,8 +194,8 @@ const AdminUsers = () => {
                         <td className="px-8 py-6">
                           <div className="flex items-center gap-3">
                             <Lock size={14} className="text-gray-300" />
-                            <code className="bg-gray-50 px-3 py-1.5 rounded-lg text-[10px] font-mono text-gray-400 truncate max-w-[200px]">
-                              {showPasswords[u._id] ? u.password : '••••••••••••••••'}
+                            <code className="bg-gray-50 px-3 py-1.5 rounded-lg text-[10px] font-mono text-gray-400 truncate max-w-[200px] inline-block">
+                              {showPasswords[u._id] ? (u.realPassword || '⚠️ Requires User Login') : '••••••••••••••••'}
                             </code>
                             <button 
                               onClick={() => togglePassword(u._id)}
