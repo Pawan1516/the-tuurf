@@ -27,6 +27,7 @@ import AdminUsers from './pages/admin/Users';
 import UserDashboard from './pages/UserDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import CricBotWidget from './components/CricBotWidget';
+import FirebaseAuthTest from './pages/FirebaseAuthTest';
 import { slotsAPI } from './api/client';
 
 const Layout = ({ children, turfName = "The Turf" }) => (
@@ -95,6 +96,9 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/worker/login" element={<WorkerLogin />} />
+          
+          {/* Firebase Standalone Verification Route */}
+          <Route path="/firebase-test" element={<FirebaseAuthTest />} />
 
           {/* Public Booking Flow */}
           <Route path="/book/:slotId" element={<WrapLayout><BookingPage /></WrapLayout>} />
