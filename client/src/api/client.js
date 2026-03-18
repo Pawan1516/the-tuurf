@@ -47,12 +47,11 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Auth APIs
+// Authentication APIs
 export const authAPI = {
-  login: (email, password, role) =>
-    apiClient.post('/auth/login', { email, password, role }),
-  register: (name, email, phone, password) =>
-    apiClient.post('/auth/register', { name, email, phone, password })
+  login: (email, password, role) => apiClient.post('/auth/login', { email, password, role }),
+  register: (name, email, phone, password) => apiClient.post('/auth/register', { name, email, phone, password }),
+  googleLogin: (email, name, uid) => apiClient.post('/auth/google', { email, name, uid }),
 };
 
 // Slots APIs

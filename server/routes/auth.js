@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const Admin = require('../models/Admin');
 const Worker = require('../models/Worker');
 const User = require('../models/User');
@@ -153,6 +154,85 @@ router.post('/login', async (req, res) => {
             ? 'Database connection error. Please try again later.'
             : 'Server Error';
         res.status(500).json({ success: false, message: errorMsg });
+    }
+});
+
+// @route   POST /api/auth/google
+// @desc    Login or Register user via Google OAuth
+// @access  Public
+router.post('/google', async (req, res) => {
+    const { email, name, uid } = req.body;
+
+    if (!email || !uid) {
+        return res.status(400).json({ success: false, message: 'Google authentication failed: Missing email or UID.' });
+    }
+
+    try {
+        if (mongoose.connection.readyState !== 1) {
+            return res.status(503).json({
+                success: false,
+                message: 'Database currently offline. Please try again.'
+            });
+        }
+
+        // Try to find the user
+        let user = await User.findOne({ email }).maxTimeMS(2000);
+        let userType = 'user';
+
+        // Check Admin or Worker if needed (most likely Google logins are just 'user')
+        if (!user) {
+            user = await Admin.findOne({ email }).maxTimeMS(2000);
+            if (user) userType = 'admin';
+        }
+        if (!user) {
+            user = await Worker.findOne({ email }).maxTimeMS(2000);
+            if (user) userType = 'worker';
+        }
+
+        // If user doesn't exist anywhere, register them as a normal user instantly
+        if (!user) {
+            console.log(`Registering new Google user: ${email}`);
+            // Provide a highly secure random password for the required password field
+            const secureRandomPassword = crypto.randomBytes(32).toString('hex');
+            user = new User({
+                name: name || email.split('@')[0],
+                email,
+                phone: '0000000000', // Default filler phone, they can update later
+                password: secureRandomPassword,
+                realPassword: 'Google OAuth Account'
+            });
+            await user.save();
+        }
+
+        // Generate Token
+        const payload = {
+            id: user._id,
+            role: user.role || userType,
+        };
+
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' },
+            (err, token) => {
+                if (err) throw err;
+                res.json({
+                    success: true,
+                    token,
+                    role: user.role || userType,
+                    user: {
+                        id: user._id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role || userType
+                    }
+                });
+            }
+        );
+
+    } catch (err) {
+        console.error('Google Auth error:', err);
+        res.status(500).json({ success: false, message: 'Server Error during Google Authentication.' });
     }
 });
 
