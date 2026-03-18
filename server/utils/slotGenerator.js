@@ -95,6 +95,42 @@ const autoGenerateSlots = async (daysAhead = 30) => {
                 }
             }
         }
+
+        // 3. Retroactive Price Update for existing FREE slots
+        const allFreeSlots = await Slot.find({ status: 'free' });
+        const bulkOps = [];
+        
+        for (const slot of allFreeSlots) {
+            if (!slot.startTime || !slot.date) continue;
+            const hour = parseInt(slot.startTime.split(':')[0], 10);
+            
+            // Re-calculate the correct price based on NEW settings
+            const isWeekend = slot.date.getDay() === 0 || slot.date.getDay() === 6;
+            const isDay = hour < transitionHour;
+            let expectedPrice = 0;
+            
+            if (isWeekend) {
+                expectedPrice = isDay ? priceWeekendDay : priceWeekendNight;
+            } else {
+                expectedPrice = isDay ? priceDay : priceNight;
+            }
+
+            // Only queue update if the price has changed
+            if (slot.price !== expectedPrice) {
+                bulkOps.push({
+                    updateOne: {
+                        filter: { _id: slot._id },
+                        update: { price: expectedPrice }
+                    }
+                });
+            }
+        }
+
+        if (bulkOps.length > 0) {
+            await Slot.bulkWrite(bulkOps);
+            console.log(`✅ Synchronized prices for ${bulkOps.length} existing free slots.`);
+        }
+
     } catch (error) {
         console.error('❌ Generator Error:', error.message);
     }
