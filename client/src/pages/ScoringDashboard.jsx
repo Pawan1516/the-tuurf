@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { Save, Circle, EyeOff, ShieldAlert } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react'; // renders QR client-side from match payload
 
 const ScoringDashboard = () => {
     const { id } = useParams(); // Match ID

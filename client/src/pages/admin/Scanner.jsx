@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { 
@@ -6,29 +6,176 @@ import {
     CheckCircle, 
     AlertTriangle, 
     XCircle, 
-    Monitor, 
+    Camera, 
     ShieldCheck, 
     Activity, 
     Zap,
-    MousePointer2,
     Lock,
-    Unlock
+    Unlock,
+    CameraOff
 } from 'lucide-react';
 
+// ─── Real Camera QR Scanner Component ───────────────────────────────────────
+const CameraScanner = ({ onScan, onClose }) => {
+    const videoRef = useRef(null);
+    const streamRef = useRef(null);
+    const rafRef = useRef(null);
+    const detectorRef = useRef(null);
+    const [camError, setCamError] = useState(null);
+    const [isReady, setIsReady] = useState(false);
+    const [manualMode, setManualMode] = useState(false);
+    const [manualInput, setManualInput] = useState('');
+
+    const stopCamera = useCallback(() => {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(t => t.stop());
+            streamRef.current = null;
+        }
+    }, []);
+
+    const scanLoop = useCallback(async () => {
+        if (!videoRef.current || !detectorRef.current) return;
+        if (videoRef.current.readyState < 2) {
+            rafRef.current = requestAnimationFrame(scanLoop);
+            return;
+        }
+        try {
+            const codes = await detectorRef.current.detect(videoRef.current);
+            if (codes.length > 0) {
+                stopCamera();
+                onScan(codes[0].rawValue);
+                return;
+            }
+        } catch (_) {}
+        rafRef.current = requestAnimationFrame(scanLoop);
+    }, [onScan, stopCamera]);
+
+    useEffect(() => {
+        const hasBarcodeDetector = 'BarcodeDetector' in window;
+        if (!hasBarcodeDetector) {
+            setManualMode(true);
+            return;
+        }
+
+        detectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
+
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        }).then(stream => {
+            streamRef.current = stream;
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                videoRef.current.onloadedmetadata = () => {
+                    videoRef.current.play();
+                    setIsReady(true);
+                    rafRef.current = requestAnimationFrame(scanLoop);
+                };
+            }
+        }).catch(err => {
+            console.error('Camera error:', err);
+            setCamError(err.name === 'NotAllowedError' 
+                ? 'Camera permission denied. Please allow camera access in your browser settings.' 
+                : 'Could not open camera. Try using the manual input below.');
+            setManualMode(true);
+        });
+
+        return () => stopCamera();
+    }, [scanLoop, stopCamera]);
+
+    if (manualMode || camError) {
+        return (
+            <div className="rounded-[2.5rem] border-2 border-dashed border-gray-600 p-8 flex flex-col items-center gap-6">
+                {camError && <p className="text-yellow-400 text-xs font-bold text-center uppercase tracking-wide">{camError}</p>}
+                <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest text-center">
+                    {camError ? 'Manual Override: Paste QR Payload' : 'Browser does not support camera scanning. Paste QR payload below.'}
+                </p>
+                <div className="w-full max-w-md">
+                    <input
+                        type="text"
+                        value={manualInput}
+                        onChange={e => setManualInput(e.target.value)}
+                        placeholder="Paste QR payload here..."
+                        className="w-full p-5 rounded-[1.5rem] bg-gray-900/50 border-2 border-dashed border-gray-700 text-emerald-400 font-mono text-xs focus:border-emerald-500 outline-none transition-all placeholder:text-gray-600"
+                        autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter' && manualInput.trim()) onScan(manualInput.trim()); }}
+                    />
+                    <button
+                        onClick={() => manualInput.trim() && onScan(manualInput.trim())}
+                        className="w-full mt-3 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all"
+                    >
+                        Submit Payload
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative rounded-[2.5rem] overflow-hidden border-2 border-emerald-500/30 bg-black" style={{ aspectRatio: '4/3' }}>
+            {/* Live camera feed */}
+            <video
+                ref={videoRef}
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+            />
+
+            {/* Scanning overlay */}
+            {isReady && (
+                <>
+                    {/* Corner guides */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="relative w-56 h-56 md:w-64 md:h-64">
+                            {/* Corners */}
+                            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg"/>
+                            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg"/>
+                            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg"/>
+                            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-400 rounded-br-lg"/>
+                            {/* Scan line */}
+                            <div className="absolute left-0 right-0 h-0.5 bg-emerald-400/80 shadow-lg shadow-emerald-400" style={{ animation: 'scanLine 2s linear infinite' }}/>
+                        </div>
+                    </div>
+                    <div className="absolute bottom-4 left-0 right-0 text-center">
+                        <span className="bg-black/60 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
+                            Scanning for QR Code...
+                        </span>
+                    </div>
+                </>
+            )}
+
+            {/* Loading state */}
+            {!isReady && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80">
+                    <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"/>
+                    <p className="text-emerald-400 text-xs font-black uppercase tracking-widest">Initializing Camera...</p>
+                </div>
+            )}
+
+            <style>{`
+                @keyframes scanLine {
+                    0% { top: 0%; }
+                    50% { top: 100%; }
+                    100% { top: 0%; }
+                }
+            `}</style>
+        </div>
+    );
+};
+
+// ─── Main Scanner Component ──────────────────────────────────────────────────
 const Scanner = () => {
-    const [scanStatus, setScanStatus] = useState('idle'); // 'idle', 'scanning', 'success', 'error'
+    const [scanStatus, setScanStatus] = useState('idle');
     const [matchDetails, setMatchDetails] = useState(null);
     const [dashboardStats, setDashboardStats] = useState(null);
     const [showScanner, setShowScanner] = useState(false);
     
-    // Manual override state
     const [showOverride, setShowOverride] = useState(false);
     const [overrideMatchId, setOverrideMatchId] = useState('');
     const [overrideReason, setOverrideReason] = useState('');
 
     const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
     
-    // Configure axios
     const api = axios.create({
         baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001',
         headers: { 'Authorization': token }
@@ -37,36 +184,29 @@ const Scanner = () => {
     const fetchDashboard = React.useCallback(async () => {
         try {
             const res = await api.get('/api/admin/scan-dashboard');
-            if (res.data.success) {
-                setDashboardStats(res.data.dashboard);
-            }
+            if (res.data.success) setDashboardStats(res.data.dashboard);
         } catch (error) {
             console.error('Error fetching dashboard:', error);
-            toast.error('Failed to load operational stats.');
         }
-    }, [api]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token]);
 
-    useEffect(() => {
-        fetchDashboard();
-    }, [fetchDashboard]);
+    useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
 
     const handleScan = async (payload) => {
         if (!payload) return;
-        
         setShowScanner(false);
         setScanStatus('scanning');
-        
         try {
             const res = await api.post('/api/admin/scan-match', {
                 qr_payload: payload,
                 ip_address: 'admin_node_secure',
                 device_info: navigator.userAgent
             });
-
             if (res.data.success) {
                 setScanStatus('success');
                 setMatchDetails(res.data.match);
-                toast.success('Protocol Match Verified!');
+                toast.success('✅ Match Verified Successfully!');
                 fetchDashboard();
             }
         } catch (err) {
@@ -83,7 +223,6 @@ const Scanner = () => {
                 match_id: overrideMatchId,
                 reason: overrideReason
             });
-            
             if (res.data.success) {
                 toast.success('Admin Manual Override Successful.');
                 setShowOverride(false);
@@ -133,62 +272,40 @@ const Scanner = () => {
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Main Scanning HUD */}
                 <div className="lg:col-span-8 space-y-8">
-                    <div className="bg-gray-800/40 backdrop-blur-xl border border-gray-700/50 rounded-[3rem] p-8 md:p-12 shadow-2xl overflow-hidden relative group">
-                        {/* Decorative Background Accents */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/5 rounded-full blur-[100px] pointer-events-none"></div>
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
+                    <div className="bg-gray-800/40 backdrop-blur-xl border border-gray-700/50 rounded-[3rem] p-8 md:p-12 shadow-2xl overflow-hidden relative">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/5 rounded-full blur-[100px] pointer-events-none"/>
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"/>
 
                         <div className="flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
                             <div className="text-center md:text-left">
-                                <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Secure Scan Interface</h2>
+                                <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Camera QR Scanner</h2>
                                 <p className="text-gray-400 text-sm max-w-sm font-bold uppercase tracking-tight leading-relaxed">
-                                    Align the player's unique identity QR within the frame to authorize scoring and statistics counting.
+                                    Point the camera at the match QR code to instantly verify and unlock scoring.
                                 </p>
                             </div>
                             <button 
-                                onClick={() => setShowScanner(!showScanner)}
+                                onClick={() => setShowScanner(prev => !prev)}
                                 className={`px-10 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center gap-4 ${
                                     showScanner 
                                     ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-900/40' 
                                     : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-900/40'
                                 }`}
                             >
-                                {showScanner ? <XCircle size={18} /> : <QrCode size={18} />}
-                                {showScanner ? 'Abort Protocol' : 'Initialize Scanner'}
+                                {showScanner ? <><XCircle size={18} /> Stop Camera</> : <><Camera size={18} /> Open Camera</>}
                             </button>
                         </div>
 
                         {/* Scanner Viewport */}
-                        <div className="mt-12">
+                        <div className="mt-10">
                             {showScanner ? (
-                                <div className="bg-black/80 rounded-[2.5rem] border-2 border-emerald-500/20 aspect-video md:aspect-[21/9] flex flex-col items-center justify-center p-8 relative overflow-hidden group/scanner">
-                                    {/* Animated Scan Bar */}
-                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/10 to-transparent w-full h-1/4 animate-scan pointer-events-none"></div>
-                                    
-                                    <h3 className="text-white font-black uppercase mb-4 text-xl tracking-[0.3em] flex items-center gap-4">
-                                        <Monitor size={24} className="text-emerald-500" />
-                                        Optical Input Required
-                                    </h3>
-                                    <p className="text-gray-500 text-[10px] mb-8 text-center px-4 font-black uppercase tracking-widest">Simulation Mode: Inject QR Identifier Below</p>
-                                    
-                                    <div className="w-full max-w-md relative">
-                                        <input
-                                            type="text"
-                                            placeholder="Paste Identity Payload..."
-                                            className="w-full p-5 rounded-[1.5rem] bg-gray-900/50 border-2 border-dashed border-gray-700 text-emerald-400 font-mono text-xs focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder:text-gray-700"
-                                            autoFocus
-                                            onKeyDown={(e) => {
-                                                if(e.key === 'Enter') handleScan(e.target.value);
-                                            }}
-                                        />
-                                        <MousePointer2 className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-700" size={16} />
-                                    </div>
-                                    <p className="mt-4 text-[9px] text-gray-600 uppercase tracking-widest font-black">Secure Input: Only Authorized Payloads Accepted</p>
-                                </div>
+                                <CameraScanner
+                                    onScan={handleScan}
+                                    onClose={() => setShowScanner(false)}
+                                />
                             ) : (
-                                <div className="bg-gray-800/20 rounded-[2.5rem] border-2 border-dashed border-gray-700 h-64 flex flex-col items-center justify-center text-gray-600">
-                                    <Monitor className="text-4xl mb-4 opacity-20" size={48} />
-                                    <p className="text-xs font-black uppercase tracking-widest">Optical Device Offline</p>
+                                <div className="bg-gray-800/20 rounded-[2.5rem] border-2 border-dashed border-gray-700 h-64 flex flex-col items-center justify-center text-gray-600 gap-4">
+                                    <CameraOff className="opacity-20" size={48} />
+                                    <p className="text-xs font-black uppercase tracking-widest">Camera Offline — Press "Open Camera" to Start</p>
                                 </div>
                             )}
                         </div>
