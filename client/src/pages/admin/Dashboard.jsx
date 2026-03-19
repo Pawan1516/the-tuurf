@@ -16,7 +16,8 @@ import {
   ArrowDownRight,
   X,
   Download,
-  Settings
+  Settings,
+  ScanLine
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
@@ -33,13 +34,15 @@ const AdminDashboard = () => {
   const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
   const navItems = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+    { to: '/admin/operations', label: 'Operations HUB', icon: Activity },
     { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
     { to: '/admin/booked-slots', label: 'Booked Slots', icon: CheckCircle },
-    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
+    { to: '/admin/bookings', label: 'Booking Log', icon: ScanLine },
     { to: '/admin/workers', label: 'Workers', icon: Briefcase },
     { to: '/admin/users', label: 'Users', icon: Users },
     { to: '/admin/report', label: 'Report', icon: PieChart },
+    { to: '/admin/scanner', label: 'Scanner', icon: ScanLine },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
@@ -441,6 +444,14 @@ const AdminDashboard = () => {
                   <div>
                     <p className="text-xs font-black uppercase tracking-widest">Extract Intel</p>
                     <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Generation protocol</p>
+                  </div>
+                </Link>
+
+                <Link to="/admin/scanner" className="w-full bg-white/5 hover:bg-emerald-600 p-6 rounded-[2rem] border border-white/5 flex items-center gap-5 transition-all group">
+                  <div className="bg-white/10 p-4 rounded-2xl group-hover:bg-black/20 transition-colors"><ScanLine size={20} /></div>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest">QR Scanner</p>
+                    <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Verify Matches</p>
                   </div>
                 </Link>
               </div>

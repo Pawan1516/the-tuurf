@@ -10,6 +10,10 @@ const { createBookingEntry } = require('./bookingService');
 const checkAvailability = async (date, time) => {
     try {
         const [hours, minutes] = time.split(':').map(Number);
+        
+        // Normalize date to UTC midnight across all timezones
+        const d = new Date(date);
+        const normalizedDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
 
         // Check operating hours from config
         const openHour = parseInt(process.env.TURF_OPEN_HOUR) || 7;
@@ -28,7 +32,7 @@ const checkAvailability = async (date, time) => {
         const endTime = `${String(endHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
         const existingBooking = await Slot.findOne({
-            date,
+            date: normalizedDate,
             $or: [
                 {
                     $and: [
@@ -57,7 +61,7 @@ const checkAvailability = async (date, time) => {
             if (h === startHour) continue;
             const t = `${String(h).padStart(2, '0')}:00`;
             const booked = await Slot.findOne({
-                date,
+                date: normalizedDate,
                 startTime: t,
                 status: { $in: ['booked', 'hold'] }
             });
@@ -144,9 +148,13 @@ const lockSlot = async (date, time) => {
     try {
         const Slot = require('../models/Slot');
         
+        // Normalize date to UTC midnight across all timezones
+        const d = new Date(date);
+        const normalizedDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+
         // 1. Check if already booked or held
         const existing = await Slot.findOne({
-            date,
+            date: normalizedDate,
             startTime: time,
             status: { $in: ['booked', 'hold'] }
         });
@@ -162,10 +170,14 @@ const lockSlot = async (date, time) => {
         // 2. Lock it for 2 minutes
         const holdExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
         const slot = await Slot.findOneAndUpdate(
-            { date, startTime: time },
+            { date: normalizedDate, startTime: time },
             { status: 'hold', holdExpiresAt },
-            { new: true, upsert: true }
+            { new: true }
         );
+
+        if (!slot) {
+            return { success: false, message: "Infrastructure mismatch: Slot not found in the designated operating window." };
+        }
 
         return { 
             success: true, 
@@ -184,8 +196,11 @@ const lockSlot = async (date, time) => {
  */
 const getFreeSlots = async (targetDate) => {
     try {
+        const normalizedDate = new Date(targetDate);
+        normalizedDate.setUTCHours(0, 0, 0, 0);
+
         const slots = await Slot.find({
-            date: targetDate,
+            date: normalizedDate,
             status: 'free'
         }).sort({ startTime: 1 });
 
@@ -228,8 +243,11 @@ const getFreeSlots = async (targetDate) => {
  */
 const getBookedSlots = async (targetDate) => {
     try {
+        const normalizedDate = new Date(targetDate);
+        normalizedDate.setUTCHours(0, 0, 0, 0);
+
         const slots = await Slot.find({
-            date: targetDate,
+            date: normalizedDate,
             status: { $in: ['booked', 'hold'] }
         }).sort({ startTime: 1 });
 
@@ -280,7 +298,10 @@ const cancelBooking = async (phone, date, time) => {
         const Slot = require('../models/Slot');
         const Booking = require('../models/Booking');
 
-        const slot = await Slot.findOne({ date, startTime: time, status: 'booked' });
+        const normalizedDate = new Date(date);
+        normalizedDate.setUTCHours(0, 0, 0, 0);
+
+        const slot = await Slot.findOne({ date: normalizedDate, startTime: time, status: 'booked' });
         if (!slot) {
             return { success: false, message: `No booked slot found on ${date} at ${time}.` };
         }
@@ -317,15 +338,21 @@ const rescheduleBooking = async (phone, oldDate, oldTime, newDate, newTime) => {
         const Slot = require('../models/Slot');
         const Booking = require('../models/Booking');
 
+        const normalizedOld = new Date(oldDate);
+        normalizedOld.setUTCHours(0, 0, 0, 0);
+        
+        const normalizedNew = new Date(newDate);
+        normalizedNew.setUTCHours(0, 0, 0, 0);
+
         // 1. Find the old booking
-        const oldSlot = await Slot.findOne({ date: oldDate, startTime: oldTime, status: 'booked' });
+        const oldSlot = await Slot.findOne({ date: normalizedOld, startTime: oldTime, status: 'booked' });
         if (!oldSlot) return { success: false, message: `No active booking found on ${oldDate} at ${oldTime}.` };
 
         const booking = await Booking.findOne({ slot: oldSlot._id, userPhone: phone, bookingStatus: 'confirmed' });
         if (!booking) return { success: false, message: `No confirmed booking found for this phone number on ${oldDate} at ${oldTime}.` };
 
         // 2. Check if the new slot is available
-        const newSlot = await Slot.findOne({ date: newDate, startTime: newTime, status: 'free' });
+        const newSlot = await Slot.findOne({ date: normalizedNew, startTime: newTime, status: 'free' });
         if (!newSlot) return { success: false, message: `Sorry, the new slot on ${newDate} at ${newTime} is not available.` };
 
         // 3. Perform rescheduling

@@ -1,59 +1,95 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const dotenv = require('dotenv');
-dotenv.config();
+const Anthropic = require('@anthropic-ai/sdk');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY || 'dummy_key',
+});
 
-/**
- * Analyze a booking and generate a personalized confirmation message using Gemini
- */
-const analyzeBookingAndGenerateMessage = async (bookingData, userHistory) => {
-    if (!process.env.GEMINI_API_KEY) return null;
+class AIService {
+    /**
+     * @desc Generate one-line punchy commentary for a ball
+     */
+    static async generateCommentary(context) {
+        try {
+            const { ball, batsman, bowler, match, situation } = context;
+            
+            const prompt = `You are a live cricket commentator for 'The Turf'. Generate ONE punchy, engaging sentence for this ball:
+            EVENT: ${ball.type === 'normal' ? ball.runs + ' runs' : ball.type}
+            BATSMAN: ${batsman.name} (${batsman.runs} off ${batsman.balls})
+            BOWLER: ${bowler.name} (Econ: ${bowler.economy})
+            MATCH STATE: ${match.team} needs ${match.required} off ${match.ballsLeft} balls.
+            SITUATION: ${situation}
+            
+            Keep it under 60 tokens. Be dramatic if it's a high pressure situation.`;
 
-    try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+            const message = await anthropic.messages.create({
+                model: "claude-3-sonnet-20240229",
+                max_tokens: 60,
+                temperature: 0.8,
+                system: "You are a live cricket commentator. Return only the commentary line.",
+                messages: [{ role: "user", content: prompt }],
+            });
 
-        const prompt = `You are a Booking Confirmation Agent. Analyze this booking and predict no-show risk.
-
-Booking: ${JSON.stringify(bookingData)}
-User History: ${JSON.stringify(userHistory)}
-
-Respond ONLY with valid JSON:
-{
-  "risk_level": "LOW | MEDIUM | HIGH",
-  "channel_recommendation": "SMS | WHATSAPP | EMAIL",
-  "message": "personalized confirmation message"
-}`;
-
-        const result = await model.generateContent(prompt);
-        const text = result.response.text().replace(/```json|```/g, '').trim();
-        return JSON.parse(text);
-    } catch (error) {
-        console.error('Gemini analyzeBooking error:', error.message);
-        return null;
+            return message.content[0].text;
+        } catch (error) {
+            console.error('AI Commentary Error:', error);
+            return "A solid delivery there."; // Fallback
+        }
     }
-};
 
-/**
- * Get AI insights about a user's booking patterns
- */
-const getAIInsights = async (userHistory) => {
-    if (!process.env.GEMINI_API_KEY) return null;
+    /**
+     * @desc TurfBot - AI In-App Assistant
+     */
+    static async turfBotChat(userInput, conversationHistory, userContext) {
+        try {
+            const systemPrompt = `You are TurfBot, the cricket assistant for 'The Turf' platform. 
+            You have access to the user's stats, team, and match history.
+            CONTEXT: ${JSON.stringify(userContext)}
+            Answer concisely and helpfully. If asked for stats, use the provided JSON context. 
+            Be encouraging like a coach.`;
 
-    try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-        const result = await model.generateContent(
-            `Analyze this user booking history and give a brief executive summary (under 60 words) with one Smart Action recommendation:\n${JSON.stringify(userHistory)}`
-        );
-        return result.response.text();
-    } catch (error) {
-        console.error('Gemini getAIInsights error:', error.message);
-        return null;
+            const message = await anthropic.messages.create({
+                model: "claude-3-sonnet-20240229",
+                max_tokens: 300,
+                temperature: 0.4,
+                system: systemPrompt,
+                messages: [
+                    ...conversationHistory,
+                    { role: "user", content: userInput }
+                ],
+            });
+
+            return message.content[0].text;
+        } catch (error) {
+            console.error('TurfBot Error:', error);
+            return "I'm having trouble analyzing the stats right now, but you're doing great on the field!";
+        }
     }
-};
 
-module.exports = {
-    analyzeBookingAndGenerateMessage,
-    getAIInsights,
-    genAI
-};
+    /**
+     * @desc Generate individual post-match report
+     */
+    static async generatePostMatchReport(matchData, playerData) {
+        try {
+            const prompt = `Analyze this player's performance in MS Paint... just kidding. 
+            Use this data to generate a short, professional post-match debrief.
+            MATCH: ${matchData.title} (${matchData.result})
+            PLAYER STATS: ${JSON.stringify(playerData)}
+            Include: Performance Grade, Batting/Bowling analysis, Turning point contribution, and Focus for next match.`;
+
+            const message = await anthropic.messages.create({
+                model: "claude-3-sonnet-20240229",
+                max_tokens: 500,
+                temperature: 0.5,
+                system: "You are a professional cricket analyst. Return a structured JSON-like text report.",
+                messages: [{ role: "user", content: prompt }],
+            });
+
+            return message.content[0].text;
+        } catch (error) {
+            console.error('Post-Match AI Error:', error);
+            return "Technical difficulties with the AI Analyst. We'll have your report shortly!";
+        }
+    }
+}
+
+module.exports = AIService;

@@ -21,10 +21,17 @@ router.post('/', async (req, res) => {
         const mongoose = require('mongoose');
         if (mongoose.connection.readyState === 1) {
             try {
+                const formatDate = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+                const startDateStr = formatDate(new Date());
+                const endDateStr = formatDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+
+                const dStart = new Date();
+                const dEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
                 freeSlots = await Slot.find({
                     date: {
-                        $gte: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
-                        $lte: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
+                        $gte: new Date(Date.UTC(dStart.getFullYear(), dStart.getMonth(), dStart.getDate())),
+                        $lte: new Date(Date.UTC(dEnd.getFullYear(), dEnd.getMonth(), dEnd.getDate(), 23, 59, 59, 999))
                     },
                     status: 'free'
                 }).sort({ date: 1, startTime: 1 }).limit(20).lean().maxTimeMS(2000);

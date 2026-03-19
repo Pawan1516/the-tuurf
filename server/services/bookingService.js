@@ -26,6 +26,10 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
             { new: true }
         );
     } else if (date && startTime && endTime) {
+        // Normalize date to UTC midnight across all timezones
+        const d = new Date(date);
+        const normalizedDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+
         const timeToMinutes = (t) => {
             const [h, m] = t.split(':').map(Number);
             return h * 60 + m;
@@ -39,7 +43,7 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
 
         // Check for overlaps
         const overlaps = await Slot.find({
-            date,
+            date: normalizedDate,
             _id: { $ne: slotId },
             $or: [
                 {
@@ -58,7 +62,7 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
         }
 
         slot = await Slot.findOneAndUpdate(
-            { date, startTime, status: 'free' },
+            { date: normalizedDate, startTime, status: 'free' },
             {
                 status: 'booked',
                 endTime,
@@ -69,8 +73,14 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
         );
 
         if (!slot) {
+            // Check if it exists with another status before trying to create it
+            const existingAnyStatus = await Slot.findOne({ date: normalizedDate, startTime });
+            if (existingAnyStatus) {
+                throw new Error('This temporal segment is already reserved or occupied.');
+            }
+
             slot = new Slot({
-                date,
+                date: normalizedDate,
                 startTime,
                 endTime,
                 status: 'booked',

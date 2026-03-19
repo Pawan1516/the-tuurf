@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { Briefcase } from 'lucide-react';
 import AdminLogin from './pages/admin/Login';
 import WorkerLogin from './pages/worker/Login';
@@ -16,6 +18,7 @@ import WorkerBookedSlots from './pages/worker/BookedSlots';
 import WorkerAssignedSlots from './pages/worker/AssignedSlots';
 import WorkerReport from './pages/worker/Report';
 import AdminDashboard from './pages/admin/Dashboard';
+import OperationsDashboard from './pages/admin/OperationsDashboard';
 import AdminSlots from './pages/admin/Slots';
 import AdminBookings from './pages/admin/Bookings';
 import AdminWorkers from './pages/admin/Workers';
@@ -24,7 +27,9 @@ import AdminBookedSlots from './pages/admin/BookedSlots';
 import AdminBookingDetail from './pages/admin/BookingDetail';
 import AdminSettings from './pages/admin/Settings';
 import AdminUsers from './pages/admin/Users';
+import AdminScanner from './pages/admin/Scanner';
 import UserDashboard from './pages/UserDashboard';
+import ScoringDashboard from './pages/ScoringDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import CricBotWidget from './components/CricBotWidget';
 import FirebaseAuthTest from './pages/FirebaseAuthTest';
@@ -111,6 +116,11 @@ function App() {
               <UserDashboard />
             </ProtectedRoute>
           } />
+          <Route path="/scoring/:id" element={
+            <ProtectedRoute allowedRoles={['user', 'admin']}>
+              <ScoringDashboard />
+            </ProtectedRoute>
+          } />
 
           {/* Worker Dashboard */}
           <Route path="/worker/dashboard" element={
@@ -185,8 +195,19 @@ function App() {
               <AdminSettings />
             </ProtectedRoute>
           } />
+          <Route path="/admin/scanner" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminScanner />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/operations" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <OperationsDashboard />
+            </ProtectedRoute>
+          } />
         </Routes>
         <CricBotWidget />
+        <ToastContainer position="bottom-right" theme="dark" />
       </AuthProvider>
     </Router>
   );

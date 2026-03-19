@@ -18,7 +18,7 @@ if (accountSid && authToken) {
 /**
  * ─── Core send function: WhatsApp first, SMS fallback ──────────────────────────
  */
-const sendWhatsAppNotification = async (phoneNumber, message, bookingId = null, messageType = 'custom', mediaUrl = null) => {
+const sendWhatsAppNotification = async (phoneNumber, message, bookingId = null, messageType = 'custom', mediaUrl = null, twilioOptions = null) => {
   // 1. Clean and Format recipient number
   let cleanNumber = String(phoneNumber).trim();
   if (cleanNumber.startsWith('whatsapp:')) cleanNumber = cleanNumber.substring(9);
@@ -40,7 +40,13 @@ const sendWhatsAppNotification = async (phoneNumber, message, bookingId = null, 
 
   // ── ATTEMPT 1: WhatsApp ─────────────────────────────────────────────────
   try {
-    const payload = { body: message, from, to: toWhatsApp };
+    const payload = { from, to: toWhatsApp };
+    if (twilioOptions && twilioOptions.contentSid) {
+      payload.contentSid = twilioOptions.contentSid;
+      payload.contentVariables = twilioOptions.contentVariables;
+    } else {
+      payload.body = message;
+    }
     if (mediaUrl) payload.mediaUrl = [mediaUrl];
     const response = await client.messages.create(payload);
     console.log(`✅ WhatsApp→ ${toWhatsApp} | SID: ${response.sid}`);
@@ -82,7 +88,10 @@ const sendConfirmationMessage = (phoneNumber, userName, slotDate, timeRange, boo
     `📅 Date: ${slotDate}\n` +
     `⏰ Time: ${timeRange}\n\n` +
     `See you on the turf! 🏟️\n— The Turf`;
-  return sendWhatsAppNotification(phoneNumber, message, bookingId, 'confirm');
+  return sendWhatsAppNotification(phoneNumber, message, bookingId, 'confirm', null, {
+    contentSid: 'HXb5b62575e6e4ff6129ad7c8efe1f983e',
+    contentVariables: JSON.stringify({ "1": String(slotDate), "2": String(timeRange) })
+  });
 };
 
 const sendRejectionMessage = (phoneNumber, userName, slotDate, timeRange, bookingId, turfLocation = process.env.TURF_LOCATION || 'The Turf Stadium') => {

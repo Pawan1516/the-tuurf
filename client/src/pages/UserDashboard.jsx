@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 import {
     LayoutDashboard,
     Calendar,
@@ -16,13 +18,17 @@ import {
 import AuthContext from '../context/AuthContext';
 import { bookingsAPI, slotsAPI } from '../api/client';
 import MobileNav from '../components/MobileNav';
+import MatchCreationModal from '../components/MatchCreationModal';
 
 const UserDashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const [bookings, setBookings] = useState([]);
     const [todaySlots, setTodaySlots] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('bookings'); // 'bookings', 'profile'
     const [settings, setSettings] = useState({ TURF_NAME: 'The Turf', TURF_LOCATION: 'The Turf Stadium' });
+    const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState(null);
     const navigate = useNavigate();
 
     const navItems = [
@@ -58,6 +64,15 @@ const UserDashboard = () => {
     const handleLogout = () => {
         logout();
         navigate('/');
+    };
+
+    const handleCreateMatchClick = (booking) => {
+        setSelectedBooking(booking);
+        setIsMatchModalOpen(true);
+    };
+
+    const handleMatchSuccess = (match) => {
+        navigate(`/scoring/${match._id}`);
     };
 
     const getStatusInfo = (status) => {
@@ -132,7 +147,18 @@ const UserDashboard = () => {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
                 <header className="hidden md:flex bg-white/80 backdrop-blur-md px-10 h-24 items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-                    <h2 className="text-xl font-black text-gray-900 tracking-tighter uppercase">Activity Log</h2>
+                    <div className="flex gap-8">
+                        <button 
+                            onClick={() => setActiveTab('bookings')}
+                            className={`text-xl font-black tracking-tighter uppercase pb-2 border-b-4 transition-all ${activeTab === 'bookings' ? 'text-gray-900 border-emerald-600' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>
+                            Activity Log
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('profile')}
+                            className={`text-xl font-black tracking-tighter uppercase pb-2 border-b-4 transition-all ${activeTab === 'profile' ? 'text-gray-900 border-emerald-600' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>
+                            Profile & Stats
+                        </button>
+                    </div>
                     <div className="flex items-center gap-4">
                         <div className="text-right">
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Operational Status</p>
@@ -142,6 +168,85 @@ const UserDashboard = () => {
                 </header>
 
                 <div className="p-4 md:p-10 space-y-12">
+                
+                {/* Mobile Tabs */}
+                <div className="md:hidden flex gap-4 overflow-x-auto pb-4 scrollbar-hide border-b border-gray-200">
+                    <button 
+                        onClick={() => setActiveTab('bookings')}
+                        className={`text-sm font-black whitespace-nowrap uppercase pb-2 border-b-4 ${activeTab === 'bookings' ? 'text-gray-900 border-emerald-600' : 'text-gray-400 border-transparent'}`}>
+                        Activity Log
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('profile')}
+                        className={`text-sm font-black whitespace-nowrap uppercase pb-2 border-b-4 ${activeTab === 'profile' ? 'text-gray-900 border-emerald-600' : 'text-gray-400 border-transparent'}`}>
+                        Profile & Stats
+                    </button>
+                </div>
+
+                {activeTab === 'profile' && (
+                    <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl">
+                        <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-8">Cricket Profile</h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                            <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Batting Career</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-3xl font-black text-emerald-600">{user?.stats?.batting?.runs || 0}</p>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase">Total Runs</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-3xl font-black text-emerald-600">{user?.stats?.batting?.average || 0}</p>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase">Average</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-gray-800">{user?.stats?.batting?.strike_rate || 0}</p>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase">Strike Rate</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-gray-800">{user?.stats?.batting?.matches || 0}</p>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase">Matches</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Bowling Career</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-3xl font-black text-emerald-600">{user?.stats?.bowling?.wickets || 0}</p>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase">Wickets</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-3xl font-black text-emerald-600">{user?.stats?.bowling?.economy || 0}</p>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase">Economy</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-gray-800">{user?.stats?.bowling?.overs || 0}</p>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase">Overs Bowled</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-gray-800">{user?.stats?.bowling?.five_wicket_hauls || 0}</p>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase">5-Wickets Hauls</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-emerald-950 text-white rounded-[2rem] p-8 flex items-center justify-between">
+                            <div>
+                                <h4 className="text-xl font-black uppercase mb-2">Team Management</h4>
+                                <p className="text-sm font-bold text-emerald-400/80">You are a {user?.role || 'PLAYER'}</p>
+                            </div>
+                            <button className="bg-emerald-600 hover:bg-emerald-500 transition-colors px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/40">
+                                View Teams
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'bookings' && (
+                    <>
                     {/* Today's Rapid Booking Section (7 AM - 11 PM) */}
                     <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
                         <div className="flex justify-between items-center mb-6 md:mb-8">
@@ -226,12 +331,19 @@ const UserDashboard = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="w-full md:w-auto text-center md:text-right shrink-0 pt-4 md:pt-0 border-t md:border-0 border-gray-50">
+                                            <div className="w-full md:w-auto text-center md:text-right shrink-0 pt-4 md:pt-0 border-t md:border-0 border-gray-50 flex flex-col items-end">
                                                 <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Transaction Value</p>
                                                 <p className="text-2xl font-black text-emerald-600 tracking-tighter">₹{booking.amount}</p>
                                                 <p className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest mt-1 ${booking.paymentStatus === 'verified' ? 'text-emerald-400' : 'text-yellow-500'}`}>
                                                     Payment: {booking.paymentStatus}
                                                 </p>
+                                                {booking.bookingStatus === 'confirmed' && (
+                                                    <button 
+                                                        onClick={() => handleCreateMatchClick(booking)}
+                                                        className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-emerald-500/20 shadow-md">
+                                                        Create Match
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -239,8 +351,19 @@ const UserDashboard = () => {
                             </div>
                         )}
                     </div>
+                    </>
+                )}
                 </div>
             </main>
+
+            {selectedBooking && (
+                <MatchCreationModal 
+                    isOpen={isMatchModalOpen}
+                    onClose={() => setIsMatchModalOpen(false)}
+                    booking={selectedBooking}
+                    onSuccess={handleMatchSuccess}
+                />
+            )}
         </div>
     );
 };

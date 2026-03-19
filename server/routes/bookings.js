@@ -46,6 +46,10 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Normalize date to UTC midnight across all timezones
+    const d = new Date(date);
+    const normalizedDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+
     // 2. Perform time calculations
     const timeToMinutes = (t) => {
       const [h, m] = t.split(':').map(Number);
@@ -91,7 +95,7 @@ router.post('/', async (req, res) => {
 
     // Check for overlaps (excluding the current slot if we are updating it)
     const overlapQuery = {
-      date,
+      date: normalizedDate,
       $or: [
         {
           $and: [
@@ -115,25 +119,29 @@ router.post('/', async (req, res) => {
 
     let slot;
     // 3. Try to take/update the slot
+    // If we have a slotId, prioritize it but ensure it matches the requested time/date
     if (slotId && mongoose.Types.ObjectId.isValid(slotId)) {
-      // Find and update existing slot to match requested time
-      slot = await Slot.findOneAndUpdate(
-        { _id: slotId, status: { $in: ['free', 'hold'] } }, // Allow hold if it's the same flow
-        {
-          status: 'hold',
-          startTime: startTimeClean,
-          endTime: endTimeClean,
-          holdExpiresAt: new Date(Date.now() + holdDuration * 60 * 1000),
-          updatedAt: new Date()
-        },
-        { new: true }
-      );
+        slot = await Slot.findOneAndUpdate(
+            { 
+              _id: slotId, 
+              date: normalizedDate, 
+              startTime: startTimeClean, 
+              status: { $in: ['free', 'hold'] } 
+            },
+            {
+                status: 'hold',
+                endTime: endTimeClean,
+                holdExpiresAt: new Date(Date.now() + holdDuration * 60 * 1000),
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
     }
 
     if (!slot) {
-      // Fallback: try to find a free slot at the same time or create new
+      // Fallback: try to find a free slot at the same time
       slot = await Slot.findOneAndUpdate(
-        { date, startTime: startTimeClean, status: 'free' },
+        { date: normalizedDate, startTime: startTimeClean, status: 'free' },
         {
           status: 'hold',
           endTime: endTimeClean,
@@ -144,8 +152,14 @@ router.post('/', async (req, res) => {
       );
 
       if (!slot) {
+        // Finally check if it exists at all with different status
+        const existingAnyStatus = await Slot.findOne({ date: normalizedDate, startTime: startTimeClean });
+        if (existingAnyStatus) {
+           return res.status(400).json({ success: false, message: 'This slot is already reserved or occupied.' });
+        }
+
         slot = new Slot({
-          date,
+          date: normalizedDate,
           startTime: startTimeClean,
           endTime: endTimeClean,
           status: 'hold',

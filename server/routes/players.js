@@ -1,0 +1,228 @@
+const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
+const Match = require('../models/Match');
+const QRService = require('../services/qrService');
+const verifyToken = require('../middleware/verifyToken');
+const roleGuard = require('../middleware/roleGuard');
+
+// @route   GET /api/players/:id/qr
+// @desc    Fetch player's QR code PNG and payload
+// @access  Private
+router.get('/:id/qr', verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('player_qr name');
+        if (!user) return res.status(404).json({ success: false, message: 'Player not found' });
+        
+        // Security: only self or admin can see full QR payload details
+        if (req.user.id !== req.params.id && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ success: false, message: 'Access denied' });
+        }
+
+        res.json({ success: true, player_qr: user.player_qr });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/players/:id/qr/reset
+// @desc    Regenerate player QR
+// @access  Private (Owner or Admin)
+router.post('/:id/qr/reset', verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ success: false, message: 'Player not found' });
+        
+        if (req.user.id !== req.params.id && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ success: false, message: 'Access denied' });
+        }
+
+        const qrData = await QRService.generatePlayerQR(user);
+        
+        user.player_qr.code = qrData.encodedData;
+        user.player_qr.qr_image_url = qrData.qrImage; // For now storing base64 as URL
+        user.player_qr.last_reset_at = new Date();
+        user.player_qr.reset_count += 1;
+        
+        await user.save();
+
+        res.json({ success: true, message: 'Identity QR Regenerated.', player_qr: user.player_qr });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/players/resolve
+// @desc    Resolve a username or mobile to a user profile
+// @access  Private
+router.post('/resolve', verifyToken, async (req, res) => {
+    try {
+        const { identifier } = req.body;
+        if (!identifier) return res.status(400).json({ success: false, message: 'Registry criteria not met: identifier required.' });
+
+        let user = null;
+        if (identifier.startsWith('@')) {
+            user = await User.findOne({ username: identifier.slice(1) })
+                .select('name username phone player_qr.qr_image_url stats');
+        } else if (/^\d{10}$/.test(identifier)) {
+            user = await User.findOne({ phone: identifier })
+                .select('name username phone player_qr.qr_image_url stats');
+        }
+
+        if (user) {
+            res.json({ success: true, linked: true, user });
+        } else {
+            res.json({ success: true, linked: false, message: 'Node could not be addressed. Saved as guest.' });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/players/lookup-mobile
+// @desc    Lookup player by mobile (Addendum v2.6)
+router.post('/lookup-mobile', verifyToken, async (req, res) => {
+    try {
+        const { mobile } = req.body;
+        const user = await User.findOne({ phone: mobile }).select('name username phone stats');
+        if (user) {
+            res.json({ success: true, found: true, user });
+        } else {
+            res.json({ success: true, found: false });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/players/lookup-mobile/bulk
+// @desc    Bulk lookup for team entry (Addendum v2.6)
+router.post('/lookup-mobile/bulk', verifyToken, async (req, res) => {
+    try {
+        const { players } = req.body; // array of {mobile, name}
+        const mobiles = players.map(p => p.mobile);
+        const users = await User.find({ phone: { $in: mobiles } }).select('name username phone stats');
+        
+        const results = players.map(p => {
+            const foundUser = users.find(u => u.phone === p.mobile);
+            return {
+                mobile: p.mobile,
+                name: p.name,
+                found: !!foundUser,
+                user: foundUser || null
+            };
+        });
+
+        res.json({ success: true, results });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/players/claim-stats
+// @desc    Claim guest stats after registration (Addendum v2.6)
+router.post('/claim-stats', verifyToken, async (req, res) => {
+    try {
+        const { mobile, claim_token } = req.body;
+        const user = await User.findById(req.user.id);
+        if (!user || user.phone !== mobile) {
+            return res.status(403).json({ success: false, message: 'Mobile verification failed.' });
+        }
+
+        // Search for matches where this mobile appeared as a guest with the token
+        const matches = await Match.find({
+            $or: [
+                { "quick_teams.team_a.players": { $elemMatch: { input: mobile, claim_token } } },
+                { "quick_teams.team_b.players": { $elemMatch: { input: mobile, claim_token } } }
+            ]
+        });
+
+        if (matches.length === 0) {
+            return res.status(404).json({ success: false, message: 'No claimable stats found for this token/mobile.' });
+        }
+
+        // Linking logic (Phase 2): Iterate and update user_id in matches
+        for (const match of matches) {
+            ['team_a', 'team_b'].forEach(teamSide => {
+                match.quick_teams[teamSide].players.forEach(p => {
+                    if (p.input === mobile && p.claim_token === claim_token) {
+                        p.user_id = user._id;
+                        p.is_linked = true;
+                    }
+                });
+            });
+            await match.save();
+        }
+
+        res.json({ success: true, message: `Successfully claimed stats from ${matches.length} matches.` });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/players/scan-qr
+// @desc    Extract profile from Player QR
+// @access  Private
+router.post('/scan-qr', verifyToken, async (req, res) => {
+    try {
+        const { qr_payload } = req.body;
+        if (!qr_payload) return res.status(400).json({ success: false, message: 'Missing QR payload' });
+
+        // Search user by QR code
+        const player = await User.findOne({ 'player_qr.code': qr_payload })
+            .select('name stats cricket_profile personal teams');
+
+        if (!player) return res.status(404).json({ success: false, message: 'Identity not found in Registry.' });
+
+        res.json({ success: true, profile: player });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/players/checkin
+// @desc    Check a player into a match
+// @access  Private (SCORER or ADMIN)
+router.post('/checkin', verifyToken, roleGuard(['SCORER', 'ADMIN', 'admin']), async (req, res) => {
+    try {
+        const { match_id, player_qr_code, team_id, method = 'QR_SCAN' } = req.body;
+        
+        const player = await User.findOne({ 'player_qr.code': player_qr_code });
+        if (!player) return res.status(404).json({ success: false, message: 'Player identity failed.' });
+
+        const match = await Match.findById(match_id);
+        if (!match) return res.status(404).json({ success: false, message: 'Match node not found.' });
+
+        // Check if player already checked in
+        const alreadyCheckedIn = match.player_checkin.find(c => c.player_id.toString() === player._id.toString());
+        if (alreadyCheckedIn) {
+            return res.status(400).json({ success: false, message: 'Player already manifested in match.' });
+        }
+
+        match.player_checkin.push({
+            player_id: player._id,
+            team_id: team_id,
+            checked_in_at: new Date(),
+            method,
+            scanned_by: req.user.id
+        });
+
+        await match.save();
+
+        // Emit check-in event
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`match_${match._id}`).emit('match:player_checkin', {
+                player_name: player.name,
+                team_id: team_id,
+                total_checked_in: match.player_checkin.length
+            });
+        }
+
+        res.json({ success: true, message: 'Player manifestations confirmed.', player_name: player.name });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+module.exports = router;

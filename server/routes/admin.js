@@ -10,6 +10,110 @@ const { generateBookingReport, createPDF } = require('../services/pdfReport');
 const { createBookingEntry } = require('../services/bookingService');
 const Setting = require('../models/Setting');
 const User = require('../models/User');
+const Match = require('../models/Match');
+const QRScanLog = require('../models/QRScanLog');
+const QRService = require('../services/qrService');
+
+// @route   GET /api/admin/scan-dashboard
+// @desc    Today's verification status
+// @access  Private (ADMIN)
+router.get('/scan-dashboard', verifyToken, roleGuard(['ADMIN', 'admin']), async (req, res) => {
+    try {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        const [totalMatches, verifiedMatches, totalScans, successScans] = await Promise.all([
+            Match.countDocuments({ start_time: { $gte: today } }),
+            Match.countDocuments({ start_time: { $gte: today }, 'verification.status': 'VERIFIED' }),
+            QRScanLog.countDocuments({ scan_time: { $gte: today } }),
+            QRScanLog.countDocuments({ scan_time: { $gte: today }, scan_result: 'SUCCESS' })
+        ]);
+
+        res.json({
+            success: true,
+            dashboard: {
+                matches: {
+                    total: totalMatches,
+                    verified: verifiedMatches,
+                    pending: totalMatches - verifiedMatches
+                },
+                scans: {
+                    total: totalScans,
+                    success: successScans,
+                    successRate: totalScans > 0 ? (successScans / totalScans * 100).toFixed(1) : 0
+                }
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/admin/scan-match
+// @desc    Admin scans QR to verify match
+// @access  Private (ADMIN)
+router.post('/scan-match', verifyToken, roleGuard(['ADMIN', 'admin']), async (req, res) => {
+    try {
+        const { qr_payload, ip_address, device_info } = req.body;
+        if (!qr_payload) return res.status(400).json({ success: false, message: 'Registry failure: Missing payload.' });
+
+        const result = await QRService.verifyQR(qr_payload, req.user.id, ip_address, device_info);
+        
+        if (result.success) {
+            const io = req.app.get('socketio');
+            if (io) {
+                io.to(`match_${result.match._id}`).emit('match:verified', {
+                    match_id: result.match._id,
+                    status: 'VERIFIED'
+                });
+            }
+            res.json({ success: true, match: result.match });
+        } else {
+            res.status(400).json({ success: false, reason: result.reason });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/admin/override-match
+// @desc    Manual verification override
+// @access  Private (ADMIN)
+router.post('/override-match', verifyToken, roleGuard(['ADMIN', 'admin']), async (req, res) => {
+    try {
+        const { match_id, reason } = req.body;
+        const match = await Match.findById(match_id);
+        
+        if (!match) return res.status(404).json({ success: false, message: 'Match Node Not Found.' });
+        
+        match.verification.status = 'VERIFIED';
+        match.start_control.can_start = true;
+        match.start_control.start_method = 'ADMIN_OVERRIDE';
+        
+        await match.save();
+
+        // Log the override
+        const log = new QRScanLog({
+            match_id: match._id,
+            scanned_by: req.user.id,
+            scan_result: 'SUCCESS',
+            error_reason: `MANUAL_OVERRIDE: ${reason}`
+        });
+        await log.save();
+
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`match_${match._id}`).emit('match:verified', {
+                match_id: match._id,
+                status: 'VERIFIED'
+            });
+        }
+
+        res.json({ success: true, message: 'Match Protocol Overridden.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 
 // Create Worker (ADMIN ONLY)
 router.post('/workers', verifyToken, roleGuard(['admin']), async (req, res) => {
@@ -467,6 +571,113 @@ router.get('/users', verifyToken, roleGuard(['admin']), async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+});
+
+// Admin QR Routes
+
+// POST /api/admin/scan-match - Admin scans QR data
+router.post('/scan-match', verifyToken, roleGuard(['admin']), async (req, res) => {
+    try {
+        const { qr_payload, ip_address, device_info } = req.body;
+        const adminId = req.user._id; // from Auth middlewae
+
+        if (!qr_payload) return res.status(400).json({ success: false, message: 'QR payload required' });
+
+        const result = await QRService.verifyQR(qr_payload, adminId, ip_address, device_info);
+
+        if (result.success) {
+            res.json({ success: true, message: 'Match successfully verified', match: result.match });
+        } else {
+            res.status(400).json({ success: false, message: 'QR scan failed', reason: result.reason });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// GET /api/admin/scan-dashboard - Today's scan status
+router.get('/scan-dashboard', verifyToken, roleGuard(['admin']), async (req, res) => {
+    try {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        const [totalMatches, verifiedMatches, pendingMatches, offlineMatches] = await Promise.all([
+            Match.countDocuments({ start_time: { $gte: today } }),
+            Match.countDocuments({ start_time: { $gte: today }, 'verification.status': 'VERIFIED' }),
+            Match.countDocuments({ start_time: { $gte: today }, 'verification.status': 'PENDING' }),
+            Match.countDocuments({ start_time: { $gte: today }, 'verification.status': 'OFFLINE' })
+        ]);
+
+        const [totalScans, successfulScans, failedScans] = await Promise.all([
+            QRScanLog.countDocuments({ scan_time: { $gte: today } }),
+            QRScanLog.countDocuments({ scan_time: { $gte: today }, scan_result: 'SUCCESS' }),
+            QRScanLog.countDocuments({ scan_time: { $gte: today }, scan_result: { $ne: 'SUCCESS' } })
+        ]);
+
+        res.json({
+            success: true,
+            dashboard: {
+                matches: {
+                    total: totalMatches,
+                    verified: verifiedMatches,
+                    pending: pendingMatches,
+                    offline: offlineMatches,
+                    verificationRate: totalMatches > 0 ? (verifiedMatches / totalMatches * 100).toFixed(2) : 0
+                },
+                scans: {
+                    total: totalScans,
+                    successful: successfulScans,
+                    failed: failedScans,
+                    successRate: totalScans > 0 ? (successfulScans / totalScans * 100).toFixed(2) : 0
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// GET /api/admin/scan-reports - Scan reports for date range
+router.get('/scan-reports', verifyToken, roleGuard(['admin']), async (req, res) => {
+    try {
+        const { start_date, end_date } = req.query;
+        let query = {};
+        if (start_date && end_date) {
+            query.scan_time = { $gte: new Date(start_date), $lte: new Date(end_date) };
+        }
+        
+        const logs = await QRScanLog.find(query).populate('scanned_by match_id').sort({ scan_time: -1 }).limit(100);
+        res.json({ success: true, logs });
+    } catch (error) {
+         res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// POST /api/admin/override-match - Manual override
+router.post('/override-match', verifyToken, roleGuard(['admin']), async (req, res) => {
+    try {
+        const { match_id, reason } = req.body;
+        const adminId = req.user._id;
+
+        const match = await Match.findById(match_id);
+        if (!match) return res.status(404).json({ success: false, message: 'Match not found' });
+
+        match.verification.status = 'VERIFIED';
+        match.start_control.can_start = true;
+        match.start_control.start_method = 'ADMIN_OVERRIDE';
+        await match.save();
+
+        await QRService.logScan({
+            match_id,
+            scanned_by: adminId,
+            scan_result: 'MANUAL_OVERRIDE',
+            error_reason: reason || 'Manual Admin Override'
+        });
+
+        res.json({ success: true, message: 'Match overridden successfully', match });
+    } catch (error) {
+         res.status(500).json({ success: false, message: error.message });
+    }
 });
 
 module.exports = router;

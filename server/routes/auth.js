@@ -7,6 +7,105 @@ const crypto = require('crypto');
 const Admin = require('../models/Admin');
 const Worker = require('../models/Worker');
 const User = require('../models/User');
+const { sendWhatsAppNotification } = require('../services/whatsapp');
+const QRService = require('../services/qrService');
+
+/**
+ * @route   POST /api/auth/send-otp
+ * @desc    Generate and send OTP to phone
+ * @access  Public
+ */
+router.post('/send-otp', async (req, res) => {
+    try {
+        const { phone } = req.body;
+        if (!phone) return res.status(400).json({ success: false, message: 'Registry criteria not met: Phone identifier required.' });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+        let user = await User.findOne({ phone });
+        if (!user) {
+            // Semi-register if non-existent, or just store OTP
+            user = new User({
+                name: `Player_${phone.slice(-4)}`,
+                phone,
+                password: crypto.randomBytes(16).toString('hex'), // Temp password
+                role: 'PLAYER'
+            });
+        }
+        
+        user.otpCode = otp;
+        user.otpExpires = expires;
+        await user.save();
+
+        // Send via WhatsApp if enabled
+        const message = `🏏 *The Turf Verification* \n\nYour security access code is: *${otp}*\n_Valid for 10 minutes._`;
+        try {
+            await sendWhatsAppNotification(phone, message, null, 'otp');
+        } catch (waError) {
+            console.warn('⚠️ WhatsApp service error (continuing with log):', waError.message);
+        }
+
+        console.log(`📡 [Security] OTP for ${phone}: ${otp}`);
+
+        res.json({ success: true, message: 'OTP dispatched to registered mobile node.', phone });
+    } catch (err) {
+        console.error('OTP Error:', err);
+        res.status(500).json({ success: false, message: 'OTP dispatch failure: ' + err.message });
+    }
+});
+
+/**
+ * @route   POST /api/auth/verify-otp
+ * @desc    Verify OTP and return token
+ * @access  Public
+ */
+router.post('/verify-otp', async (req, res) => {
+    try {
+        const { phone, code } = req.body;
+        if (!phone || !code) return res.status(400).json({ success: false, message: 'Protocol violation: Phone and Code required.' });
+
+        const user = await User.findOne({ phone }).select('+otpCode +otpExpires');
+        
+        // Simulation mode for speed (123456 always works if ENV is development)
+        const isSimulated = process.env.NODE_ENV === 'development' && code === '123456';
+        const isMatch = user && user.otpCode === code && user.otpExpires > new Date();
+
+        if (!isSimulated && (!user || !isMatch)) {
+            return res.status(401).json({ success: false, message: 'Invalid or expired security code.' });
+        }
+
+        user.isPhoneVerified = true;
+        user.otpCode = undefined;
+        user.otpExpires = undefined;
+        
+        // Generate Player QR on first verification
+        if (!user.player_qr || !user.player_qr.code) {
+            const qrData = await QRService.generatePlayerQR(user);
+            user.player_qr = {
+                code: qrData.encodedData,
+                qr_image_url: qrData.qrImage,
+                generated_at: qrData.generatedAt
+            };
+        }
+        
+        await user.save();
+
+        const payload = { id: user._id, role: user.role };
+        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
+            if (err) throw err;
+            res.json({
+                success: true,
+                token,
+                role: user.role,
+                user: { id: user._id, name: user.name, phone: user.phone, role: user.role }
+            });
+        });
+    } catch (err) {
+        console.error('Verify OTP Error:', err);
+        res.status(500).json({ success: false, message: 'Verification protocol failure.' });
+    }
+});
 
 
 

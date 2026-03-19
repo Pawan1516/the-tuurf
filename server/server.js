@@ -26,6 +26,14 @@ const adminRoutes = require('./routes/admin');
 const paymentRoutes = require('./routes/payments');
 const chatbotRoutes = require('./routes/chatbot');
 const whatsappRoutes = require('./routes/whatsapp');
+const matchRoutes = require('./routes/matches');
+const teamRoutes = require('./routes/teams');
+const tournamentRoutes = require('./routes/tournaments');
+const playerRoutes = require('./routes/players');
+const aiRoutes = require('./routes/ai');
+const leaderboardRoutes = require('./routes/leaderboards');
+const formatRoutes = require('./routes/formats');
+
 
 const seedSettings = require('./utils/settingsSeeder');
 
@@ -38,6 +46,17 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 const app = express();
+
+// Health Check (Part 04)
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        timestamp: new Date().toISOString(),
+        version: 'v2.0'
+    });
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -45,6 +64,28 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+
+// Socket.io for Live Scoring
+io.on('connection', (socket) => {
+    console.log('🔌 New Client Connected:', socket.id);
+    
+    socket.on('join_match', (matchId) => {
+        socket.join(`match_${matchId}`);
+        console.log(`📡 Socket ${socket.id} joined match_${matchId}`);
+    });
+
+    socket.on('leave_match', (matchId) => {
+        socket.leave(`match_${matchId}`);
+        console.log(`📡 Socket ${socket.id} left match_${matchId}`);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('🔌 Client Disconnected:', socket.id);
+    });
+});
+
+// Export io for use in routes
+app.set('socketio', io);
 
 app.use(cors());
 app.use(express.json());
@@ -59,6 +100,13 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/matches', matchRoutes);
+app.use('/api/teams', teamRoutes);
+app.use('/api/tournaments', tournamentRoutes);
+app.use('/api/players', playerRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/leaderboards', leaderboardRoutes);
+app.use('/api/formats', formatRoutes);
 
 // Twilio Client
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);

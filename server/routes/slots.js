@@ -89,8 +89,12 @@ router.post('/', verifyToken, roleGuard(['admin']), async (req, res) => {
       });
     }
 
+    // Normalize date to UTC midnight across all timezones
+    const d = new Date(date);
+    const normalizedDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+
     const slot = new Slot({
-      date,
+      date: normalizedDate,
       startTime,
       endTime,
       status: 'free'
