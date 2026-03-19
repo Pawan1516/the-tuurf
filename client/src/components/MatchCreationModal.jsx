@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, Users, Clock, Shield, CheckCircle2, Search, Zap, UserPlus, Star, ShieldAlert, BadgeCheck, MessageCircle } from 'lucide-react';
+import { X, Trophy, Shield, CheckCircle2, Star, BadgeCheck, MessageCircle } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState('REGISTERED'); // 'REGISTERED' or 'QUICK'
-    const [myTeams, setMyTeams] = useState([]);
-    const [allTeams, setAllTeams] = useState([]);
     const [formats, setFormats] = useState([]);
     const [formData, setFormData] = useState({
         title: '',
@@ -30,13 +28,11 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
     const fetchInitialData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const [myRes, allRes, formatRes] = await Promise.all([
+            const [, , formatRes] = await Promise.all([
                 axios.get('http://localhost:5001/api/teams', { headers: { Authorization: token } }),
                 axios.get('http://localhost:5001/api/teams'),
                 axios.get('http://localhost:5001/api/formats')
             ]);
-            setMyTeams(myRes.data.teams || []);
-            setAllTeams(allRes.data.teams || []);
             setFormats(formatRes.data.formats || []);
         } catch (error) {
             console.error('Error fetching data:', error);

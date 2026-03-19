@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { 
-    QrCode, 
     CheckCircle, 
     AlertTriangle, 
     XCircle, 
