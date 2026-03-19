@@ -37,7 +37,8 @@ const matchSchema = new mongoose.Schema({
     // QR & Verification (CRITICAL)
     verification: {
         qr_code: {
-            code: { type: String, unique: true, sparse: true }, // Base64 encoded string
+            code: { type: String, unique: true, sparse: true }, // Base64 encoded payload string
+            qr_image: { type: String }, // Full data:image/png;base64,... for display
             generated_at: { type: Date },
             expires_at: { type: Date },
             scanned_at: { type: Date },

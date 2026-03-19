@@ -50,13 +50,31 @@ const ScoringDashboard = () => {
                 
                 <div className="bg-white p-6 rounded-[2.5rem] shadow-2xl shadow-gray-200 border border-gray-100 mb-8 max-w-sm w-full">
                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-4">Official Match QR Code</p>
-                    {match.verification?.qr_code?.code ? (
+                    {match.verification?.qr_code?.qr_image ? (
                         <div className="bg-gray-50 p-4 rounded-3xl border-2 border-dashed border-gray-200 aspect-square flex items-center justify-center overflow-hidden">
                             <img 
-                                src={`data:image/png;base64,${match.verification.qr_code.code}`} 
+                                src={match.verification.qr_code.qr_image}
                                 alt="Match QR" 
-                                className="w-full h-full object-contain mix-blend-multiply"
+                                className="w-full h-full object-contain"
                             />
+                        </div>
+                    ) : match.verification?.qr_code?.code ? (
+                        <div className="aspect-square bg-gray-100 rounded-3xl flex flex-col items-center justify-center gap-3 p-4">
+                            <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest text-center">QR Image Unavailable</p>
+                            <button 
+                                onClick={async () => {
+                                    try {
+                                        const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+                                        const res = await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/matches/${id}/generateqr`, {}, { headers: { Authorization: token } });
+                                        if (res.data.qr_code) {
+                                            setMatch(prev => ({ ...prev, verification: { ...prev.verification, qr_code: { ...prev.verification.qr_code, qr_image: res.data.qr_code } } }));
+                                        }
+                                    } catch(e) { toast.error('Could not refresh QR'); }
+                                }}
+                                className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-emerald-700 transition-all"
+                            >
+                                Refresh QR
+                            </button>
                         </div>
                     ) : (
                         <div className="aspect-square bg-gray-100 rounded-3xl flex items-center justify-center text-gray-400 font-bold uppercase text-[10px] tracking-widest">

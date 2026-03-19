@@ -38,6 +38,7 @@ router.post('/from-booking', async (req, res) => {
         const qrDetails = await QRService.generateMatchQR(match._id, match.booking_id, matchDate, matchTime);
 
         match.verification.qr_code.code = qrDetails.encodedData;
+        match.verification.qr_code.qr_image = qrDetails.qrImage;
         match.verification.qr_code.generated_at = new Date();
         match.verification.qr_code.expires_at = qrDetails.expiresAt;
         match.verification.verification_token = qrDetails.securityToken;
@@ -63,6 +64,7 @@ router.post('/:id/generateqr', async (req, res) => {
         const qrDetails = await QRService.generateMatchQR(match._id, match.booking_id, matchDate, matchTime);
 
         match.verification.qr_code.code = qrDetails.encodedData;
+        match.verification.qr_code.qr_image = qrDetails.qrImage;
         match.verification.qr_code.generated_at = new Date();
         match.verification.qr_code.expires_at = qrDetails.expiresAt;
         match.verification.verification_token = qrDetails.securityToken;
@@ -341,6 +343,7 @@ router.post('/quick/create', async (req, res) => {
         // Generate Match QR
         const qrDetails = await QRService.generateMatchQR(match._id);
         match.verification.qr_code.code = qrDetails.encodedData;
+        match.verification.qr_code.qr_image = qrDetails.qrImage;
         match.verification.qr_code.generated_at = new Date();
         match.verification.qr_code.expires_at = qrDetails.expiresAt;
         match.verification.verification_token = qrDetails.securityToken;
