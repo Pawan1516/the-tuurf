@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import jsQR from 'jsqr';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { 
@@ -8,87 +9,96 @@ import {
     Camera, 
     ShieldCheck, 
     Activity, 
-    Zap,
     Lock,
     Unlock,
     CameraOff
 } from 'lucide-react';
 
-// ─── Real Camera QR Scanner Component ───────────────────────────────────────
-const CameraScanner = ({ onScan, onClose }) => {
+// ─── Real Camera QR Scanner (jsQR — works in ALL browsers) ──────────────────
+const CameraScanner = ({ onScan }) => {
     const videoRef = useRef(null);
+    const canvasRef = useRef(null);
     const streamRef = useRef(null);
-    const rafRef = useRef(null);
-    const detectorRef = useRef(null);
+    const intervalRef = useRef(null);
     const [camError, setCamError] = useState(null);
     const [isReady, setIsReady] = useState(false);
-    const [manualMode, setManualMode] = useState(false);
     const [manualInput, setManualInput] = useState('');
 
     const stopCamera = useCallback(() => {
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        if (intervalRef.current) clearInterval(intervalRef.current);
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(t => t.stop());
             streamRef.current = null;
         }
     }, []);
 
-    const scanLoop = useCallback(async () => {
-        if (!videoRef.current || !detectorRef.current) return;
-        if (videoRef.current.readyState < 2) {
-            rafRef.current = requestAnimationFrame(scanLoop);
-            return;
+    const scanFrame = useCallback(() => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) return;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'dontInvert'
+        });
+
+        if (code && code.data) {
+            stopCamera();
+            onScan(code.data);
         }
-        try {
-            const codes = await detectorRef.current.detect(videoRef.current);
-            if (codes.length > 0) {
-                stopCamera();
-                onScan(codes[0].rawValue);
-                return;
-            }
-        } catch (_) {}
-        rafRef.current = requestAnimationFrame(scanLoop);
     }, [onScan, stopCamera]);
 
     useEffect(() => {
-        const hasBarcodeDetector = 'BarcodeDetector' in window;
-        if (!hasBarcodeDetector) {
-            setManualMode(true);
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            setCamError('Camera API not supported in this browser.');
             return;
         }
-
-        detectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
 
         navigator.mediaDevices.getUserMedia({
             video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
         }).then(stream => {
             streamRef.current = stream;
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                videoRef.current.onloadedmetadata = () => {
-                    videoRef.current.play();
-                    setIsReady(true);
-                    rafRef.current = requestAnimationFrame(scanLoop);
+            const video = videoRef.current;
+            if (video) {
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play().then(() => {
+                        setIsReady(true);
+                        // Scan every 200ms
+                        intervalRef.current = setInterval(scanFrame, 200);
+                    });
                 };
             }
         }).catch(err => {
             console.error('Camera error:', err);
-            setCamError(err.name === 'NotAllowedError' 
-                ? 'Camera permission denied. Please allow camera access in your browser settings.' 
-                : 'Could not open camera. Try using the manual input below.');
-            setManualMode(true);
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                setCamError('Camera permission denied. Click the camera icon in your browser address bar and allow access, then try again.');
+            } else if (err.name === 'NotFoundError') {
+                setCamError('No camera found on this device.');
+            } else {
+                setCamError(`Camera error: ${err.message}`);
+            }
         });
 
         return () => stopCamera();
-    }, [scanLoop, stopCamera]);
+    }, [scanFrame, stopCamera]);
 
-    if (manualMode || camError) {
+    // Hidden canvas for frame processing
+    const hiddenCanvas = <canvas ref={canvasRef} style={{ display: 'none' }} />;
+
+    if (camError) {
         return (
-            <div className="rounded-[2.5rem] border-2 border-dashed border-gray-600 p-8 flex flex-col items-center gap-6">
-                {camError && <p className="text-yellow-400 text-xs font-bold text-center uppercase tracking-wide">{camError}</p>}
-                <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest text-center">
-                    {camError ? 'Manual Override: Paste QR Payload' : 'Browser does not support camera scanning. Paste QR payload below.'}
-                </p>
+            <div className="rounded-[2.5rem] border-2 border-dashed border-yellow-500/30 p-8 flex flex-col items-center gap-4 bg-yellow-500/5">
+                {hiddenCanvas}
+                <AlertTriangle className="text-yellow-500" size={32} />
+                <p className="text-yellow-400 text-xs font-bold text-center uppercase tracking-wide leading-relaxed max-w-sm">{camError}</p>
+                <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest text-center">— OR — paste QR payload manually below —</p>
                 <div className="w-full max-w-md">
                     <input
                         type="text"
@@ -97,10 +107,10 @@ const CameraScanner = ({ onScan, onClose }) => {
                         placeholder="Paste QR payload here..."
                         className="w-full p-5 rounded-[1.5rem] bg-gray-900/50 border-2 border-dashed border-gray-700 text-emerald-400 font-mono text-xs focus:border-emerald-500 outline-none transition-all placeholder:text-gray-600"
                         autoFocus
-                        onKeyDown={e => { if (e.key === 'Enter' && manualInput.trim()) onScan(manualInput.trim()); }}
+                        onKeyDown={e => { if (e.key === 'Enter' && manualInput.trim()) { stopCamera(); onScan(manualInput.trim()); }}}
                     />
                     <button
-                        onClick={() => manualInput.trim() && onScan(manualInput.trim())}
+                        onClick={() => { if (manualInput.trim()) { stopCamera(); onScan(manualInput.trim()); }}}
                         className="w-full mt-3 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all"
                     >
                         Submit Payload
@@ -111,51 +121,55 @@ const CameraScanner = ({ onScan, onClose }) => {
     }
 
     return (
-        <div className="relative rounded-[2.5rem] overflow-hidden border-2 border-emerald-500/30 bg-black" style={{ aspectRatio: '4/3' }}>
+        <div className="relative rounded-[2.5rem] overflow-hidden border-2 border-emerald-500/30 bg-black" style={{ minHeight: '300px' }}>
+            {hiddenCanvas}
+
             {/* Live camera feed */}
             <video
                 ref={videoRef}
                 playsInline
                 muted
+                autoPlay
                 className="w-full h-full object-cover"
+                style={{ display: isReady ? 'block' : 'none' }}
             />
 
             {/* Scanning overlay */}
             {isReady && (
                 <>
-                    {/* Corner guides */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="relative w-56 h-56 md:w-64 md:h-64">
-                            {/* Corners */}
-                            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg"/>
-                            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg"/>
-                            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg"/>
-                            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-400 rounded-br-lg"/>
-                            {/* Scan line */}
-                            <div className="absolute left-0 right-0 h-0.5 bg-emerald-400/80 shadow-lg shadow-emerald-400" style={{ animation: 'scanLine 2s linear infinite' }}/>
+                            <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-emerald-400 rounded-tl-xl"/>
+                            <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-emerald-400 rounded-tr-xl"/>
+                            <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-emerald-400 rounded-bl-xl"/>
+                            <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-emerald-400 rounded-br-xl"/>
+                            <div 
+                                className="absolute left-2 right-2 h-0.5 bg-emerald-400 shadow-lg shadow-emerald-400/50"
+                                style={{ animation: 'scanLine 2s ease-in-out infinite' }}
+                            />
                         </div>
                     </div>
                     <div className="absolute bottom-4 left-0 right-0 text-center">
-                        <span className="bg-black/60 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
-                            Scanning for QR Code...
+                        <span className="bg-black/70 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
+                            🔍 Align QR code inside the box
                         </span>
                     </div>
                 </>
             )}
 
             {/* Loading state */}
-            {!isReady && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80">
-                    <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"/>
-                    <p className="text-emerald-400 text-xs font-black uppercase tracking-widest">Initializing Camera...</p>
+            {!isReady && !camError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black" style={{ minHeight: '300px' }}>
+                    <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"/>
+                    <p className="text-emerald-400 text-xs font-black uppercase tracking-widest">Opening Camera...</p>
+                    <p className="text-gray-600 text-[10px] mt-2 uppercase tracking-widest">Please allow camera access if prompted</p>
                 </div>
             )}
 
             <style>{`
                 @keyframes scanLine {
-                    0% { top: 0%; }
-                    50% { top: 100%; }
-                    100% { top: 0%; }
+                    0%, 100% { top: 10%; }
+                    50% { top: 90%; }
                 }
             `}</style>
         </div>
