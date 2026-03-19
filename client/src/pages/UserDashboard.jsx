@@ -165,7 +165,7 @@ const UserDashboard = () => {
                     </div>
                 </header>
 
-                <div className="p-4 md:p-10 space-y-12">
+                <div className="p-4 md:p-10 space-y-6 md:space-y-12 mb-nav md:mb-0">
                 
                 {/* Mobile Tabs */}
                 <div className="md:hidden flex gap-4 overflow-x-auto pb-4 scrollbar-hide border-b border-gray-200">
@@ -254,7 +254,7 @@ const UserDashboard = () => {
                             <button onClick={() => navigate('/')} className="text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:underline">View All</button>
                         </div>
 
-                        <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide">
+                        <div className="flex overflow-x-auto gap-3 pb-4 scrollbar-hide">
                             {todaySlots.length === 0 ? (
                                 <p className="text-xs font-bold text-gray-400 uppercase italic">No slots available for today yet.</p>
                             ) : (
@@ -264,8 +264,8 @@ const UserDashboard = () => {
                                         <div
                                             key={slot._id}
                                             onClick={() => slot.status === 'free' && navigate(`/book/${slot._id}`)}
-                                            className={`flex-shrink-0 w-28 md:w-32 p-4 md:p-6 rounded-[2rem] border-2 transition-all cursor-pointer ${slot.status === 'free'
-                                                ? 'border-emerald-100 bg-emerald-50 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-200'
+                                            className={`flex-shrink-0 w-24 md:w-32 p-4 md:p-6 rounded-[1.5rem] border-2 transition-all ${slot.status === 'free'
+                                                ? 'border-emerald-100 bg-emerald-50 active:scale-95 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-200 cursor-pointer'
                                                 : isBooked ? 'border-red-50 bg-red-50/50 opacity-40 cursor-not-allowed' : 'border-yellow-50 bg-yellow-50 opacity-40 cursor-not-allowed'
                                                 }`}
                                         >
@@ -329,17 +329,19 @@ const UserDashboard = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="w-full md:w-auto text-center md:text-right shrink-0 pt-4 md:pt-0 border-t md:border-0 border-gray-50 flex flex-col items-end">
-                                                <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Transaction Value</p>
-                                                <p className="text-2xl font-black text-emerald-600 tracking-tighter">₹{booking.amount}</p>
-                                                <p className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest mt-1 ${booking.paymentStatus === 'verified' ? 'text-emerald-400' : 'text-yellow-500'}`}>
-                                                    Payment: {booking.paymentStatus}
-                                                </p>
+                                        <div className="w-full mt-4 pt-4 border-t border-gray-100 flex flex-row md:flex-col items-center justify-between md:items-end gap-3">
+                                                <div className="text-left md:text-right">
+                                                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Amount</p>
+                                                    <p className="text-2xl font-black text-emerald-600 tracking-tighter">₹{booking.amount}</p>
+                                                    <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${booking.paymentStatus === 'verified' ? 'text-emerald-400' : 'text-yellow-500'}`}>
+                                                        {booking.paymentStatus}
+                                                    </p>
+                                                </div>
                                                 {booking.bookingStatus === 'confirmed' && (
                                                     <button 
                                                         onClick={() => handleCreateMatchClick(booking)}
-                                                        className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-emerald-500/20 shadow-md">
-                                                        Create Match
+                                                        className="bg-emerald-600 active:bg-emerald-700 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl shadow-md shadow-emerald-200 transition-all">
+                                                        🏏 Create Match
                                                     </button>
                                                 )}
                                             </div>

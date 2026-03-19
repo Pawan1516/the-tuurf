@@ -71,21 +71,21 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 relative overflow-hidden font-sans">
-            {/* Ambient Background Elements */}
+        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
+            {/* Ambient Background */}
             <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-100 rounded-full blur-[120px]"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-50 rounded-full blur-[120px]"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-100 rounded-full blur-[120px]"/>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-50 rounded-full blur-[120px]"/>
             </div>
 
             <div className="w-full max-w-xl relative z-10">
-                <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] shadow-2xl p-10 md:p-14 border border-white/20">
-                    <div className="text-center mb-10">
-                        <div className="inline-flex bg-emerald-600 text-white p-5 rounded-[2rem] mb-6 shadow-xl shadow-emerald-200">
-                            <LogIn size={40} />
+                <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] md:rounded-[3rem] shadow-2xl p-7 md:p-14 border border-white/20">
+                    <div className="text-center mb-7 md:mb-10">
+                        <div className="inline-flex bg-emerald-600 text-white p-4 md:p-5 rounded-[1.5rem] md:rounded-[2rem] mb-4 md:mb-6 shadow-xl shadow-emerald-200">
+                            <LogIn size={32} />
                         </div>
-                        <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase leading-none">Welcome Back</h2>
-                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em] mt-4">Authorized Access Only</p>
+                        <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter uppercase leading-none">Welcome Back</h2>
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] md:tracking-[0.4em] mt-3 md:mt-4">Sign in to continue</p>
                     </div>
 
                     {error && (

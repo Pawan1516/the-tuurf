@@ -20,6 +20,7 @@ module.exports = {
                 '.scrollbar-hide': { '-ms-overflow-style': 'none', 'scrollbar-width': 'none' },
                 '.pb-safe': { 'padding-bottom': 'env(safe-area-inset-bottom, 0px)' },
                 '.pt-safe': { 'padding-top': 'env(safe-area-inset-top, 0px)' },
+                '.mb-nav': { 'margin-bottom': 'calc(4rem + env(safe-area-inset-bottom, 0px))' },
             });
         }
     ],

@@ -123,7 +123,7 @@ const ScoringDashboard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] pb-20 md:pb-0">
+        <div className="min-h-screen bg-[#F8FAFC] pb-safe">
             {/* Header */}
             <header className="bg-emerald-950 text-white p-6 md:p-8 flex flex-col md:flex-row justify-between items-center relative overflow-hidden shadow-2xl shadow-emerald-950/20">
                 <div className="relative z-10 flex flex-col items-center md:items-start">
@@ -139,12 +139,12 @@ const ScoringDashboard = () => {
                     <p className="text-[10px] md:text-xs text-emerald-400 font-bold uppercase tracking-widest mt-2">{match.format || 'T20'} Match • {match.location}</p>
                 </div>
                 
-                <div className="mt-8 md:mt-0 relative z-10 bg-white/10 backdrop-blur-md p-6 rounded-[2rem] border border-white/20 text-center shadow-inner min-w-[200px]">
-                    <p className="text-[10px] text-emerald-300 font-black uppercase tracking-widest mb-1">Current Score</p>
+                <div className="mt-6 md:mt-0 relative z-10 bg-white/10 backdrop-blur-md p-5 md:p-6 rounded-[2rem] border border-white/20 text-center shadow-inner min-w-[180px] md:min-w-[200px]">
+                    <p className="text-[10px] text-emerald-300 font-black uppercase tracking-widest mb-1">Score</p>
                     <div className="flex justify-center items-end gap-2">
-                        <h2 className="text-6xl font-black tracking-tighter">{score.runs}<span className="text-4xl text-white/50">/{score.wickets}</span></h2>
+                        <h2 className="text-5xl md:text-6xl font-black tracking-tighter">{score.runs}<span className="text-3xl md:text-4xl text-white/50">/{score.wickets}</span></h2>
                     </div>
-                    <p className="text-sm font-bold mt-2 text-white/80">Overs: {score.overs}.{score.balls}</p>
+                    <p className="text-sm font-bold mt-1 text-white/80">Overs: {score.overs}.{score.balls}</p>
                 </div>
             </header>
 
@@ -153,12 +153,12 @@ const ScoringDashboard = () => {
                 <div className="bg-white rounded-[2rem] p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
                     <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6">Record Next Play</h3>
                     
-                    <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="grid grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
                         {[0, 1, 2, 3, 4, 6].map(run => (
                             <button
                                 key={run}
                                 onClick={() => recordBall(run)}
-                                className={`h-20 rounded-2xl font-black text-2xl transition-all shadow-sm
+                                className={`h-20 md:h-20 rounded-2xl font-black text-2xl md:text-2xl transition-all shadow-sm active:scale-95
                                     ${run === 4 || run === 6 
                                         ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-600 hover:text-white hover:scale-105' 
                                         : 'bg-gray-50 text-gray-800 border-b-4 border-gray-200 hover:bg-gray-100 hover:border-gray-300 active:translate-y-1 active:border-b-0'
@@ -169,22 +169,14 @@ const ScoringDashboard = () => {
                         ))}
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                         <button
                             onClick={() => recordBall(0, true)}
-                            className="h-16 bg-red-50 text-red-600 rounded-2xl font-black uppercase tracking-widest border border-red-200 hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                        >
-                            Wicket!
-                        </button>
-                        <button className="h-16 bg-yellow-50 text-yellow-600 rounded-2xl font-black uppercase tracking-widest border border-yellow-200 hover:bg-yellow-500 hover:text-white transition-all shadow-sm">
-                            Wide
-                        </button>
-                        <button className="h-16 bg-blue-50 text-blue-600 rounded-2xl font-black uppercase tracking-widest border border-blue-200 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
-                            No Ball
-                        </button>
-                        <button className="h-16 bg-purple-50 text-purple-600 rounded-2xl font-black uppercase tracking-widest border border-purple-200 hover:bg-purple-600 hover:text-white transition-all shadow-sm">
-                            Leg Bye
-                        </button>
+                            className="h-16 md:h-16 bg-red-50 text-red-600 rounded-2xl font-black uppercase tracking-widest border border-red-200 hover:bg-red-600 hover:text-white active:scale-95 transition-all shadow-sm"
+                        >🏏 Wicket!</button>
+                        <button className="h-16 bg-yellow-50 text-yellow-600 rounded-2xl font-black uppercase tracking-widest border border-yellow-200 hover:bg-yellow-500 hover:text-white active:scale-95 transition-all shadow-sm">Wide</button>
+                        <button className="h-16 bg-blue-50 text-blue-600 rounded-2xl font-black uppercase tracking-widest border border-blue-200 hover:bg-blue-600 hover:text-white active:scale-95 transition-all shadow-sm">No Ball</button>
+                        <button className="h-16 bg-purple-50 text-purple-600 rounded-2xl font-black uppercase tracking-widest border border-purple-200 hover:bg-purple-600 hover:text-white active:scale-95 transition-all shadow-sm">Leg Bye</button>
                     </div>
                 </div>
 

@@ -1,3 +1,72 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Global Mobile-First Resets ───────────────────────────────────────── */
+@layer base {
+  html {
+    /* Smooth scroll & prevent tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    /* Prevent horizontal overflow on mobile */
+    overflow-x: hidden;
+    /* Better font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Ensure all interactive elements are at least 44px (Apple HIG minimum) */
+  button, a, [role="button"] {
+    min-height: 44px;
+    cursor: pointer;
+  }
+
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* ── Safe Area (iPhone notch/home indicator) ──────────────────────────── */
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .mb-nav {
+    /* Pushes content above bottom nav on mobile */
+    margin-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── Animations ───────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.5; }
+  100% { transform: scale(1.6);  opacity: 0; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.35s ease both;
+}
+
+/* ── Toast z-index fix (above bottom nav) ─────────────────────────────── */
+.Toastify__toast-container {
+  z-index: 9999 !important;
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+@media (min-width: 768px) {
+  .Toastify__toast-container {
+    bottom: 1rem !important;
+  }
+}
