@@ -5,6 +5,7 @@
 
     <!-- ─── Viewport: no user-scaling, respect iPhone safe areas ─── -->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
     <!-- ─── PWA / Home Screen ─── -->
     <meta name="mobile-web-app-capable" content="yes" />
@@ -43,5 +44,14 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('%PUBLIC_URL%/service-worker.js').catch(err => {
+            console.log('SW registration failed: ', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
