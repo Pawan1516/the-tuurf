@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import { PlayCircle, Square, CheckCircle, Save, Circle, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { Save, Circle, EyeOff, ShieldAlert } from 'lucide-react';
 
 const ScoringDashboard = () => {
     const { id } = useParams(); // Match ID

@@ -34,11 +34,7 @@ const Scanner = () => {
         headers: { 'Authorization': token }
     });
 
-    useEffect(() => {
-        fetchDashboard();
-    }, []);
-
-    const fetchDashboard = async () => {
+    const fetchDashboard = React.useCallback(async () => {
         try {
             const res = await api.get('/api/admin/scan-dashboard');
             if (res.data.success) {
@@ -48,7 +44,11 @@ const Scanner = () => {
             console.error('Error fetching dashboard:', error);
             toast.error('Failed to load operational stats.');
         }
-    };
+    }, [api]);
+
+    useEffect(() => {
+        fetchDashboard();
+    }, [fetchDashboard]);
 
     const handleScan = async (payload) => {
         if (!payload) return;

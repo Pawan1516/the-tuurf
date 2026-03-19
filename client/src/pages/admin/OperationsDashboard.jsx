@@ -4,10 +4,7 @@ import {
     Activity, 
     ShieldCheck, 
     Clock, 
-    AlertCircle, 
     RefreshCcw, 
-    Search,
-    ChevronRight,
     QrCode,
     Zap,
     TrendingUp,
@@ -30,11 +27,7 @@ const AdminDashboard = () => {
         headers: { 'Authorization': token }
     });
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, []);
-
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = React.useCallback(async () => {
         try {
             setLoading(true);
             const [statsRes, matchesRes] = await Promise.all([
@@ -50,7 +43,7 @@ const AdminDashboard = () => {
                 m.start_time.startsWith(today)
             ));
             
-            // Mock recent scans for UI demo as we don't have a specific GET /recent-scans yet
+            // Mock recent scans for UI demo
             setRecentScans([
                 { id: 1, time: '10:45 AM', match: 'Warriors vs Titans', user: 'Admin_1', result: 'SUCCESS' },
                 { id: 2, time: '10:30 AM', match: 'Royals vs King XI', user: 'Scanner_A', result: 'FAILED' },
@@ -62,7 +55,11 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [api, token]);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     if (loading) return (
         <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-8 gap-4">
