@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import jsQR from 'jsqr';
 import apiClient from '../../api/client';
 import AuthContext from '../../context/AuthContext';
@@ -190,6 +191,7 @@ const CameraScanner = ({ onScan }) => {
 
 // ─── Main Scanner Component ──────────────────────────────────────────────────
 const Scanner = () => {
+    const { user, logout } = useContext(AuthContext);
     const [scanStatus, setScanStatus] = useState('idle');
     const [matchDetails, setMatchDetails] = useState(null);
     const [dashboardStats, setDashboardStats] = useState(null);
