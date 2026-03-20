@@ -139,6 +139,8 @@ export const chatbotAPI = {
 export const matchesAPI = {
   getLive: () => apiClient.get('/matches/live'),
   getById: (id) => apiClient.get(`/matches/${id}`),
+  getMyHistory: () => apiClient.get('/matches/my-history'),
+  getAll: (filters) => apiClient.get('/matches', { params: filters })
 };
 
 export default apiClient;

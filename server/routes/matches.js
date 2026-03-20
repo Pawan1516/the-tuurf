@@ -4,7 +4,7 @@ const Match = require('../models/Match');
 const Booking = require('../models/Booking');
 const AIService = require('../services/aiService');
 const QRService = require('../services/qrService');
-const verifyMatch = require('../middleware/verifyMatch');
+const verifyToken = require('../middleware/verifyToken');
 
 // @route   GET /api/matches/live
 // @desc    Get the active match AND the most recent completed match for today
@@ -34,6 +34,29 @@ router.get('/live', async (req, res) => {
         const matches = [];
         if (liveMatch) matches.push(liveMatch);
         if (completedMatch) matches.push(completedMatch);
+
+        res.json({ success: true, matches });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   GET /api/matches/my-history
+// @desc    Get all matches where the current user was a participant
+// @access  Private
+router.get('/my-history', verifyToken, async (req, res) => {
+    try {
+        const matches = await Match.find({
+            $or: [
+                { 'team_a.players': req.user.id },
+                { 'team_b.players': req.user.id },
+                { 'team_a.captain': req.user.id },
+                { 'team_b.captain': req.user.id },
+                { scorer_id: req.user.id }
+            ]
+        })
+        .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain')
+        .sort({ end_time: -1, start_time: -1 });
 
         res.json({ success: true, matches });
     } catch (err) {

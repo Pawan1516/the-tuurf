@@ -16,13 +16,14 @@ import {
     Swords
 } from 'lucide-react';
 import AuthContext from '../context/AuthContext';
-import { bookingsAPI, slotsAPI } from '../api/client';
+import { bookingsAPI, slotsAPI, matchesAPI } from '../api/client';
 import MobileNav from '../components/MobileNav';
 import MatchCreationModal from '../components/MatchCreationModal';
 
 const UserDashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const [bookings, setBookings] = useState([]);
+    const [myMatches, setMyMatches] = useState([]);
     const [todaySlots, setTodaySlots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('bookings'); // 'bookings', 'profile'
@@ -44,13 +45,15 @@ const UserDashboard = () => {
         try {
             setLoading(true);
             const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-            const [bookingRes, slotRes, settingsRes] = await Promise.all([
+            const [bookingRes, slotRes, settingsRes, matchRes] = await Promise.all([
                 bookingsAPI.getMyBookings(),
                 slotsAPI.getAll(today),
-                slotsAPI.getSettings()
+                slotsAPI.getSettings(),
+                matchesAPI.getMyHistory()
             ]);
             setBookings(bookingRes.data.bookings || []);
             setTodaySlots(slotRes.data || []);
+            setMyMatches(matchRes.data.matches || []);
             if (settingsRes.data.success) {
                 setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
             }
@@ -233,14 +236,78 @@ const UserDashboard = () => {
                             </div>
                         </div>
 
-                        <div className="bg-emerald-950 text-white rounded-[2rem] p-8 flex items-center justify-between">
+                        <div className="bg-emerald-950 text-white rounded-[2rem] p-8 flex items-center justify-between mb-10">
                             <div>
                                 <h4 className="text-xl font-black uppercase mb-2">Team Management</h4>
-                                <p className="text-sm font-bold text-emerald-400/80">You are a {user?.role || 'PLAYER'}</p>
+                                <p className="text-sm font-bold text-emerald-400/80">{user?.role === 'admin' ? 'SYSTEM ADMINISTRATOR' : user?.role === 'worker' ? 'ARENA STAFF' : 'REGISTERED PLAYER'}</p>
                             </div>
-                            <button className="bg-emerald-600 hover:bg-emerald-500 transition-colors px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/40">
+                            <button onClick={() => navigate('/teams')} className="bg-emerald-600 hover:bg-emerald-500 transition-colors px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/40">
                                 View Teams
                             </button>
+                        </div>
+
+                        {/* Recent Matches Section */}
+                        <div>
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Match History</h3>
+                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{myMatches.length} Recorded Matches</span>
+                            </div>
+
+                            {myMatches.length === 0 ? (
+                                <div className="p-12 text-center bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
+                                    <Swords size={32} className="mx-auto mb-4 text-gray-300" />
+                                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">No match records found on your profile.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {myMatches.map((m) => (
+                                        <div key={m._id} 
+                                            onClick={() => navigate(`/scoring/${m._id}`)}
+                                            className="bg-white border border-gray-100 p-6 rounded-[2rem] hover:border-emerald-200 hover:shadow-lg transition-all cursor-pointer group flex flex-col md:flex-row md:items-center gap-6"
+                                        >
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${m.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600 pulse'}`}>
+                                                        {m.status}
+                                                    </span>
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tight">#{m._id.slice(-6)}</span>
+                                                </div>
+                                                <h4 className="text-base font-black text-gray-900 uppercase tracking-tight leading-none mb-1">
+                                                    {m.team_a?.team_id?.name || m.quick_teams?.team_a?.name} vs {m.team_b?.team_id?.name || m.quick_teams?.team_b?.name}
+                                                </h4>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase">
+                                                    {new Date(m.start_time).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </p>
+                                            </div>
+
+                                            <div className="flex items-center gap-8 px-8 border-l border-r border-gray-50">
+                                                <div className="text-center">
+                                                    <p className="text-lg font-black text-gray-900 leading-none">{m.team_a?.score || 0}</p>
+                                                    <p className="text-[8px] font-black text-gray-400 uppercase">TMA</p>
+                                                </div>
+                                                <div className="text-emerald-200 font-black">VS</div>
+                                                <div className="text-center">
+                                                    <p className="text-lg font-black text-gray-900 leading-none">{m.team_b?.score || 0}</p>
+                                                    <p className="text-[8px] font-black text-gray-400 uppercase">TMB</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex-1 text-right">
+                                                {m.status === 'Completed' ? (
+                                                    <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl">
+                                                        <Trophy size={14} className="text-yellow-500" />
+                                                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">
+                                                            {m.result?.winner?.name || 'Result'} won
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[10px] font-black text-red-500 uppercase tracking-widest animate-pulse">Match In Progress</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
