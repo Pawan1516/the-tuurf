@@ -99,15 +99,21 @@ router.post('/:id/offline', async (req, res) => {
 // GET /api/matches/:id - Get full match details
 router.get('/:id', async (req, res) => {
     try {
+        if (!req.params.id || req.params.id === 'undefined') {
+            return res.status(400).json({ error: 'Invalid Match ID provided' });
+        }
+        
         const match = await Match.findById(req.params.id)
             .populate('team_a.team_id team_b.team_id')
-            .populate('team_a.squad team_b.squad', 'name phone role');
+            .populate('team_a.squad team_b.squad', 'name phone role')
+            .populate('quick_teams.team_a.players.user_id quick_teams.team_b.players.user_id', 'name phone profile.stats');
         
-        if (!match) return res.status(404).json({ error: 'Match not found' });
+        if (!match) return res.status(404).json({ error: 'Match not found in database' });
         
         res.json(match);
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Fetch Match Error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error while loading match' });
     }
 });
 

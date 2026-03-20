@@ -25,8 +25,9 @@ const ScoringDashboard = () => {
                 const res = await apiClient.get(`/matches/${id}`);
                 setMatch(res.data);
             } catch (error) {
-                toast.error('Failed to load match details');
-                navigate('/dashboard'); // or wherever appropriate
+                console.error("Match fetch failed:", error.response?.data || error.message);
+                toast.error(`Fail: ${error.response?.data?.error || error.response?.data?.message || 'Match details lost'}`);
+                navigate('/dashboard'); 
             }
         };
 
