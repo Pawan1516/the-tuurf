@@ -16,12 +16,13 @@ import {
     Swords
 } from 'lucide-react';
 import AuthContext from '../context/AuthContext';
-import { bookingsAPI, slotsAPI, matchesAPI } from '../api/client';
+import { bookingsAPI, slotsAPI, matchesAPI, authAPI } from '../api/client';
 import MobileNav from '../components/MobileNav';
 import MatchCreationModal from '../components/MatchCreationModal';
 
 const UserDashboard = () => {
     const { user, logout } = useContext(AuthContext);
+    const [profile, setProfile] = useState(user);
     const [bookings, setBookings] = useState([]);
     const [myMatches, setMyMatches] = useState([]);
     const [todaySlots, setTodaySlots] = useState([]);
@@ -44,25 +45,61 @@ const UserDashboard = () => {
     const fetchInitialData = async () => {
         try {
             setLoading(true);
-            const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-            const [bookingRes, slotRes, settingsRes, matchRes] = await Promise.all([
+            const today = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date());
+
+            // Run all requests in parallel but handle each one independently
+            const [bookingRes, slotRes, settingsRes, matchRes, profileRes] = await Promise.allSettled([
                 bookingsAPI.getMyBookings(),
                 slotsAPI.getAll(today),
                 slotsAPI.getSettings(),
-                matchesAPI.getMyHistory()
+                matchesAPI.getMyHistory(),
+                authAPI.getProfile()
             ]);
-            setBookings(bookingRes.data.bookings || []);
-            setTodaySlots(slotRes.data || []);
-            setMyMatches(matchRes.data.matches || []);
-            if (settingsRes.data.success) {
-                setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
+
+            // Slots — most critical, must always work
+            if (slotRes.status === 'fulfilled') {
+                const slotData = slotRes.value.data;
+                setTodaySlots(Array.isArray(slotData) ? slotData : (slotData?.slots || []));
+            } else {
+                console.error('Slots failed:', slotRes.reason?.message);
             }
+
+            // Bookings
+            if (bookingRes.status === 'fulfilled') {
+                setBookings(bookingRes.value.data?.bookings || []);
+            } else {
+                console.error('Bookings failed:', bookingRes.reason?.message);
+            }
+
+            // Settings
+            if (settingsRes.status === 'fulfilled' && settingsRes.value.data?.success) {
+                setSettings(prev => ({ ...prev, ...settingsRes.value.data.settings }));
+            }
+
+            // Match history
+            if (matchRes.status === 'fulfilled') {
+                setMyMatches(matchRes.value.data?.matches || []);
+            } else {
+                console.error('Match history failed:', matchRes.reason?.message);
+            }
+
+            // Profile
+            if (profileRes.status === 'fulfilled' && profileRes.value.data?.success) {
+                setProfile(profileRes.value.data.user);
+            } else {
+                console.error('Profile fetch skipped:', profileRes.reason?.message);
+            }
+
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleLogout = () => {
         logout();
@@ -195,19 +232,19 @@ const UserDashboard = () => {
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Batting Career</p>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <p className="text-3xl font-black text-emerald-600">{user?.stats?.batting?.runs || 0}</p>
+                                        <p className="text-3xl font-black text-emerald-600">{profile?.stats?.batting?.runs || 0}</p>
                                         <p className="text-[9px] font-black text-gray-500 uppercase">Total Runs</p>
                                     </div>
                                     <div>
-                                        <p className="text-3xl font-black text-emerald-600">{user?.stats?.batting?.average || 0}</p>
+                                        <p className="text-3xl font-black text-emerald-600">{profile?.stats?.batting?.average || 0}</p>
                                         <p className="text-[9px] font-black text-gray-500 uppercase">Average</p>
                                     </div>
                                     <div>
-                                        <p className="text-xl font-bold text-gray-800">{user?.stats?.batting?.strike_rate || 0}</p>
+                                        <p className="text-xl font-bold text-gray-800">{profile?.stats?.batting?.strike_rate || 0}</p>
                                         <p className="text-[9px] font-black text-gray-500 uppercase">Strike Rate</p>
                                     </div>
                                     <div>
-                                        <p className="text-xl font-bold text-gray-800">{user?.stats?.batting?.matches || 0}</p>
+                                        <p className="text-xl font-bold text-gray-800">{profile?.stats?.batting?.matches || 0}</p>
                                         <p className="text-[9px] font-black text-gray-500 uppercase">Matches</p>
                                     </div>
                                 </div>
@@ -217,19 +254,19 @@ const UserDashboard = () => {
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Bowling Career</p>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <p className="text-3xl font-black text-emerald-600">{user?.stats?.bowling?.wickets || 0}</p>
+                                        <p className="text-3xl font-black text-emerald-600">{profile?.stats?.bowling?.wickets || 0}</p>
                                         <p className="text-[9px] font-black text-gray-500 uppercase">Wickets</p>
                                     </div>
                                     <div>
-                                        <p className="text-3xl font-black text-emerald-600">{user?.stats?.bowling?.economy || 0}</p>
+                                        <p className="text-3xl font-black text-emerald-600">{profile?.stats?.bowling?.economy || 0}</p>
                                         <p className="text-[9px] font-black text-gray-500 uppercase">Economy</p>
                                     </div>
                                     <div>
-                                        <p className="text-xl font-bold text-gray-800">{user?.stats?.bowling?.overs || 0}</p>
+                                        <p className="text-xl font-bold text-gray-800">{profile?.stats?.bowling?.overs || 0}</p>
                                         <p className="text-[9px] font-black text-gray-500 uppercase">Overs Bowled</p>
                                     </div>
                                     <div>
-                                        <p className="text-xl font-bold text-gray-800">{user?.stats?.bowling?.five_wicket_hauls || 0}</p>
+                                        <p className="text-xl font-bold text-gray-800">{profile?.stats?.bowling?.five_wicket_hauls || 0}</p>
                                         <p className="text-[9px] font-black text-gray-500 uppercase">5-Wickets Hauls</p>
                                     </div>
                                 </div>
@@ -239,7 +276,7 @@ const UserDashboard = () => {
                         <div className="bg-emerald-950 text-white rounded-[2rem] p-8 flex items-center justify-between mb-10">
                             <div>
                                 <h4 className="text-xl font-black uppercase mb-2">Team Management</h4>
-                                <p className="text-sm font-bold text-emerald-400/80">{user?.role === 'admin' ? 'SYSTEM ADMINISTRATOR' : user?.role === 'worker' ? 'ARENA STAFF' : 'REGISTERED PLAYER'}</p>
+                                <p className="text-sm font-bold text-emerald-400/80">{profile?.role === 'admin' ? 'SYSTEM ADMINISTRATOR' : profile?.role === 'worker' ? 'ARENA STAFF' : 'REGISTERED PLAYER'}</p>
                             </div>
                             <button onClick={() => navigate('/teams')} className="bg-emerald-600 hover:bg-emerald-500 transition-colors px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/40">
                                 View Teams

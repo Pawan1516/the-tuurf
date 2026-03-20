@@ -15,8 +15,6 @@ import {
     Briefcase,
     PieChart,
     Settings,
-    LogOut,
-    ChevronRight,
     Database
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -41,25 +39,18 @@ const OperationsDashboard = () => {
 
         try {
             setLoading(true);
-            const [statsRes, matchesRes] = await Promise.all([
+            const [statsRes, matchesRes, activityRes] = await Promise.all([
                 apiClient.get('/admin/scan-dashboard'),
-                apiClient.get('/matches')
+                apiClient.get('/matches'),
+                apiClient.get('/admin/activity-log').catch(() => ({ data: { logs: [] } }))
             ]);
 
             setStats(statsRes.data.dashboard);
-            // Sort matches so that newest are first, and filter for today if possible but show all
-            const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
             const allMatches = (matchesRes.data.matches || []).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-            setPendingMatches(allMatches); // Show all instead of filtering strictly, to avoid "not working" confusion
-            
-            // Highlight today's matches to the admin in some way? (Handled in the list UI)
-            
-            // Mock recent scans for UI demo
-            setRecentScans([
-                { id: 1, time: '10:45 AM', match: 'Warriors vs Titans', user: 'Admin_1', result: 'SUCCESS' },
-                { id: 2, time: '10:30 AM', match: 'Royals vs King XI', user: 'Scanner_A', result: 'FAILED' },
-                { id: 3, time: '09:15 AM', match: 'Blues vs Reds', user: 'Admin_1', result: 'SUCCESS' },
-            ]);
+            setPendingMatches(allMatches);
+
+            // Use real booking activity log
+            setRecentScans(activityRes.data.logs || []);
 
         } catch (error) {
             toast.error('Failed to synchronize dashboard telemetry.');
@@ -255,17 +246,28 @@ const OperationsDashboard = () => {
                             </div>
                             <MoreVertical className="text-gray-700 cursor-pointer" size={18} />
                         </div>
-                        <div className="space-y-6">
-                            {recentScans.map(scan => (
-                                <div key={scan.id} className="flex gap-4 group">
-                                    <div className={`w-1 shadow-lg rounded-full ${scan.result === 'SUCCESS' ? 'bg-emerald-500 shadow-emerald-900/20' : 'bg-red-500 shadow-red-900/20'}`}></div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-start">
-                                            <p className="text-xs font-black text-white uppercase tracking-tight">{scan.match}</p>
-                                            <span className="text-[8px] font-bold text-gray-600 uppercase">{scan.time}</span>
+                        <div className="space-y-4">
+                            {recentScans.length === 0 ? (
+                                <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center py-6">No activity yet</p>
+                            ) : recentScans.slice(0, 10).map(log => (
+                                <div key={log.id} className="flex gap-4 group">
+                                    <div className={`w-1 shadow-lg rounded-full flex-shrink-0 ${
+                                        log.status === 'confirmed' ? 'bg-emerald-500 shadow-emerald-900/20' :
+                                        log.status === 'pending'   ? 'bg-yellow-500 shadow-yellow-900/20' :
+                                        log.status === 'rejected'  ? 'bg-red-500 shadow-red-900/20' :
+                                        'bg-gray-600'
+                                    }`}></div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start gap-2">
+                                            <p className="text-xs font-black text-white uppercase tracking-tight truncate">{log.userName}</p>
+                                            <span className="text-[8px] font-bold text-gray-600 uppercase whitespace-nowrap flex-shrink-0">{log.slotDate}</span>
                                         </div>
-                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-1">
-                                            Node: {scan.user} • Result: <span className={scan.result === 'SUCCESS' ? 'text-emerald-500' : 'text-red-500'}>{scan.result}</span>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-0.5">
+                                            <span className="text-emerald-400">{log.slotTime}</span> • <span className={`${
+                                                log.status === 'confirmed' ? 'text-emerald-400' :
+                                                log.status === 'pending'   ? 'text-yellow-400' :
+                                                log.status === 'rejected'  ? 'text-red-400' : 'text-gray-400'
+                                            }`}>{log.status}</span> • ₹{log.amount}
                                         </p>
                                     </div>
                                 </div>

@@ -5,35 +5,25 @@ const Booking = require('../models/Booking');
 const AIService = require('../services/aiService');
 const QRService = require('../services/qrService');
 const verifyToken = require('../middleware/verifyToken');
+const verifyMatch = require('../middleware/verifyMatch');
 
 // @route   GET /api/matches/live
-// @desc    Get the active match AND the most recent completed match for today
+// @desc    Get only active in-progress matches for today
 // @access  Public
 router.get('/live', async (req, res) => {
     try {
-        const now = new Date();
-        const startOfToday = new Date(now).setHours(0,0,0,0);
-        const endOfToday = new Date(now).setHours(23,59,59,999);
+        const istMidnight = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        istMidnight.setHours(0,0,0,0);
+        const istNextMidnight = new Date(istMidnight);
+        istNextMidnight.setDate(istNextMidnight.getDate() + 1);
 
-        // 1. Get the current Live Match
-        const liveMatch = await Match.findOne({ 
+        // Only get live/in-progress matches — no finished matches
+        const matches = await Match.find({ 
             status: 'In Progress',
-            start_time: { $gte: startOfToday, $lte: endOfToday }
+            start_time: { $gte: istMidnight, $lte: istNextMidnight }
         })
         .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain')
         .sort({ start_time: -1 });
-
-        // 2. Get the most recent Completed Match for today
-        const completedMatch = await Match.findOne({
-            status: 'Completed',
-            start_time: { $gte: startOfToday, $lte: endOfToday }
-        })
-        .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain')
-        .sort({ end_time: -1 });
-
-        const matches = [];
-        if (liveMatch) matches.push(liveMatch);
-        if (completedMatch) matches.push(completedMatch);
 
         res.json({ success: true, matches });
     } catch (err) {
@@ -176,11 +166,16 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST /api/matches/:id/live-update - Update full live state
+// POST /api/matches/:id/live-update - Update full live state with Socket.IO broadcast
 router.post('/:id/live-update', async (req, res) => {
     try {
         const match = await Match.findById(req.params.id);
         if (!match) return res.status(404).json({ error: 'Match not found' });
+
+        const { generateCommentary } = require('../utils/commentaryGenerator');
+        const prevBalls = match.live_data?.totalBalls || 0;
+        const newBalls = req.body.totalBalls || 0;
+        const isNewBall = newBalls > prevBalls;
 
         match.live_data = {
             ...match.live_data,
@@ -214,9 +209,10 @@ router.post('/:id/live-update', async (req, res) => {
                     user_id: b.user_id,
                     runs: b.r,
                     balls: b.b,
-                    fours: b.fours,
-                    sixes: b.sixes,
-                    out_type: b.out ? 'Out' : 'Not Out'
+                    fours: b.fours || b.f || 0,
+                    sixes: b.sixes || b.s || 0,
+                    out_type: b.out ? 'Out' : 'Not Out',
+                    is_on_strike: b.batting || false
                 }));
             }
 
@@ -234,25 +230,174 @@ router.post('/:id/live-update', async (req, res) => {
         // Map live_data for public view (striker index -> striker object)
         if (req.body.batters && req.body.striker !== undefined) {
             const s = req.body.batters[req.body.striker];
-            match.live_data.striker = { name: s.name, runs: s.r, balls: s.b };
+            if (s) match.live_data.striker = { name: s.name, runs: s.r, balls: s.b, fours: s.fours || s.f || 0, sixes: s.sixes || s.s || 0 };
         }
         if (req.body.batters && req.body.nonStriker !== undefined) {
             const ns = req.body.batters[req.body.nonStriker];
-            match.live_data.non_striker = { name: ns.name, runs: ns.r, balls: ns.b };
+            if (ns) match.live_data.non_striker = { name: ns.name, runs: ns.r, balls: ns.b, fours: ns.fours || ns.f || 0, sixes: ns.sixes || ns.s || 0 };
         }
         if (req.body.bowlers && req.body.currentBowlerIdx !== undefined) {
             const bw = req.body.bowlers[req.body.currentBowlerIdx];
-            match.live_data.bowler = { name: bw.name, overs: bw.overs, r: bw.r, w: bw.w, eco: bw.overs > 0 ? (bw.r / bw.overs).toFixed(1) : '0.0' };
+            if (bw) match.live_data.bowler = { 
+                name: bw.name, 
+                overs: bw.overs, 
+                r: bw.r, 
+                w: bw.w, 
+                balls: bw.balls,
+                eco: bw.overs > 0 ? (bw.r / bw.overs).toFixed(1) : '0.0' 
+            };
         }
         if (req.body.currentOverBalls) {
             match.live_data.recent_balls = req.body.currentOverBalls;
         }
 
+        // Build over summaries for over-by-over display
+        if (req.body.overHistory || req.body.currentOverBalls) {
+            match.live_data.over_summaries = (req.body.overHistory || []).map((over, i) => ({
+                over_number: i + 1,
+                balls: over,
+                runs: over.reduce((sum, b) => {
+                    if (b === '·') return sum;
+                    if (b === 'W') return sum;
+                    if (b === 'Wd') return sum + 1;
+                    if (b === 'Nb') return sum + 1;
+                    if (b === 'B') return sum + 1;
+                    return sum + (parseInt(b) || 0);
+                }, 0)
+            }));
+        }
+
+        // Generate commentary for new balls
+        let commentary = null;
+        if (isNewBall && req.body.currentOverBalls?.length > 0) {
+            const lastBall = req.body.currentOverBalls[req.body.currentOverBalls.length - 1];
+            const batter = req.body.batters?.[req.body.striker];
+            const bowler = req.body.bowlers?.[req.body.currentBowlerIdx];
+            
+            commentary = generateCommentary({
+                runs: lastBall === '·' ? 0 : (parseInt(lastBall) || 0),
+                isWicket: lastBall === 'W',
+                wicketType: lastBall === 'W' ? (req.body.pendingWicket?.type || 'bowled') : null,
+                extraType: lastBall === 'Wd' ? 'wide' : lastBall === 'Nb' ? 'noball' : lastBall === 'B' ? 'bye' : null,
+                batsmanName: batter?.name || 'Batsman',
+                bowlerName: bowler?.name || 'Bowler',
+                overNum: req.body.overNum || 0,
+                ballNum: req.body.ballInOver || 0
+            });
+
+            // Store commentary log (keep last 30 entries)
+            if (!match.live_data.commentary_log) match.live_data.commentary_log = [];
+            match.live_data.commentary_log.unshift({
+                text: commentary,
+                ball: lastBall,
+                runs: req.body.runs,
+                wickets: req.body.wickets,
+                overs: `${req.body.overNum || 0}.${req.body.ballInOver || 0}`,
+                timestamp: new Date()
+            });
+            if (match.live_data.commentary_log.length > 30) {
+                match.live_data.commentary_log = match.live_data.commentary_log.slice(0, 30);
+            }
+        }
+
+        // Calculate run rate and required run rate
+        const totalOvers = (req.body.overNum || 0) + (req.body.ballInOver || 0) / 6;
+        match.live_data.run_rate = totalOvers > 0 ? ((req.body.runs || 0) / totalOvers).toFixed(2) : '0.00';
+        if (req.body.target && req.body.inningsNum === 2) {
+            const remainingRuns = req.body.target - (req.body.runs || 0);
+            const totalMatchOvers = req.body.overs || 20;
+            const remainingOvers = totalMatchOvers - totalOvers;
+            match.live_data.required_run_rate = remainingOvers > 0 ? (remainingRuns / remainingOvers).toFixed(2) : '0.00';
+            match.live_data.runs_needed = remainingRuns;
+            match.live_data.balls_remaining = Math.round(remainingOvers * 6);
+        }
+
+        // Partnership data
+        match.live_data.partnership = req.body.partnership || { runs: 0, balls: 0 };
+
+        // Full scorecard for Cricbuzz tabs
+        match.live_data.scorecard = {
+            batsmen: (req.body.batters || []).filter(b => b.batting || b.out || b.r > 0 || b.b > 0).map(b => ({
+                name: b.name,
+                runs: b.r || 0,
+                balls: b.b || 0,
+                fours: b.fours || b.f || 0,
+                sixes: b.sixes || b.s || 0,
+                sr: b.b > 0 ? ((b.r / b.b) * 100).toFixed(1) : '0.0',
+                out: b.out || false,
+                batting: b.batting || false
+            })),
+            bowlers: (req.body.bowlers || []).filter(bw => bw.balls > 0 || bw.w > 0).map(bw => ({
+                name: bw.name,
+                overs: bw.balls ? `${Math.floor(bw.balls / 6)}.${bw.balls % 6}` : '0.0',
+                maidens: bw.maidens || 0,
+                runs: bw.r || 0,
+                wickets: bw.w || 0,
+                eco: bw.balls > 0 ? ((bw.r / (bw.balls / 6))).toFixed(1) : '0.0'
+            })),
+            extras: req.body.extras || { wides: 0, noballs: 0, byes: 0 },
+            total: {
+                runs: req.body.runs || 0,
+                wickets: req.body.wickets || 0,
+                overs: `${req.body.overNum || 0}.${req.body.ballInOver || 0}`
+            }
+        };
+
+        // Inn1 Scorecard (for 2nd innings view)
+        if (req.body.inn1Batters && req.body.inn1Bowlers) {
+            match.live_data.inn1_scorecard = {
+                score: req.body.inn1Score || 0,
+                wickets: req.body.inn1Wickets || 0,
+                overs: req.body.inn1Overs || 0,
+                batsmen: req.body.inn1Batters.filter(b => b.r > 0 || b.b > 0 || b.out).map(b => ({
+                    name: b.name, runs: b.r || 0, balls: b.b || 0,
+                    fours: b.fours || b.f || 0, sixes: b.sixes || b.s || 0,
+                    sr: b.b > 0 ? ((b.r / b.b) * 100).toFixed(1) : '0.0',
+                    out: b.out || false
+                })),
+                bowlers: req.body.inn1Bowlers.filter(bw => bw.balls > 0).map(bw => ({
+                    name: bw.name, 
+                    overs: bw.balls ? `${Math.floor(bw.balls / 6)}.${bw.balls % 6}` : '0.0',
+                    runs: bw.r || 0, wickets: bw.w || 0,
+                    eco: bw.balls > 0 ? ((bw.r / (bw.balls / 6))).toFixed(1) : '0.0'
+                }))
+            };
+        }
+
         await match.save();
 
+        // 🔥 SOCKET.IO BROADCAST — Real-time to all connected viewers
         const io = req.app.get('socketio');
         if (io) {
-            io.to(`match_${match._id}`).emit('match:update', match.live_data);
+            const payload = {
+                matchId: match._id,
+                score: { runs: req.body.runs, wickets: req.body.wickets },
+                overs: `${req.body.overNum || 0}.${req.body.ballInOver || 0}`,
+                striker: match.live_data.striker,
+                non_striker: match.live_data.non_striker,
+                bowler: match.live_data.bowler,
+                recent_balls: match.live_data.recent_balls,
+                over_summaries: match.live_data.over_summaries,
+                commentary: commentary,
+                commentary_log: match.live_data.commentary_log,
+                run_rate: match.live_data.run_rate,
+                required_run_rate: match.live_data.required_run_rate,
+                runs_needed: match.live_data.runs_needed,
+                balls_remaining: match.live_data.balls_remaining,
+                partnership: match.live_data.partnership,
+                scorecard: match.live_data.scorecard,
+                inn1_scorecard: match.live_data.inn1_scorecard,
+                target: req.body.target,
+                status: match.status,
+                result: req.body.result,
+                phase: req.body.phase,
+                inningsNum: req.body.inningsNum,
+                timestamp: new Date()
+            };
+
+            // Emit to match room AND globally
+            io.to(`match_${match._id}`).emit('match:update', payload);
+            io.to(`match_${match._id}`).emit('match:ball', payload);
         }
 
         res.json({ success: true });

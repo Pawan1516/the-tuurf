@@ -52,6 +52,7 @@ export const authAPI = {
   login: (email, password, role) => apiClient.post('/auth/login', { email, password, role }),
   register: (name, email, phone, password) => apiClient.post('/auth/register', { name, email, phone, password }),
   googleLogin: (email, name, uid) => apiClient.post('/auth/google', { email, name, uid }),
+  getProfile: () => apiClient.get('/auth/profile'),
 };
 
 // Slots APIs
@@ -127,7 +128,8 @@ export const adminAPI = {
   aiCommand: (message) => apiClient.post('/admin/ai-command', { message }),
   getSettings: () => apiClient.get('/admin/settings'),
   saveSettings: (settings) => apiClient.post('/admin/settings/bulk', { settings }),
-  getUsers: () => apiClient.get('/admin/users')
+  getUsers: () => apiClient.get('/admin/users'),
+  getActivityLog: () => apiClient.get('/admin/activity-log'),
 };
 
 // Chatbot APIs

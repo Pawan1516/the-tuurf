@@ -563,6 +563,43 @@ router.post('/settings/bulk', verifyToken, roleGuard(['admin']), async (req, res
   }
 });
 
+// GET Activity Log — recent bookings with slot info (ADMIN ONLY)
+router.get('/activity-log', verifyToken, roleGuard(['admin']), async (req, res) => {
+  try {
+    const recentBookings = await Booking.find()
+      .populate('slot', 'startTime endTime date')
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+
+    const formatTime12h = (t) => {
+      if (!t) return 'N/A';
+      const [h, m] = t.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+    };
+
+    const logs = recentBookings.map(b => ({
+      id: b._id,
+      userName: b.userName,
+      userPhone: b.userPhone,
+      status: b.bookingStatus,
+      amount: b.amount,
+      slotDate: b.slot?.date ? new Date(b.slot.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' }) : 'N/A',
+      slotTime: b.slot
+        ? `${formatTime12h(b.slot.startTime)} – ${formatTime12h(b.slot.endTime)}`
+        : 'N/A',
+      createdAt: b.createdAt,
+      platform: b.platform || 'web',
+    }));
+
+    res.json({ success: true, logs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Get all users (ADMIN ONLY)
 router.get('/users', verifyToken, roleGuard(['admin']), async (req, res) => {
   try {

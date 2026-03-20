@@ -43,10 +43,18 @@ const autoGenerateSlots = async (daysAhead = 30) => {
 
         // 2. Generation Loop (ensure full coverage)
         for (let i = 0; i < daysAhead; i++) {
-            const date = new Date();
+            // Use Asia/Kolkata to determine the start of the relative day
+            const now = new Date();
+            const kolkataDateStr = new Intl.DateTimeFormat('en-CA', { 
+                timeZone: 'Asia/Kolkata', 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+            }).format(now);
+            
+            const date = new Date(`${kolkataDateStr}T00:00:00.000Z`);
             date.setDate(date.getDate() + i);
-            date.setUTCHours(0, 0, 0, 0);
-
+            
             const nextDay = new Date(date);
             nextDay.setDate(nextDay.getDate() + 1);
 

@@ -335,5 +335,39 @@ router.post('/google', async (req, res) => {
     }
 });
 
+// @route   GET /api/auth/profile
+// @desc    Get current user's profile with stats
+// @access  Private (User)
+const verifyToken = require('../middleware/verifyToken');
+router.get('/profile', verifyToken, async (req, res) => {
+    try {
+        const userId = req.user.id || req.user._id;
+        let user = null;
+
+        // Try User collection first
+        user = await User.findById(userId).select('-password -realPassword -otpCode -otpExpires').lean();
+        if (!user) {
+            // Try Admin
+            const Admin = require('../models/Admin');
+            user = await Admin.findById(userId).select('-password').lean();
+        }
+        if (!user) {
+            // Try Worker
+            const Worker = require('../models/Worker');
+            user = await Worker.findById(userId).select('-password').lean();
+        }
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        res.json({ success: true, user });
+    } catch (err) {
+        console.error('Profile fetch error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 module.exports = router;
+
 
