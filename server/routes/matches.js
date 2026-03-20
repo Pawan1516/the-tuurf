@@ -153,19 +153,26 @@ router.post('/:id/live-update', async (req, res) => {
             last_updated: new Date()
         };
 
-        // Also update the main score fields for easier querying
-        if (req.body.runs !== undefined) match.team_a.score = req.body.runs;
-        if (req.body.wickets !== undefined) match.team_a.wickets = req.body.wickets;
-        if (req.body.overs !== undefined) match.team_a.overs_played = req.body.overs;
+        // Update the main score fields for the CURRENT batting team
+        const battingTeamKey = (req.body.batting_team === 'B' || match.live_active_team === 'B') ? 'team_b' : 'team_a';
+        
+        if (req.body.runs !== undefined) match[battingTeamKey].score = req.body.runs;
+        if (req.body.wickets !== undefined) match[battingTeamKey].wickets = req.body.wickets;
+        if (req.body.overs !== undefined) match[battingTeamKey].overs_played = req.body.overs;
         if (req.body.status) match.status = req.body.status;
 
-        // CRITICAL: Update individual player stats in the Match document
-        if (req.body.batters || req.body.bowlers) {
+        // CRITICAL: Update individual player stats and INNINGS scores for Home Page
+        if (req.body.batters || req.body.bowlers || req.body.runs !== undefined) {
             // Ensure first innings exists
             if (match.innings.length === 0) {
-                match.innings.push({ number: 1, batsmen: [], bowlers: [] });
+                match.innings.push({ number: 1, score: 0, wickets: 0, overs_completed: 0, batsmen: [], bowlers: [] });
             }
             const currentInning = match.innings[0];
+
+            // Sync inning-level scores for home page display
+            if (req.body.runs !== undefined) currentInning.score = req.body.runs;
+            if (req.body.wickets !== undefined) currentInning.wickets = req.body.wickets;
+            if (req.body.overs !== undefined) currentInning.overs_completed = req.body.overs;
 
             if (req.body.batters) {
                 currentInning.batsmen = req.body.batters.map(b => ({
