@@ -141,7 +141,7 @@ const PublicHome = () => {
                             <span className="text-[9px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">{liveMatches.length} Active Matches</span>
                         </div>
 
-                        <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-6">
+                        <div className={`flex gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-6 ${liveMatches.length === 1 ? 'justify-center' : ''}`}>
                             {liveMatches.map((match) => (
                                 <Link 
                                     key={match._id} 
