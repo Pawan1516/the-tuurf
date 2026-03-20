@@ -7,21 +7,23 @@ const QRService = require('../services/qrService');
 const verifyMatch = require('../middleware/verifyMatch');
 
 // @route   GET /api/matches/live
-// @desc    Get all active/in-progress matches for scoreboard
+// @desc    Get ONLY the single match that is currently In Progress
 // @access  Public
 router.get('/live', async (req, res) => {
     try {
-        const liveMatches = await Match.find({ 
-            status: { $in: ['In Progress', 'Scheduled'] },
-            start_time: { 
-                $gte: new Date(new Date().setHours(0,0,0,0)), 
-                $lte: new Date(new Date().setHours(23,59,59,999)) 
-            }
+        const now = new Date();
+        const startOfToday = new Date(now).setHours(0,0,0,0);
+        const endOfToday = new Date(now).setHours(23,59,59,999);
+
+        // 1. Try to find ONLY a match that is explicitly "In Progress"
+        const match = await Match.findOne({ 
+            status: 'In Progress',
+            start_time: { $gte: startOfToday, $lte: endOfToday }
         })
         .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain')
-        .sort({ start_time: 1 });
+        .sort({ start_time: -1 });
 
-        res.json({ success: true, matches: liveMatches });
+        res.json({ success: true, matches: match ? [match] : [] });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
