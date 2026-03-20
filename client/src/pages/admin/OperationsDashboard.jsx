@@ -9,8 +9,17 @@ import {
     Zap,
     TrendingUp,
     MoreVertical,
-    History
+    History,
+    LayoutDashboard,
+    Calendar,
+    Briefcase,
+    PieChart,
+    Settings,
+    LogOut,
+    ChevronRight,
+    Database
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
@@ -22,6 +31,16 @@ const AdminDashboard = () => {
     const [pendingMatches, setPendingMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
+
+    const navItems = [
+        { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
+        { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
+        { to: '/admin/workers', label: 'Workers', icon: Briefcase },
+        { to: '/admin/report', label: 'Report', icon: PieChart },
+        { to: '/admin/settings', label: 'Settings', icon: Settings },
+    ];
 
     const { user, logout } = React.useContext(AuthContext);
 
@@ -57,7 +76,26 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchDashboardData();
+        const interval = setInterval(fetchDashboardData, 30000);
+        return () => clearInterval(interval);
     }, [fetchDashboardData]);
+
+    const NavItem = ({ to, label, icon: Icon, active = false }) => (
+        <Link
+            to={to}
+            className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
+            ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
+            : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
+        >
+            <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
+            <span className="text-xs font-black uppercase tracking-widest">{label}</span>
+        </Link>
+    );
+
+    const handleLogout = () => {
+        logout();
+        navigate('/admin/login');
+    };
 
     if (loading) return (
         <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-8 gap-4">
@@ -67,9 +105,43 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gray-950 text-gray-100 p-0 md:p-10 font-sans selection:bg-emerald-500/30">
-            <MobileNav user={user} logout={logout} />
-            <div className="p-4 md:p-0">
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row font-sans selection:bg-emerald-500/30">
+            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+
+            {/* Sidebar (Desktop) */}
+            <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
+                <div className="p-8 border-b border-gray-50 flex items-center gap-4">
+                    <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
+                        <Database size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin OS v2.0</p>
+                    </div>
+                </div>
+
+                <nav className="flex-1 p-6 space-y-2">
+                    <NavItem to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} active={true} />
+                    <NavItem to="/admin/operations" label="Operations" icon={Activity} />
+                    <NavItem to="/admin/scanner" label="Scanner Node" icon={Zap} />
+                    <NavItem to="/admin/slots" label="Slot Control" icon={Calendar} />
+                    <NavItem to="/admin/bookings" label="Booking Log" icon={Activity} />
+                </nav>
+
+                <div className="p-6 border-t border-gray-50">
+                    <button onClick={handleLogout} className="w-full flex items-center justify-between p-5 rounded-2xl bg-gray-900 text-white hover:bg-black transition-all group">
+                        <div className="flex items-center gap-3">
+                            <LogOut size={18} className="text-emerald-400" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Log Out</span>
+                        </div>
+                        <ChevronRight size={14} className="opacity-30 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <main className="flex-1 overflow-y-auto bg-gray-950 text-gray-100">
+            <div className="p-4 md:p-10 pb-20">
                 {/* Header */}
             <header className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
                 <div>
@@ -238,7 +310,8 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
+            </main>
         </div>
     );
 };
