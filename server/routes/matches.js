@@ -567,6 +567,11 @@ router.post('/:id/complete', async (req, res) => {
         match.result = { winner, won_by, margin };
         match.awards.man_of_the_match = man_of_the_match;
         match.end_time = new Date();
+        
+        // Auto-verify if processed by Authorized Scorer/Admin to trigger Career Stats
+        match.verification.status = 'VERIFIED';
+        match.verification.verified_by = req.user.id;
+        match.verification.verified_at = new Date();
 
         await match.save();
 

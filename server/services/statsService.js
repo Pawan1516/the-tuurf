@@ -16,59 +16,38 @@ class StatsService {
 
         const playerStats = new Map(); // player_id -> { batting: {}, bowling: {} }
 
-        // Iterate through all innings and balls
-        for (const innings of match.innings) {
-            for (const ball of innings.balls) {
-                const { batsman_id, bowler_id, delivery } = ball;
-                const { runs, is_wicket, wicket, extras } = delivery;
+        // 1. Process Batting Statistics from Summaries
+        for (const inning of match.innings) {
+            for (const b of inning.batsmen) {
+                if (!b.user_id) continue;
+                const pid = b.user_id.toString();
+                
+                if (!playerStats.has(pid)) playerStats.set(pid, this.initStats());
+                const stats = playerStats.get(pid);
 
-                // Batting Stats
-                if (batsman_id) {
-                    if (!playerStats.has(batsman_id.toString())) {
-                        playerStats.set(batsman_id.toString(), this.initStats());
-                    }
-                    const stats = playerStats.get(batsman_id.toString());
-                    stats.batting.runs += runs;
-                    stats.batting.balls_faced += (extras.type === 'wide' ? 0 : 1);
-                    if (runs === 4) stats.batting.fours += 1;
-                    if (runs === 6) stats.batting.sixes += 1;
-                }
-
-                // Bowling Stats
-                if (bowler_id) {
-                    if (!playerStats.has(bowler_id.toString())) {
-                        playerStats.set(bowler_id.toString(), this.initStats());
-                    }
-                    const stats = playerStats.get(bowler_id.toString());
-                    stats.bowling.runs_conceded += (runs + extras.runs);
-                    stats.bowling.balls_bowled += (extras.type === 'wide' || extras.type === 'noball' ? 0 : 1);
-                    
-                    if (is_wicket && wicket && !['runout', 'retired'].includes(wicket.type)) {
-                        stats.bowling.wickets += 1;
-                    }
-                }
-            }
-
-            // At the end of innings, mark who batted and their dismissals
-            for (const b of innings.batsmen) {
-                if (!playerStats.has(b.user_id.toString())) {
-                    playerStats.set(b.user_id.toString(), this.initStats());
-                }
-                const stats = playerStats.get(b.user_id.toString());
                 stats.batting.innings += 1;
-                if (b.out_type === 'Not Out') {
-                    stats.batting.not_outs += 1;
-                }
+                stats.batting.runs += (b.runs || 0);
+                stats.batting.balls_faced += (b.balls || 0);
+                stats.batting.fours += (b.fours || 0);
+                stats.batting.sixes += (b.sixes || 0);
+                
+                if (b.out_type === 'Not Out') stats.batting.not_outs += 1;
                 if (b.runs >= 50 && b.runs < 100) stats.batting.fifties += 1;
                 if (b.runs >= 100) stats.batting.hundreds += 1;
             }
 
-            for (const br of innings.bowlers) {
-                 if (!playerStats.has(br.user_id.toString())) {
-                    playerStats.set(br.user_id.toString(), this.initStats());
-                }
-                const stats = playerStats.get(br.user_id.toString());
+            // 2. Process Bowling Statistics from Summaries
+            for (const bw of inning.bowlers) {
+                if (!bw.user_id) continue;
+                const pid = bw.user_id.toString();
+
+                if (!playerStats.has(pid)) playerStats.set(pid, this.initStats());
+                const stats = playerStats.get(pid);
+
                 stats.bowling.innings_bowled += 1;
+                stats.bowling.runs_conceded += (bw.runs || 0);
+                stats.bowling.wickets += (bw.wickets || 0);
+                stats.bowling.balls_bowled += (bw.balls || 0);
             }
         }
 
