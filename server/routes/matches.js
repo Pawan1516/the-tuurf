@@ -7,7 +7,7 @@ const QRService = require('../services/qrService');
 const verifyMatch = require('../middleware/verifyMatch');
 
 // @route   GET /api/matches/live
-// @desc    Get ONLY the single match that is currently In Progress
+// @desc    Get the active match AND the most recent completed match for today
 // @access  Public
 router.get('/live', async (req, res) => {
     try {
@@ -15,15 +15,27 @@ router.get('/live', async (req, res) => {
         const startOfToday = new Date(now).setHours(0,0,0,0);
         const endOfToday = new Date(now).setHours(23,59,59,999);
 
-        // 1. Try to find ONLY a match that is explicitly "In Progress"
-        const match = await Match.findOne({ 
+        // 1. Get the current Live Match
+        const liveMatch = await Match.findOne({ 
             status: 'In Progress',
             start_time: { $gte: startOfToday, $lte: endOfToday }
         })
         .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain')
         .sort({ start_time: -1 });
 
-        res.json({ success: true, matches: match ? [match] : [] });
+        // 2. Get the most recent Completed Match for today
+        const completedMatch = await Match.findOne({
+            status: 'Completed',
+            start_time: { $gte: startOfToday, $lte: endOfToday }
+        })
+        .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain')
+        .sort({ end_time: -1 });
+
+        const matches = [];
+        if (liveMatch) matches.push(liveMatch);
+        if (completedMatch) matches.push(completedMatch);
+
+        res.json({ success: true, matches });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

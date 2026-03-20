@@ -149,56 +149,74 @@ const PublicHome = () => {
                                     className="flex-shrink-0 w-[290px] md:w-[380px] bg-white/5 border border-white/10 rounded-[2rem] p-6 hover:bg-white/10 transition-all group relative overflow-hidden"
                                 >
                                     <div className="absolute top-0 right-0 p-5">
-                                        <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-none">{match.status === 'In Progress' ? 'LIVE' : 'UPCOMING'}</span>
+                                        <div className={`px-3 py-1 border rounded-full ${match.status === 'In Progress' ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10'}`}>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${match.status === 'In Progress' ? 'text-red-400' : 'text-slate-400'}`}>
+                                                {match.status === 'In Progress' ? 'LIVE' : match.status === 'Completed' ? 'FINISHED' : 'UPCOMING'}
+                                            </span>
                                         </div>
                                     </div>
 
                                     <div className="flex flex-col gap-6">
                                         <div className="space-y-5">
+                                            {/* Team A Row */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
-                                                        <Users size={18} className="text-emerald-400" />
+                                                        <Users size={18} className={match.status === 'Completed' && match.result?.winner?.toString() === (match.team_a?.team_id?._id || match.team_a?.team_id)?.toString() ? "text-yellow-400" : "text-emerald-400"} />
                                                     </div>
-                                                    <span className="text-sm md:text-base font-black text-white truncate max-w-[140px]">
+                                                    <span className={`text-sm md:text-base font-black truncate max-w-[140px] ${match.status === 'Completed' && match.result?.winner?.toString() === (match.team_a?.team_id?._id || match.team_a?.team_id)?.toString() ? 'text-white' : 'text-white/60'}`}>
                                                         {match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || 'Team A'}
                                                     </span>
                                                 </div>
-                                                {match.status === 'In Progress' && (
+                                                {(match.status === 'In Progress' || match.status === 'Completed') && (
                                                     <span className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter">
-                                                        {match.innings?.[match.current_innings_index || 0]?.score || 0}
-                                                        <span className="text-emerald-500/50 ml-1 text-sm md:text-lg">/ {match.innings?.[match.current_innings_index || 0]?.wickets || 0}</span>
+                                                        {match.team_a?.score || 0}
+                                                        <span className="text-emerald-500/50 ml-1 text-sm md:text-lg">/ {match.team_a?.wickets || 0}</span>
                                                     </span>
                                                 )}
                                             </div>
 
+                                            {/* Team B Row */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
-                                                        <Users size={18} className="text-white/20" />
+                                                        <Users size={18} className={match.status === 'Completed' && match.result?.winner?.toString() === (match.team_b?.team_id?._id || match.team_b?.team_id)?.toString() ? "text-yellow-400" : "text-white/20"} />
                                                     </div>
-                                                    <span className="text-sm md:text-base font-black text-white/60 truncate max-w-[140px]">
+                                                    <span className={`text-sm md:text-base font-black truncate max-w-[140px] ${match.status === 'Completed' && match.result?.winner?.toString() === (match.team_b?.team_id?._id || match.team_b?.team_id)?.toString() ? 'text-white' : 'text-white/60'}`}>
                                                         {match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || 'Team B'}
                                                     </span>
                                                 </div>
-                                                {match.status === 'In Progress' && match.innings?.[1] && (
-                                                    <span className="text-sm font-black text-emerald-500/30 italic uppercase tracking-widest">Wait</span>
+                                                {(match.status === 'In Progress' || match.status === 'Completed') && (
+                                                    <span className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter opacity-60">
+                                                        {match.team_b?.score || 0}
+                                                        <span className="text-emerald-500/50 ml-1 text-sm md:text-lg">/ {match.team_b?.wickets || 0}</span>
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
 
                                         <div className="flex items-center justify-between pt-6 border-t border-white/5">
                                             <div className="flex items-center gap-2">
-                                                <Timer size={14} className="text-white/20" />
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                    {match.status === 'In Progress' ? 
-                                                        (typeof match.innings?.[match.current_innings_index || 0]?.overs_completed === 'number' ? match.innings?.[match.current_innings_index || 0]?.overs_completed.toFixed(1) : (match.innings?.[match.current_innings_index || 0]?.overs_completed || '0.0')) + ' Overs' : 
-                                                        new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                </span>
+                                                {match.status === 'Completed' ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Trophy size={14} className="text-yellow-400" />
+                                                        <span className="text-[10px] font-black text-yellow-400 uppercase tracking-widest truncate max-w-[150px]">
+                                                            {match.result?.winner?.name || 'Match'} won by {match.result?.margin || 'Result'}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <Timer size={14} className="text-white/20" />
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                            {match.status === 'In Progress' ? 
+                                                                (typeof match.innings?.[match.current_innings_index || 0]?.overs_completed === 'number' ? match.innings?.[match.current_innings_index || 0]?.overs_completed.toFixed(1) : (match.innings?.[match.current_innings_index || 0]?.overs_completed || '0.0')) + ' Overs' : 
+                                                                new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                        </span>
+                                                    </>
+                                                )}
                                             </div>
                                             <div className="flex items-center gap-2 text-emerald-400 group-hover:gap-4 transition-all bg-emerald-500/5 px-4 py-2 rounded-xl">
-                                                <span className="text-[9px] font-black uppercase tracking-widest">View Intel</span>
+                                                <span className="text-[9px] font-black uppercase tracking-widest">{match.status === 'Completed' ? 'Recap' : 'View Intel'}</span>
                                                 <ChevronRight size={14} />
                                             </div>
                                         </div>
