@@ -11,7 +11,9 @@ import {
     LogOut,
     ChevronRight,
     Zap,
-    MapPin
+    MapPin,
+    Trophy,
+    Swords
 } from 'lucide-react';
 import AuthContext from '../context/AuthContext';
 import { bookingsAPI, slotsAPI } from '../api/client';
@@ -329,21 +331,49 @@ const UserDashboard = () => {
                                                 </div>
                                             </div>
 
-                                        <div className="w-full mt-4 pt-4 border-t border-gray-100 flex flex-row md:flex-col items-center justify-between md:items-end gap-3">
-                                                <div className="text-left md:text-right">
-                                                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Amount</p>
-                                                    <p className="text-2xl font-black text-emerald-600 tracking-tighter">₹{booking.amount}</p>
-                                                    <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${booking.paymentStatus === 'verified' ? 'text-emerald-400' : 'text-yellow-500'}`}>
-                                                        {booking.paymentStatus}
-                                                    </p>
-                                                </div>
-                                                {booking.bookingStatus === 'confirmed' && (
-                                                    <button 
-                                                        onClick={() => handleCreateMatchClick(booking)}
-                                                        className="bg-emerald-600 active:bg-emerald-700 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl shadow-md shadow-emerald-200 transition-all">
-                                                        🏏 Create Match
-                                                    </button>
+                                            <div className="flex-1 flex flex-col gap-4">
+                                                {/* Matches List */}
+                                                {(booking.matches || []).length > 0 && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                                                        {(booking.matches || []).map((m, mi) => (
+                                                            <div key={mi} className={`relative overflow-hidden rounded-[2rem] p-5 border transition-all duration-500 ${
+                                                                m.status === 'Completed' ? 'bg-gradient-to-br from-[#064E3B] to-[#022C22] border-emerald-400/30' : 'bg-gray-900 border-gray-700'
+                                                            }`}>
+                                                                <div className="flex justify-between items-center mb-3">
+                                                                    <div className="bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                                                                        <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">{m.status === 'Completed' ? 'FINAL' : 'LIVE'}</p>
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => navigate(`/scoring/${m._id}`)}
+                                                                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
+                                                                        {m.status === 'Completed' ? 'Intel' : 'Score'}
+                                                                    </button>
+                                                                </div>
+                                                                <h4 className="text-[11px] font-black text-white uppercase tracking-tight mb-1">
+                                                                    {m.status === 'Completed' && m.result?.won_by ? (m.result.won_by === 'Tie' ? 'MATCH TIED' : `WON BY ${m.result.margin} ${m.result.won_by === 'Runs' ? 'RUNS' : 'WICKETS'}`) : `${m.quick_teams?.team_a?.name || 'TMA'} Vs. ${m.quick_teams?.team_b?.name || 'TMB'}`}
+                                                                </h4>
+                                                                <p className="text-[8px] font-bold text-emerald-400/40 uppercase tracking-widest leading-none">Arena Session: #{m._id.slice(-6)}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 )}
+
+                                                <div className="w-full pt-4 border-t border-gray-100 flex flex-row items-center justify-between gap-3 shrink-0">
+                                                    <div className="text-left md:text-right">
+                                                        <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest leading-none mb-1">Fee Registry</p>
+                                                        <p className="text-2xl font-black text-emerald-600 tracking-tighter leading-none">₹{booking.amount}</p>
+                                                        <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${booking.paymentStatus === 'verified' ? 'text-emerald-400' : 'text-yellow-500'}`}>
+                                                            {booking.paymentStatus}
+                                                        </p>
+                                                    </div>
+                                                    {booking.bookingStatus === 'confirmed' && (booking.matches || []).length < 5 && (
+                                                        <button 
+                                                            onClick={() => handleCreateMatchClick(booking)}
+                                                            className="bg-emerald-600 active:bg-emerald-700 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl shadow-md shadow-emerald-200 transition-all flex items-center gap-2">
+                                                            🏏 Create {(booking.matches || []).length > 0 ? 'Next' : ''} Match
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     );

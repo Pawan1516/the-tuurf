@@ -1,28 +1,17 @@
+
 require('dotenv').config();
 const mongoose = require('mongoose');
+const Slot = require('./models/Slot');
 
-const run = async () => {
-    try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        const Slot = require('./models/Slot');
+async function check() {
+    await mongoose.connect(process.env.MONGODB_URI);
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const count = await Slot.countDocuments({ date: today });
+    console.log('Slots for today (UTC 00:00):', count);
+    const all = await Slot.find({ date: today }).limit(3);
+    console.log('Segments:', all.map(s => s.startTime));
+    process.exit(0);
+}
 
-        const counts = await Slot.aggregate([
-            { $group: { _id: '$status', count: { $sum: 1 } } }
-        ]);
-
-        console.log('--- SLOT STATUS COUNTS ---');
-        counts.forEach(c => console.log(`${c._id}: ${c.count}`));
-
-        const holds = await Slot.find({ status: 'hold' }).limit(10);
-        if (holds.length > 0) {
-            console.log('\n--- RECENT HOLDS ---');
-            holds.forEach(h => {
-                console.log(`ID: ${h._id}, Expires: ${h.holdExpiresAt}, Date: ${h.date}, Time: ${h.startTime}`);
-            });
-        }
-
-        process.exit(0);
-    } catch (err) { console.error(err); process.exit(1); }
-};
-
-run();
+check();

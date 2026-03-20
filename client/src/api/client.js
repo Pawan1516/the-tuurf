@@ -1,9 +1,9 @@
 import axios from 'axios';
+// API configuration
 let API_BASE_URL = 'http://localhost:5001/api';
+
 if (process.env.NODE_ENV === 'production') {
   API_BASE_URL = 'https://the-turf-in.onrender.com/api';
-} else if (process.env.REACT_APP_API_URL) {
-  API_BASE_URL = process.env.REACT_APP_API_URL;
 }
 
 const apiClient = axios.create({
@@ -133,6 +133,12 @@ export const adminAPI = {
 // Chatbot APIs
 export const chatbotAPI = {
   sendMessage: (message, context) => apiClient.post('/chatbot', { message, context })
+};
+
+// Matches APIs
+export const matchesAPI = {
+  getLive: () => apiClient.get('/matches/live'),
+  getById: (id) => apiClient.get(`/matches/${id}`),
 };
 
 export default apiClient;

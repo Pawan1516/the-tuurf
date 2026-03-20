@@ -4,7 +4,9 @@ import jsQR from 'jsqr';
 import apiClient from '../../api/client';
 import AuthContext from '../../context/AuthContext';
 import MobileNav from '../../components/MobileNav';
+import AdminSidebar from '../../components/AdminSidebar';
 import { toast } from 'react-toastify';
+
 import { 
     CheckCircle, 
     AlertTriangle, 
@@ -204,11 +206,14 @@ const Scanner = () => {
 
     const navItems = [
         { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/admin/operations', label: 'Operations HUB', icon: Zap },
         { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
         { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-        { to: '/admin/workers', label: 'Workers', icon: Briefcase },
-        { to: '/admin/report', label: 'Report', icon: PieChart },
+        { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
+        { to: '/admin/users', label: 'User Control', icon: Database },
+        { to: '/admin/report', label: 'Intelligence', icon: PieChart },
         { to: '/admin/settings', label: 'Settings', icon: Settings },
+        { to: '/admin/scanner', label: 'QR Scanner', icon: Zap }
     ];
 
     const fetchDashboard = React.useCallback(async () => {
@@ -286,10 +291,12 @@ const Scanner = () => {
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-emerald-500/30">
             <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-            
+            <div className="flex flex-1 overflow-hidden">
+                <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto pb-24">
+                {/* Main Content */}
+                <main className="flex-1 overflow-y-auto pb-24">
+
             <div className="p-4 md:p-10 pb-20">
             {/* Header Area */}
             <div className="max-w-7xl mx-auto flex flex-col justify-between items-start md:items-center gap-6 mb-12">
@@ -492,8 +499,10 @@ const Scanner = () => {
             `}</style>
             </div>
             </main>
+            </div>
         </div>
     );
 };
+
 
 export default Scanner;

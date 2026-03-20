@@ -42,6 +42,8 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log('✅ MongoDB Connected Successfully');
     await seedSettings();
+    const { autoGenerateSlots } = require('./utils/slotGenerator');
+    await autoGenerateSlots(30);
   })
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 

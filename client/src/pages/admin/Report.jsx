@@ -18,6 +18,8 @@ import {
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
 import MobileNav from '../../components/MobileNav';
+import AdminSidebar from '../../components/AdminSidebar';
+
 
 const AdminReport = () => {
   const navigate = useNavigate();
@@ -29,11 +31,14 @@ const AdminReport = () => {
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/operations', label: 'Operations HUB', icon: Activity },
     { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-    { to: '/admin/workers', label: 'Workers', icon: Briefcase },
-    { to: '/admin/report', label: 'Report', icon: PieChart },
+    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
+    { to: '/admin/users', label: 'User Control', icon: ShieldCheck },
+    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
+    { to: '/admin/scanner', label: 'QR Scanner', icon: Cpu }
   ];
 
   const handleLogout = () => {
@@ -94,13 +99,14 @@ const AdminReport = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col lg:flex-row">
       <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-      
+      <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-24">
+
         <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
           <div className="flex flex-col">
             <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Report Center</h2>

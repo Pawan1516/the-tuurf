@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         default: 'PLAYER',
-        enum: ['PLAYER', 'CAPTAIN', 'SCORER', 'ADMIN', 'WORKER'],
+        enum: ['PLAYER', 'CAPTAIN', 'SCORER', 'ADMIN', 'WORKER', 'USER'],
     },
     admin_permissions: {
         can_scan_qr: { type: Boolean, default: false },
@@ -59,6 +59,9 @@ const userSchema = new mongoose.Schema({
             balls_faced: { type: Number, default: 0 },
             fours: { type: Number, default: 0 },
             sixes: { type: Number, default: 0 },
+            fifties: { type: Number, default: 0 },
+            hundreds: { type: Number, default: 0 },
+            high_score: { type: Number, default: 0 },
             average: { type: Number, default: 0 },
             strike_rate: { type: Number, default: 0 }
         },
@@ -68,7 +71,11 @@ const userSchema = new mongoose.Schema({
             overs: { type: Number, default: 0 },
             runs_conceded: { type: Number, default: 0 },
             economy: { type: Number, default: 0 },
-            five_wicket_hauls: { type: Number, default: 0 }
+            five_wicket_hauls: { type: Number, default: 0 },
+            best_bowling: {
+                wickets: { type: Number, default: 0 },
+                runs: { type: Number, default: 0 }
+            }
         }
     },
     player_qr: {

@@ -27,6 +27,9 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
         { to: '/admin/operations', label: 'Ops', icon: Activity },
         { to: '/admin/scanner', label: 'Scan', icon: ScanLine },
         { to: '/admin/bookings', label: 'Logs', icon: Calendar },
+        { to: '/admin/users', label: 'Users', icon: User },
+        { to: '/admin/workers', label: 'Team', icon: Briefcase },
+        { to: '/admin/report', label: 'Stats', icon: Activity },
         { to: '/admin/settings', label: 'Config', icon: Settings },
     ];
 

@@ -183,7 +183,7 @@ router.post('/scan-qr', verifyToken, async (req, res) => {
 // @route   POST /api/players/checkin
 // @desc    Check a player into a match
 // @access  Private (SCORER or ADMIN)
-router.post('/checkin', verifyToken, roleGuard(['SCORER', 'ADMIN', 'admin']), async (req, res) => {
+router.post('/checkin', verifyToken, roleGuard(['SCORER', 'ADMIN', 'admin', 'player', 'captain', 'PLAYER', 'CAPTAIN', 'WORKER', 'worker', 'USER', 'user']), async (req, res) => {
     try {
         const { match_id, player_qr_code, team_id, method = 'QR_SCAN' } = req.body;
         
@@ -225,4 +225,101 @@ router.post('/checkin', verifyToken, roleGuard(['SCORER', 'ADMIN', 'admin']), as
     }
 });
 
+// @route   GET /api/players/profile/:name
+// @desc    Fetch player career profile by name (Public)
+router.get('/profile/:name', async (req, res) => {
+    try {
+        const name = req.params.name;
+        // Case-insensitive search
+        let player = await User.findOne({ name: { $regex: new RegExp("^" + name + "$", "i") } })
+            .select('name username cricket_profile stats personal');
+
+        if (!player) {
+            // Return dummy profile for unidentified players
+            return res.json({
+                success: true,
+                is_guest: true,
+                profile: {
+                    name: name,
+                    stats: {
+                        batting: { matches: 0, runs: 0, high_score: 0 },
+                        bowling: { matches: 0, wickets: 0, best_bowling: { wickets: 0, runs: 0 } }
+                    },
+                    cricket_profile: { primary_role: 'Guest Player' }
+                }
+            });
+        }
+
+        res.json({ success: true, is_guest: false, profile: player });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/players/stats/bulk-update
+// @desc    Update career stats for multiple players (Scorer/Admin Only)
+router.post('/stats/bulk-update', verifyToken, roleGuard(['PLAYER', 'CAPTAIN', 'SCORER', 'ADMIN', 'WORKER', 'USER', 'worker', 'admin', 'player', 'captain', 'scorer', 'user']), async (req, res) => {
+    try {
+        const { match_results } = req.body; // array of { name, user_id, r, b, w, rc, o }
+        
+        for (const res of match_results) {
+            let filter = {};
+            if (res.user_id) {
+                filter = { _id: res.user_id };
+            } else {
+                const escapedName = (res.name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                filter = { name: { $regex: new RegExp("^" + escapedName + "$", "i") } };
+            }
+
+            const player = await User.findOne(filter);
+            if (player) {
+                // Failsafe for legacy documents missing stats schema structure
+                if (!player.stats) player.stats = {};
+                if (!player.stats.batting) player.stats.batting = { matches: 0, innings: 0, runs: 0, balls_faced: 0, fifties: 0, hundreds: 0, high_score: 0, strike_rate: 0 };
+                if (!player.stats.bowling) player.stats.bowling = { matches: 0, wickets: 0, overs: 0, runs_conceded: 0, best_bowling: { wickets: 0, runs: 0 } };
+                if (!player.stats.bowling.best_bowling) player.stats.bowling.best_bowling = { wickets: 0, runs: 0 };
+
+                // Batting
+                if (res.b > 0) {
+                    player.stats.batting.matches = (player.stats.batting.matches || 0) + 1;
+                    player.stats.batting.innings = (player.stats.batting.innings || 0) + 1;
+                    player.stats.batting.runs = (player.stats.batting.runs || 0) + res.r;
+                    player.stats.batting.balls_faced = (player.stats.batting.balls_faced || 0) + res.b;
+                    if (res.r >= 100) player.stats.batting.hundreds = (player.stats.batting.hundreds || 0) + 1;
+                    else if (res.r >= 50) player.stats.batting.fifties = (player.stats.batting.fifties || 0) + 1;
+                    if (res.r > (player.stats.batting.high_score || 0)) player.stats.batting.high_score = res.r;
+                    
+                    // Simple Avg/SR calc
+                    if (player.stats.batting.balls_faced > 0) {
+                        player.stats.batting.strike_rate = (player.stats.batting.runs / player.stats.batting.balls_faced) * 100;
+                    }
+                }
+
+                // Bowling
+                if (res.o > 0 || res.rc > 0 || res.w > 0) {
+                    if (res.b === 0) player.stats.bowling.matches = (player.stats.bowling.matches || 0) + 1; 
+                    player.stats.bowling.wickets = (player.stats.bowling.wickets || 0) + res.w;
+                    player.stats.bowling.overs = (player.stats.bowling.overs || 0) + res.o;
+                    player.stats.bowling.runs_conceded = (player.stats.bowling.runs_conceded || 0) + res.rc;
+                    
+                    // Best Bowling
+                    const currentBest = player.stats.bowling.best_bowling;
+                    if (res.w > currentBest.wickets || (res.w === currentBest.wickets && res.rc < currentBest.runs) || currentBest.wickets === undefined) {
+                        player.stats.bowling.best_bowling = { wickets: res.w, runs: res.rc };
+                    }
+                }
+                
+                // Mongoose might not detect deeply nested un-schematized changes without markModified
+                player.markModified('stats');
+                await player.save();
+            }
+        }
+
+        res.json({ success: true, message: 'Career registries updated successfully.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 module.exports = router;
+

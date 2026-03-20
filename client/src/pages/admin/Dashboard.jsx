@@ -22,6 +22,8 @@ import {
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
 import MobileNav from '../../components/MobileNav';
+import AdminSidebar from '../../components/AdminSidebar';
+
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -34,16 +36,15 @@ const AdminDashboard = () => {
   const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
   const navItems = [
-    { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
-    { to: '/admin/operations', label: 'Operations HUB', icon: Activity },
+    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/operations', label: 'Operations HUB', icon: Zap },
     { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-    { to: '/admin/booked-slots', label: 'Booked Slots', icon: CheckCircle },
-    { to: '/admin/bookings', label: 'Booking Log', icon: ScanLine },
-    { to: '/admin/workers', label: 'Workers', icon: Briefcase },
-    { to: '/admin/users', label: 'Users', icon: Users },
-    { to: '/admin/report', label: 'Report', icon: PieChart },
-    { to: '/admin/scanner', label: 'Scanner', icon: ScanLine },
+    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
+    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
+    { to: '/admin/users', label: 'User Control', icon: Users },
+    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
+    { to: '/admin/scanner', label: 'QR Scanner', icon: ScanLine }
   ];
 
   // Audio Alarm (Base64 Chime)
@@ -138,13 +139,16 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-      
+      <div className="flex flex-1">
+        <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto relative pb-24">
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto relative pb-24">
+
+
         {/* NEW BOOKING ALARM TOAST */}
         {showAlarm && (
           <div className="fixed top-28 left-1/2 -translate-x-1/2 z-[100] w-fit min-w-[320px] animate-bounce-slow px-4">
@@ -418,8 +422,10 @@ const AdminDashboard = () => {
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 };
+
 
 export default AdminDashboard;

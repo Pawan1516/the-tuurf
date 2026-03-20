@@ -17,13 +17,16 @@ import {
   Sun,
   Moon,
   Info,
-  TrendingUp
+  TrendingUp,
+  User
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
 import MobileNav from '../../components/MobileNav';
+import AdminSidebar from '../../components/AdminSidebar';
 
 const AdminSettings = () => {
+
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
@@ -47,13 +50,14 @@ const AdminSettings = () => {
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/operations', label: 'Operations HUB', icon: TrendingUp },
     { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-    { to: '/admin/booked-slots', label: 'Booked Slots', icon: CheckCircle },
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-    { to: '/admin/workers', label: 'Workers', icon: Briefcase },
-    { to: '/admin/users', label: 'Users', icon: Database },
-    { to: '/admin/report', label: 'Report', icon: PieChart },
+    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
+    { to: '/admin/users', label: 'User Control', icon: User },
+    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
     { to: '/admin/settings', label: 'Settings', icon: SettingsIcon },
+    { to: '/admin/scanner', label: 'QR Scanner', icon: Clock }
   ];
 
   useEffect(() => {
@@ -120,13 +124,15 @@ const AdminSettings = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-      
+      <div className="flex flex-1 overflow-hidden">
+        <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto relative pb-20">
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto pb-24">
+
         <header className="hidden md:flex bg-white/80 backdrop-blur-md px-10 h-24 items-center justify-between sticky top-0 z-40 border-b border-gray-100">
           <div className="flex items-center gap-6">
             <div className="flex flex-col">
@@ -402,9 +408,11 @@ const AdminSettings = () => {
             </form>
           )}
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };
 
 export default AdminSettings;
+

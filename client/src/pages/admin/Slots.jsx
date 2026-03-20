@@ -19,6 +19,8 @@ import {
 import AuthContext from '../../context/AuthContext';
 import { slotsAPI, adminAPI } from '../../api/client';
 import MobileNav from '../../components/MobileNav';
+import AdminSidebar from '../../components/AdminSidebar';
+
 
 const AdminSlots = () => {
   const navigate = useNavigate();
@@ -54,12 +56,14 @@ const AdminSlots = () => {
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/operations', label: 'Operations HUB', icon: TrendingUp },
     { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-    { to: '/admin/workers', label: 'Workers', icon: Briefcase },
-    { to: '/admin/users', label: 'Users', icon: Briefcase },
-    { to: '/admin/report', label: 'Report', icon: PieChart },
+    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
+    { to: '/admin/users', label: 'User Control', icon: Database },
+    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
+    { to: '/admin/scanner', label: 'QR Scanner', icon: Clock }
   ];
 
   useEffect(() => {
@@ -261,219 +265,222 @@ const AdminSlots = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-      
+      <div className="flex flex-1 overflow-hidden">
+        <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-24">
-        <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-          <div className="flex flex-col">
-            <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Slot Control</h2>
-            <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Availability Mgmt</p>
-          </div>
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto pb-24">
 
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 md:px-8 py-2 md:py-3 rounded-xl md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shadow-xl shadow-emerald-200"
-          >
-            {showForm ? <X size={16} /> : <Plus size={16} />}
-            <span className="hidden md:inline">{showForm ? 'Abort Operation' : 'Initialize New Slot'}</span>
-            <span className="md:hidden">{showForm ? 'Cancel' : 'Add Slot'}</span>
-          </button>
-        </header>
-
-        <div className="p-4 md:p-10 space-y-8 md:space-y-10">
-          {error && (
-            <div className="bg-red-50 border border-red-100 p-6 rounded-[2rem] flex items-center gap-4 text-red-600">
-              <TrendingUp className="rotate-90 shrink-0" />
-              <p className="text-xs font-black uppercase tracking-tight">{error}</p>
+          <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
+            <div className="flex flex-col">
+              <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Slot Control</h2>
+              <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Availability Mgmt</p>
             </div>
-          )}
 
-          {/* Creation Form */}
-          {showForm && (
-            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border-2 border-emerald-100 shadow-2xl shadow-emerald-900/5 transition-all">
-              <h3 className="text-xs font-black text-gray-900 uppercase tracking-[0.2em] mb-8">Specification Deployment</h3>
-              <form onSubmit={handleCreateSlot} className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Universal Date</label>
-                  <input type="date" name="date" value={formData.date} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start T-Minus</label>
-                  <input type="time" name="startTime" min={`${String(settings.TURF_OPEN_HOUR).padStart(2, '0')}:00`} max={`${String(settings.TURF_CLOSE_HOUR).padStart(2, '0')}:00`} value={formData.startTime} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Phase</label>
-                  <input type="time" name="endTime" min={`${String(settings.TURF_OPEN_HOUR).padStart(2, '0')}:00`} max={`${String(settings.TURF_CLOSE_HOUR).padStart(2, '0')}:00`} value={formData.endTime} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
-                </div>
-                <div className="flex flex-col gap-4">
-                  <div className="flex gap-2">
-                    {[60, 90, 120].map(mins => (
-                      <button
-                        key={mins}
-                        type="button"
-                        onClick={() => adjustEndTime(mins)}
-                        className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 text-[8px] font-black uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all"
-                      >
-                        {mins}M
-                      </button>
-                    ))}
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 md:px-8 py-2 md:py-3 rounded-xl md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shadow-xl shadow-emerald-200"
+            >
+              {showForm ? <X size={16} /> : <Plus size={16} />}
+              <span className="hidden md:inline">{showForm ? 'Abort Operation' : 'Initialize New Slot'}</span>
+              <span className="md:hidden">{showForm ? 'Cancel' : 'Add Slot'}</span>
+            </button>
+          </header>
+
+          <div className="p-4 md:p-10 space-y-8 md:space-y-10">
+            {error && (
+              <div className="bg-red-50 border border-red-100 p-6 rounded-[2rem] flex items-center gap-4 text-red-600">
+                <TrendingUp className="rotate-90 shrink-0" />
+                <p className="text-xs font-black uppercase tracking-tight">{error}</p>
+              </div>
+            )}
+
+            {/* Creation Form */}
+            {showForm && (
+              <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border-2 border-emerald-100 shadow-2xl shadow-emerald-900/5 transition-all">
+                <h3 className="text-xs font-black text-gray-900 uppercase tracking-[0.2em] mb-8">Specification Deployment</h3>
+                <form onSubmit={handleCreateSlot} className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Universal Date</label>
+                    <input type="date" name="date" value={formData.date} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
                   </div>
-                  <button type="submit" disabled={submitting} className="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50">
-                    {submitting ? 'Deploying...' : 'Deploy Node'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Manual Booking Modal */}
-          {showBookingModal && (
-            <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-300">
-                <div className="flex justify-between items-center mb-8">
-                  <div>
-                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Manual Booking</h3>
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1 flex items-center gap-2">
-                      {new Date(selectedSlot?.date).toLocaleDateString()} | {selectedSlot?.startTime}
-                    </p>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start T-Minus</label>
+                    <input type="time" name="startTime" min={`${String(settings.TURF_OPEN_HOUR).padStart(2, '0')}:00`} max={`${String(settings.TURF_CLOSE_HOUR).padStart(2, '0')}:00`} value={formData.startTime} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
                   </div>
-                  <button onClick={() => setShowBookingModal(false)} className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all">
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <form onSubmit={handleManualBooking} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Customer Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={bookingData.userName}
-                      onChange={(e) => setBookingData({ ...bookingData, userName: e.target.value })}
-                      placeholder="Enter customer name"
-                      className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-2xl font-bold text-sm outline-none"
-                    />
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Phase</label>
+                    <input type="time" name="endTime" min={`${String(settings.TURF_OPEN_HOUR).padStart(2, '0')}:00`} max={`${String(settings.TURF_CLOSE_HOUR).padStart(2, '0')}:00`} value={formData.endTime} onChange={handleInputChange} required className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-xl font-bold text-sm outline-none" />
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
-                    <input
-                      type="tel"
-                      required
-                      pattern="[0-9]{10}"
-                      value={bookingData.userPhone}
-                      onChange={(e) => setBookingData({ ...bookingData, userPhone: e.target.value })}
-                      placeholder="10-digit mobile number"
-                      className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-2xl font-bold text-sm outline-none"
-                    />
+                  <div className="flex flex-col gap-4">
+                    <div className="flex gap-2">
+                      {[60, 90, 120].map(mins => (
+                        <button
+                          key={mins}
+                          type="button"
+                          onClick={() => adjustEndTime(mins)}
+                          className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 text-[8px] font-black uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all"
+                        >
+                          {mins}M
+                        </button>
+                      ))}
+                    </div>
+                    <button type="submit" disabled={submitting} className="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50">
+                      {submitting ? 'Deploying...' : 'Deploy Node'}
+                    </button>
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Paid Amount (₹)</label>
-                    <input
-                      type="number"
-                      required
-                      value={bookingData.amount}
-                      onChange={(e) => setBookingData({ ...bookingData, amount: e.target.value })}
-                      className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-2xl font-bold text-sm outline-none"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full bg-gray-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50 mt-4"
-                  >
-                    {submitting ? 'Processing...' : 'Confirm Manual Booking'}
-                  </button>
                 </form>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Slots Breakdown */}
-          {loading ? (
-            <div className="py-40 flex flex-col items-center gap-6">
-              <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Syncing Infrastructure...</p>
-            </div>
-          ) : (
-            <div className="space-y-12">
-              {Object.entries(groupedSlots).map(([date, daySlots]) => (
-                <div key={date} className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="h-0.5 flex-1 bg-gray-100"></div>
-                    <h4 className="bg-white border-2 border-gray-100 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">{date}</h4>
-                    <div className="h-0.5 flex-1 bg-gray-100"></div>
+            {/* Manual Booking Modal */}
+            {showBookingModal && (
+              <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-300">
+                  <div className="flex justify-between items-center mb-8">
+                    <div>
+                      <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Manual Booking</h3>
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1 flex items-center gap-2">
+                        {new Date(selectedSlot?.date).toLocaleDateString()} | {selectedSlot?.startTime}
+                      </p>
+                    </div>
+                    <button onClick={() => setShowBookingModal(false)} className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all">
+                      <X size={20} />
+                    </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    {daySlots.map(slot => (
-                      <div key={slot._id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-lg shadow-emerald-900/[0.02] hover:border-emerald-300 transition-all group flex flex-col justify-between min-h-[160px]">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-gray-900">
-                              <Clock size={16} className="text-emerald-600" />
-                              <span className="text-base md:text-lg font-black tracking-tighter leading-none">{formatTime12h(slot.startTime)} – {formatTime12h(slot.endTime)}</span>
-                            </div>
-                            <div className={`text-[9px] font-black uppercase tracking-widest ${slot.status === 'booked' ? 'text-red-500' :
-                              slot.status === 'hold' ? 'text-yellow-500' :
-                                'text-emerald-500'
-                              }`}>
-                              {slot.status}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            {slot.status === 'free' && (
-                              <button
-                                onClick={() => {
-                                  setSelectedSlot(slot);
-                                  setShowBookingModal(true);
-                                }}
-                                className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100"
-                              >
-                                Book
-                              </button>
-                            )}
-                            <button onClick={() => handleDeleteSlot(slot._id)} className="bg-red-50 text-red-400 p-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-all md:opacity-0 group-hover:opacity-100 shadow-sm">
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
+                  <form onSubmit={handleManualBooking} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Customer Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={bookingData.userName}
+                        onChange={(e) => setBookingData({ ...bookingData, userName: e.target.value })}
+                        placeholder="Enter customer name"
+                        className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-2xl font-bold text-sm outline-none"
+                      />
+                    </div>
 
-                        <div className="mt-6 pt-4 border-t border-gray-50 flex flex-col gap-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Ground Unit</span>
-                            <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                              <Briefcase size={14} />
-                            </div>
-                          </div>
-                          <select
-                            value={slot.assignedWorker?._id || ''}
-                            onChange={(e) => handleAssignWorker(slot._id, e.target.value)}
-                            className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider outline-none transition-all cursor-pointer"
-                          >
-                            <option value="">-- UNASSIGNED --</option>
-                            {workers.map(w => (
-                              <option key={w._id} value={w._id}>
-                                {w.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        required
+                        pattern="[0-9]{10}"
+                        value={bookingData.userPhone}
+                        onChange={(e) => setBookingData({ ...bookingData, userPhone: e.target.value })}
+                        placeholder="10-digit mobile number"
+                        className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-2xl font-bold text-sm outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Paid Amount (₹)</label>
+                      <input
+                        type="number"
+                        required
+                        value={bookingData.amount}
+                        onChange={(e) => setBookingData({ ...bookingData, amount: e.target.value })}
+                        className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 rounded-2xl font-bold text-sm outline-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full bg-gray-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50 mt-4"
+                    >
+                      {submitting ? 'Processing...' : 'Confirm Manual Booking'}
+                    </button>
+                  </form>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+              </div>
+            )}
+
+            {/* Slots Breakdown */}
+            {loading ? (
+              <div className="py-40 flex flex-col items-center gap-6">
+                <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Syncing Infrastructure...</p>
+              </div>
+            ) : (
+              <div className="space-y-12">
+                {Object.entries(groupedSlots).map(([date, daySlots]) => (
+                  <div key={date} className="space-y-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-0.5 flex-1 bg-gray-100"></div>
+                      <h4 className="bg-white border-2 border-gray-100 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">{date}</h4>
+                      <div className="h-0.5 flex-1 bg-gray-100"></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                      {daySlots.map(slot => (
+                        <div key={slot._id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-lg shadow-emerald-900/[0.02] hover:border-emerald-300 transition-all group flex flex-col justify-between min-h-[160px]">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-gray-900">
+                                <Clock size={16} className="text-emerald-600" />
+                                <span className="text-base md:text-lg font-black tracking-tighter leading-none">{formatTime12h(slot.startTime)} – {formatTime12h(slot.endTime)}</span>
+                              </div>
+                              <div className={`text-[9px] font-black uppercase tracking-widest ${slot.status === 'booked' ? 'text-red-500' :
+                                slot.status === 'hold' ? 'text-yellow-500' :
+                                  'text-emerald-500'
+                                }`}>
+                                {slot.status}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              {slot.status === 'free' && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedSlot(slot);
+                                    setShowBookingModal(true);
+                                  }}
+                                  className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100"
+                                >
+                                  Book
+                                </button>
+                              )}
+                              <button onClick={() => handleDeleteSlot(slot._id)} className="bg-red-50 text-red-400 p-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-all md:opacity-0 group-hover:opacity-100 shadow-sm">
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-6 pt-4 border-t border-gray-50 flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Ground Unit</span>
+                              <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                <Briefcase size={14} />
+                              </div>
+                            </div>
+                            <select
+                              value={slot.assignedWorker?._id || ''}
+                              onChange={(e) => handleAssignWorker(slot._id, e.target.value)}
+                              className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider outline-none transition-all cursor-pointer"
+                            >
+                              <option value="">-- UNASSIGNED --</option>
+                              {workers.map(w => (
+                                <option key={w._id} value={w._id}>
+                                  {w.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

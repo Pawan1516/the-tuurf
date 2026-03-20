@@ -24,8 +24,10 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import MobileNav from '../../components/MobileNav';
+import AdminSidebar from '../../components/AdminSidebar';
 
-const AdminDashboard = () => {
+const OperationsDashboard = () => {
+
     const [stats, setStats] = useState(null);
     const [recentScans, setRecentScans] = useState([]);
     const [pendingMatches, setPendingMatches] = useState([]);
@@ -33,32 +35,24 @@ const AdminDashboard = () => {
     const navigate = useNavigate();
     const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
-    const navItems = [
-        { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-        { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-        { to: '/admin/workers', label: 'Workers', icon: Briefcase },
-        { to: '/admin/report', label: 'Report', icon: PieChart },
-        { to: '/admin/settings', label: 'Settings', icon: Settings },
-    ];
-
     const { user, logout } = React.useContext(AuthContext);
 
     const fetchDashboardData = React.useCallback(async () => {
+
         try {
             setLoading(true);
             const [statsRes, matchesRes] = await Promise.all([
                 apiClient.get('/admin/scan-dashboard'),
-                apiClient.get('/matches?status=Scheduled')
+                apiClient.get('/matches')
             ]);
 
             setStats(statsRes.data.dashboard);
-            // Filter pending matches for today
-            const today = new Date().toISOString().split('T')[0];
-            setPendingMatches(matchesRes.data.matches.filter(m => 
-                m.verification.status === 'PENDING' && 
-                m.start_time.startsWith(today)
-            ));
+            // Sort matches so that newest are first, and filter for today if possible but show all
+            const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+            const allMatches = (matchesRes.data.matches || []).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setPendingMatches(allMatches); // Show all instead of filtering strictly, to avoid "not working" confusion
+            
+            // Highlight today's matches to the admin in some way? (Handled in the list UI)
             
             // Mock recent scans for UI demo
             setRecentScans([
@@ -97,6 +91,18 @@ const AdminDashboard = () => {
         navigate('/admin/login');
     };
 
+    const navItems = [
+    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/operations', label: 'Operations HUB', icon: TrendingUp },
+    { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
+    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
+    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
+    { to: '/admin/users', label: 'User Control', icon: Database },
+    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
+    { to: '/admin/settings', label: 'Settings', icon: Settings },
+    { to: '/admin/scanner', label: 'QR Scanner', icon: Clock }
+  ];
+
     if (loading) return (
         <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-8 gap-4">
             <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
@@ -108,10 +114,13 @@ const AdminDashboard = () => {
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-emerald-500/30">
             <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-            
+            <div className="flex flex-1">
+                <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-gray-950 text-gray-100">
+                {/* Main Content */}
+                <main className="flex-1 overflow-y-auto bg-gray-950 text-gray-100">
+
+
             <div className="p-4 md:p-10 pb-20">
                 {/* Header */}
             <header className="max-w-7xl mx-auto flex flex-col justify-between items-start md:items-center gap-8 mb-12">
@@ -213,12 +222,12 @@ const AdminDashboard = () => {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <button 
-                                                    onClick={() => navigate('/admin/scanner')}
-                                                    className="bg-gray-800 group-hover:bg-emerald-600 text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all"
-                                                >
-                                                    Process QR
-                                                </button>
+                                                    <button 
+                                                        onClick={() => navigate(`/scoring/${m._id}`)}
+                                                        className={`bg-gray-800 ${m.verification.status === 'VERIFIED' ? 'bg-emerald-600' : 'group-hover:bg-emerald-600'} text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all`}
+                                                    >
+                                                        {m.verification.status === 'VERIFIED' ? 'Scorer HUD' : 'Open Scorer'}
+                                                    </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -283,6 +292,7 @@ const AdminDashboard = () => {
             </div>
             </div>
             </main>
+            </div>
         </div>
     );
 };
@@ -301,4 +311,5 @@ const StatCard = ({ label, value, icon, trend, sub }) => (
     </div>
 );
 
-export default AdminDashboard;
+export default OperationsDashboard;
+

@@ -309,11 +309,31 @@ router.get('/my-bookings', verifyToken, async (req, res) => {
       .sort({ createdAt: -1 })
       .maxTimeMS(2000);
 
-    res.json({ success: true, bookings });
+    // Fetch associated matches
+    const Match = require('../models/Match');
+    const bookingIds = bookings.map(b => b._id);
+    const matches = await Match.find({ 
+      $or: [
+        { booking_id: { $in: bookingIds } },
+        { 'match_creation.linked_booking_id': { $in: bookingIds } }
+      ]
+    }).populate('team_a.team_id team_b.team_id');
+
+    // Attach matches to bookings
+    const bookingsWithMatches = bookings.map(b => {
+      const associatedMatches = matches.filter(m => 
+        (m.booking_id && m.booking_id.toString() === b._id.toString()) || 
+        (m.match_creation?.linked_booking_id && m.match_creation.linked_booking_id.toString() === b._id.toString())
+      );
+      return { ...b.toObject(), matches: associatedMatches };
+    });
+
+    res.json({ success: true, bookings: bookingsWithMatches });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 // Get bookings for worker's dashboard (all bookings visible)
 router.get('/my-slots', verifyToken, roleGuard(['worker']), async (req, res) => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { slotsAPI } from '../api/client';
-import { ChevronRight, Zap, MapPin, Plus } from 'lucide-react';
+import { slotsAPI, matchesAPI } from '../api/client';
+import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer } from 'lucide-react';
 
 const PublicHome = () => {
     const getISODate = (date = new Date()) => {
@@ -9,6 +9,7 @@ const PublicHome = () => {
     };
 
     const [slots, setSlots] = useState([]);
+    const [liveMatches, setLiveMatches] = useState([]);
     const [selectedDate, setSelectedDate] = useState(getISODate());
     const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState({ PRICE_DAY: 1000 });
@@ -30,22 +31,39 @@ const PublicHome = () => {
 
     useEffect(() => {
         const init = async () => {
+            setLoading(true);
+            
+            // 1. Fetch Slots (Primary)
             try {
-                setLoading(true);
-                const [slotsRes, settingsRes] = await Promise.all([
-                    slotsAPI.getAll(selectedDate),
-                    slotsAPI.getSettings()
-                ]);
-                if (Array.isArray(slotsRes.data)) setSlots(slotsRes.data);
+                const res = await slotsAPI.getAll(selectedDate);
+                if (Array.isArray(res.data)) setSlots(res.data);
                 else setSlots([]);
-                if (settingsRes.data.success) {
-                    setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
-                }
-                setLoading(false);
             } catch (err) {
-                console.error('Error fetching data:', err);
-                setLoading(false);
+                console.error('Error fetching slots:', err);
+                setSlots([]);
             }
+
+            // 2. Fetch Settings
+            try {
+                const res = await slotsAPI.getSettings();
+                if (res.data.success) {
+                    setSettings(prev => ({ ...prev, ...res.data.settings }));
+                }
+            } catch (err) {
+                console.error('Error fetching settings:', err);
+            }
+
+            // 3. Fetch Live Matches (New)
+            try {
+                const res = await matchesAPI.getLive();
+                if (res.data.success) {
+                    setLiveMatches(res.data.matches || []);
+                }
+            } catch (err) {
+                console.error('Error fetching live matches:', err);
+            }
+
+            setLoading(false);
         };
         init();
     }, [selectedDate]);
@@ -75,7 +93,7 @@ const PublicHome = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
             {/* HERO SECTION WITH BACKGROUND IMAGE SLIDER */}
-            <section className="relative h-[280px] sm:h-[340px] md:h-[480px] w-full flex flex-col items-center justify-center overflow-hidden">
+            <section className="relative h-[250px] sm:h-[300px] md:h-[420px] w-full flex flex-col items-center justify-center overflow-hidden">
                 {heroImages.map((img, idx) => (
                     <div
                         key={idx}
@@ -91,7 +109,7 @@ const PublicHome = () => {
                     <h1 className="text-3xl sm:text-4xl md:text-8xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-2xl">
                         Feel Free <span className="text-emerald-400"> Play Better</span>
                     </h1>
-                    <p className="text-[10px] md:text-sm font-black text-white/80 uppercase tracking-[0.4em] md:tracking-[1em] mb-8 md:mb-12 drop-shadow-lg">
+                    <p className="text-[10px] md:text-sm font-black text-white/80 uppercase tracking-[0.4em] md:tracking-[1em] mb-4 md:mb-8 drop-shadow-lg">
                         Select your squad. Lock your slot
                     </p>
 
@@ -111,6 +129,84 @@ const PublicHome = () => {
 
             {/* MAIN INTERFACE OVERLAPPING HERO */}
             <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-10 md:-mt-32 relative z-20 mb-8 md:mb-32">
+                
+                {/* LIVE SCOREBOARD (NEW POSITION) */}
+                {liveMatches.length > 0 && (
+                    <div className="bg-[#1e293b] rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 mb-8 md:mb-12 shadow-[0_30px_100px_rgba(0,0,0,0.2)] border border-white/5 overflow-hidden relative">
+                        <div className="flex items-center justify-between mb-8 px-2">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_15px_#ef4444]"></div>
+                                <h3 className="text-xs md:text-sm font-black uppercase tracking-[0.3em] text-emerald-400">Live Arena Intel</h3>
+                            </div>
+                            <span className="text-[9px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">{liveMatches.length} Active Matches</span>
+                        </div>
+
+                        <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-6">
+                            {liveMatches.map((match) => (
+                                <Link 
+                                    key={match._id} 
+                                    to={`/live/${match._id}`}
+                                    className="flex-shrink-0 w-[290px] md:w-[380px] bg-white/5 border border-white/10 rounded-[2rem] p-6 hover:bg-white/10 transition-all group relative overflow-hidden"
+                                >
+                                    <div className="absolute top-0 right-0 p-5">
+                                        <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-none">{match.status === 'In Progress' ? 'LIVE' : 'UPCOMING'}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-6">
+                                        <div className="space-y-5">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
+                                                        <Users size={18} className="text-emerald-400" />
+                                                    </div>
+                                                    <span className="text-sm md:text-base font-black text-white truncate max-w-[140px]">
+                                                        {match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || 'Team A'}
+                                                    </span>
+                                                </div>
+                                                {match.status === 'In Progress' && (
+                                                    <span className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter">
+                                                        {match.innings?.[match.current_innings_index || 0]?.score || 0}
+                                                        <span className="text-emerald-500/50 ml-1 text-sm md:text-lg">/ {match.innings?.[match.current_innings_index || 0]?.wickets || 0}</span>
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
+                                                        <Users size={18} className="text-white/20" />
+                                                    </div>
+                                                    <span className="text-sm md:text-base font-black text-white/60 truncate max-w-[140px]">
+                                                        {match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || 'Team B'}
+                                                    </span>
+                                                </div>
+                                                {match.status === 'In Progress' && match.innings?.[1] && (
+                                                    <span className="text-sm font-black text-emerald-500/30 italic uppercase tracking-widest">Wait</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                                            <div className="flex items-center gap-2">
+                                                <Timer size={14} className="text-white/20" />
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                    {match.status === 'In Progress' ? (match.innings?.[match.current_innings_index || 0]?.overs_completed || 0) + ' Overs' : new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-emerald-400 group-hover:gap-4 transition-all bg-emerald-500/5 px-4 py-2 rounded-xl">
+                                                <span className="text-[9px] font-black uppercase tracking-widest">View Intel</span>
+                                                <ChevronRight size={14} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
 
                     {/* DATE SIDEBAR - Horizontal on Mobile, Vertical on Desktop */}

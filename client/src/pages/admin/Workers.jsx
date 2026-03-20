@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import {
-  LayoutDashboard,
+import { LayoutDashboard,
   Calendar,
   Activity,
   Briefcase,
@@ -19,13 +18,14 @@ import {
   Lock,
   Edit2,
   ShieldCheck,
-  Settings
-} from 'lucide-react';
+  Settings, Clock } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
 import MobileNav from '../../components/MobileNav';
+import AdminSidebar from '../../components/AdminSidebar';
 
 const AdminWorkers = () => {
+
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
   const [workers, setWorkers] = useState([]);
@@ -38,12 +38,14 @@ const AdminWorkers = () => {
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/operations', label: 'Operations HUB', icon: Activity },
     { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
     { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-    { to: '/admin/workers', label: 'Workers', icon: Briefcase },
-    { to: '/admin/users', label: 'Users', icon: User },
-    { to: '/admin/report', label: 'Report', icon: PieChart },
+    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
+    { to: '/admin/users', label: 'User Control', icon: User },
+    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
+    { to: '/admin/scanner', label: 'QR Scanner', icon: Clock }
   ];
 
   const handleLogout = () => {
@@ -124,13 +126,16 @@ const AdminWorkers = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-      
+      <div className="flex flex-1 overflow-hidden">
+        <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-24">
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto pb-24 bg-gray-50">
+
+
         <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
           <div className="flex flex-col">
             <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Workers</h2>
@@ -243,7 +248,8 @@ const AdminWorkers = () => {
             </div>
           )}
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

@@ -5,6 +5,28 @@ const Booking = require('../models/Booking');
 const AIService = require('../services/aiService');
 const QRService = require('../services/qrService');
 const verifyMatch = require('../middleware/verifyMatch');
+
+// @route   GET /api/matches/live
+// @desc    Get all active/in-progress matches for scoreboard
+// @access  Public
+router.get('/live', async (req, res) => {
+    try {
+        const liveMatches = await Match.find({ 
+            status: { $in: ['In Progress', 'Scheduled'] },
+            start_time: { 
+                $gte: new Date(new Date().setHours(0,0,0,0)), 
+                $lte: new Date(new Date().setHours(23,59,59,999)) 
+            }
+        })
+        .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain')
+        .sort({ start_time: 1 });
+
+        res.json({ success: true, matches: liveMatches });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // Assuming userAuth middleware is available to set req.user
 // const { userAuth } = require('../middleware/auth'); // If such a middleware exists
 
@@ -117,6 +139,84 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// POST /api/matches/:id/live-update - Update full live state
+router.post('/:id/live-update', async (req, res) => {
+    try {
+        const match = await Match.findById(req.params.id);
+        if (!match) return res.status(404).json({ error: 'Match not found' });
+
+        match.live_data = {
+            ...match.live_data,
+            ...req.body,
+            last_updated: new Date()
+        };
+
+        // Also update the main score fields for easier querying
+        if (req.body.runs !== undefined) match.team_a.score = req.body.runs;
+        if (req.body.wickets !== undefined) match.team_a.wickets = req.body.wickets;
+        if (req.body.overs !== undefined) match.team_a.overs_played = req.body.overs;
+        if (req.body.status) match.status = req.body.status;
+
+        // CRITICAL: Update individual player stats in the Match document
+        if (req.body.batters || req.body.bowlers) {
+            // Ensure first innings exists
+            if (match.innings.length === 0) {
+                match.innings.push({ number: 1, batsmen: [], bowlers: [] });
+            }
+            const currentInning = match.innings[0];
+
+            if (req.body.batters) {
+                currentInning.batsmen = req.body.batters.map(b => ({
+                    user_id: b.user_id,
+                    runs: b.r,
+                    balls: b.b,
+                    fours: b.fours,
+                    sixes: b.sixes,
+                    out_type: b.out ? 'Out' : 'Not Out'
+                }));
+            }
+
+            if (req.body.bowlers) {
+                currentInning.bowlers = req.body.bowlers.map(bw => ({
+                    user_id: bw.user_id,
+                    overs: bw.overs,
+                    runs: bw.r,
+                    wickets: bw.w,
+                    balls: bw.balls
+                }));
+            }
+        }
+
+        // Map live_data for public view (striker index -> striker object)
+        if (req.body.batters && req.body.striker !== undefined) {
+            const s = req.body.batters[req.body.striker];
+            match.live_data.striker = { name: s.name, runs: s.r, balls: s.b };
+        }
+        if (req.body.batters && req.body.nonStriker !== undefined) {
+            const ns = req.body.batters[req.body.nonStriker];
+            match.live_data.non_striker = { name: ns.name, runs: ns.r, balls: ns.b };
+        }
+        if (req.body.bowlers && req.body.currentBowlerIdx !== undefined) {
+            const bw = req.body.bowlers[req.body.currentBowlerIdx];
+            match.live_data.bowler = { name: bw.name, overs: bw.overs, r: bw.r, w: bw.w, eco: bw.overs > 0 ? (bw.r / bw.overs).toFixed(1) : '0.0' };
+        }
+        if (req.body.currentOverBalls) {
+            match.live_data.recent_balls = req.body.currentOverBalls;
+        }
+
+        await match.save();
+
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`match_${match._id}`).emit('match:update', match.live_data);
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // POST /api/matches/:id/ball - Record a ball (Requires verifyMatch middleware protection)
 router.post('/:id/ball', verifyMatch, async (req, res) => {
     try {
@@ -140,7 +240,7 @@ router.post('/:id/ball', verifyMatch, async (req, res) => {
         let aiCommentary = "";
         try {
             aiCommentary = await AIService.generateCommentary({
-                ball: { runs: run_count, type: is_wicket ? 'WICKET' : 'RUNS', over: match.innings[0].overs.length, ballNo: currentOver.balls.length },
+                ball: { runs: run || 0, type: is_wicket ? 'WICKET' : 'RUNS', over: match.innings && match.innings[0] && match.innings[0].overs ? match.innings[0].overs.length : 0, ballNo: 1 },
                 batsman: { name: 'Player A', runs: 28, balls: 24 }, // Actual names would be retrieved here
                 bowler: { name: 'Player B', wickets: 1, economy: 6.0 },
                 match: { target: 145, required: 42, ballsLeft: 30, team: 'Chasing Team' },
@@ -292,7 +392,7 @@ router.post('/:id/playing-xi', async (req, res) => {
 // @access  Private
 router.post('/quick/create', async (req, res) => {
     try {
-        const { format, team_a, team_b } = req.body;
+        const { format, team_a, team_b, booking_id } = req.body;
         const crypto = require('crypto');
         const User = require('../models/User'); // Ensure User model is available
         const setupPlayers = async (teamData, teamName) => {
@@ -343,8 +443,13 @@ router.post('/quick/create', async (req, res) => {
                 team_b: { name: team_b.name, players: processedTeamB } 
             },
             status: 'Scheduled',
-            match_creation: { created_via: 'DIRECT' }
+            booking_id: booking_id || null,
+            match_creation: { 
+                created_via: booking_id ? 'BOOKING' : 'DIRECT',
+                linked_booking_id: booking_id || null
+            }
         });
+
 
         // Generate Match QR
         const qrDetails = await QRService.generateMatchQR(match._id);
