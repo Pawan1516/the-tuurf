@@ -192,7 +192,9 @@ const PublicHome = () => {
                                             <div className="flex items-center gap-2">
                                                 <Timer size={14} className="text-white/20" />
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                    {match.status === 'In Progress' ? (match.innings?.[match.current_innings_index || 0]?.overs_completed || 0) + ' Overs' : new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    {match.status === 'In Progress' ? 
+                                                        (typeof match.innings?.[match.current_innings_index || 0]?.overs_completed === 'number' ? match.innings?.[match.current_innings_index || 0]?.overs_completed.toFixed(1) : (match.innings?.[match.current_innings_index || 0]?.overs_completed || '0.0')) + ' Overs' : 
+                                                        new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 text-emerald-400 group-hover:gap-4 transition-all bg-emerald-500/5 px-4 py-2 rounded-xl">

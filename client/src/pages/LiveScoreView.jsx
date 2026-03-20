@@ -42,14 +42,15 @@ export default function LiveScoreView() {
         </div>
     );
 
-    const teamA = match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || "Team A";
-    const teamB = match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || "Team B";
-    const scoreA = match.team_a?.score || 0;
-    const wicketsA = match.team_a?.wickets || 0;
-    const oversA = match.team_a?.overs_played || '0.0';
+    const isTeamBBatting = match.live_data?.batting_team === 'B' || match.live_active_team === 'B';
+    const activeTeam = isTeamBBatting ? match.team_b : match.team_a;
 
-    const isMatchEnded = match.status === 'COMPLETED';
-    const resultText = match.result?.winner ? `${match.result.winner.name} won by ${match.result.margin}` : "Match in Progress";
+    const score = activeTeam?.score || 0;
+    const wickets = activeTeam?.wickets || 0;
+    const overs = activeTeam?.overs_played || '0.0';
+
+    const isMatchEnded = match.status === 'Completed';
+    const resultText = match.result?.winner ? `${match.result.winner.name || 'Winner'} won by ${match.result.margin || ''}` : "Match in Progress";
 
     return (
         <div className="min-h-screen bg-[#0D1B0F] text-white font-sans overflow-x-hidden pb-20">
@@ -81,7 +82,9 @@ export default function LiveScoreView() {
                             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/10 group-hover:border-emerald-500/50 transition-colors">
                                 <Users className="text-emerald-400" size={24} />
                             </div>
-                            <h3 className="text-xs font-black uppercase tracking-tight line-clamp-2">{teamA}</h3>
+                            <h3 className={`text-xs font-black uppercase tracking-tight line-clamp-2 ${!isTeamBBatting ? 'text-emerald-400' : 'text-white/40'}`}>
+                                {match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || "Team A"}
+                            </h3>
                         </div>
                         
                         <div className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
@@ -92,7 +95,9 @@ export default function LiveScoreView() {
                             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/10 group-hover:border-emerald-500/50 transition-colors">
                                 <Users className="text-emerald-400" size={24} />
                             </div>
-                            <h3 className="text-xs font-black uppercase tracking-tight line-clamp-2">{teamB}</h3>
+                            <h3 className={`text-xs font-black uppercase tracking-tight line-clamp-2 ${isTeamBBatting ? 'text-emerald-400' : 'text-white/40'}`}>
+                                {match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || "Team B"}
+                            </h3>
                         </div>
                     </div>
 
@@ -104,10 +109,10 @@ export default function LiveScoreView() {
                     ) : (
                         <div className="space-y-1">
                             <div className="text-5xl font-black tracking-tighter text-white">
-                                {scoreA}<span className="text-white/30 text-3xl font-bold ml-1">/</span><span className="text-emerald-500 text-3xl font-bold ml-1">{wicketsA}</span>
+                                {score}<span className="text-white/30 text-3xl font-bold ml-1">/</span><span className="text-emerald-500 text-3xl font-bold ml-1">{wickets}</span>
                             </div>
                             <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
-                                {oversA} <span className="text-[10px] opacity-50">Overs</span>
+                                {overs} <span className="text-[10px] opacity-50">Overs</span>
                             </p>
                         </div>
                     )}
