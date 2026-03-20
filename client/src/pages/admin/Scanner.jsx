@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import jsQR from 'jsqr';
-import axios from 'axios';
+import apiClient from '../../api/client';
 import AuthContext from '../../context/AuthContext';
 import MobileNav from '../../components/MobileNav';
 import { toast } from 'react-toastify';
@@ -190,23 +190,15 @@ const Scanner = () => {
     const [overrideMatchId, setOverrideMatchId] = useState('');
     const [overrideReason, setOverrideReason] = useState('');
 
-    const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
-    const { user, logout } = React.useContext(AuthContext);
-    
-    const api = axios.create({
-        baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001',
-        headers: { 'Authorization': token }
-    });
-
     const fetchDashboard = React.useCallback(async () => {
         try {
-            const res = await api.get('/api/admin/scan-dashboard');
+            const res = await apiClient.get('/admin/scan-dashboard');
             if (res.data.success) setDashboardStats(res.data.dashboard);
         } catch (error) {
             console.error('Error fetching dashboard:', error);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [token]);
+    }, []);
 
     useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
 
@@ -215,7 +207,7 @@ const Scanner = () => {
         setShowScanner(false);
         setScanStatus('scanning');
         try {
-            const res = await api.post('/api/admin/scan-match', {
+            const res = await apiClient.post('/admin/scan-match', {
                 qr_payload: payload,
                 ip_address: 'admin_node_secure',
                 device_info: navigator.userAgent
@@ -236,7 +228,7 @@ const Scanner = () => {
     const handleManualOverride = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.post('/api/admin/override-match', {
+            const res = await apiClient.post('/admin/override-match', {
                 match_id: overrideMatchId,
                 reason: overrideReason
             });

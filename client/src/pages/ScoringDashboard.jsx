@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import apiClient from '../api/client';
 import { io } from 'socket.io-client';
 import { Save, Circle, EyeOff, ShieldAlert } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react'; // renders QR client-side from match payload
@@ -22,10 +22,7 @@ const ScoringDashboard = () => {
         // Fetch match data
         const loadMatch = async () => {
             try {
-                const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
-                const res = await axios.get(`http://localhost:5001/api/matches/${id}`, {
-                    headers: { 'Authorization': token }
-                });
+                const res = await apiClient.get(`/matches/${id}`);
                 setMatch(res.data);
             } catch (error) {
                 toast.error('Failed to load match details');
@@ -35,8 +32,16 @@ const ScoringDashboard = () => {
 
         loadMatch();
 
+        let socketUrl = 'http://localhost:5001';
+        if (process.env.NODE_ENV === 'production') {
+            socketUrl = 'https://the-turf-in.onrender.com';
+        } else if (process.env.REACT_APP_API_URL) {
+            // Strip /api if present from url string to just get the base domain
+            socketUrl = process.env.REACT_APP_API_URL.replace(/\/api$/, '');
+        }
+
         // Connect WebSocket for live updates (simulated here)
-        const newSocket = io('http://localhost:5001');
+        const newSocket = io(socketUrl);
         setSocket(newSocket);
 
         return () => newSocket.close();
@@ -103,11 +108,8 @@ const ScoringDashboard = () => {
         }));
 
         try {
-            const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
-            await axios.post(`http://localhost:5001/api/matches/${id}/ball`, {
+            await apiClient.post(`/matches/${id}/ball`, {
                 runs, isWicket, extra
-            }, {
-                headers: { 'Authorization': token }
             });
 
             // Emit to sockets (in a real scenario, the backend handles broadcasting)

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../../api/client';
 import { 
     Activity, 
     ShieldCheck, 
@@ -23,19 +23,14 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
     const { user, logout } = React.useContext(AuthContext);
-    const api = axios.create({
-        baseURL: 'http://localhost:5001/api/admin',
-        headers: { 'Authorization': token }
-    });
 
     const fetchDashboardData = React.useCallback(async () => {
         try {
             setLoading(true);
             const [statsRes, matchesRes] = await Promise.all([
-                api.get('/scan-dashboard'),
-                axios.get('http://localhost:5001/api/matches?status=Scheduled', { headers: { 'Authorization': token } })
+                apiClient.get('/admin/scan-dashboard'),
+                apiClient.get('/matches?status=Scheduled')
             ]);
 
             setStats(statsRes.data.dashboard);
@@ -58,7 +53,7 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [api, token]);
+    }, []);
 
     useEffect(() => {
         fetchDashboardData();
