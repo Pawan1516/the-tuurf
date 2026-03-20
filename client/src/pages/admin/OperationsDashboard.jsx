@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import AuthContext from '../../context/AuthContext';
+import MobileNav from '../../components/MobileNav';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
@@ -22,6 +24,7 @@ const AdminDashboard = () => {
     const navigate = useNavigate();
 
     const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+    const { user, logout } = React.useContext(AuthContext);
     const api = axios.create({
         baseURL: 'http://localhost:5001/api/admin',
         headers: { 'Authorization': token }
@@ -69,8 +72,10 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gray-950 text-gray-100 p-4 md:p-10 font-sans selection:bg-emerald-500/30">
-            {/* Header */}
+        <div className="min-h-screen bg-gray-950 text-gray-100 p-0 md:p-10 font-sans selection:bg-emerald-500/30">
+            <MobileNav user={user} logout={logout} />
+            <div className="p-4 md:p-0">
+                {/* Header */}
             <header className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -238,6 +243,7 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     );
 };

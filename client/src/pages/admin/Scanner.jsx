@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import jsQR from 'jsqr';
 import axios from 'axios';
+import AuthContext from '../../context/AuthContext';
+import MobileNav from '../../components/MobileNav';
 import { toast } from 'react-toastify';
 import { 
     CheckCircle, 
@@ -11,7 +13,8 @@ import {
     Activity, 
     Lock,
     Unlock,
-    CameraOff
+    CameraOff,
+    Zap
 } from 'lucide-react';
 
 // ─── Real Camera QR Scanner (jsQR — works in ALL browsers) ──────────────────
@@ -188,6 +191,7 @@ const Scanner = () => {
     const [overrideReason, setOverrideReason] = useState('');
 
     const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+    const { user, logout } = React.useContext(AuthContext);
     
     const api = axios.create({
         baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001',
@@ -249,7 +253,9 @@ const Scanner = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-10 font-sans selection:bg-emerald-500/30">
+        <div className="min-h-screen bg-gray-900 text-gray-100 p-0 md:p-10 font-sans selection:bg-emerald-500/30">
+            <MobileNav user={user} logout={logout} />
+            <div className="p-4 md:p-0 pb-20">
             {/* Header Area */}
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                 <div>
@@ -449,6 +455,7 @@ const Scanner = () => {
                     animation: scan 3s linear infinite;
                 }
             `}</style>
+            </div>
         </div>
     );
 };

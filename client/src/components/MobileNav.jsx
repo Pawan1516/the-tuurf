@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, User, LogOut, Home } from 'lucide-react';
+import { LayoutDashboard, Calendar, User, LogOut, Home, Menu, X, Activity, ScanLine, Briefcase, Settings } from 'lucide-react';
 
-// ─── Bottom Tab Bar (mobile primary nav — like WhatsApp/Instagram) ────────────
+// ─── Bottom Tab Bar (mobile primary nav) ────────────
 const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -12,11 +12,38 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
         navigate('/');
     };
 
-    const tabs = [
+    const isWorker = location.pathname.includes('/worker');
+    const isAdmin = location.pathname.includes('/admin');
+    const portalType = isAdmin ? 'Admin Portal' : isWorker ? 'Worker Portal' : 'Player Portal';
+
+    const defaultTabs = [
         { to: '/dashboard', label: 'Home', icon: Home },
         { to: '/', label: 'Book', icon: Calendar },
         { to: '/dashboard?tab=profile', label: 'Profile', icon: User },
     ];
+
+    const adminTabs = [
+        { to: '/admin/dashboard', label: 'Dash', icon: LayoutDashboard },
+        { to: '/admin/operations', label: 'Ops', icon: Activity },
+        { to: '/admin/scanner', label: 'Scan', icon: ScanLine },
+        { to: '/admin/bookings', label: 'Logs', icon: Calendar },
+        { to: '/admin/settings', label: 'Config', icon: Settings },
+    ];
+
+    const workerTabs = [
+        { to: '/worker/dashboard', label: 'Dash', icon: LayoutDashboard },
+        { to: '/worker/assigned-slots', label: 'Tasks', icon: Briefcase },
+        { to: '/worker/report', label: 'Report', icon: Activity },
+    ];
+
+    let displayTabs = defaultTabs;
+    if (isAdmin) displayTabs = adminTabs;
+    if (isWorker) displayTabs = workerTabs;
+    
+    // For mobile, maybe we just use the simplified tabs to avoid horizontal scrolling overload
+    // But if we override it completely, the dashboard desktop might use navItems or not. MobileNav is strictly mobile, so using simplified tabs is best.
+    const finalTabs = displayTabs; // Ignore huge navItems list for bottom bar to make it clean
+
 
     return (
         <>
@@ -28,7 +55,7 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
                     </div>
                     <div>
                         <h1 className="text-base font-black text-gray-900 tracking-tight leading-none uppercase">{dashboardTitle}</h1>
-                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest leading-none mt-0.5">Player Portal</p>
+                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest leading-none mt-0.5">{portalType}</p>
                     </div>
                 </div>
                 <button
@@ -40,10 +67,10 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
                 </button>
             </header>
 
-            {/* ── Bottom Tab Bar (Mobile) — Fixed at bottom like native app ── */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe">
-                <div className="flex items-stretch h-16">
-                    {tabs.map((tab) => {
+            {/* ── Bottom Tab Bar (Mobile) — Fixed at bottom with horizontal scroll ── */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe overflow-x-auto overflow-y-hidden no-scrollbar">
+                <div className="flex items-stretch h-16 px-2 min-w-max">
+                    {displayTabs.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = location.pathname === tab.to || 
                             (tab.to.includes('?tab=profile') && location.search.includes('tab=profile'));
@@ -51,9 +78,10 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
                             <Link
                                 key={tab.to}
                                 to={tab.to}
-                                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all ${
+                                className={`flex flex-col items-center justify-center gap-1 transition-all px-4 ${
                                     isActive ? 'text-emerald-600' : 'text-gray-400'
                                 }`}
+                                style={{ minWidth: '64px' }}
                             >
                                 <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-emerald-50' : ''}`}>
                                     <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
@@ -66,6 +94,15 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
                     })}
                 </div>
             </nav>
+            <style jsx>{`
+                .no-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .no-scrollbar {
+                    -ms-overflow-style: none;  /* IE and Edge */
+                    scrollbar-width: none;  /* Firefox */
+                }
+            `}</style>
         </>
     );
 };

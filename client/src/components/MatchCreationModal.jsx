@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Trophy, Shield, CheckCircle2, Star, BadgeCheck, MessageCircle } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../api/client';
 import { toast } from 'react-toastify';
 
 const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
@@ -27,11 +27,10 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
 
     const fetchInitialData = async () => {
         try {
-            const token = localStorage.getItem('token');
             const [, , formatRes] = await Promise.all([
-                axios.get('http://localhost:5001/api/teams', { headers: { Authorization: token } }),
-                axios.get('http://localhost:5001/api/teams'),
-                axios.get('http://localhost:5001/api/formats')
+                apiClient.get('/teams'),
+                apiClient.get('/teams'),
+                apiClient.get('/formats')
             ]);
             setFormats(formatRes.data.formats || []);
         } catch (error) {
@@ -43,21 +42,26 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
         if (!/^\d{10}$/.test(mobile)) return;
 
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.post('http://localhost:5001/api/players/lookup-mobile', { mobile }, {
-                headers: { Authorization: token }
-            });
+            const res = await apiClient.post('/players/lookup-mobile', { mobile });
 
             if (res.data.found) {
-                updatePlayer(team, index, 'profile', res.data.user);
-                updatePlayer(team, index, 'is_linked', true);
-                if (!formData[team === 'a' ? 'team_a_players' : 'team_b_players'][index].name) {
-                    updatePlayer(team, index, 'name', res.data.user.name);
-                }
+                setFormData(prev => {
+                    const listField = team === 'a' ? 'team_a_players' : 'team_b_players';
+                    const newList = prev[listField].map((p, i) => i === index ? {
+                        ...p,
+                        profile: res.data.user,
+                        is_linked: true,
+                        name: p.name || res.data.user.name
+                    } : p);
+                    return { ...prev, [listField]: newList };
+                });
                 toast.info(`Player Identified: ${res.data.user.name}`);
             } else {
-                updatePlayer(team, index, 'is_linked', false);
-                updatePlayer(team, index, 'profile', null);
+                setFormData(prev => {
+                    const listField = team === 'a' ? 'team_a_players' : 'team_b_players';
+                    const newList = prev[listField].map((p, i) => i === index ? { ...p, is_linked: false, profile: null } : p);
+                    return { ...prev, [listField]: newList };
+                });
             }
         } catch (error) {
             console.error('Lookup failed:', error);
@@ -73,18 +77,21 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
     };
 
     const updatePlayer = (team, index, field, value) => {
-        const listField = team === 'a' ? 'team_a_players' : 'team_b_players';
-        const newList = [...formData[listField]];
-        
-        if (field === 'is_captain' && value === true) {
-            newList.forEach((p, idx) => p.is_captain = idx === index);
-        } else if (field === 'is_wk' && value === true) {
-            newList.forEach((p, idx) => p.is_wk = idx === index);
-        } else {
-            newList[index][field] = value;
-        }
+        setFormData(prev => {
+            const listField = team === 'a' ? 'team_a_players' : 'team_b_players';
+            // Deep clone the array elements
+            const newList = prev[listField].map(p => ({ ...p }));
+            
+            if (field === 'is_captain' && value === true) {
+                newList.forEach((p, idx) => p.is_captain = idx === index);
+            } else if (field === 'is_wk' && value === true) {
+                newList.forEach((p, idx) => p.is_wk = idx === index);
+            } else {
+                newList[index][field] = value;
+            }
 
-        setFormData({ ...formData, [listField]: newList });
+            return { ...prev, [listField]: newList };
+        });
 
         if (field === 'mobile' && value.length === 10) {
             handleMobileLookup(team, index, value);
@@ -93,21 +100,20 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const token = localStorage.getItem('token');
         setLoading(true);
 
         try {
             let res;
             if (mode === 'REGISTERED') {
-                res = await axios.post('http://localhost:5001/api/matches/from-booking', {
+                res = await apiClient.post('/matches/from-booking', {
                     booking_id: booking._id,
                     title: formData.title || `${formData.team_a_name} vs ${formData.team_b_name}`,
                     format: formData.format,
                     team_a: { team_id: formData.team_a },
                     team_b: { team_id: formData.team_b }
-                }, { headers: { Authorization: token } });
+                });
             } else {
-                res = await axios.post('http://localhost:5001/api/matches/quick/create', {
+                res = await apiClient.post('/matches/quick/create', {
                     booking_id: booking._id,
                     format: formData.format,
                     overs: formData.overs,
@@ -135,10 +141,10 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
                             batting_position: i + 1
                         }))
                     }
-                }, { headers: { Authorization: token } });
+                });
             }
 
-            if (res.data.success) {
+            if (res.data.success || res.status === 201) {
                 toast.success('Match Manifested! All Players Notified.');
                 onSuccess(res.data.match || { _id: res.data.match_id });
                 onClose();
@@ -267,6 +273,12 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
                                                         <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Linked: {p.profile.username}</span>
                                                     </div>
                                                     <span className="text-[8px] font-bold text-gray-400">Avg: {p.profile.stats?.batting?.average || 0} • SR: {p.profile.stats?.batting?.strike_rate || 0}</span>
+                                                </div>
+                                            )}
+                                            {!p.is_linked && p.mobile.length === 10 && (
+                                                <div className="flex items-center gap-1.5 pl-7">
+                                                    <MessageCircle size={10} className="text-orange-400" />
+                                                    <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest italic leading-none">Will invite via SMS</span>
                                                 </div>
                                             )}
                                         </div>
