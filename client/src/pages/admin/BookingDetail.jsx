@@ -219,40 +219,13 @@ const AdminBookingDetail = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
             <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-            {/* Sidebar (Desktop) */}
-            <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen z-50">
-                <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-                    <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
-                        <Database size={24} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
-                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin </p>
-                    </div>
-                </div>
-                <nav className="flex-1 p-6 space-y-2">
-                    <NavItem to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} />
-                    <NavItem to="/admin/slots" label="Slots" icon={Calendar} />
-                    <NavItem to="/admin/bookings" label="Bookings" icon={Activity} active />
-                    <NavItem to="/admin/workers" label="Workers" icon={Briefcase} />
-                    <NavItem to="/admin/report" label="Reports" icon={PieChart} />
-                </nav>
-                <div className="p-6 border-t border-gray-50">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-between p-5 rounded-2xl bg-gray-900 text-white hover:bg-black transition-all group">
-                        <div className="flex items-center gap-3">
-                            <LogOut size={18} className="text-emerald-400" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Logout</span>
-                        </div>
-                        <ChevronRight size={14} className="opacity-30 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </div>
-            </aside>
+            
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto pb-24">
                 <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
                     <button onClick={() => navigate('/admin/bookings')} className="flex items-center gap-2 md:gap-3 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 transition-colors">
                         <ArrowLeft size={16} /> <span className="hidden md:inline">Return to Registry</span> <span className="md:hidden">Back</span>
@@ -295,7 +268,7 @@ const AdminBookingDetail = () => {
                                     <div>
                                         <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Legally Designated Name</p>
                                         {editingName ? (
-                                            <div className="flex flex-col md:flex-row gap-2">
+                                            <div className="flex flex-col gap-2">
                                                 <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} className="bg-gray-50 border-2 border-emerald-500 p-3 md:p-4 rounded-xl outline-none font-black text-gray-900 w-full text-sm md:text-base" />
                                                 <div className="flex gap-2">
                                                     <button onClick={handleUserNameUpdate} className="flex-1 bg-emerald-600 text-white px-4 md:px-6 py-2 rounded-xl font-black uppercase text-[10px]">Save</button>

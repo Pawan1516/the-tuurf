@@ -80,41 +80,14 @@ const AdminBookedSlots = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
             <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-            {/* Sidebar (Desktop) */}
-            <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
-                <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-                    <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
-                        <Database size={24} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
-                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin OS v2.0</p>
-                    </div>
-                </div>
-
-                <nav className="flex-1 p-6 space-y-2">
-                    {navItems.map(item => (
-                        <NavItem key={item.to} to={item.to} label={item.label} icon={item.icon} active={window.location.pathname === item.to} />
-                    ))}
-                </nav>
-
-                <div className="p-6 border-t border-gray-50">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-between p-5 rounded-2xl bg-gray-900 text-white hover:bg-black transition-all group">
-                        <div className="flex items-center gap-3">
-                            <LogOut size={18} className="text-emerald-400" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Log Out</span>
-                        </div>
-                        <ChevronRight size={14} className="opacity-30 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </div>
-            </aside>
+            
 
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto pb-24">
                 <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
                     <div className="flex flex-col">
                         <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Booked Slots</h2>

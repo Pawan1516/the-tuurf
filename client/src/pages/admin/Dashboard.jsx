@@ -138,43 +138,13 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
       <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-      {/* Sidebar (Desktop Only) */}
-      <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
-        <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-          <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
-            <Database size={24} />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
-            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 p-6 space-y-2">
-          {navItems.map((item) => (
-            <NavItem key={item.to} to={item.to} label={item.label} icon={item.icon} active={window.location.pathname === item.to} />
-          ))}
-        </nav>
-
-        <div className="p-6 border-t border-gray-50">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-between p-5 rounded-2xl bg-gray-900 text-white hover:bg-black transition-all group"
-          >
-            <div className="flex items-center gap-3">
-              <LogOut size={18} className="text-emerald-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Log out</span>
-            </div>
-            <ChevronRight size={14} className="opacity-30 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-      </aside>
+      
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto relative">
+      <main className="flex-1 overflow-y-auto relative pb-24">
         {/* NEW BOOKING ALARM TOAST */}
         {showAlarm && (
           <div className="fixed top-28 left-1/2 -translate-x-1/2 z-[100] w-fit min-w-[320px] animate-bounce-slow px-4">
@@ -193,31 +163,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Header (Desktop Only) */}
-        <header className="hidden md:flex bg-white/80 backdrop-blur-md px-10 h-24 items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <h2 className="text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Dashboard</h2>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1"></p>
-            </div>
-            <div className="h-10 w-[1px] bg-gray-100"></div>
-            <div className="flex flex-col">
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
-              <p className="text-xl font-black text-gray-900 tracking-tighter tabular-nums">{currentTime.toLocaleTimeString()}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-[1px] bg-gray-100 mx-2"></div>
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-black text-gray-900 uppercase tracking-tight">{user?.name || 'Grand Administrator'}</span>
-              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">admin</span>
-            </div>
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black overflow-hidden border border-emerald-100 uppercase">
-              {user?.name?.slice(0, 2) || 'AD'}
-            </div>
-          </div>
-        </header>
+        
 
         <div className="p-10 space-y-10">
 
@@ -228,7 +174,7 @@ const AdminDashboard = () => {
                 <TrendingUp size={180} />
               </div>
 
-              <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+              <div className="relative z-10 flex flex-col justify-between items-start md:items-center gap-8">
                 <div className="space-y-4">
                   <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em]"> Revenue</p>
                   <div className="flex items-end gap-3">
@@ -302,7 +248,7 @@ const AdminDashboard = () => {
               <Zap size={100} className="text-emerald-600" />
             </div>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
+            <div className="flex flex-col justify-between items-start md:items-center gap-8 mb-10">
               <div>
                 <h3 className="text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">Automated Intelligence Node</h3>
                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-2">Auto-Machine & AI Agent Deployment Status</p>

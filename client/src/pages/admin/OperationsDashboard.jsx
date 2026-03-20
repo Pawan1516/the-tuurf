@@ -105,45 +105,16 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row font-sans selection:bg-emerald-500/30">
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-emerald-500/30">
             <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-            {/* Sidebar (Desktop) */}
-            <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
-                <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-                    <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
-                        <Database size={24} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
-                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin OS v2.0</p>
-                    </div>
-                </div>
-
-                <nav className="flex-1 p-6 space-y-2">
-                    <NavItem to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} active={true} />
-                    <NavItem to="/admin/operations" label="Operations" icon={Activity} />
-                    <NavItem to="/admin/scanner" label="Scanner Node" icon={Zap} />
-                    <NavItem to="/admin/slots" label="Slot Control" icon={Calendar} />
-                    <NavItem to="/admin/bookings" label="Booking Log" icon={Activity} />
-                </nav>
-
-                <div className="p-6 border-t border-gray-50">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-between p-5 rounded-2xl bg-gray-900 text-white hover:bg-black transition-all group">
-                        <div className="flex items-center gap-3">
-                            <LogOut size={18} className="text-emerald-400" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Log Out</span>
-                        </div>
-                        <ChevronRight size={14} className="opacity-30 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </div>
-            </aside>
+            
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto bg-gray-950 text-gray-100">
             <div className="p-4 md:p-10 pb-20">
                 {/* Header */}
-            <header className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
+            <header className="max-w-7xl mx-auto flex flex-col justify-between items-start md:items-center gap-8 mb-12">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <div className="bg-emerald-600 p-2 rounded-xl shadow-lg shadow-emerald-900/40">

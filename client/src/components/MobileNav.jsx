@@ -47,8 +47,8 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
 
     return (
         <>
-            {/* ── Top Header (Mobile) ── */}
-            <header className="md:hidden bg-white/95 backdrop-blur-md px-5 h-16 flex items-center justify-between sticky top-0 z-[60] border-b border-gray-100 shadow-sm">
+            {/* ── Top Header (Universal) ── */}
+            <header className="bg-white/95 backdrop-blur-md px-5 h-16 flex items-center justify-between sticky top-0 z-[60] border-b border-gray-100 shadow-sm">
                 <div className="flex items-center gap-3">
                     <div className="bg-emerald-600 text-white p-2 rounded-xl shadow-md shadow-emerald-200">
                         <LayoutDashboard size={18} />
@@ -67,9 +67,9 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
                 </button>
             </header>
 
-            {/* ── Bottom Tab Bar (Mobile) — Fixed at bottom with horizontal scroll ── */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe overflow-x-auto overflow-y-hidden no-scrollbar">
-                <div className="flex items-stretch h-16 px-2 min-w-max">
+            {/* ── Bottom Tab Bar (Universal) — Fixed at bottom with horizontal scroll ── */}
+            <nav className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe overflow-x-auto overflow-y-hidden no-scrollbar">
+                <div className="flex items-stretch justify-center h-16 px-2 min-w-max mx-auto max-w-lg">
                     {displayTabs.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = location.pathname === tab.to || 
