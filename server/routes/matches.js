@@ -16,20 +16,22 @@ router.get('/live', async (req, res) => {
         istMidnight.setHours(0,0,0,0);
         const istNextMidnight = new Date(istMidnight);
         istNextMidnight.setDate(istNextMidnight.getDate() + 1);
-        // Get live/in-progress matches AND recently finished matches for today
-        const matches = await Match.find({ 
-            status: { $in: ['In Progress', 'Completed'] },
+        // Get all live in-progress matches for today
+        const activeMatches = await Match.find({ 
+            status: 'In Progress',
             start_time: { $gte: istMidnight, $lte: istNextMidnight }
         })
         .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
-        .sort({ updatedAt: -1 }); // Sort by latest updates
+        .sort({ updatedAt: -1 });
 
-        const activeMatches = matches.filter(m => m.status === 'In Progress');
-        const completedMatches = matches.filter(m => m.status === 'Completed');
+        // Also get the single most recently finished match (can be from yesterday)
+        const completedMatch = await Match.findOne({ status: 'Completed' })
+            .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
+            .sort({ updatedAt: -1 });
         
         const finalMatches = [...activeMatches];
-        if (completedMatches.length > 0) {
-            finalMatches.push(completedMatches[0]); // Keep only the single most recently finished match
+        if (completedMatch) {
+            finalMatches.push(completedMatch);
         }
 
         res.json({ success: true, matches: finalMatches });
