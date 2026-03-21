@@ -3,7 +3,7 @@ import axios from 'axios';
 let API_BASE_URL = 'http://localhost:5001/api';
 
 if (process.env.NODE_ENV === 'production') {
-  API_BASE_URL = 'https://the-turf-in.onrender.com/api';
+  API_BASE_URL = 'https://the-tuurf-ufkd.onrender.com/api';
 }
 
 const apiClient = axios.create({

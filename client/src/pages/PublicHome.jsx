@@ -6,7 +6,7 @@ import io from 'socket.io-client';
 
 const PublicHome = () => {
     const SOCKET_URL = process.env.NODE_ENV === 'production' 
-        ? 'https://the-turf-in.onrender.com' 
+        ? 'https://the-tuurf-ufkd.onrender.com' 
         : 'http://localhost:5001';
     const getISODate = (date = new Date()) => {
         return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);

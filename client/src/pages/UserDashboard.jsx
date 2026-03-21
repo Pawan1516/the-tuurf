@@ -43,7 +43,7 @@ const UserDashboard = () => {
         fetchInitialData();
 
         // Socket.IO for real-time career stats updates
-        const socket = io(process.env.NODE_ENV === 'production' ? 'https://the-turf-in.onrender.com' : 'http://localhost:5001');
+        const socket = io(process.env.NODE_ENV === 'production' ? 'https://the-tuurf-ufkd.onrender.com' : 'http://localhost:5001');
         
         if (user?._id) {
             socket.emit('join:profile', user._id);

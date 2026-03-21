@@ -5,7 +5,7 @@ import { Trophy, Users, Timer, Info, Share2, Activity, BarChart3 } from 'lucide-
 import io from 'socket.io-client';
 
 const SOCKET_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://the-turf-in.onrender.com' 
+    ? 'https://the-tuurf-ufkd.onrender.com' 
     : 'http://localhost:5001';
 
 export default function LiveScoreView() {
