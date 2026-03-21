@@ -3,7 +3,7 @@ services:
     name: the-turf-backend
     env: node
     plan: free
-    rootDir: server
+    rootDir: backend
     buildCommand: npm install
     startCommand: npm start
     envVars:

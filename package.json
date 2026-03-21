@@ -6,11 +6,11 @@
         "node": "22.x"
     },
     "scripts": {
-        "postinstall": "npm install --prefix server",
-        "start": "npm start --prefix server",
+        "postinstall": "npm install --prefix backend",
+        "start": "npm start --prefix backend",
         "build": "CI=false npm install --prefix client --legacy-peer-deps && CI=false npm run build --prefix client",
-        "install-server": "npm install --prefix server",
+        "install-backend": "npm install --prefix backend",
         "install-client": "npm install --prefix client --legacy-peer-deps",
-        "install-all": "npm install --prefix server && npm install --prefix client --legacy-peer-deps"
+        "install-all": "npm install --prefix backend && npm install --prefix client --legacy-peer-deps"
     }
 }

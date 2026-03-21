@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
-const Booking = require('./server/models/Booking');
-const Slot = require('./server/models/Slot');
-const Worker = require('./server/models/Worker');
-const User = require('./server/models/User');
-const Admin = require('./server/models/Admin');
+const Booking = require('./backend/models/Booking');
+const Slot = require('./backend/models/Slot');
+const Worker = require('./backend/models/Worker');
+const User = require('./backend/models/User');
+const Admin = require('./backend/models/Admin');
 
 const MONGODB_URI = 'mongodb+srv://pvan_db_user:23951A66c0@cluster0.itzk1ia.mongodb.net/the-turf?retryWrites=true&w=majority';
 

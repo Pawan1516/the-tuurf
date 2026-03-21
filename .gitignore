@@ -19,15 +19,15 @@ dist/
 
 # ─── Logs & Temp Files ───────────────────────────
 *.log
-server/server_out.log
-server/server_err.log
-server/git_status.txt
+backend/server_out.log
+backend/server_err.log
+backend/git_status.txt
 git_status.txt
-server/check_bookings.js
-server/db_health_check.js
+backend/check_bookings.js
+backend/db_health_check.js
 
 # ─── QR Codes (generated at runtime) ─────────────
-server/public/qrs/
+backend/public/qrs/
 
 # ─── OS & Editor ─────────────────────────────────
 .DS_Store
