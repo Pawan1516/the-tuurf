@@ -74,10 +74,16 @@ const userSchema = new mongoose.Schema({
             runs_conceded: { type: Number, default: 0 },
             economy: { type: Number, default: 0 },
             five_wicket_hauls: { type: Number, default: 0 },
+            three_wicket_hauls: { type: Number, default: 0 },
             best_bowling: {
                 wickets: { type: Number, default: 0 },
                 runs: { type: Number, default: 0 }
             }
+        },
+        fielding: {
+            catches: { type: Number, default: 0 },
+            run_outs: { type: Number, default: 0 },
+            stumpings: { type: Number, default: 0 }
         }
     },
     player_qr: {

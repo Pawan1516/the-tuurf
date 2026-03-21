@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { Trophy, Users, Timer, Info, Share2, Activity, BarChart3 } from 'lucide-react';
 import io from 'socket.io-client';
@@ -10,6 +10,7 @@ const SOCKET_URL = process.env.NODE_ENV === 'production'
 
 export default function LiveScoreView() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [match, setMatch] = useState(null);
     const [liveData, setLiveData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -24,8 +25,9 @@ export default function LiveScoreView() {
         const fetchMatch = async () => {
             try {
                 const res = await apiClient.get(`/matches/${id}`);
-                setMatch(res.data);
-                setLiveData(res.data.live_data || {});
+                const matchData = res.data.match || res.data; // Support both old and new format
+                setMatch(matchData);
+                setLiveData(matchData.live_data || {});
             } catch (err) {
                 setError("Match not found or private.");
             } finally {
@@ -85,7 +87,13 @@ export default function LiveScoreView() {
         </div>
     );
 
-    const score = liveData?.scorecard?.total || { runs: liveData?.runs || 0, wickets: liveData?.wickets || 0, overs: '0.0' };
+    const currentScore = {
+        runs: liveData?.runs ?? liveData?.scorecard?.total?.runs ?? 0,
+        wickets: liveData?.wickets ?? liveData?.scorecard?.total?.wickets ?? 0,
+        overs: liveData?.overNum !== undefined && liveData?.ballInOver !== undefined
+            ? `${liveData.overNum}.${liveData.ballInOver}`
+            : (typeof liveData?.overs === 'number' ? Math.floor(liveData.overs) + '.' + Math.round((liveData.overs % 1) * 6) : (liveData?.overs ?? liveData?.scorecard?.total?.overs ?? '0.0'))
+    };
     const isMatchEnded = match.status === 'Completed' || liveData?.phase === 'match_result';
     const teamAName = match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || 'Team A';
     const teamBName = match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || 'Team B';
@@ -170,10 +178,10 @@ export default function LiveScoreView() {
                     ) : (
                         <div className="text-center mb-4">
                             <div className="text-5xl font-black tracking-tighter text-white leading-none">
-                                {score.runs}<span className="text-white/20 text-3xl mx-1">/</span><span className="text-emerald-500 text-3xl">{score.wickets}</span>
+                                {currentScore.runs}<span className="text-white/20 text-3xl mx-1">/</span><span className="text-emerald-500 text-3xl">{currentScore.wickets}</span>
                             </div>
                             <p className="text-sm font-bold text-white/30 mt-1">
-                                ({score.overs || liveData?.overs || '0.0'} Overs)
+                                ({currentScore.overs || '0.0'} Overs)
                             </p>
                         </div>
                     )}
@@ -311,7 +319,7 @@ export default function LiveScoreView() {
                         <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
                             <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center">
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Batting</h4>
-                                <span className="text-[9px] font-bold text-white/20">{score.runs}/{score.wickets} ({score.overs || liveData?.overs})</span>
+                                <span className="text-[9px] font-bold text-white/20">{currentScore.runs}/{currentScore.wickets} ({currentScore.overs})</span>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-xs">
@@ -330,7 +338,12 @@ export default function LiveScoreView() {
                                             <tr key={i} className={`border-b border-white/5 ${b.batting ? 'bg-emerald-500/5' : ''}`}>
                                                 <td className="px-4 py-2.5 font-bold flex items-center gap-1.5">
                                                     {b.batting && <span className="text-emerald-400">🏏</span>}
-                                                    <span className={b.out ? 'text-white/30' : 'text-white'}>{b.name}</span>
+                                                    <span 
+                                                        onClick={() => b.user_id && navigate(`/player/${b.user_id}`)}
+                                                        className={`${b.out ? 'text-white/30' : 'text-white'} ${b.user_id ? 'hover:text-emerald-400 cursor-pointer transition-colors' : ''}`}
+                                                    >
+                                                        {b.name}
+                                                    </span>
                                                     {b.out && <span className="text-[8px] text-red-400/60 ml-auto">out</span>}
                                                 </td>
                                                 <td className="px-2 py-2.5 text-center font-black">{b.runs}</td>
@@ -370,7 +383,14 @@ export default function LiveScoreView() {
                                     <tbody>
                                         {(liveData?.scorecard?.bowlers || []).map((bw, i) => (
                                             <tr key={i} className="border-b border-white/5">
-                                                <td className="px-4 py-2.5 font-bold">{bw.name}</td>
+                                                <td className="px-4 py-2.5 font-bold">
+                                                    <span 
+                                                        onClick={() => bw.user_id && navigate(`/player/${bw.user_id}`)}
+                                                        className={`${bw.user_id ? 'hover:text-emerald-400 cursor-pointer transition-colors' : ''}`}
+                                                    >
+                                                        {bw.name}
+                                                    </span>
+                                                </td>
                                                 <td className="px-2 py-2.5 text-center text-white/40">{bw.overs}</td>
                                                 <td className="px-2 py-2.5 text-center">{bw.runs}</td>
                                                 <td className="px-2 py-2.5 text-center font-black text-emerald-400">{bw.wickets}</td>

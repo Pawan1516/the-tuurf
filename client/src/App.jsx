@@ -31,6 +31,7 @@ import AdminScanner from './pages/admin/Scanner';
 import UserDashboard from './pages/UserDashboard';
 import ScoringDashboard from './pages/ScoringDashboard';
 import LiveScoreView from './pages/LiveScoreView';
+import PlayerProfile from './pages/PlayerProfile';
 import ProtectedRoute from './components/ProtectedRoute';
 import CricBotWidget from './components/CricBotWidget';
 import FirebaseAuthTest from './pages/FirebaseAuthTest';
@@ -111,6 +112,7 @@ function App() {
           <Route path="/payment/:bookingId" element={<WrapLayout><PaymentPage /></WrapLayout>} />
           <Route path="/booking-success" element={<SuccessPage />} />
           <Route path="/live/:id" element={<LiveScoreView />} />
+          <Route path="/player/:id" element={<PlayerProfile />} />
 
           {/* User Dashboard */}
           <Route path="/dashboard" element={

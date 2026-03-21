@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { slotsAPI, matchesAPI } from '../api/client';
 import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer } from 'lucide-react';
+import io from 'socket.io-client';
 
 const PublicHome = () => {
+    const SOCKET_URL = process.env.NODE_ENV === 'production' 
+        ? 'https://the-turf-in.onrender.com' 
+        : 'http://localhost:5001';
     const getISODate = (date = new Date()) => {
         return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
     };
@@ -73,9 +77,38 @@ const PublicHome = () => {
     };
 
     useEffect(() => {
-        const interval = setInterval(fetchLiveMatches, 20000); // Poll every 20s
-        return () => clearInterval(interval);
-    }, []);
+        const interval = setInterval(fetchLiveMatches, 20000); // Fallback Polling
+        
+        // --- REAL-TIME INTEL (Workflow 5) ---
+        const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+        
+        socket.on('connect', () => {
+            console.log('🟢 Home Intel Connected');
+            // Join all live match rooms
+            liveMatches.forEach(m => socket.emit('join_match', m._id));
+        });
+
+        socket.on('match:update', (data) => {
+            setLiveMatches(prev => prev.map(m => {
+                if (String(m._id) === String(data.matchId)) {
+                    return { 
+                        ...m, 
+                        ...data,
+                        status: data.status || m.status,
+                        // Ensure top-level scores are updated from live payload
+                        team_a: { ...m.team_a, score: data.live_active_team === 'A' ? data.runs : (data.inn1_scorecard?.score || m.team_a.score), wickets: data.live_active_team === 'A' ? data.wickets : (data.inn1_scorecard?.wickets || m.team_a.wickets) },
+                        team_b: { ...m.team_b, score: data.live_active_team === 'B' ? data.runs : m.team_b.score, wickets: data.live_active_team === 'B' ? data.wickets : m.team_b.wickets }
+                    };
+                }
+                return m;
+            }));
+        });
+
+        return () => {
+            clearInterval(interval);
+            socket.disconnect();
+        };
+    }, [liveMatches.length]);
 
     const formatTime12h = (time24) => {
         if (!time24) return '';
@@ -177,15 +210,20 @@ const PublicHome = () => {
                                             {/* Team A Row */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
-                                                        <Users size={18} className={match.status === 'Completed' && match.result?.winner?.toString() === (match.team_a?.team_id?._id || match.team_a?.team_id)?.toString() ? "text-yellow-400" : "text-emerald-400"} />
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${match.live_active_team === 'A' ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/10'}`}>
+                                                        <Users size={18} className={match.status === 'Completed' && match.result?.winner?.toString() === (match.team_a?.team_id?._id || match.team_a?.team_id)?.toString() ? "text-yellow-400" : (match.live_active_team === 'A' ? "text-emerald-400" : "text-white/20")} />
                                                     </div>
-                                                    <span className={`text-sm md:text-base font-black truncate max-w-[140px] ${match.status === 'Completed' && match.result?.winner?.toString() === (match.team_a?.team_id?._id || match.team_a?.team_id)?.toString() ? 'text-white' : 'text-white/60'}`}>
-                                                        {match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || 'Team A'}
-                                                    </span>
+                                                    <div className="flex flex-col">
+                                                        <span className={`text-sm md:text-base font-black truncate max-w-[140px] ${match.live_active_team === 'A' ? 'text-white' : 'text-white/60'}`}>
+                                                            {match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || 'Team A'}
+                                                        </span>
+                                                        {match.live_active_team === 'A' && match.status === 'In Progress' && (
+                                                            <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">Batting</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 {(match.status === 'In Progress' || match.status === 'Completed') && (
-                                                    <span className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter">
+                                                    <span className={`text-xl md:text-2xl font-black font-mono tracking-tighter ${match.live_active_team === 'A' ? 'text-white' : 'text-white/40'}`}>
                                                         {match.team_a?.score || 0}
                                                         <span className="text-emerald-500/50 ml-1 text-sm md:text-lg">/ {match.team_a?.wickets || 0}</span>
                                                     </span>
@@ -195,15 +233,20 @@ const PublicHome = () => {
                                             {/* Team B Row */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
-                                                        <Users size={18} className={match.status === 'Completed' && match.result?.winner?.toString() === (match.team_b?.team_id?._id || match.team_b?.team_id)?.toString() ? "text-yellow-400" : "text-white/20"} />
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${match.live_active_team === 'B' ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/10'}`}>
+                                                        <Users size={18} className={match.status === 'Completed' && match.result?.winner?.toString() === (match.team_b?.team_id?._id || match.team_b?.team_id)?.toString() ? "text-yellow-400" : (match.live_active_team === 'B' ? "text-emerald-400" : "text-white/20")} />
                                                     </div>
-                                                    <span className={`text-sm md:text-base font-black truncate max-w-[140px] ${match.status === 'Completed' && match.result?.winner?.toString() === (match.team_b?.team_id?._id || match.team_b?.team_id)?.toString() ? 'text-white' : 'text-white/60'}`}>
-                                                        {match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || 'Team B'}
-                                                    </span>
+                                                    <div className="flex flex-col">
+                                                        <span className={`text-sm md:text-base font-black truncate max-w-[140px] ${match.live_active_team === 'B' ? 'text-white' : 'text-white/60'}`}>
+                                                            {match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || 'Team B'}
+                                                        </span>
+                                                        {match.live_active_team === 'B' && match.status === 'In Progress' && (
+                                                            <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">Batting</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 {(match.status === 'In Progress' || match.status === 'Completed') && (
-                                                    <span className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter opacity-60">
+                                                    <span className={`text-xl md:text-2xl font-black font-mono tracking-tighter ${match.live_active_team === 'B' ? 'text-white' : 'text-white/40'}`}>
                                                         {match.team_b?.score || 0}
                                                         <span className="text-emerald-500/50 ml-1 text-sm md:text-lg">/ {match.team_b?.wickets || 0}</span>
                                                     </span>

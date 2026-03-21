@@ -336,6 +336,19 @@ router.post('/stats/bulk-update', verifyToken, roleGuard(['PLAYER', 'CAPTAIN', '
             }
         }
 
+        // Notify individual players via Socket.IO to refresh their dashboards
+        const io = req.app.get('socketio');
+        if (io) {
+            match_results.forEach(stat => {
+                if (stat.user_id) {
+                    io.to(`profile:${stat.user_id}`).emit('stats:updated', {
+                        message: 'Match results synchronized with your career profile!',
+                        timestamp: new Date()
+                    });
+                }
+            });
+        }
+
         res.json({ success: true, message: 'Career registries updated successfully.' });
     } catch (err) {
         console.error("Bulk Stats Update Error:", err);

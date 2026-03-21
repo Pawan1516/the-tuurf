@@ -47,7 +47,7 @@ const DISMISSAL_TYPES = [
 const getPOTM = (state, teams) => {
     const scored = {};
     const processPlayer = (p, isBatting, isBowling) => {
-        if (!scored[p.name]) scored[p.name] = { name: p.name, pts: 0, r: 0, w: 0, b: 0, overs: 0, eco: 0, sr: 0 };
+        if (!scored[p.name]) scored[p.name] = { name: p.name, pts: 0, r: 0, w: 0, b: 0, overs: 0, eco: 0, sr: 0, user_id: p.user_id };
         const s = scored[p.name];
         if (isBatting) {
             s.r += p.r || 0;
@@ -118,36 +118,37 @@ export default function ScoringDashboard() {
         const fetchMatch = async () => {
              try {
                 const res = await apiClient.get(`/matches/${id}`);
-                setMatch(res.data);
-                if (res.data.team_a && res.data.team_b) {
+                const matchData = res.data.match || res.data;
+                setMatch(matchData);
+                if (matchData.team_a && matchData.team_b) {
                     setTeams([
                         {
-                            name: res.data.team_a?.team_id?.name || res.data.quick_teams?.team_a?.name || 'Team A',
-                            short: res.data.team_a?.team_id?.short_name || 'TMA',
-                            players: (res.data.team_a.squad?.length ? res.data.team_a.squad : res.data.quick_teams?.team_a?.players)?.map(p => ({
+                            name: matchData.team_a?.team_id?.name || matchData.quick_teams?.team_a?.name || 'Team A',
+                            short: matchData.team_a?.team_id?.short_name || 'TMA',
+                            players: (matchData.team_a.squad?.length ? matchData.team_a.squad : matchData.quick_teams?.team_a?.players)?.map(p => ({
                                 name: p.name || p.display_name,
                                 user_id: p._id || p.user_id || null
                             })) || []
                         },
                         {
-                            name: res.data.team_b?.team_id?.name || res.data.quick_teams?.team_b?.name || 'Team B',
-                            short: res.data.team_b?.team_id?.short_name || 'TMB',
-                            players: (res.data.team_b.squad?.length ? res.data.team_b.squad : res.data.quick_teams?.team_b?.players)?.map(p => ({
+                            name: matchData.team_b?.team_id?.name || matchData.quick_teams?.team_b?.name || 'Team B',
+                            short: matchData.team_b?.team_id?.short_name || 'TMB',
+                            players: (matchData.team_b.squad?.length ? matchData.team_b.squad : matchData.quick_teams?.team_b?.players)?.map(p => ({
                                 name: p.name || p.display_name,
                                 user_id: p._id || p.user_id || null
                             })) || []
                         }
                     ]);
                 }
-                if (res.data.format && res.data.format.startsWith('T')) {
-                    setState(s => ({ ...s, overs: parseInt(res.data.format.replace('T', '')) || 20 }));
+                if (matchData.format && matchData.format.startsWith('T')) {
+                    setState(s => ({ ...s, overs: parseInt(matchData.format.replace('T', '')) || 20 }));
                 }
                 
-                if (res.data.live_data && Object.keys(res.data.live_data).length > 2) {
-                    setState(s => ({ ...s, ...res.data.live_data }));
-                } else if (res.data.status === 'Completed') {
+                if (matchData.live_data && Object.keys(matchData.live_data).length > 2) {
+                    setState(s => ({ ...s, ...matchData.live_data }));
+                } else if (matchData.status === 'Completed') {
                     setState(s => ({ ...s, phase: 'match_result', result: 'Match Completed' }));
-                } else if (res.data.status === 'In Progress' || res.data.verification?.status === 'VERIFIED') {
+                } else if (matchData.status === 'In Progress' || matchData.verification?.status === 'VERIFIED') {
                     setState(s => ({ ...s, phase: 'toss' }));
                 }
             } catch (error) {
@@ -355,7 +356,7 @@ export default function ScoringDashboard() {
 
     useEffect(() => {
         if (state.phase !== 'toss' && state.phase !== 'bb_choice') {
-            const timer = setTimeout(syncWithBackend, 500); 
+            const timer = setTimeout(syncWithBackend, 200); 
             return () => clearTimeout(timer);
         }
     }, [state.runs, state.wickets, state.totalBalls, state.phase, syncWithBackend]);
@@ -376,7 +377,10 @@ export default function ScoringDashboard() {
             const isWide = type === 'wd', isNB = type === 'nb', isBye = type === 'bye';
             const bwIdx = prev.currentBowlerIdx;
             const bw = { ...prev.bowlers[bwIdx] };
-            const striker = { ...prev.batters[prev.striker], milestones: [...(prev.batters[prev.striker]?.milestones || [])] };
+            const striker = { 
+                ...prev.batters[prev.striker], 
+                milestones: [...(prev.batters[prev.striker]?.milestones || [])] 
+            };
             
             if (isWide) {
                 next.runs++; next.extras.wides++; bw.r++;
@@ -387,7 +391,8 @@ export default function ScoringDashboard() {
             } else if (isBye) {
                 next.runs++; next.extras.byes++; bw.balls++; next.ballInOver++; next.totalBalls++;
                 next.currentOverBalls.push('B'); next.freeHit = false;
-                if (1 % 2 !== 0) { const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t; }
+                // Swap on odd legbyes/byes if needed, but usually byes are just 1
+                const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t;
             } else {
                 const runs = type;
                 next.runs += runs; striker.r += runs; striker.b++;
@@ -400,7 +405,7 @@ export default function ScoringDashboard() {
             next.batters[prev.striker] = striker;
             next.bowlers[bwIdx] = bw;
             
-            // Check Milestones
+            // Milestone Tracking
             if (striker.r >= 100 && !striker.milestones.includes(100)) {
                 striker.milestones.push(100);
                 next.pendingMilestone = { name: striker.name, typ: 'CENTURY', val: 100 };
@@ -409,6 +414,7 @@ export default function ScoringDashboard() {
                 next.pendingMilestone = { name: striker.name, typ: 'HALF-CENTURY', val: 50 };
             }
 
+            // Over Transition
             if (next.ballInOver >= 6 && next.phase === 'batting') {
                  next.overHistory.push([...next.currentOverBalls]);
                  next.currentOverBalls = []; next.overNum++; next.ballInOver = 0;
@@ -416,25 +422,40 @@ export default function ScoringDashboard() {
                  const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t;
                  next.phase = next.overNum >= next.overs ? 'innings_over' : 'select_bowler';
             }
+
+            // Match Result Tracking
             if (next.inningsNum === 2 && next.target) {
+                const teams = [match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || 'Team A', match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || 'Team B'];
                 if (next.runs >= next.target) {
                     next.phase = 'match_result';
                     const wicketsLeft = 10 - next.wickets;
-                    next.result = `${TEAMS[next.battingTeam]?.name} won by ${wicketsLeft} wicket${wicketsLeft !== 1 ? 's' : ''}`;
+                    next.result = `${teams[next.battingTeam]} won by ${wicketsLeft} wicket${wicketsLeft !== 1 ? 's' : ''}`;
                 } else if (next.phase === 'innings_over' || next.wickets >= 10) {
                     if (next.runs < next.target - 1) {
                         const runDiff = (next.target - 1) - next.runs;
-                        next.result = `${TEAMS[next.bowlingTeam]?.name} won by ${runDiff} run${runDiff !== 1 ? 's' : ''}`;
+                        next.result = `${teams[1 - next.battingTeam]} won by ${runDiff} run${runDiff !== 1 ? 's' : ''}`;
                     } else if (next.runs === next.target - 1) {
                         next.result = "Match Tied!";
                     }
                     next.phase = 'match_result';
                 }
             }
-            
+            const resPayload = {
+                inning: next.inningsNum,
+                over: next.overNum,
+                ball: next.ballInOver,
+                batter_id: striker.user_id,
+                bowler_id: bw.user_id,
+                runs: isWide || isNB || isBye ? 0 : type,
+                is_four: !isWide && !isNB && !isBye && type === 4,
+                is_six: !isWide && !isNB && !isBye && type === 6,
+                extra_type: isWide ? 'wide' : isNB ? 'noball' : isBye ? 'bye' : null,
+                is_wicket: false
+            };
+            apiClient.post(`/matches/${id}/ball`, resPayload).catch(e => console.error("Ball recording failed:", e));
+
             return next;
         });
-        syncWithBackend();
     };
 
     const finalizeWicket = (nextBatterIdx = null) => {
@@ -502,11 +523,28 @@ export default function ScoringDashboard() {
                     next.phase = 'match_result';
                 }
             }
-            
+            const resPayload = {
+                inning: next.inningsNum,
+                over: next.overNum,
+                ball: next.ballInOver,
+                batter_id: next.batters[outIdx].user_id,
+                bowler_id: next.bowlers[prev.currentBowlerIdx].user_id,
+                runs: completedRuns || 0,
+                is_four: completedRuns === 4,
+                is_six: completedRuns === 6,
+                extra_type: null,
+                is_wicket: true,
+                wicket: {
+                    dismissal_type: prev.pendingWicket?.type || 'bowled',
+                    player_out_id: next.batters[outIdx].user_id,
+                    is_bowler_wicket: !!(DISMISSAL_TYPES.find(d => d.key === prev.pendingWicket?.type)?.creditsBowler)
+                }
+            };
+            apiClient.post(`/matches/${id}/ball`, resPayload).catch(e => console.error("Wicket recording failed:", e));
+
             next.pendingWicket = null;
             return next;
         });
-        syncWithBackend();
     };
 
     const updateCareerStats = async () => {
@@ -538,76 +576,19 @@ export default function ScoringDashboard() {
         }
 
         try {
-            await apiClient.post(`/matches/${match._id}/complete`, {
+            const res = await apiClient.post(`/matches/${match._id}/complete`, {
                 winner: winner?._id || winner,
                 won_by,
                 margin,
-                man_of_the_match: getPOTM()?.[0]?.user_id || null
+                man_of_the_match: getPOTM(state, TEAMS)?.[0]?.user_id || null
             });
+            if (res.data.success) {
+                updateState({ statsUpdated: true });
+                toast.info("Match completed and career stats recorded!");
+            }
         } catch (err) {
             console.error("Match Completion Persistence Failed:", err);
-        }
-        
-        const collect = (batters, bowlers) => {
-            const map = {};
-            batters.forEach(b => {
-                if (b.b > 0) {
-                    map[b.name] = { 
-                        name: b.name, 
-                        user_id: b.user_id, 
-                        r: b.r || 0, 
-                        b: b.b || 0, 
-                        fours: b.fours || b.f || 0,
-                        sixes: b.sixes || b.s || 0,
-                        is_out: !!b.out,
-                        w: 0, rc: 0, o: 0 
-                    };
-                }
-            });
-            bowlers.forEach(bw => {
-                if (bw.balls > 0) {
-                    if (!map[bw.name]) map[bw.name] = { 
-                        name: bw.name, 
-                        user_id: bw.user_id, 
-                        r: 0, b: 0, fours: 0, sixes: 0, is_out: false,
-                        w: 0, rc: 0, o: 0 
-                    };
-                    map[bw.name].w = (map[bw.name].w || 0) + (bw.w || 0);
-                    map[bw.name].rc = (map[bw.name].rc || 0) + (bw.r || 0);
-                    map[bw.name].o = (map[bw.name].o || 0) + (bw.balls / 6);
-                }
-            });
-            return map;
-        };
-
-        let masterMap = {};
-        const mergeMaps = (target, source) => {
-            Object.keys(source).forEach(name => {
-                if (!target[name]) {
-                    target[name] = source[name];
-                } else {
-                    const t = target[name];
-                    const s = source[name];
-                    t.r += s.r; t.b += s.b; 
-                    t.fours += s.fours; t.sixes += s.sixes;
-                    t.is_out = t.is_out || s.is_out;
-                    t.w += s.w; t.rc += s.rc; t.o += s.o;
-                }
-            });
-        };
-
-        if (state.inn1Batters) mergeMaps(masterMap, collect(state.inn1Batters, state.inn1Bowlers));
-        mergeMaps(masterMap, collect(state.batters, state.bowlers));
-        
-        const batch = Object.values(masterMap);
-        
-        const res = await PlayerDB.bulkUpdateRemote(batch);
-        if (res.success) {
-            updateState({ statsUpdated: true });
-            toast.info("Global Player registries updated!");
-        } else {
-            // Include backend error message directly for debugging!
-            toast.error(`Cloud registry update failed: ${res.message || 'Local cache saved.'}`);
+            toast.error("Match completion failed: " + (err.response?.data?.message || err.message));
         }
     };
 

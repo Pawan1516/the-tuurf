@@ -103,6 +103,28 @@ const UserDashboard = () => {
         }
     };
 
+    const getMyMatchStats = (m) => {
+        if (!m.innings || !user?._id) return null;
+        let batting = null;
+        let bowling = null;
+        
+        m.innings.forEach(inn => {
+            const b = (inn.batsmen || []).find(bt => {
+                const bId = bt.user_id?._id || bt.user_id;
+                return bId === user._id;
+            });
+            if (b) batting = b;
+            const bw = (inn.bowlers || []).find(bwlr => {
+                const bwId = bwlr.user_id?._id || bwlr.user_id;
+                return bwId === user._id;
+            });
+            if (bw) bowling = bw;
+        });
+        
+        if (!batting && !bowling) return null;
+        return { batting, bowling };
+    };
+
     const handleLogout = () => {
         logout();
         navigate('/');
@@ -258,7 +280,7 @@ const UserDashboard = () => {
                                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-10 text-emerald-600">
                                     <Swords size={16} /> Batting Arsenal
                                 </h3>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                                     <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
                                         <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.runs || 0}</p>
                                         <p className="text-[8px] font-black text-emerald-600 uppercase">Runs</p>
@@ -270,6 +292,10 @@ const UserDashboard = () => {
                                     <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
                                         <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.strike_rate || 0}</p>
                                         <p className="text-[8px] font-black text-emerald-600 uppercase">S/R</p>
+                                    </div>
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.high_score || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Best</p>
                                     </div>
                                     <div className="bg-gray-50 p-4 rounded-3xl text-center">
                                         <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.fours || 0}</p>
@@ -283,6 +309,10 @@ const UserDashboard = () => {
                                         <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.not_outs || 0}</p>
                                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">NO</p>
                                     </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.matches || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Inns</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -291,7 +321,7 @@ const UserDashboard = () => {
                                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-10 text-emerald-600">
                                     <Database size={16} /> Bowling Command
                                 </h3>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                                     <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
                                         <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.wickets || 0}</p>
                                         <p className="text-[8px] font-black text-emerald-600 uppercase">Wkts</p>
@@ -304,6 +334,10 @@ const UserDashboard = () => {
                                         <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.overs || 0}</p>
                                         <p className="text-[8px] font-black text-emerald-600 uppercase">Overs</p>
                                     </div>
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.best_bowling?.wickets || 0} / {profile?.stats?.bowling?.best_bowling?.runs || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Best</p>
+                                    </div>
                                     <div className="bg-gray-50 p-4 rounded-3xl text-center">
                                         <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.matches || 0}</p>
                                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Inns</p>
@@ -313,8 +347,33 @@ const UserDashboard = () => {
                                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Runs</p>
                                     </div>
                                     <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.three_wicket_hauls || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">3W</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
                                         <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.five_wicket_hauls || 0}</p>
                                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">5W</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* FIELDING PROWESS */}
+                            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-xl md:col-span-2 xl:col-span-1">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-10 text-emerald-600">
+                                    <Trophy size={16} /> Fielding Prowess
+                                </h3>
+                                <div className="grid grid-cols-3 gap-4 md:gap-6">
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.fielding?.catches || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Catches</p>
+                                    </div>
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.fielding?.run_outs || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Run Outs</p>
+                                    </div>
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.fielding?.stumpings || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Stumpings</p>
                                     </div>
                                 </div>
                             </div>
@@ -365,6 +424,28 @@ const UserDashboard = () => {
                                                     <p className="text-[8px] font-black text-gray-400 uppercase">TMB</p>
                                                 </div>
                                             </div>
+
+                                            {/* PERSONAL CONTRIBUTION (Workflow 5) */}
+                                            {m.status === 'Completed' && (() => {
+                                                const performance = getMyMatchStats(m);
+                                                if (!performance) return null;
+                                                return (
+                                                    <div className="hidden lg:flex items-center gap-4 px-6 border-r border-gray-50">
+                                                        {performance.batting && (
+                                                            <div className="text-left">
+                                                                <p className="text-emerald-600 text-sm font-black leading-none">{performance.batting.runs}* <span className="text-[10px] text-gray-400">({performance.batting.balls})</span></p>
+                                                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Your Batting</p>
+                                                            </div>
+                                                        )}
+                                                        {performance.bowling && (
+                                                            <div className="text-left border-l border-gray-100 pl-4 ml-2">
+                                                                <p className="text-emerald-600 text-sm font-black leading-none">{performance.bowling.wickets} Wkts</p>
+                                                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Your Bowling</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
 
                                             <div className="flex-1 text-right">
                                                 {m.status === 'Completed' ? (

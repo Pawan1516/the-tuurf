@@ -16,16 +16,56 @@ router.get('/live', async (req, res) => {
         istMidnight.setHours(0,0,0,0);
         const istNextMidnight = new Date(istMidnight);
         istNextMidnight.setDate(istNextMidnight.getDate() + 1);
-
-        // Only get live/in-progress matches — no finished matches
+        // Get live/in-progress matches AND recently finished matches for today
         const matches = await Match.find({ 
-            status: 'In Progress',
+            status: { $in: ['In Progress', 'Completed'] },
             start_time: { $gte: istMidnight, $lte: istNextMidnight }
         })
-        .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain')
-        .sort({ start_time: -1 });
+        .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
+        .sort({ updatedAt: -1 }); // Sort by latest updates
 
-        res.json({ success: true, matches });
+        const activeMatches = matches.filter(m => m.status === 'In Progress');
+        const completedMatches = matches.filter(m => m.status === 'Completed');
+        
+        const finalMatches = [...activeMatches];
+        if (completedMatches.length > 0) {
+            finalMatches.push(completedMatches[0]); // Keep only the single most recently finished match
+        }
+
+        res.json({ success: true, matches: finalMatches });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   GET /api/matches/players/:id
+// @desc    Get PUBLIC profile payload for a player (strictly safe data: names, stats, etc)
+// @access  Public
+router.get('/players/:id', async (req, res) => {
+    try {
+        const User = require('../models/User');
+        const user = await User.findById(req.params.id)
+            .select('name profile stats cricket_profile teams')
+            .populate('teams.team_id', 'name logo');
+            
+        if (!user) return res.status(404).json({ success: false, message: 'Player not found' });
+        
+        // Also fetch their recent match history
+        const recentMatches = await Match.find({
+            $or: [
+                { 'team_a.squad': user._id },
+                { 'team_b.squad': user._id },
+                { 'quick_teams.team_a.players.user_id': user._id },
+                { 'quick_teams.team_b.players.user_id': user._id }
+            ],
+            status: 'Completed'
+        })
+        .select('team_a team_b start_time status result quick_teams live_data.scorecard.total format')
+        .populate('team_a.team_id team_b.team_id result.winner')
+        .sort({ end_time: -1, start_time: -1 })
+        .limit(10);
+
+        res.json({ success: true, player: user, matches: recentMatches });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
@@ -38,11 +78,13 @@ router.get('/my-history', verifyToken, async (req, res) => {
     try {
         const matches = await Match.find({
             $or: [
-                { 'team_a.players': req.user.id },
-                { 'team_b.players': req.user.id },
+                { 'team_a.squad': req.user.id },
+                { 'team_b.squad': req.user.id },
                 { 'team_a.captain': req.user.id },
                 { 'team_b.captain': req.user.id },
-                { scorer_id: req.user.id }
+                { 'quick_teams.team_a.players.user_id': req.user.id },
+                { 'quick_teams.team_b.players.user_id': req.user.id },
+                { 'officials.scorer': req.user.id }
             ]
         })
         .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain')
@@ -157,12 +199,51 @@ router.get('/:id', async (req, res) => {
             .populate('team_a.squad team_b.squad', 'name phone role')
             .populate('quick_teams.team_a.players.user_id quick_teams.team_b.players.user_id', 'name phone profile.stats');
         
-        if (!match) return res.status(404).json({ error: 'Match not found in database' });
+        if (!match) return res.status(404).json({ success: false, error: 'Match not found in database' });
         
-        res.json(match);
+        res.json({ success: true, match });
     } catch (error) {
         console.error('Fetch Match Error:', error);
         res.status(500).json({ error: error.message || 'Internal server error while loading match' });
+    }
+});
+
+// POST /api/matches/:id/complete - Record match completion result and final awards
+router.post('/:id/complete', async (req, res) => {
+    try {
+        const match = await Match.findById(req.params.id);
+        if (!match) return res.status(404).json({ error: 'Match not found' });
+
+        match.status = 'Completed';
+        match.result = {
+            winner: req.body.winner || null,
+            won_by: req.body.won_by || 'Pending',
+            margin: req.body.margin || 0
+        };
+        match.awards = {
+            man_of_the_match: req.body.man_of_the_match || null
+        };
+        
+        await match.save();
+
+        if (!match.stats_updated) {
+            const statsService = require('../services/statsService');
+            const io = req.app.get('socketio');
+            statsService.updatePlayerStats(match._id, io).catch(err => {
+                console.error('StatsService error heavily logging:', err.message);
+            });
+        }
+        
+        // Broadcast final state to Home Pages / live viewers
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`match_${match._id}`).emit('match:update', { matchId: match._id, status: 'Completed', result: match.result });
+        }
+
+        res.json({ success: true, message: 'Match successfully completed and archived.' });
+    } catch (error) {
+        console.error('Error completing match:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -183,25 +264,48 @@ router.post('/:id/live-update', async (req, res) => {
             last_updated: new Date()
         };
 
+        // Sync root status for Home Page / Admin analytics
+        if (req.body.status) {
+            match.status = req.body.status;
+        } else if (match.status === 'Scheduled') {
+            match.status = 'In Progress';
+        }
+
         // Identify current inning (index 0 for first, 1 for second)
         const innIdx = (req.body.inningsNum ? req.body.inningsNum - 1 : 0);
+        match.current_innings_index = innIdx;
         
-        // Ensure the current innings array slot exists
-        while (match.innings.length <= innIdx) {
-            match.innings.push({ number: match.innings.length + 1, score: 0, wickets: 0, overs_completed: 0, batsmen: [], bowlers: [] });
-        }
-        const currentInning = match.innings[innIdx];
-
-        // Determine which overall team is batting
-        // (If the client sends 'batting_team' (A/B), use it. Otherwise use innings logic)
+        // Determine which overall team is batting — TRUST THE CLIENT BATTING TEAM IF PROVIDED
         let activeTeam = 'A';
-        if (req.body.batting_team === 'B') activeTeam = 'B';
-        else if (req.body.battingTeam === 1) activeTeam = 'B'; // Handling 0/1 index from client
-        else if (innIdx === 1) activeTeam = (match.live_active_team === 'A' ? 'B' : 'A'); // toggle if 2nd inn
-        else activeTeam = match.live_active_team || 'A';
+        if (req.body.batting_team === 'B' || req.body.battingTeam === 1 || (req.body.battingTeam === '1')) {
+            activeTeam = 'B';
+        } else if (req.body.batting_team === 'A' || req.body.battingTeam === 0 || (req.body.battingTeam === '0')) {
+            activeTeam = 'A';
+        } else if (innIdx === 1) {
+            activeTeam = (match.live_active_team === 'A' ? 'B' : 'A');
+        } else {
+            activeTeam = match.live_active_team || 'A';
+        }
 
         match.live_active_team = activeTeam;
         const battingTeamKey = activeTeam === 'B' ? 'team_b' : 'team_a';
+        const bowlingTeamKey = activeTeam === 'B' ? 'team_a' : 'team_b';
+
+        // Ensure the current innings array slot exists
+        while (match.innings.length <= innIdx) {
+            const nextInnNum = match.innings.length + 1;
+            match.innings.push({ 
+                number: nextInnNum, 
+                score: 0, 
+                wickets: 0, 
+                overs_completed: 0, 
+                batting_team: match[battingTeamKey].team_id,
+                bowling_team: match[bowlingTeamKey].team_id,
+                batsmen: [], 
+                bowlers: [] 
+            });
+        }
+        const currentInning = match.innings[innIdx];
 
         if (req.body.runs !== undefined) match[battingTeamKey].score = req.body.runs;
         if (req.body.wickets !== undefined) match[battingTeamKey].wickets = req.body.wickets;
@@ -210,7 +314,7 @@ router.post('/:id/live-update', async (req, res) => {
 
         // CRITICAL: Update individual player stats and INNINGS scores for Home Page
         if (req.body.batters || req.body.bowlers || req.body.runs !== undefined) {
-            // Sync inning-level scores for home page display
+            // Sync inning-level scores
             if (req.body.runs !== undefined) currentInning.score = req.body.runs;
             if (req.body.wickets !== undefined) currentInning.wickets = req.body.wickets;
             if (req.body.overs !== undefined) currentInning.overs_completed = req.body.overs;
@@ -218,8 +322,8 @@ router.post('/:id/live-update', async (req, res) => {
             if (req.body.batters) {
                 currentInning.batsmen = req.body.batters.map(b => ({
                     user_id: b.user_id,
-                    runs: b.r,
-                    balls: b.b,
+                    runs: b.r || 0,
+                    balls: b.b || 0,
                     fours: b.fours || b.f || 0,
                     sixes: b.sixes || b.s || 0,
                     out_type: b.out ? 'Out' : 'Not Out',
@@ -230,10 +334,10 @@ router.post('/:id/live-update', async (req, res) => {
             if (req.body.bowlers) {
                 currentInning.bowlers = req.body.bowlers.map(bw => ({
                     user_id: bw.user_id,
-                    overs: bw.overs,
-                    runs: bw.r,
-                    wickets: bw.w,
-                    balls: bw.balls
+                    overs: bw.balls ? parseFloat(`${Math.floor(bw.balls / 6)}.${bw.balls % 6}`) : (bw.overs || 0),
+                    runs: bw.r || 0,
+                    wickets: bw.w || 0,
+                    balls: bw.balls || 0
                 }));
             }
         }
@@ -249,14 +353,17 @@ router.post('/:id/live-update', async (req, res) => {
         }
         if (req.body.bowlers && req.body.currentBowlerIdx !== undefined) {
             const bw = req.body.bowlers[req.body.currentBowlerIdx];
-            if (bw) match.live_data.bowler = { 
-                name: bw.name, 
-                overs: bw.overs, 
-                r: bw.r, 
-                w: bw.w, 
-                balls: bw.balls,
-                eco: bw.overs > 0 ? (bw.r / bw.overs).toFixed(1) : '0.0' 
-            };
+            if (bw) {
+                const formattedOvers = `${Math.floor(bw.balls / 6)}.${bw.balls % 6}`;
+                match.live_data.bowler = { 
+                    name: bw.name, 
+                    overs: formattedOvers,
+                    r: bw.r, 
+                    w: bw.w, 
+                    balls: bw.balls,
+                    eco: bw.balls > 0 ? (bw.r / (bw.balls / 6)).toFixed(1) : '0.0' 
+                };
+            }
         }
         if (req.body.batters) {
             match.live_data.batters = req.body.batters;
@@ -398,85 +505,40 @@ router.post('/:id/live-update', async (req, res) => {
             };
         }
 
+        // Mark modified for nested fields (CRITICAL for persistence)
+        match.markModified('innings');
+        match.markModified('live_data');
+        match.markModified('team_a');
+        match.markModified('team_b');
+
         await match.save();
 
         // 🔥 SOCKET.IO BROADCAST — Real-time to all connected viewers
         const io = req.app.get('socketio');
         if (io) {
             const payload = {
+                ...match.live_data,
                 matchId: match._id,
-                runs: req.body.runs,
-                wickets: req.body.wickets,
-                score: { runs: req.body.runs, wickets: req.body.wickets },
-                overs: `${req.body.overNum || 0}.${req.body.ballInOver || 0}`,
-                striker: match.live_data.striker,
-                non_striker: match.live_data.non_striker,
-                bowler: match.live_data.bowler,
-                scorecard: match.live_data.scorecard, // include scorecard for real-time tabs
-                recent_balls: match.live_data.recent_balls,
-                over_summaries: match.live_data.over_summaries,
-                commentary: commentary,
-                commentary_log: match.live_data.commentary_log,
-                run_rate: match.live_data.run_rate,
-                required_run_rate: match.live_data.required_run_rate,
-                runs_needed: match.live_data.runs_needed,
-                balls_remaining: match.live_data.balls_remaining,
-                partnership: match.live_data.partnership,
-                scorecard: match.live_data.scorecard,
-                inn1_scorecard: match.live_data.inn1_scorecard,
-                target: req.body.target,
                 status: match.status,
-                result: req.body.result,
                 phase: req.body.phase,
                 inningsNum: req.body.inningsNum,
                 timestamp: new Date()
             };
+            // Map common aliases for transition period
+            payload.score = { runs: payload.runs, wickets: payload.wickets };
+            payload.overs = `${req.body.overNum || 0}.${req.body.ballInOver || 0}`;
 
-            // Emit to match room AND globally
             io.to(`match_${match._id}`).emit('match:update', payload);
             io.to(`match_${match._id}`).emit('match:ball', payload);
         }
 
-        res.json({ success: true });
+        res.json({ success: true, match_id: match._id });
     } catch (error) {
+        console.error('live-update error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// POST /api/matches/:id/complete - Explicitly complete match and update stats
-router.post('/:id/complete', async (req, res) => {
-    try {
-        const match = await Match.findById(req.params.id);
-        if (!match) return res.status(404).json({ error: 'Match not found' });
-
-        match.status = 'Completed';
-        match.end_time = new Date();
-        
-        if (req.body.result) match.result = req.body.result;
-        if (req.body.live_data) match.live_data = { ...match.live_data, ...req.body.live_data };
-
-        await match.save();
-
-        if (match.canBeScored() && !match.stats_updated) {
-            const statsService = require('../services/statsService');
-            const io = req.app.get('socketio');
-            await statsService.updatePlayerStats(match._id, io);
-        }
-
-        const io = req.app.get('socketio');
-        if (io) {
-            io.to(`match_${match._id}`).emit('match:completed', { 
-                matchId: match._id, 
-                result: match.result,
-                stats_updated: true
-            });
-        }
-
-        res.json({ success: true, message: 'Match completed and career stats updated.' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // POST /api/matches/:id/ball - Granular ball recording (Spec v4.0)
 router.post('/:id/ball', async (req, res) => {
@@ -863,14 +925,14 @@ router.post('/:id/complete', async (req, res) => {
         
         // Auto-verify if processed by Authorized Scorer/Admin to trigger Career Stats
         match.verification.status = 'VERIFIED';
-        match.verification.verified_by = req.user.id;
+        match.verification.verified_by = req.user?.id || 'SYSTEM';
         match.verification.verified_at = new Date();
 
         await match.save();
 
         // 🚨 CRITICAL: Workflow 5 — Career Stats Manifestation
-        const StatsService = require('../services/statsService');
-        const statsResult = await StatsService.updateCareerStats(match);
+        const statsService = require('../services/statsService');
+        const statsResult = await statsService.updatePlayerStats(match._id, req.app.get('socketio'));
 
         res.json({ 
             success: true, 
