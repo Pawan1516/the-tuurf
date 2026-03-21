@@ -183,9 +183,26 @@ router.post('/:id/live-update', async (req, res) => {
             last_updated: new Date()
         };
 
-        // Update the main score fields for the CURRENT batting team
-        const battingTeamKey = (req.body.batting_team === 'B' || match.live_active_team === 'B') ? 'team_b' : 'team_a';
+        // Identify current inning (index 0 for first, 1 for second)
+        const innIdx = (req.body.inningsNum ? req.body.inningsNum - 1 : 0);
         
+        // Ensure the current innings array slot exists
+        while (match.innings.length <= innIdx) {
+            match.innings.push({ number: match.innings.length + 1, score: 0, wickets: 0, overs_completed: 0, batsmen: [], bowlers: [] });
+        }
+        const currentInning = match.innings[innIdx];
+
+        // Determine which overall team is batting
+        // (If the client sends 'batting_team' (A/B), use it. Otherwise use innings logic)
+        let activeTeam = 'A';
+        if (req.body.batting_team === 'B') activeTeam = 'B';
+        else if (req.body.battingTeam === 1) activeTeam = 'B'; // Handling 0/1 index from client
+        else if (innIdx === 1) activeTeam = (match.live_active_team === 'A' ? 'B' : 'A'); // toggle if 2nd inn
+        else activeTeam = match.live_active_team || 'A';
+
+        match.live_active_team = activeTeam;
+        const battingTeamKey = activeTeam === 'B' ? 'team_b' : 'team_a';
+
         if (req.body.runs !== undefined) match[battingTeamKey].score = req.body.runs;
         if (req.body.wickets !== undefined) match[battingTeamKey].wickets = req.body.wickets;
         if (req.body.overs !== undefined) match[battingTeamKey].overs_played = req.body.overs;
@@ -193,12 +210,6 @@ router.post('/:id/live-update', async (req, res) => {
 
         // CRITICAL: Update individual player stats and INNINGS scores for Home Page
         if (req.body.batters || req.body.bowlers || req.body.runs !== undefined) {
-            // Ensure first innings exists
-            if (match.innings.length === 0) {
-                match.innings.push({ number: 1, score: 0, wickets: 0, overs_completed: 0, batsmen: [], bowlers: [] });
-            }
-            const currentInning = match.innings[0];
-
             // Sync inning-level scores for home page display
             if (req.body.runs !== undefined) currentInning.score = req.body.runs;
             if (req.body.wickets !== undefined) currentInning.wickets = req.body.wickets;
@@ -247,6 +258,19 @@ router.post('/:id/live-update', async (req, res) => {
                 eco: bw.overs > 0 ? (bw.r / bw.overs).toFixed(1) : '0.0' 
             };
         }
+        if (req.body.batters) {
+            match.live_data.batters = req.body.batters;
+        }
+        if (req.body.bowlers) {
+            match.live_data.bowlers = req.body.bowlers;
+        }
+        if (req.body.inn1Batters) {
+            match.live_data.inn1Batters = req.body.inn1Batters;
+        }
+        if (req.body.inn1Bowlers) {
+            match.live_data.inn1Bowlers = req.body.inn1Bowlers;
+        }
+
         if (req.body.currentOverBalls) {
             match.live_data.recent_balls = req.body.currentOverBalls;
         }
@@ -299,6 +323,16 @@ router.post('/:id/live-update', async (req, res) => {
                 match.live_data.commentary_log = match.live_data.commentary_log.slice(0, 30);
             }
         }
+
+        // --- STATS UPDATE TRIGGER ---
+        if (req.body.status === 'Completed' && !match.stats_updated) {
+            const statsService = require('../services/statsService');
+            const io = req.app.get('socketio');
+            statsService.updatePlayerStats(match._id, io).catch(err => {
+                console.error('StatsService error in live-update:', err.message);
+            });
+        }
+        // ----------------------------
 
         // Calculate run rate and required run rate
         const totalOvers = (req.body.overNum || 0) + (req.body.ballInOver || 0) / 6;
@@ -371,11 +405,14 @@ router.post('/:id/live-update', async (req, res) => {
         if (io) {
             const payload = {
                 matchId: match._id,
+                runs: req.body.runs,
+                wickets: req.body.wickets,
                 score: { runs: req.body.runs, wickets: req.body.wickets },
                 overs: `${req.body.overNum || 0}.${req.body.ballInOver || 0}`,
                 striker: match.live_data.striker,
                 non_striker: match.live_data.non_striker,
                 bowler: match.live_data.bowler,
+                scorecard: match.live_data.scorecard, // include scorecard for real-time tabs
                 recent_balls: match.live_data.recent_balls,
                 over_summaries: match.live_data.over_summaries,
                 commentary: commentary,
@@ -406,51 +443,127 @@ router.post('/:id/live-update', async (req, res) => {
     }
 });
 
-// POST /api/matches/:id/ball - Record a ball (Requires verifyMatch middleware protection)
-router.post('/:id/ball', verifyMatch, async (req, res) => {
+// POST /api/matches/:id/complete - Explicitly complete match and update stats
+router.post('/:id/complete', async (req, res) => {
     try {
-        const match = req.match; // populated by verifyMatch
-        const { run, is_wicket, extra_type, extra_runs, bowler_id, batsman_id } = req.body;
+        const match = await Match.findById(req.params.id);
+        if (!match) return res.status(404).json({ error: 'Match not found' });
 
-        // In a real app, you'd maintain an 'innings' array and update the current over
-        // For brevity in this v2.0 foundation, we update the status and emit the event
-        const ballData = {
-            match_id: match._id,
-            run: run || 0,
-            is_wicket: !!is_wicket,
-            extra_type: extra_type || 'NONE',
-            extra_runs: extra_runs || 0,
+        match.status = 'Completed';
+        match.end_time = new Date();
+        
+        if (req.body.result) match.result = req.body.result;
+        if (req.body.live_data) match.live_data = { ...match.live_data, ...req.body.live_data };
+
+        await match.save();
+
+        if (match.canBeScored() && !match.stats_updated) {
+            const statsService = require('../services/statsService');
+            const io = req.app.get('socketio');
+            await statsService.updatePlayerStats(match._id, io);
+        }
+
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`match_${match._id}`).emit('match:completed', { 
+                matchId: match._id, 
+                result: match.result,
+                stats_updated: true
+            });
+        }
+
+        res.json({ success: true, message: 'Match completed and career stats updated.' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/matches/:id/ball - Granular ball recording (Spec v4.0)
+router.post('/:id/ball', async (req, res) => {
+    try {
+        const match = await Match.findById(req.params.id);
+        if (!match) return res.status(404).json({ error: 'Match not found' });
+
+        if (!match.canBeScored()) {
+            return res.status(403).json({ error: 'Match not verified for official scoring.' });
+        }
+
+        const { inning, over, ball, batter_id, bowler_id, runs, is_four, is_six, extra_type, is_wicket, wicket } = req.body;
+
+        const newBall = {
+            ball_number: `${over}.${ball}`,
+            over_number: over,
+            ball_in_over: ball,
+            batter_id,
             bowler_id,
-            batsman_id,
+            runs_off_bat: runs || 0,
+            is_four: is_four || false,
+            is_six: is_six || false,
+            extra_type: extra_type || null,
+            extra_runs: (extra_type === 'wide' || extra_type === 'noball' || extra_type === 'bye' || extra_type === 'legbye') ? 1 : 0,
+            is_wicket: is_wicket || false,
+            wicket: wicket || null,
             timestamp: new Date()
         };
 
-        // Generate AI Commentary (Phase 1 AI Integration)
-        let aiCommentary = "";
-        try {
-            aiCommentary = await AIService.generateCommentary({
-                ball: { runs: run || 0, type: is_wicket ? 'WICKET' : 'RUNS', over: match.innings && match.innings[0] && match.innings[0].overs ? match.innings[0].overs.length : 0, ballNo: 1 },
-                batsman: { name: 'Player A', runs: 28, balls: 24 }, // Actual names would be retrieved here
-                bowler: { name: 'Player B', wickets: 1, economy: 6.0 },
-                match: { target: 145, required: 42, ballsLeft: 30, team: 'Chasing Team' },
-                situation: 'NORMAL'
-            });
-            ballData.commentary = aiCommentary;
-        } catch (aiErr) {
-            console.warn('AI Commentary service failure (skipping):', aiErr.message);
+        // Push to deep storage
+        const currentInning = match.innings.find(inn => inn.number === inning);
+        if (currentInning) {
+            currentInning.balls.push(newBall);
+            currentInning.score += (newBall.runs_off_bat + newBall.extra_runs);
+            if (is_wicket) currentInning.wickets += 1;
         }
 
-        // Emit real-time update to all listeners for this match
-        const io = req.app.get('socketio');
-        if (io) {
-            io.to(`match_${match._id}`).emit(is_wicket ? 'match:wicket' : 'match:ball', ballData);
-            console.log(`📡 Broadcasted ${is_wicket ? 'wicket' : 'ball'} with AI Commentary for match_${match._id}`);
-        }
+        await match.save();
 
-        res.json({ success: true, message: 'Ball recorded and broadcasted.', ball: ballData });
+        res.json({ success: true, ball_id: newBall._id });
     } catch (error) {
-        console.error('Ball Recording Error:', error);
-        res.status(500).json({ error: 'Ball Recording protocol failure.' });
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/matches/players/:id - Detailed player profile (Spec v4.0)
+router.get('/players/:id', async (req, res) => {
+    try {
+        const User = require('../models/User');
+        const player = await User.findById(req.params.id)
+            .select('-password -realPassword')
+            .populate('teams.team_id', 'name short_name colour');
+
+        if (!player) return res.status(404).json({ error: 'Player not found' });
+
+        // Fetch last 10 matches
+        const recentMatches = await Match.find({
+            status: 'Completed',
+            $or: [
+                { 'team_a.squad': player._id },
+                { 'team_b.squad': player._id }
+            ]
+        }).sort({ end_time: -1 }).limit(10);
+
+        // Fetch leaderboard ranks
+        const battingRank = await User.countDocuments({ 'stats.batting.runs': { $gt: player.stats.batting.runs } }) + 1;
+        const bowlingRank = await User.countDocuments({ 'stats.bowling.wickets': { $gt: player.stats.bowling.wickets } }) + 1;
+
+        res.json({
+            success: true,
+            player: {
+                ...player.toObject(),
+                leaderboard: {
+                    batting_rank: battingRank,
+                    bowling_rank: bowlingRank
+                }
+            },
+            recent_matches: recentMatches.map(m => ({
+                id: m._id,
+                date: m.end_time,
+                format: m.format,
+                result: m.result,
+                score: m.live_data?.scorecard?.total
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 

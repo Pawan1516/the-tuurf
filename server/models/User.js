@@ -62,6 +62,7 @@ const userSchema = new mongoose.Schema({
             fifties: { type: Number, default: 0 },
             hundreds: { type: Number, default: 0 },
             high_score: { type: Number, default: 0 },
+            not_outs: { type: Number, default: 0 },
             average: { type: Number, default: 0 },
             strike_rate: { type: Number, default: 0 }
         },
@@ -69,6 +70,7 @@ const userSchema = new mongoose.Schema({
             matches: { type: Number, default: 0 },
             wickets: { type: Number, default: 0 },
             overs: { type: Number, default: 0 },
+            balls_bowled: { type: Number, default: 0 },
             runs_conceded: { type: Number, default: 0 },
             economy: { type: Number, default: 0 },
             five_wicket_hauls: { type: Number, default: 0 },

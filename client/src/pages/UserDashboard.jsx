@@ -15,6 +15,7 @@ import {
     Trophy,
     Swords
 } from 'lucide-react';
+import io from 'socket.io-client';
 import AuthContext from '../context/AuthContext';
 import { bookingsAPI, slotsAPI, matchesAPI, authAPI } from '../api/client';
 import MobileNav from '../components/MobileNav';
@@ -40,7 +41,23 @@ const UserDashboard = () => {
 
     useEffect(() => {
         fetchInitialData();
-    }, []);
+
+        // Socket.IO for real-time career stats updates
+        const socket = io(process.env.NODE_ENV === 'production' ? 'https://the-turf-in.onrender.com' : 'http://localhost:5001');
+        
+        if (user?._id) {
+            socket.emit('join:profile', user._id);
+            socket.on('stats:updated', (data) => {
+                console.log('🚀 Career stats updated via socket:', data);
+                // Re-fetch profile to show new stats
+                authAPI.getProfile().then(res => {
+                    if (res.data?.success) setProfile(res.data.user);
+                });
+            });
+        }
+
+        return () => socket.disconnect();
+    }, [user?._id]);
 
     const fetchInitialData = async () => {
         try {
@@ -50,7 +67,6 @@ const UserDashboard = () => {
                 year: 'numeric', month: '2-digit', day: '2-digit'
             }).format(new Date());
 
-            // Run all requests in parallel but handle each one independently
             const [bookingRes, slotRes, settingsRes, matchRes, profileRes] = await Promise.allSettled([
                 bookingsAPI.getMyBookings(),
                 slotsAPI.getAll(today),
@@ -59,38 +75,25 @@ const UserDashboard = () => {
                 authAPI.getProfile()
             ]);
 
-            // Slots — most critical, must always work
             if (slotRes.status === 'fulfilled') {
                 const slotData = slotRes.value.data;
                 setTodaySlots(Array.isArray(slotData) ? slotData : (slotData?.slots || []));
-            } else {
-                console.error('Slots failed:', slotRes.reason?.message);
             }
 
-            // Bookings
             if (bookingRes.status === 'fulfilled') {
                 setBookings(bookingRes.value.data?.bookings || []);
-            } else {
-                console.error('Bookings failed:', bookingRes.reason?.message);
             }
 
-            // Settings
             if (settingsRes.status === 'fulfilled' && settingsRes.value.data?.success) {
                 setSettings(prev => ({ ...prev, ...settingsRes.value.data.settings }));
             }
 
-            // Match history
             if (matchRes.status === 'fulfilled') {
                 setMyMatches(matchRes.value.data?.matches || []);
-            } else {
-                console.error('Match history failed:', matchRes.reason?.message);
             }
 
-            // Profile
             if (profileRes.status === 'fulfilled' && profileRes.value.data?.success) {
                 setProfile(profileRes.value.data.user);
-            } else {
-                console.error('Profile fetch skipped:', profileRes.reason?.message);
             }
 
         } catch (error) {
@@ -99,7 +102,6 @@ const UserDashboard = () => {
             setLoading(false);
         }
     };
-
 
     const handleLogout = () => {
         logout();
@@ -137,7 +139,6 @@ const UserDashboard = () => {
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
             <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
 
-            {/* Sidebar (Desktop Only) */}
             <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
                 <div className="p-8 border-b border-gray-50 flex items-center gap-4">
                     <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
@@ -184,7 +185,6 @@ const UserDashboard = () => {
                 </div>
             </aside>
 
-            {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
                 <header className="hidden md:flex bg-white/80 backdrop-blur-md px-10 h-24 items-center justify-between sticky top-0 z-40 border-b border-gray-100">
                     <div className="flex gap-8">
@@ -209,7 +209,6 @@ const UserDashboard = () => {
 
                 <div className="p-4 md:p-10 space-y-6 md:space-y-12 mb-nav md:mb-0">
                 
-                {/* Mobile Tabs */}
                 <div className="md:hidden flex gap-4 overflow-x-auto pb-4 scrollbar-hide border-b border-gray-200">
                     <button 
                         onClick={() => setActiveTab('bookings')}
@@ -224,76 +223,114 @@ const UserDashboard = () => {
                 </div>
 
                 {activeTab === 'profile' && (
-                    <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl">
-                        <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-8">Cricket Profile</h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                            <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Batting Career</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-3xl font-black text-emerald-600">{profile?.stats?.batting?.runs || 0}</p>
-                                        <p className="text-[9px] font-black text-gray-500 uppercase">Total Runs</p>
+                    <div className="space-y-10">
+                        <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
+                            <div className="flex flex-col md:flex-row items-center gap-10">
+                                <div className="relative group">
+                                    <div className="w-40 h-40 md:w-56 md:h-56 rounded-[3rem] overflow-hidden border-8 border-emerald-50 bg-emerald-100 flex items-center justify-center shadow-2xl transition-transform group-hover:scale-105 duration-500">
+                                        {profile?.personal?.photo ? (
+                                            <img src={profile.personal.photo} alt={profile.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Zap size={64} className="text-emerald-300" />
+                                        )}
                                     </div>
-                                    <div>
-                                        <p className="text-3xl font-black text-emerald-600">{profile?.stats?.batting?.average || 0}</p>
-                                        <p className="text-[9px] font-black text-gray-500 uppercase">Average</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xl font-bold text-gray-800">{profile?.stats?.batting?.strike_rate || 0}</p>
-                                        <p className="text-[9px] font-black text-gray-500 uppercase">Strike Rate</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xl font-bold text-gray-800">{profile?.stats?.batting?.matches || 0}</p>
-                                        <p className="text-[9px] font-black text-gray-500 uppercase">Matches</p>
+                                    <div className="absolute -bottom-4 -right-4 bg-emerald-600 text-white p-5 rounded-3xl shadow-xl shadow-emerald-200 border-4 border-white">
+                                        <Trophy size={24} />
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Bowling Career</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-3xl font-black text-emerald-600">{profile?.stats?.bowling?.wickets || 0}</p>
-                                        <p className="text-[9px] font-black text-gray-500 uppercase">Wickets</p>
+                                <div className="flex-1 text-center md:text-left space-y-4">
+                                    <div className="inline-flex items-center gap-3 bg-emerald-50 px-5 py-2 rounded-full border border-emerald-100">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest leading-none">PLAYER PROFILE</span>
                                     </div>
-                                    <div>
-                                        <p className="text-3xl font-black text-emerald-600">{profile?.stats?.bowling?.economy || 0}</p>
-                                        <p className="text-[9px] font-black text-gray-500 uppercase">Economy</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xl font-bold text-gray-800">{profile?.stats?.bowling?.overs || 0}</p>
-                                        <p className="text-[9px] font-black text-gray-500 uppercase">Overs Bowled</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xl font-bold text-gray-800">{profile?.stats?.bowling?.five_wicket_hauls || 0}</p>
-                                        <p className="text-[9px] font-black text-gray-500 uppercase">5-Wickets Hauls</p>
+                                    <h2 className="text-5xl md:text-7xl font-black text-gray-900 uppercase tracking-tighter leading-[0.8]">{profile?.name}</h2>
+                                    <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                                        <div className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.primary_role || 'All-Rounder'}</div>
+                                        <div className="bg-emerald-100 text-emerald-800 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.batting_style || 'Right Hand'}</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-emerald-950 text-white rounded-[2rem] p-8 flex items-center justify-between mb-10">
-                            <div>
-                                <h4 className="text-xl font-black uppercase mb-2">Team Management</h4>
-                                <p className="text-sm font-bold text-emerald-400/80">{profile?.role === 'admin' ? 'SYSTEM ADMINISTRATOR' : profile?.role === 'worker' ? 'ARENA STAFF' : 'REGISTERED PLAYER'}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            {/* BATTING ARSENAL */}
+                            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-xl">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-10 text-emerald-600">
+                                    <Swords size={16} /> Batting Arsenal
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.runs || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Runs</p>
+                                    </div>
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.average || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Avg</p>
+                                    </div>
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.strike_rate || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">S/R</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.fours || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">4s</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.sixes || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">6s</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.not_outs || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">NO</p>
+                                    </div>
+                                </div>
                             </div>
-                            <button onClick={() => navigate('/teams')} className="bg-emerald-600 hover:bg-emerald-500 transition-colors px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/40">
-                                View Teams
-                            </button>
+
+                            {/* BOWLING COMMAND */}
+                            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-xl">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-10 text-emerald-600">
+                                    <Database size={16} /> Bowling Command
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.wickets || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Wkts</p>
+                                    </div>
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.economy || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Eco</p>
+                                    </div>
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
+                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.overs || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Overs</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.matches || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Inns</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.runs_conceded || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Runs</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.five_wicket_hauls || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">5W</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Recent Matches Section */}
-                        <div>
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Match History</h3>
-                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{myMatches.length} Recorded Matches</span>
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Recent Battles</h3>
+                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest px-4 py-1.5 bg-emerald-50 rounded-full">{myMatches.length} Matches</span>
                             </div>
 
                             {myMatches.length === 0 ? (
                                 <div className="p-12 text-center bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
                                     <Swords size={32} className="mx-auto mb-4 text-gray-300" />
-                                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">No match records found on your profile.</p>
+                                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">No match records found.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -304,7 +341,7 @@ const UserDashboard = () => {
                                         >
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-3 mb-2">
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${m.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600 pulse'}`}>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${m.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600 animate-pulse'}`}>
                                                         {m.status}
                                                     </span>
                                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-tight">#{m._id.slice(-6)}</span>
@@ -334,11 +371,11 @@ const UserDashboard = () => {
                                                     <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl">
                                                         <Trophy size={14} className="text-yellow-500" />
                                                         <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">
-                                                            {m.result?.winner?.name || 'Result'} won
+                                                            Detailed Intel
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-[10px] font-black text-red-500 uppercase tracking-widest animate-pulse">Match In Progress</span>
+                                                    <span className="text-[10px] font-black text-red-500 uppercase tracking-widest animate-pulse">Live Scoring</span>
                                                 )}
                                             </div>
                                         </div>
@@ -351,7 +388,6 @@ const UserDashboard = () => {
 
                 {activeTab === 'bookings' && (
                     <>
-                    {/* Today's Rapid Booking Section (7 AM - 11 PM) */}
                     <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
                         <div className="flex justify-between items-center mb-6 md:mb-8">
                             <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
@@ -436,7 +472,6 @@ const UserDashboard = () => {
                                             </div>
 
                                             <div className="flex-1 flex flex-col gap-4">
-                                                {/* Matches List */}
                                                 {(booking.matches || []).length > 0 && (
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                                                         {(booking.matches || []).map((m, mi) => (

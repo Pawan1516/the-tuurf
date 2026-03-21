@@ -345,7 +345,8 @@ export default function ScoringDashboard() {
                 inn1Wickets: state.inn1Wickets,
                 inn1Overs: state.inn1Overs,
                 inn1Batters: state.inn1Batters,
-                inn1Bowlers: state.inn1Bowlers
+                inn1Bowlers: state.inn1Bowlers,
+                battingTeam: state.battingTeam
             });
         } catch (error) {
             console.warn("Backend sync failed:", error.message);

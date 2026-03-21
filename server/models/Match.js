@@ -15,12 +15,18 @@ const matchSchema = new mongoose.Schema({
     team_a: {
         team_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
         squad: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-        captain: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+        captain: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        score: { type: Number, default: 0 },
+        wickets: { type: Number, default: 0 },
+        overs_played: { type: Number, default: 0 }
     },
     team_b: {
         team_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
         squad: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-        captain: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+        captain: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        score: { type: Number, default: 0 },
+        wickets: { type: Number, default: 0 },
+        overs_played: { type: Number, default: 0 }
     },
 
     // Officials
@@ -126,31 +132,26 @@ const matchSchema = new mongoose.Schema({
             run_rate: Number, // Run rate for this over
             phase: { type: String, enum: ['powerplay', 'middle', 'death'] }
         }],
-        balls: [{ // This is the new 'balls' array for delivery details
-            over: Number,
-            ball: Number,
-            batsman_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        balls: [{ // Spec v4.0 Granular Ball-by-Ball
+            ball_number: String, // '5.3'
+            over_number: Number, // 0-indexed
+            ball_in_over: Number, // 1-6
+            absolute_ball: Number,
+            batter_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            non_striker_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
             bowler_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-            non_striker: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-            delivery: {
-                runs: { type: Number, default: 0 },
-                extras: {
-                    type: { type: String, enum: ['wide', 'noball', 'bye', 'legbye', null], default: null },
-                    runs: { type: Number, default: 0 }
-                },
-                is_wicket: { type: Boolean, default: false },
-                wicket: {
-                    type: { type: String, enum: ['bowled', 'caught', 'lbw', 'runout', 'stumped', 'hit-wicket', 'retired'] },
-                    player_out: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-                    fielder_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
-                },
-                line: { type: String, enum: ['off', 'middle', 'leg', 'wide_off', 'wide_leg'] },
-                length: { type: String, enum: ['yorker', 'full', 'good', 'short_of_length', 'bouncer'] },
-                shot: { type: String }
-            },
-            score_after: {
-                runs: Number,
-                wickets: Number
+            runs_off_bat: { type: Number, default: 0 },
+            is_four: { type: Boolean, default: false },
+            is_six: { type: Boolean, default: false },
+            extra_type: { type: String, enum: ['wide', 'noball', 'bye', 'legbye', null], default: null },
+            extra_runs: { type: Number, default: 0 },
+            is_free_hit: { type: Boolean, default: false },
+            is_wicket: { type: Boolean, default: false },
+            wicket: {
+                dismissal_type: { type: String },
+                player_out_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+                fielder_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+                is_bowler_wicket: { type: Boolean, default: true }
             },
             commentary: String,
             timestamp: { type: Date, default: Date.now }
@@ -184,6 +185,7 @@ const matchSchema = new mongoose.Schema({
         }]
     }],
     current_innings_index: { type: Number, default: 0 },
+    live_active_team: { type: String, enum: ['A', 'B'], default: 'A' },
     
     // Awards and Completion
     status: { type: String, enum: ['Scheduled', 'In Progress', 'Completed', 'Abandoned', 'Cancelled'], default: 'Scheduled' },
@@ -214,6 +216,16 @@ const matchSchema = new mongoose.Schema({
         checked_in_at: { type: Date, default: Date.now },
         method: { type: String, enum: ['QR_SCAN', 'MANUAL'], default: 'QR_SCAN' },
         scanned_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
+    }],
+    stats_updated: { type: Boolean, default: false },
+    live_data: { type: mongoose.Schema.Types.Mixed, default: {} },
+    commentary_log: [{
+        text: String,
+        ball: String,
+        runs: Number,
+        wickets: Number,
+        overs: String,
+        timestamp: { type: Date, default: Date.now }
     }]
 }, { timestamps: true });
 

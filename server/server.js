@@ -76,6 +76,11 @@ io.on('connection', (socket) => {
         console.log(`📡 Socket ${socket.id} joined match_${matchId}`);
     });
 
+    socket.on('join:profile', (userId) => {
+        socket.join(`profile:${userId}`);
+        console.log(`📡 Socket ${socket.id} joined profile:${userId}`);
+    });
+
     socket.on('leave_match', (matchId) => {
         socket.leave(`match_${matchId}`);
         console.log(`📡 Socket ${socket.id} left match_${matchId}`);

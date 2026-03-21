@@ -53,20 +53,29 @@ const PublicHome = () => {
                 console.error('Error fetching settings:', err);
             }
 
-            // 3. Fetch Live Matches (New)
-            try {
-                const res = await matchesAPI.getLive();
-                if (res.data.success) {
-                    setLiveMatches(res.data.matches || []);
-                }
-            } catch (err) {
-                console.error('Error fetching live matches:', err);
-            }
-
+            // Initial fetch for Match Data
+            fetchLiveMatches();
             setLoading(false);
         };
         init();
     }, [selectedDate]);
+
+    // Separate effect for polling live matches
+    const fetchLiveMatches = async () => {
+        try {
+            const res = await matchesAPI.getLive();
+            if (res.data.success) {
+                setLiveMatches(res.data.matches || []);
+            }
+        } catch (err) {
+            console.error('Error fetching live matches:', err);
+        }
+    };
+
+    useEffect(() => {
+        const interval = setInterval(fetchLiveMatches, 20000); // Poll every 20s
+        return () => clearInterval(interval);
+    }, []);
 
     const formatTime12h = (time24) => {
         if (!time24) return '';
@@ -75,6 +84,13 @@ const PublicHome = () => {
         const ampm = h >= 12 ? 'PM' : 'AM';
         const h12 = h % 12 || 12;
         return `${h12}:${minutes} ${ampm}`;
+    };
+
+    const formatOvers = (overs) => {
+        if (typeof overs !== 'number') return '0.0';
+        const completeOvers = Math.floor(overs);
+        const balls = Math.round((overs % 1) * 6);
+        return `${completeOvers}.${balls}`;
     };
 
     const dates = [0, 1, 2, 3, 4, 5, 6].map(days => {
@@ -208,9 +224,9 @@ const PublicHome = () => {
                                                     <>
                                                         <Timer size={14} className="text-white/20" />
                                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                            {match.status === 'In Progress' ? 
-                                                                (typeof match.innings?.[match.current_innings_index || 0]?.overs_completed === 'number' ? match.innings?.[match.current_innings_index || 0]?.overs_completed.toFixed(1) : (match.innings?.[match.current_innings_index || 0]?.overs_completed || '0.0')) + ' Overs' : 
-                                                                new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                                {match.status === 'In Progress' ? 
+                                                                    formatOvers(match.innings?.[match.current_innings_index || 0]?.overs_completed) + ' Overs' : 
+                                                                    new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                         </span>
                                                     </>
                                                 )}
