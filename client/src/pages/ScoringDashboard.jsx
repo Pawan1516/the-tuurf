@@ -548,28 +548,58 @@ export default function ScoringDashboard() {
             console.error("Match Completion Persistence Failed:", err);
         }
         
-        let batch = [];
         const collect = (batters, bowlers) => {
-            // Merge statistics into one result per unique name
             const map = {};
             batters.forEach(b => {
                 if (b.b > 0) {
-                    map[b.name] = { name: b.name, user_id: b.user_id, r: b.r, b: b.b, w: 0, rc: 0, o: 0 };
+                    map[b.name] = { 
+                        name: b.name, 
+                        user_id: b.user_id, 
+                        r: b.r || 0, 
+                        b: b.b || 0, 
+                        fours: b.fours || b.f || 0,
+                        sixes: b.sixes || b.s || 0,
+                        is_out: !!b.out,
+                        w: 0, rc: 0, o: 0 
+                    };
                 }
             });
             bowlers.forEach(bw => {
                 if (bw.balls > 0) {
-                    if (!map[bw.name]) map[bw.name] = { name: bw.name, user_id: bw.user_id, r: 0, b: 0, w: 0, rc: 0, o: 0 };
-                    map[bw.name].w = bw.w;
-                    map[bw.name].rc = bw.r;
-                    map[bw.name].o = Number((bw.balls / 6).toFixed(1));
+                    if (!map[bw.name]) map[bw.name] = { 
+                        name: bw.name, 
+                        user_id: bw.user_id, 
+                        r: 0, b: 0, fours: 0, sixes: 0, is_out: false,
+                        w: 0, rc: 0, o: 0 
+                    };
+                    map[bw.name].w = (map[bw.name].w || 0) + (bw.w || 0);
+                    map[bw.name].rc = (map[bw.name].rc || 0) + (bw.r || 0);
+                    map[bw.name].o = (map[bw.name].o || 0) + (bw.balls / 6);
                 }
             });
-            return Object.values(map);
+            return map;
         };
+
+        let masterMap = {};
+        const mergeMaps = (target, source) => {
+            Object.keys(source).forEach(name => {
+                if (!target[name]) {
+                    target[name] = source[name];
+                } else {
+                    const t = target[name];
+                    const s = source[name];
+                    t.r += s.r; t.b += s.b; 
+                    t.fours += s.fours; t.sixes += s.sixes;
+                    t.is_out = t.is_out || s.is_out;
+                    t.w += s.w; t.rc += s.rc; t.o += s.o;
+                }
+            });
+        };
+
+        if (state.inn1Batters) mergeMaps(masterMap, collect(state.inn1Batters, state.inn1Bowlers));
+        mergeMaps(masterMap, collect(state.batters, state.bowlers));
         
-        if (state.inn1Batters) batch = [...batch, ...collect(state.inn1Batters, state.inn1Bowlers)];
-        batch = [...batch, ...collect(state.batters, state.bowlers)];
+        const batch = Object.values(masterMap);
         
         const res = await PlayerDB.bulkUpdateRemote(batch);
         if (res.success) {

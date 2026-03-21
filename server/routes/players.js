@@ -256,60 +256,81 @@ router.get('/profile/:name', async (req, res) => {
     }
 });
 
-// @route   POST /api/players/stats/bulk-update
-// @desc    Update career stats for multiple players (Scorer/Admin Only)
 router.post('/stats/bulk-update', verifyToken, roleGuard(['PLAYER', 'CAPTAIN', 'SCORER', 'ADMIN', 'WORKER', 'USER', 'worker', 'admin', 'player', 'captain', 'scorer', 'user']), async (req, res) => {
     try {
-        const { match_results } = req.body; // array of { name, user_id, r, b, w, rc, o }
+        const { match_results } = req.body; // array of { name, user_id, r, b, w, rc, o_float, fours, sixes, is_out }
         
-        for (const res of match_results) {
+        for (const stat of match_results) {
             let filter = {};
-            if (res.user_id) {
-                filter = { _id: res.user_id };
+            if (stat.user_id) {
+                filter = { _id: stat.user_id };
             } else {
-                const escapedName = (res.name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const escapedName = (stat.name || '').replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
                 filter = { name: { $regex: new RegExp("^" + escapedName + "$", "i") } };
             }
 
             const player = await User.findOne(filter);
             if (player) {
-                // Failsafe for legacy documents missing stats schema structure
                 if (!player.stats) player.stats = {};
-                if (!player.stats.batting) player.stats.batting = { matches: 0, innings: 0, runs: 0, balls_faced: 0, fifties: 0, hundreds: 0, high_score: 0, strike_rate: 0 };
-                if (!player.stats.bowling) player.stats.bowling = { matches: 0, wickets: 0, overs: 0, runs_conceded: 0, best_bowling: { wickets: 0, runs: 0 } };
-                if (!player.stats.bowling.best_bowling) player.stats.bowling.best_bowling = { wickets: 0, runs: 0 };
+                if (!player.stats.batting) player.stats.batting = { matches: 0, innings: 0, runs: 0, balls_faced: 0, fifties: 0, hundreds: 0, high_score: 0, strike_rate: 0, fours: 0, sixes: 0, not_outs: 0 };
+                if (!player.stats.bowling) player.stats.bowling = { matches: 0, wickets: 0, overs: 0, balls_bowled: 0, runs_conceded: 0, best_bowling: { wickets: 0, runs: 0 }, five_wicket_hauls: 0 };
 
-                // Batting
-                if (res.b > 0) {
-                    player.stats.batting.matches = (player.stats.batting.matches || 0) + 1;
-                    player.stats.batting.innings = (player.stats.batting.innings || 0) + 1;
-                    player.stats.batting.runs = (player.stats.batting.runs || 0) + res.r;
-                    player.stats.batting.balls_faced = (player.stats.batting.balls_faced || 0) + res.b;
-                    if (res.r >= 100) player.stats.batting.hundreds = (player.stats.batting.hundreds || 0) + 1;
-                    else if (res.r >= 50) player.stats.batting.fifties = (player.stats.batting.fifties || 0) + 1;
-                    if (res.r > (player.stats.batting.high_score || 0)) player.stats.batting.high_score = res.r;
+                // --- BATTING UPDATE ---
+                if (stat.b > 0) {
+                    player.stats.batting.matches += 1;
+                    player.stats.batting.innings += 1;
+                    player.stats.batting.runs += (stat.r || 0);
+                    player.stats.batting.balls_faced += (stat.b || 0);
+                    player.stats.batting.fours += (stat.fours || 0);
+                    player.stats.batting.sixes += (stat.sixes || 0);
                     
-                    // Simple Avg/SR calc
+                    if (!stat.is_out) player.stats.batting.not_outs += 1;
+
+                    if (stat.r >= 100) player.stats.batting.hundreds += 1;
+                    else if (stat.r >= 50) player.stats.batting.fifties += 1;
+                    
+                    if (stat.r > (player.stats.batting.high_score || 0)) {
+                        player.stats.batting.high_score = stat.r;
+                    }
+
+                    // Derived Batting Stats
                     if (player.stats.batting.balls_faced > 0) {
-                        player.stats.batting.strike_rate = (player.stats.batting.runs / player.stats.batting.balls_faced) * 100;
+                        player.stats.batting.strike_rate = Number(((player.stats.batting.runs / player.stats.batting.balls_faced) * 100).toFixed(2));
+                    }
+                    const dismissals = player.stats.batting.innings - player.stats.batting.not_outs;
+                    if (dismissals > 0) {
+                        player.stats.batting.average = Number((player.stats.batting.runs / dismissals).toFixed(2));
+                    } else {
+                        player.stats.batting.average = player.stats.batting.runs;
                     }
                 }
 
-                // Bowling
-                if (res.o > 0 || res.rc > 0 || res.w > 0) {
-                    if (res.b === 0) player.stats.bowling.matches = (player.stats.bowling.matches || 0) + 1; 
-                    player.stats.bowling.wickets = (player.stats.bowling.wickets || 0) + res.w;
-                    player.stats.bowling.overs = (player.stats.bowling.overs || 0) + res.o;
-                    player.stats.bowling.runs_conceded = (player.stats.bowling.runs_conceded || 0) + res.rc;
-                    
+                // --- BOWLING UPDATE ---
+                // Convert o_float (balls/6) to balls bowled
+                const ballsBowledThisMatch = Math.round((stat.o || 0) * 6);
+                if (ballsBowledThisMatch > 0 || stat.rc > 0 || stat.w > 0) {
+                    if (stat.b === 0) player.stats.bowling.matches += 1; 
+                    player.stats.bowling.wickets += (stat.w || 0);
+                    player.stats.bowling.balls_bowled += ballsBowledThisMatch;
+                    player.stats.bowling.runs_conceded += (stat.rc || 0);
+
+                    // Update overs in standard notation (e.g. 10.4 balls -> internal float or just recalculated)
+                    player.stats.bowling.overs = Number((player.stats.bowling.balls_bowled / 6).toFixed(1));
+
+                    if (stat.w >= 5) player.stats.bowling.five_wicket_hauls += 1;
+
                     // Best Bowling
-                    const currentBest = player.stats.bowling.best_bowling;
-                    if (res.w > currentBest.wickets || (res.w === currentBest.wickets && res.rc < currentBest.runs) || currentBest.wickets === undefined) {
-                        player.stats.bowling.best_bowling = { wickets: res.w, runs: res.rc };
+                    const currentBest = player.stats.bowling.best_bowling || { wickets: 0, runs: 0 };
+                    if (stat.w > currentBest.wickets || (stat.w === currentBest.wickets && stat.rc < currentBest.runs) || currentBest.wickets === 0) {
+                        player.stats.bowling.best_bowling = { wickets: stat.w, runs: stat.rc };
+                    }
+
+                    // Economy
+                    if (player.stats.bowling.balls_bowled > 0) {
+                        player.stats.bowling.economy = Number(((player.stats.bowling.runs_conceded / player.stats.bowling.balls_bowled) * 6).toFixed(2));
                     }
                 }
-                
-                // Mongoose might not detect deeply nested un-schematized changes without markModified
+
                 player.markModified('stats');
                 await player.save();
             }
@@ -317,6 +338,7 @@ router.post('/stats/bulk-update', verifyToken, roleGuard(['PLAYER', 'CAPTAIN', '
 
         res.json({ success: true, message: 'Career registries updated successfully.' });
     } catch (err) {
+        console.error("Bulk Stats Update Error:", err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
