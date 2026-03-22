@@ -49,10 +49,13 @@ apiClient.interceptors.response.use(
 
 // Authentication APIs
 export const authAPI = {
-  login: (email, password, role) => apiClient.post('/auth/login', { email, password, role }),
+  login: (email, password, role, phone) => apiClient.post('/auth/login', { email, password, role, phone }),
   register: (name, email, phone, password) => apiClient.post('/auth/register', { name, email, phone, password }),
   googleLogin: (email, name, uid) => apiClient.post('/auth/google', { email, name, uid }),
   getProfile: () => apiClient.get('/auth/profile'),
+  sendOTP: (phone) => apiClient.post('/auth/send-otp', { phone }),
+  verifyOTP: (phone, code) => apiClient.post('/auth/verify-otp', { phone, code }),
+  updateProfile: (data) => apiClient.put('/auth/profile', data),
 };
 
 // Slots APIs

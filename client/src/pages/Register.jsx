@@ -144,14 +144,13 @@ const Register = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Email Address</label>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Email Address <span className="text-gray-300 normal-case font-medium">(optional)</span></label>
                             <div className="relative group">
                                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
                                 <input
                                     type="email"
                                     name="email"
-                                    required
-                                    placeholder="player@theturf.com"
+                                    placeholder="player@theturf.com (optional)"
                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/50 p-4 pl-14 rounded-2xl outline-none transition-all font-bold text-sm text-gray-900 placeholder:text-gray-300"
                                     value={email}
                                     onChange={onChange}

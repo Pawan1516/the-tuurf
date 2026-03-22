@@ -225,6 +225,157 @@ router.post('/checkin', verifyToken, roleGuard(['SCORER', 'ADMIN', 'admin', 'pla
     }
 });
 
+// --- COMPATIBILITY ROUTES FOR STANDALONE DASHBOARD ---
+
+/**
+ * @route   GET /api/players
+ * @desc    Get all players with filtering
+ * @access  Public
+ */
+router.get('/', async (req, res) => {
+    try {
+        const { search, role } = req.query;
+        let query = { role: { $in: ['PLAYER', 'CAPTAIN'] } };
+
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+        if (role) {
+            query['cricket_profile.primary_role'] = role;
+        }
+
+        const players = await User.find(query)
+            .select('name cricket_profile stats role')
+            .sort({ name: 1 });
+
+        // Transform for dashboard compatibility
+        const transformed = players.map(p => ({
+            _id: p._id,
+            name: p.name,
+            team: "The Turf Resident",
+            role: p.cricket_profile?.primary_role || 'Batsman',
+            batting: {
+                innings: p.stats?.batting?.innings || 0,
+                runs: p.stats?.batting?.runs || 0,
+                average: p.stats?.batting?.average || 0,
+                strikeRate: p.stats?.batting?.strike_rate || 0,
+                best: p.stats?.batting?.high_score?.toString() || "0",
+                notOuts: p.stats?.batting?.not_outs || 0,
+                fours: p.stats?.batting?.fours || 0,
+                sixes: p.stats?.batting?.sixes || 0,
+                fifties: p.stats?.batting?.fifties || 0,
+                hundreds: p.stats?.batting?.hundreds || 0
+            },
+            bowling: {
+                innings: p.stats?.bowling?.matches || 0,
+                wickets: p.stats?.bowling?.wickets || 0,
+                economy: p.stats?.bowling?.economy || 0,
+                overs: (p.stats?.bowling?.overs || 0).toString(),
+                best: `${p.stats?.bowling?.best_bowling?.wickets || 0}/${p.stats?.bowling?.best_bowling?.runs || 0}`,
+                runs: p.stats?.bowling?.runs_conceded || 0,
+                threeWickets: p.stats?.bowling?.three_wicket_hauls || 0,
+                fiveWickets: p.stats?.bowling?.five_wicket_hauls || 0
+            },
+            fielding: {
+                catches: p.stats?.fielding?.catches || 0,
+                runOuts: p.stats?.fielding?.run_outs || 0,
+                stumpings: p.stats?.fielding?.stumpings || 0
+            },
+            score: p.score || 0
+        }));
+
+        res.json(transformed);
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
+ * @route   GET /api/players/leaderboard
+ * @desc    Top 20 players by score
+ * @access  Public
+ */
+router.get('/leaderboard', async (req, res) => {
+    try {
+        const players = await User.find({ role: { $in: ['PLAYER', 'CAPTAIN'] } })
+            .select('name cricket_profile stats role')
+            .lean();
+
+        const transformed = players.map(p => {
+            // Recalculate score for lean objects since virtuals don't work in lean query without plugin
+            const score = (p.stats?.batting?.runs || 0) * 1 + 
+                          (p.stats?.bowling?.wickets || 0) * 20 + 
+                          (p.stats?.fielding?.catches || 0) * 10 + 
+                          (p.stats?.fielding?.run_outs || 0) * 15;
+            
+            return {
+                _id: p._id,
+                name: p.name,
+                team: "The Turf Elite",
+                role: p.cricket_profile?.primary_role || 'Batsman',
+                batting: { runs: p.stats?.batting?.runs || 0, average: p.stats?.batting?.average || 0 },
+                bowling: { wickets: p.stats?.bowling?.wickets || 0 },
+                score: score
+            };
+        }).sort((a, b) => b.score - a.score).slice(0, 20);
+
+        res.json(transformed);
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
+ * @route   GET /api/players/:id
+ * @desc    Get single player by ID
+ * @access  Public
+ */
+router.get('/:id', async (req, res) => {
+    try {
+        const p = await User.findById(req.params.id);
+        if (!p) return res.status(404).json({ success: false, message: 'Operative not found' });
+
+        const transformed = {
+            _id: p._id,
+            name: p.name,
+            team: "The Turf Resident",
+            role: p.cricket_profile?.primary_role || 'Batsman',
+            batting: {
+                innings: p.stats?.batting?.innings || 0,
+                runs: p.stats?.batting?.runs || 0,
+                average: p.stats?.batting?.average || 0,
+                strikeRate: p.stats?.batting?.strike_rate || 0,
+                best: p.stats?.batting?.high_score?.toString() || "0",
+                notOuts: p.stats?.batting?.not_outs || 0,
+                fours: p.stats?.batting?.fours || 0,
+                sixes: p.stats?.batting?.sixes || 0,
+                fifties: p.stats?.batting?.fifties || 0,
+                hundreds: p.stats?.batting?.hundreds || 0
+            },
+            bowling: {
+                innings: p.stats?.bowling?.matches || 0,
+                wickets: p.stats?.bowling?.wickets || 0,
+                economy: p.stats?.bowling?.economy || 0,
+                overs: (p.stats?.bowling?.overs || 0).toString(),
+                best: `${p.stats?.bowling?.best_bowling?.wickets || 0}/${p.stats?.bowling?.best_bowling?.runs || 0}`,
+                runs: p.stats?.bowling?.runs_conceded || 0,
+                threeWickets: p.stats?.bowling?.three_wicket_hauls || 0,
+                fiveWickets: p.stats?.bowling?.five_wicket_hauls || 0
+            },
+            fielding: {
+                catches: p.stats?.fielding?.catches || 0,
+                runOuts: p.stats?.fielding?.run_outs || 0,
+                stumpings: p.stats?.fielding?.stumpings || 0
+            },
+            score: p.score || 0
+        };
+
+        res.json(transformed);
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // @route   GET /api/players/profile/:name
 // @desc    Fetch player career profile by name (Public)
 router.get('/profile/:name', async (req, res) => {

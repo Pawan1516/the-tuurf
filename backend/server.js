@@ -37,15 +37,44 @@ const formatRoutes = require('./routes/formats');
 
 const seedSettings = require('./utils/settingsSeeder');
 
-// Database Connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(async () => {
+// Database Connection with auto-reconnect
+const connectDB = async () => {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error('❌ MONGODB_URI is not set in .env');
+    return;
+  }
+  try {
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 15000,
+      family: 4, // Force IPv4 — avoids IPv6 Atlas issues
+      maxPoolSize: 10,
+      retryWrites: true,
+    });
     console.log('✅ MongoDB Connected Successfully');
     await seedSettings();
     const { autoGenerateSlots } = require('./utils/slotGenerator');
     await autoGenerateSlots(30);
-  })
-  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+  } catch (err) {
+    console.error('❌ MongoDB Connection Error:', err.message);
+    console.log('💡 Fix: MongoDB Atlas → Network Access → Add 0.0.0.0/0 to allow all IPs');
+    console.log('🔄 Retrying in 10 seconds...');
+    setTimeout(connectDB, 10000); // Auto-retry
+  }
+};
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ MongoDB disconnected. Attempting reconnect in 5s...');
+  setTimeout(connectDB, 5000);
+});
+mongoose.connection.on('reconnected', () => {
+  console.log('✅ MongoDB reconnected!');
+});
+
+connectDB();
+
 
 const app = express();
 

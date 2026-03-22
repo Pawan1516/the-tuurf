@@ -13,7 +13,11 @@ import {
     Zap,
     MapPin,
     Trophy,
-    Swords
+    Swords,
+    Phone,
+    Edit3,
+    Save,
+    X
 } from 'lucide-react';
 import io from 'socket.io-client';
 import AuthContext from '../context/AuthContext';
@@ -32,6 +36,11 @@ const UserDashboard = () => {
     const [settings, setSettings] = useState({ TURF_NAME: 'The Turf', TURF_LOCATION: 'The Turf Stadium' });
     const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [editForm, setEditForm] = useState({});
+    const [editLoading, setEditLoading] = useState(false);
+    const [editError, setEditError] = useState('');
+    const [editSuccess, setEditSuccess] = useState('');
     const navigate = useNavigate();
 
     const navItems = [
@@ -139,6 +148,59 @@ const UserDashboard = () => {
         navigate(`/scoring/${match._id}`);
     };
 
+    const startEditProfile = () => {
+        setEditForm({
+            name: profile?.name || '',
+            phone: profile?.phone || '',
+            primary_role: profile?.cricket_profile?.primary_role || 'Batsman',
+            batting_style: profile?.cricket_profile?.batting_style || 'Right-hand bat',
+            bowling_style: profile?.cricket_profile?.bowling_style || 'None',
+        });
+        setEditError('');
+        setEditSuccess('');
+        setIsEditingProfile(true);
+    };
+
+    const cancelEdit = () => {
+        setIsEditingProfile(false);
+        setEditError('');
+        setEditSuccess('');
+    };
+
+    const handleSaveProfile = async (e) => {
+        e.preventDefault();
+        setEditError('');
+        setEditSuccess('');
+        if (editForm.phone && !/^[0-9]{10}$/.test(editForm.phone)) {
+            setEditError('Mobile number must be exactly 10 digits.');
+            return;
+        }
+        setEditLoading(true);
+        try {
+            const res = await authAPI.updateProfile({
+                name: editForm.name,
+                phone: editForm.phone,
+                cricket_profile: {
+                    primary_role: editForm.primary_role,
+                    batting_style: editForm.batting_style,
+                    bowling_style: editForm.bowling_style,
+                }
+            });
+            if (res.data?.success) {
+                setProfile(res.data.user);
+                localStorage.setItem('user', JSON.stringify(res.data.user));
+                setEditSuccess('Profile updated successfully!');
+                setTimeout(() => { setIsEditingProfile(false); setEditSuccess(''); }, 1500);
+            } else {
+                setEditError(res.data?.message || 'Update failed.');
+            }
+        } catch (err) {
+            setEditError(err.response?.data?.message || 'Failed to save profile.');
+        } finally {
+            setEditLoading(false);
+        }
+    };
+
     const getStatusInfo = (status) => {
         switch (status) {
             case 'confirmed': return { icon: <CheckCircle className="text-emerald-500" size={16} />, label: 'CONFIRMED', color: 'text-emerald-600', bg: 'bg-emerald-50' };
@@ -176,7 +238,7 @@ const UserDashboard = () => {
                     <div className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 mb-8">
                         <p className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest mb-1">Authenticated As</p>
                         <h3 className="text-lg font-black text-emerald-900 uppercase truncate text-sm">{user?.name}</h3>
-                        <p className="text-[10px] font-bold text-emerald-600/60 truncate">{user?.email}</p>
+                        <p className="text-[10px] font-bold text-emerald-600/60 truncate">+91 {user?.phone}</p>
                     </div>
 
                     <button
@@ -247,31 +309,143 @@ const UserDashboard = () => {
                 {activeTab === 'profile' && (
                     <div className="space-y-10">
                         <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
-                            <div className="flex flex-col md:flex-row items-center gap-10">
-                                <div className="relative group">
-                                    <div className="w-40 h-40 md:w-56 md:h-56 rounded-[3rem] overflow-hidden border-8 border-emerald-50 bg-emerald-100 flex items-center justify-center shadow-2xl transition-transform group-hover:scale-105 duration-500">
-                                        {profile?.personal?.photo ? (
-                                            <img src={profile.personal.photo} alt={profile.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <Zap size={64} className="text-emerald-300" />
-                                        )}
+                            {!isEditingProfile ? (
+                                <div className="flex flex-col md:flex-row items-center gap-10">
+                                    <div className="relative group">
+                                        <div className="w-40 h-40 md:w-56 md:h-56 rounded-[3rem] overflow-hidden border-8 border-emerald-50 bg-emerald-100 flex items-center justify-center shadow-2xl transition-transform group-hover:scale-105 duration-500">
+                                            {profile?.personal?.photo ? (
+                                                <img src={profile.personal.photo} alt={profile.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Zap size={64} className="text-emerald-300" />
+                                            )}
+                                        </div>
+                                        <div className="absolute -bottom-4 -right-4 bg-emerald-600 text-white p-5 rounded-3xl shadow-xl shadow-emerald-200 border-4 border-white">
+                                            <Trophy size={24} />
+                                        </div>
                                     </div>
-                                    <div className="absolute -bottom-4 -right-4 bg-emerald-600 text-white p-5 rounded-3xl shadow-xl shadow-emerald-200 border-4 border-white">
-                                        <Trophy size={24} />
+                                    <div className="flex-1 text-center md:text-left space-y-4">
+                                        <div className="inline-flex items-center gap-3 bg-emerald-50 px-5 py-2 rounded-full border border-emerald-100">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                            <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest leading-none">PLAYER PROFILE</span>
+                                        </div>
+                                        <h2 className="text-5xl md:text-7xl font-black text-gray-900 uppercase tracking-tighter leading-[0.8]">{profile?.name}</h2>
+                                        <div className="flex items-center gap-2 text-gray-500 font-mono text-sm border-l-4 border-emerald-500 pl-4 py-1">
+                                            <Phone size={14} className="text-emerald-600" />
+                                            <span>+91 {profile?.phone}</span>
+                                        </div>
+                                        <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                                            <div className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.primary_role || 'All-Rounder'}</div>
+                                            <div className="bg-emerald-100 text-emerald-800 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.batting_style || 'Right Hand'}</div>
+                                            <div className="bg-emerald-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200">CAREER SCORE: {profile?.score || 0}</div>
+                                        </div>
+                                        <div className="pt-2">
+                                            <button
+                                                onClick={startEditProfile}
+                                                className="inline-flex items-center gap-2 bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-200 text-gray-600 hover:text-emerald-700 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                            >
+                                                <Edit3 size={14} /> Edit Profile
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex-1 text-center md:text-left space-y-4">
-                                    <div className="inline-flex items-center gap-3 bg-emerald-50 px-5 py-2 rounded-full border border-emerald-100">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest leading-none">PLAYER PROFILE</span>
+                            ) : (
+                                <form onSubmit={handleSaveProfile} className="space-y-6">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Edit Profile</h3>
+                                        <button type="button" onClick={cancelEdit} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-all">
+                                            <X size={18} />
+                                        </button>
                                     </div>
-                                    <h2 className="text-5xl md:text-7xl font-black text-gray-900 uppercase tracking-tighter leading-[0.8]">{profile?.name}</h2>
-                                    <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                        <div className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.primary_role || 'All-Rounder'}</div>
-                                        <div className="bg-emerald-100 text-emerald-800 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.batting_style || 'Right Hand'}</div>
+
+                                    {editError && (
+                                        <div className="bg-red-50 border border-red-100 text-red-600 text-[11px] font-black uppercase tracking-wide px-5 py-4 rounded-2xl">{editError}</div>
+                                    )}
+                                    {editSuccess && (
+                                        <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[11px] font-black uppercase tracking-wide px-5 py-4 rounded-2xl">{editSuccess}</div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Full Name</label>
+                                            <input
+                                                type="text"
+                                                value={editForm.name}
+                                                onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                                placeholder="Your name"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Mobile Number</label>
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">+91</span>
+                                                <input
+                                                    type="tel"
+                                                    value={editForm.phone}
+                                                    onChange={e => setEditForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 pl-14 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                                    placeholder="10-digit number"
+                                                    maxLength={10}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Cricket Role</label>
+                                            <select
+                                                value={editForm.primary_role}
+                                                onChange={e => setEditForm(f => ({ ...f, primary_role: e.target.value }))}
+                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                            >
+                                                {['Batsman', 'Bowler', 'All-rounder', 'Wicketkeeper'].map(r => (
+                                                    <option key={r} value={r}>{r}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Batting Style</label>
+                                            <select
+                                                value={editForm.batting_style}
+                                                onChange={e => setEditForm(f => ({ ...f, batting_style: e.target.value }))}
+                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                            >
+                                                {['Right-hand bat', 'Left-hand bat'].map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1 md:col-span-2">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Bowling Style</label>
+                                            <select
+                                                value={editForm.bowling_style}
+                                                onChange={e => setEditForm(f => ({ ...f, bowling_style: e.target.value }))}
+                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                            >
+                                                {['Right-arm fast', 'Right-arm medium', 'Right-arm offbreak', 'Right-arm legbreak', 'Left-arm fast', 'Left-arm medium', 'Left-arm orthodox', 'Left-arm chinaman', 'None'].map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+
+                                    <div className="flex gap-4 pt-2">
+                                        <button
+                                            type="submit"
+                                            disabled={editLoading}
+                                            className="flex-1 flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                                        >
+                                            <Save size={15} /> {editLoading ? 'Saving...' : 'Save Changes'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={cancelEdit}
+                                            className="px-6 py-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-widest transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -281,21 +455,21 @@ const UserDashboard = () => {
                                     <Swords size={16} /> Batting Arsenal
                                 </h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.runs || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Runs</p>
+                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center col-span-2">
+                                        <p className="text-4xl font-black text-gray-900">{profile?.stats?.batting?.runs || 0}</p>
+                                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Total Runs</p>
                                     </div>
                                     <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.average || 0}</p>
+                                        <p className="text-2xl font-black text-gray-900">{profile?.stats?.batting?.average || 0}</p>
                                         <p className="text-[8px] font-black text-emerald-600 uppercase">Avg</p>
                                     </div>
                                     <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.strike_rate || 0}</p>
+                                        <p className="text-2xl font-black text-gray-900">{profile?.stats?.batting?.strike_rate || 0}</p>
                                         <p className="text-[8px] font-black text-emerald-600 uppercase">S/R</p>
                                     </div>
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.batting?.high_score || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Best</p>
+                                    <div className="bg-gray-50 p-6 rounded-3xl text-center col-span-2">
+                                        <p className="text-2xl font-black text-gray-900">{profile?.stats?.batting?.high_score || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Personal Best</p>
                                     </div>
                                     <div className="bg-gray-50 p-4 rounded-3xl text-center">
                                         <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.fours || 0}</p>
@@ -307,10 +481,18 @@ const UserDashboard = () => {
                                     </div>
                                     <div className="bg-gray-50 p-4 rounded-3xl text-center">
                                         <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.not_outs || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">NO</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">N/O</p>
                                     </div>
                                     <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.matches || 0}</p>
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.fifties || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">50s</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.hundreds || 0}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">100s</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
+                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.innings || 0}</p>
                                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Inns</p>
                                     </div>
                                 </div>

@@ -108,7 +108,21 @@ const userSchema = new mongoose.Schema({
         date_of_birth: Date,
         gender: { type: String, enum: ['Male', 'Female', 'Other'] }
     }
-}, { timestamps: true });
+}, { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+// Virtual score = runs×1 + wickets×20 + catches×10 + runOuts×15
+userSchema.virtual('score').get(function() {
+    const batRuns = this.stats?.batting?.runs || 0;
+    const wickets = this.stats?.bowling?.wickets || 0;
+    const catches = this.stats?.fielding?.catches || 0;
+    const runOuts = this.stats?.fielding?.run_outs || 0;
+    
+    return (batRuns * 1) + (wickets * 20) + (catches * 10) + (runOuts * 15);
+});
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

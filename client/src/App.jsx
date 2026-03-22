@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Briefcase } from 'lucide-react';
 import AdminLogin from './pages/admin/Login';
 import WorkerLogin from './pages/worker/Login';
-import { AuthProvider } from './context/AuthContext';
+import AuthContext, { AuthProvider } from './context/AuthContext';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import PublicHome from './pages/PublicHome';
@@ -32,33 +32,54 @@ import UserDashboard from './pages/UserDashboard';
 import ScoringDashboard from './pages/ScoringDashboard';
 import LiveScoreView from './pages/LiveScoreView';
 import PlayerProfile from './pages/PlayerProfile';
+import PlayerStatsDashboard from './pages/PlayerStatsDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import CricBotWidget from './components/CricBotWidget';
 import FirebaseAuthTest from './pages/FirebaseAuthTest';
 import { slotsAPI } from './api/client';
 
-const Layout = ({ children, turfName = "The Turf" }) => (
-  <div className="min-h-screen bg-gray-50 font-sans selection:bg-emerald-100 selection:text-emerald-900">
-    {/* ── Top Nav ── */}
-    <nav className="bg-white sticky top-0 z-[100] border-b border-gray-50 h-16 md:h-20 flex items-center">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 w-full flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-2 md:gap-3 group">
-          <div className="bg-emerald-600 text-white p-1.5 md:p-2 rounded-xl shadow-lg shadow-emerald-200 group-hover:rotate-12 transition-transform">
-            <Briefcase size={18} />
-          </div>
-          <span className="text-lg md:text-xl font-black text-slate-900 tracking-tighter uppercase whitespace-nowrap">{turfName}</span>
-        </Link>
-        <div className="flex items-center gap-3 md:gap-8">
-          <div className="flex items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-400">
-            <Link to="/login" className="hover:text-emerald-600 transition-colors">Login</Link>
-            <span className="opacity-20 text-slate-900">•</span>
-            <Link to="/admin/login" className="hover:text-emerald-600 transition-colors hidden sm:block">Admin</Link>
+const NavLinks = () => {
+    const { user, logout } = React.useContext(AuthContext);
+
+    if (user) {
+        let dashboardPath = '/dashboard';
+        const role = (user.role || '').toLowerCase();
+        if (role === 'admin') dashboardPath = '/admin/dashboard';
+        else if (role === 'worker') dashboardPath = '/worker/dashboard';
+
+        return (
+            <div className="flex items-center gap-4">
+                <Link to={dashboardPath} className="text-emerald-600 font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] hover:text-emerald-700 transition-colors">Dashboard</Link>
+                <button onClick={logout} className="bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all">Logout</button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-400">
+            <Link to="/login" className="bg-slate-100 hover:bg-emerald-600 hover:text-white px-4 py-2 rounded-xl transition-all text-slate-900">Login</Link>
             <span className="opacity-20 text-slate-900 hidden sm:block">•</span>
-            <Link to="/worker/login" className="hover:text-emerald-600 transition-colors hidden sm:block">Worker</Link>
-          </div>
+            <Link to="/admin/login" className="hover:text-emerald-600 transition-colors hidden sm:block">Admin</Link>
         </div>
-      </div>
-    </nav>
+    );
+};
+
+const Layout = ({ children, turfName = "The Turf" }) => (
+    <div className="min-h-screen bg-gray-50 font-sans selection:bg-emerald-100 selection:text-emerald-900">
+        {/* ── Top Nav ── */}
+        <nav className="bg-white sticky top-0 z-[100] border-b border-gray-50 h-16 md:h-20 flex items-center shadow-sm shadow-emerald-500/5">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 w-full flex justify-between items-center">
+                <Link to="/" className="flex items-center gap-2 md:gap-3 group">
+                    <div className="bg-emerald-600 text-white p-1.5 md:p-2 rounded-xl shadow-lg shadow-emerald-200 group-hover:rotate-12 transition-transform">
+                        <Briefcase size={18} />
+                    </div>
+                    <span className="text-lg md:text-xl font-black text-slate-900 tracking-tighter uppercase whitespace-nowrap">{turfName}</span>
+                </Link>
+                <NavLinks />
+            </div>
+        </nav>
+
+        <main>{children}</main>
 
     <main>{children}</main>
 
@@ -67,7 +88,14 @@ const Layout = ({ children, turfName = "The Turf" }) => (
       <div className="max-w-7xl mx-auto px-4 text-center">
         <h3 className="text-xl md:text-2xl font-black mb-3 md:mb-4 text-white uppercase tracking-tighter">🏟️ {turfName}</h3>
         <p className="text-gray-400 text-sm max-w-md mx-auto mb-4 md:mb-8">Premium booking platform for cricket and football turfs. Elevate your game with us.</p>
-        <p className="text-xs text-gray-600">© 2026 {turfName} Inc. Built with ❤️ for sports enthusiasts.</p>
+        <div className="flex items-center justify-center gap-4 mt-6 text-[10px] font-black uppercase tracking-widest text-gray-500">
+          <Link to="/login" className="hover:text-emerald-400 transition-colors">Player Login</Link>
+          <span className="opacity-20 text-gray-700">•</span>
+          <Link to="/admin/login" className="hover:text-emerald-400 transition-colors">Admin</Link>
+          <span className="opacity-20 text-gray-700">•</span>
+          <Link to="/worker/login" className="hover:text-emerald-400 transition-colors">Worker</Link>
+        </div>
+        <p className="text-xs text-gray-600 mt-6">© 2026 {turfName} Inc. Built with ❤️ for sports enthusiasts.</p>
       </div>
     </footer>
   </div>
@@ -113,15 +141,16 @@ function App() {
           <Route path="/booking-success" element={<SuccessPage />} />
           <Route path="/live/:id" element={<LiveScoreView />} />
           <Route path="/player/:id" element={<PlayerProfile />} />
+          <Route path="/stats-dashboard" element={<PlayerStatsDashboard />} />
 
           {/* User Dashboard */}
           <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['user']}>
+            <ProtectedRoute allowedRoles={['user', 'player']}>
               <UserDashboard />
             </ProtectedRoute>
           } />
           <Route path="/scoring/:id" element={
-            <ProtectedRoute allowedRoles={['user', 'admin']}>
+            <ProtectedRoute allowedRoles={['user', 'player', 'admin']}>
               <ScoringDashboard />
             </ProtectedRoute>
           } />

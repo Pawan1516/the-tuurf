@@ -26,9 +26,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
-        // Role not authorized - redirect to home or unauthorized page
-        return <Navigate to="/" replace />;
+    if (allowedRoles) {
+        const userRole = (user.role || '').toLowerCase();
+        const hasAccess = allowedRoles.some(role => role.toLowerCase() === userRole);
+        
+        if (!hasAccess) {
+            // Role not authorized - redirect to home or unauthorized page
+            return <Navigate to="/" replace />;
+        }
     }
 
     return children;
