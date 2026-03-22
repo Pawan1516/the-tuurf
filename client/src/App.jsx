@@ -78,10 +78,7 @@ const Layout = ({ children, turfName = "The Turf" }) => (
                 <NavLinks />
             </div>
         </nav>
-
         <main>{children}</main>
-
-    <main>{children}</main>
 
     {/* ── Footer ── */}
     <footer className="bg-gray-900 text-white py-10 md:py-20 mt-10 md:mt-20 pb-safe">
