@@ -60,7 +60,7 @@ const CameraScanner = ({ onScan }) => {
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: 'dontInvert'
+            inversionAttempts: 'both' // Vital for diverse lighting and dark-mode QRs
         });
 
         if (code && code.data) {
@@ -77,14 +77,20 @@ const CameraScanner = ({ onScan }) => {
 
         const startCamera = async () => {
             const constraintsList = [
-                // 1. Try rear camera with high resolution
-                { video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
-                // 2. Try rear camera with ideal high resolution
-                { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
-                // 3. Try any rear camera without resolution constraints
+                // 1. High-Performance Mobile Constraints (Prioritize rear high-res)
+                { 
+                    video: { 
+                        facingMode: { ideal: 'environment' },
+                        width: { min: 640, ideal: 1920, max: 1920 },
+                        height: { min: 480, ideal: 1080, max: 1080 },
+                        frameRate: { ideal: 30, max: 60 }
+                    } 
+                },
+                // 2. Standard Mobile Rear
                 { video: { facingMode: { exact: 'environment' } } },
-                { video: { facingMode: { ideal: 'environment' } } },
-                // 4. Fallback to any available camera
+                // 3. Fallback Rear
+                { video: { facingMode: 'environment' } },
+                // 4. Basic video
                 { video: true }
             ];
 
@@ -94,22 +100,15 @@ const CameraScanner = ({ onScan }) => {
             for (const constraints of constraintsList) {
                 try {
                     stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    break; // Success!
+                    if (stream) break;
                 } catch (err) {
-                    console.warn(`Failed with constraints: ${JSON.stringify(constraints)}`, err);
+                    console.warn(`Scanner: Constraints fallback triggered`, err.name);
                     lastErr = err;
                 }
             }
 
             if (!stream) {
-                console.error('All camera constraint attempts failed:', lastErr);
-                if (lastErr && (lastErr.name === 'NotAllowedError' || lastErr.name === 'PermissionDeniedError')) {
-                    setCamError('Camera permission denied. Click the camera icon in your browser address bar and allow access, then try again.');
-                } else if (lastErr && lastErr.name === 'NotFoundError') {
-                    setCamError('No camera found on this device.');
-                } else {
-                    setCamError(`Camera error: ${lastErr ? lastErr.message : 'Unknown'}`);
-                }
+                setCamError('Scanner Error: Permission denied or no camera detected. If you are on an iQOO/Vivo device, ensure you are using Chrome and have granted system-level camera permissions to the browser.');
                 return;
             }
 
@@ -120,15 +119,14 @@ const CameraScanner = ({ onScan }) => {
                 video.onloadedmetadata = () => {
                     video.play().then(() => {
                         setIsReady(true);
-                        // Scan every 200ms
-                        intervalRef.current = setInterval(scanFrame, 200);
-                    }).catch(e => console.error('Video play error:', e));
+                        // Scan more frequently (150ms) for better performance on premium devices
+                        intervalRef.current = setInterval(scanFrame, 150);
+                    }).catch(e => console.error('Scanner stream playback failed:', e));
                 };
             }
         };
 
         startCamera();
-
         return () => stopCamera();
     }, [scanFrame, stopCamera]);
 
