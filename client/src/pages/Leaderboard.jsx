@@ -42,7 +42,7 @@ const Leaderboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-x-hidden pb-20">
+        <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-x-hidden pb-10">
             {/* Header */}
             <header className="px-6 pt-12 pb-6 flex items-center justify-center relative bg-white border-b border-slate-100">
                 <button 
@@ -57,25 +57,8 @@ const Leaderboard = () => {
                 </button>
             </header>
 
-            {/* Toggle Switch */}
-            <div className="px-6 mb-8 mt-6">
-                <div className="flex bg-slate-100 p-1.5 rounded-2xl max-w-sm mx-auto shadow-sm">
-                    {['Team members', 'Leaderboard'].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveToggle(tab)}
-                            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-                                activeToggle === tab ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'text-slate-400'
-                            }`}
-                        >
-                            {tab}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             {/* 3D Podium Section - Green & White Theme */}
-            <div className="relative px-6 flex justify-center items-end gap-3 pt-20 pb-12 min-h-[420px] bg-white border-b border-slate-100 shadow-sm">
+            <div className="relative px-6 flex justify-center items-end gap-3 pt-24 pb-12 min-h-[420px] bg-white border-b border-slate-100 shadow-sm">
                 {topThree.map((player) => {
                     const isRank1 = player.rank === 1;
                     const isRank2 = player.rank === 2;
@@ -170,21 +153,12 @@ const Leaderboard = () => {
                                 <h4 className="text-[17px] font-bold text-slate-800 tracking-tight truncate leading-tight mb-1">{player.name}</h4>
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-[12px] font-black text-emerald-600 uppercase tracking-widest">{player.careerScore} pts</span>
-                                    {completion > 50 && <span className="text-[12px] font-bold text-orange-500 animate-pulse">Hot 🔥</span>}
+                                    {completion > 70 && <span className="text-[12px] font-bold text-orange-500 animate-pulse">Hot 🔥</span>}
                                 </div>
                             </div>
 
-                            {/* Percentage Ring */}
-                            <div className="relative w-12 h-12 flex items-center justify-center">
-                                <svg className="w-full h-full -rotate-90">
-                                    <circle cx="24" cy="24" r="20" fill="transparent" stroke="#F1F5F9" strokeWidth="5" />
-                                    <circle 
-                                        cx="24" cy="24" r="20" fill="transparent" stroke="#10b981" 
-                                        strokeWidth="5" strokeDasharray={`${(completion * 125) / 100} 125`}
-                                        strokeLinecap="round" className="transition-all duration-1000 delay-300"
-                                    />
-                                </svg>
-                                <span className="absolute text-[10px] font-black text-slate-400">{Math.round(completion)}%</span>
+                            <div className="text-right">
+                                <p className="text-[16px] font-black text-emerald-600">#{displayRank}</p>
                             </div>
                         </div>
                     );
@@ -196,21 +170,6 @@ const Leaderboard = () => {
                         <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-300">New Gladiators Joining soon...</p>
                     </div>
                 )}
-            </div>
-            
-            {/* Custom Bottom Tab Bar - White Theme */}
-            <div className="fixed bottom-0 left-0 right-0 h-20 bg-white/95 backdrop-blur-xl border-t border-slate-100 z-50 px-8 flex items-center justify-between shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
-                {[
-                    { icon: ZapIcon, label: 'Arena' },
-                    { icon: TrophyIcon, label: 'League', active: true },
-                    { icon: StarIcon, label: 'My Stats' },
-                    { icon: SearchIcon, label: 'Scout' }
-                ].map((item, i) => (
-                    <div key={i} className={`flex flex-col items-center gap-1 transition-all ${item.active ? 'text-emerald-600 scale-110' : 'text-slate-300'}`}>
-                        <item.icon size={22} strokeWidth={item.active ? 3 : 2} fill={item.active ? 'rgba(16, 185, 129, 0.1)' : 'none'} />
-                        <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
-                    </div>
-                ))}
             </div>
         </div>
     );
