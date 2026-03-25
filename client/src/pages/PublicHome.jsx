@@ -5,8 +5,8 @@ import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer, Activity } from 
 import io from 'socket.io-client';
 
 const PublicHome = () => {
-    const SOCKET_URL = process.env.NODE_ENV === 'production' 
-        ? 'https://the-tuurf-ufkd.onrender.com' 
+    const SOCKET_URL = process.env.NODE_ENV === 'production'
+        ? 'https://the-tuurf-ufkd.onrender.com'
         : 'http://localhost:5001';
     const getISODate = (date = new Date()) => {
         return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
@@ -36,7 +36,7 @@ const PublicHome = () => {
     useEffect(() => {
         const init = async () => {
             setLoading(true);
-            
+
             // 1. Fetch Slots (Primary)
             try {
                 const res = await slotsAPI.getAll(selectedDate);
@@ -78,10 +78,10 @@ const PublicHome = () => {
 
     useEffect(() => {
         const interval = setInterval(fetchLiveMatches, 20000); // Fallback Polling
-        
+
         // --- REAL-TIME INTEL (Workflow 5) ---
         const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
-        
+
         socket.on('connect', () => {
             console.log('🟢 Home Intel Connected');
             // Join all live match rooms
@@ -91,8 +91,8 @@ const PublicHome = () => {
         socket.on('match:update', (data) => {
             setLiveMatches(prev => prev.map(m => {
                 if (String(m._id) === String(data.matchId)) {
-                    return { 
-                        ...m, 
+                    return {
+                        ...m,
                         ...data,
                         status: data.status || m.status,
                         // Ensure top-level scores are updated from live payload
@@ -163,11 +163,11 @@ const PublicHome = () => {
                     </p>
 
                     <div className="flex flex-wrap justify-center gap-4 mb-4 md:mb-10">
-                        <Link 
-                            to="/leaderboard" 
+                        <Link
+                            to="/leaderboard"
                             className="bg-white/10 hover:bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/20 backdrop-blur-md transition-all shadow-2xl flex items-center gap-3"
                         >
-                            <Trophy size={16} className="text-yellow-400" /> Hall of Fame
+                            <Trophy size={16} className="text-yellow-400" /> Leaderboard
                         </Link>
                     </div>
 
@@ -187,7 +187,7 @@ const PublicHome = () => {
 
             {/* MAIN INTERFACE OVERLAPPING HERO */}
             <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-10 md:-mt-32 relative z-20 mb-8 md:mb-32">
-                
+
                 {/* LIVE ARENA INTEL - PREMIUM OVERHAUL */}
                 {liveMatches.length > 0 && (
                     <div className="bg-[#050805] rounded-[3rem] p-8 md:p-14 mb-16 shadow-[0_50px_100px_rgba(0,0,0,0.4)] border border-white/10 overflow-hidden relative">
@@ -203,15 +203,15 @@ const PublicHome = () => {
                                     <Zap size={20} className="text-emerald-500 fill-emerald-500 animate-pulse" />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm md:text-base font-black uppercase tracking-[0.4em] text-emerald-400 leading-none">Arena Deployment</h3>
-                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-2">{liveMatches.length} Operational Units</p>
+                                    <h3 className="text-sm md:text-base font-black uppercase tracking-[0.4em] text-emerald-400 leading-none">Book Your Slot</h3>
+                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-2">{liveMatches.length} Today's Slots</p>
                                 </div>
                             </div>
                             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
                                 <Activity size={14} className="text-emerald-500" />
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Global Sync Active</span>
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Active</span>
                             </div>
-                            <Link 
+                            <Link
                                 to="/leaderboard"
                                 className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-lg"
                             >
@@ -221,14 +221,14 @@ const PublicHome = () => {
 
                         <div className={`relative z-10 flex gap-6 md:gap-10 overflow-x-auto no-scrollbar pb-8 ${liveMatches.length === 1 ? 'justify-center' : ''}`}>
                             {liveMatches.map((match) => (
-                                <Link 
-                                    key={match._id} 
+                                <Link
+                                    key={match._id}
                                     to={`/live/${match._id}`}
                                     className="flex-shrink-0 w-[310px] md:w-[420px] bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-500 group relative overflow-hidden shadow-2xl"
                                 >
                                     {/* Card Glow */}
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    
+
                                     <div className="flex justify-between items-start mb-8">
                                         <div className="flex flex-col gap-1">
                                             <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{match.format || 'T20'} • {match.venue || 'Main Arena'}</span>
@@ -237,9 +237,8 @@ const PublicHome = () => {
                                                 <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Active Intel</span>
                                             </div>
                                         </div>
-                                        <div className={`px-4 py-1.5 rounded-full border text-[9px] font-[1000] uppercase tracking-widest ${
-                                            match.status === 'In Progress' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : 'bg-white/5 border-white/10 text-white/40'
-                                        }`}>
+                                        <div className={`px-4 py-1.5 rounded-full border text-[9px] font-[1000] uppercase tracking-widest ${match.status === 'In Progress' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : 'bg-white/5 border-white/10 text-white/40'
+                                            }`}>
                                             {match.status === 'In Progress' ? 'LIVE' : match.status === 'Completed' ? 'FINAL' : 'UPCOMING'}
                                         </div>
                                     </div>
@@ -251,9 +250,8 @@ const PublicHome = () => {
                                         ].map((t) => (
                                             <div key={t.idx} className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-500 ${
-                                                        t.active ? 'bg-emerald-500/20 border-emerald-500/40 scale-110 shadow-lg shadow-emerald-500/10' : 'bg-white/5 border-white/10 opacity-40'
-                                                    }`}>
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-500 ${t.active ? 'bg-emerald-500/20 border-emerald-500/40 scale-110 shadow-lg shadow-emerald-500/10' : 'bg-white/5 border-white/10 opacity-40'
+                                                        }`}>
                                                         <Users size={22} className={t.active ? 'text-emerald-400' : 'text-white'} />
                                                     </div>
                                                     <div className="flex flex-col">
@@ -295,9 +293,9 @@ const PublicHome = () => {
                                                 <div className="flex items-center gap-2.5 text-white/20">
                                                     <Timer size={14} />
                                                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-                                                        {match.status === 'In Progress' ? 
-                                                            formatOvers(match.innings?.[match.current_innings_index || 0]?.overs_completed) + ' OVS' : 
-                                                            new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                        {match.status === 'In Progress' ?
+                                                            formatOvers(match.innings?.[match.current_innings_index || 0]?.overs_completed) + ' OVS' :
+                                                            new Date(match.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
                                                 </div>
                                             )}
