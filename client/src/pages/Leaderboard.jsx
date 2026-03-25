@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Swords, Shield, Medal, ChevronLeft, Search, Star, Zap } from 'lucide-react';
+import { Trophy, ChevronLeft, Search, Star, Zap } from 'lucide-react';
 import { leaderboardAPI } from '../api/client';
 
 const Leaderboard = () => {
     const [players, setPlayers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [activeToggle, setActiveToggle] = useState('Leaderboard');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -25,141 +25,183 @@ const Leaderboard = () => {
         fetchLeaderboard();
     }, []);
 
-    const filteredPlayers = players.filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Podium order: [Rank 2, Rank 1, Rank 3]
+    const topThree = [];
+    if (players.length > 0) {
+        if (players[1]) topThree.push({ ...players[1], rank: 2 });
+        if (players[0]) topThree.push({ ...players[0], rank: 1 });
+        if (players[2]) topThree.push({ ...players[2], rank: 3 });
+    }
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-6">
-                <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-                <p className="text-xs font-black text-emerald-500 uppercase tracking-[0.3em] animate-pulse">Calculating Rankings...</p>
+            <div className="min-h-screen bg-[#121217] flex flex-col items-center justify-center gap-6">
+                <div className="w-10 h-10 border-4 border-white/10 border-t-white rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#0F172A] text-white font-sans pb-20">
-            {/* Header Section */}
-            <div className="bg-gradient-to-b from-emerald-600/20 to-transparent pt-12 pb-24 px-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-5">
-                    <Trophy size={300} strokeWidth={1} />
-                </div>
-                
-                <div className="max-w-4xl mx-auto relative z-10">
-                    <button 
-                        onClick={() => navigate('/')} 
-                        className="flex items-center gap-2 mb-8 text-emerald-400 hover:text-emerald-300 transition-colors text-[10px] font-black uppercase tracking-widest"
-                    >
-                        <ChevronLeft size={16} /> Return to Turf
-                    </button>
-                    
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                        <div className="space-y-2">
-                            <div className="inline-flex items-center gap-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                                <Star size={12} className="text-emerald-400 fill-emerald-400" />
-                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Global Rankings</span>
-                            </div>
-                            <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
-                                Gladiators<br/>
-                                <span className="text-emerald-500">Leaderboard</span>
-                            </h1>
-                        </div>
-                        
-                        <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-emerald-500 transition-colors" size={18} />
-                            <input 
-                                type="text"
-                                placeholder="Search Gladiator..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-6 w-full md:w-64 outline-none focus:border-emerald-500/50 backdrop-blur-xl transition-all font-bold text-sm"
-                            />
-                        </div>
-                    </div>
+        <div className="min-h-screen bg-[#121217] text-white font-sans overflow-x-hidden pb-20">
+            {/* Header */}
+            <header className="px-6 pt-12 pb-6 flex items-center justify-center relative">
+                <button 
+                    onClick={() => navigate('/')}
+                    className="absolute left-6 top-12 p-1 hover:bg-white/5 rounded-full"
+                >
+                    <ChevronLeft size={28} />
+                </button>
+                <h1 className="text-xl font-medium tracking-wide">The Turf Squad</h1>
+            </header>
+
+            {/* Toggle Switch */}
+            <div className="px-6 mb-12">
+                <div className="flex bg-[#1C1C24] p-1.5 rounded-2xl max-w-sm mx-auto">
+                    {['Team members', 'Leaderboard'].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveToggle(tab)}
+                            className={`flex-1 py-3.5 rounded-xl text-sm font-medium transition-all ${
+                                activeToggle === tab ? 'bg-[#32323D] text-white shadow-xl' : 'text-white/40'
+                            }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Top 3 Podium (Mobile-First Optimization) */}
-            <div className="max-w-4xl mx-auto px-6 -mt-12 relative z-20">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    {filteredPlayers.slice(0, 3).map((player, index) => (
+            {/* 3D Podium Section */}
+            <div className="relative px-6 flex justify-center items-end gap-2 pt-24 pb-8 min-h-[400px]">
+                {topThree.map((player) => {
+                    const isRank1 = player.rank === 1;
+                    const isRank2 = player.rank === 2;
+                    const isRank3 = player.rank === 3;
+
+                    return (
                         <div 
                             key={player._id}
                             onClick={() => navigate(`/player/${player._id}`)}
-                            className={`relative group cursor-pointer transition-all duration-500 hover:-translate-y-2 ${
-                                index === 0 ? 'order-first md:order-2 md:scale-110' : 
-                                index === 1 ? 'order-2 md:order-1 mt-0 md:mt-4' : 
-                                'order-3 mt-0 md:mt-4'
+                            className={`flex flex-col items-center cursor-pointer transition-all duration-500 hover:scale-105 ${
+                                isRank1 ? 'w-[36%] z-20' : 'w-[28%] z-10'
                             }`}
                         >
-                            <div className={`p-8 rounded-[2.5rem] border-2 flex flex-col items-center text-center backdrop-blur-md shadow-2xl overflow-hidden ${
-                                index === 0 ? 'bg-emerald-600/10 border-emerald-500/50' :
-                                index === 1 ? 'bg-slate-800/50 border-slate-700/50' :
-                                'bg-orange-900/10 border-orange-500/30'
-                            }`}>
-                                {/* Ranking Badge */}
-                                <div className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center font-black border-2 ${
-                                    index === 0 ? 'bg-yellow-400 text-black border-yellow-200' :
-                                    index === 1 ? 'bg-slate-300 text-black border-white' :
-                                    'bg-orange-500 text-white border-orange-200'
-                                }`}>
-                                    {index + 1}
-                                </div>
-
-                                <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mb-6 relative group-hover:scale-110 transition-transform duration-500">
-                                    <span className="text-3xl font-black text-white/20">{player.name.charAt(0)}</span>
-                                    {index === 0 && <Medal className="absolute -top-3 -right-3 text-yellow-400 drop-shadow-lg" size={32} />}
-                                </div>
-
-                                <h3 className="text-xl font-black uppercase tracking-tight mb-2 truncate w-full">{player.name}</h3>
-                                <div className="flex flex-col items-center gap-1">
-                                    <p className="text-3xl font-black text-emerald-500 tabular-nums">{player.careerScore}</p>
-                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Career Points</p>
+                            {/* Avatar & Info Floating Above Block */}
+                            <div className="flex flex-col items-center mb-6 w-full">
+                                {isRank1 && (
+                                    <div className="mb-2 animate-bounce">
+                                        <Trophy className="text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" size={32} />
+                                    </div>
+                                )}
+                                
+                                <div className={`relative mb-3 group`}>
+                                    <div className={`rounded-full overflow-hidden border-2 bg-[#1C1C24] ${
+                                        isRank1 ? 'w-20 h-20 md:w-24 md:h-24 border-yellow-500/50' : 'w-16 h-16 md:w-18 md:h-18 border-white/10'
+                                    }`}>
+                                        {player.image ? (
+                                            <img src={player.image} alt={player.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 font-bold text-xl uppercase italic">
+                                                {player.name.charAt(0)}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 
-                                <div className="mt-6 flex gap-3 opacity-40 group-hover:opacity-100 transition-opacity">
-                                    <div className="flex items-center gap-1 text-[10px] font-bold"><Swords size={12} /> {player.stats?.batting?.runs || 0}</div>
-                                    <div className="flex items-center gap-1 text-[10px] font-bold"><Shield size={12} /> {player.stats?.bowling?.wickets || 0}</div>
+                                <span className={`text-center font-bold tracking-tight mb-1 truncate w-full ${isRank1 ? 'text-[13px]' : 'text-[11px]'} text-white/90`}>
+                                    {player.name}
+                                </span>
+                                
+                                <div className="bg-[#262631] px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg border border-white/5">
+                                    <span className="text-[10px] md:text-[12px] font-black tabular-nums">
+                                        {player.careerScore}
+                                    </span>
+                                    <Zap size={10} className="text-orange-500 fill-orange-500" />
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
 
-                {/* List View for 4+ */}
-                <div className="space-y-3">
-                    {filteredPlayers.slice(3).map((player, index) => (
+                            {/* 3D Block Stand */}
+                            <div className="relative w-full perspective-[1000px]">
+                                <div 
+                                    className={`w-full rounded-t-xl transition-all shadow-[-10px_0_30px_rgba(0,0,0,0.5)] flex items-center justify-center font-black italic text-4xl md:text-5xl text-white/10 ${
+                                        isRank1 ? 'h-48 bg-gradient-to-b from-[#3D3D4D] to-[#1C1C24] border-t border-white/10' : 
+                                        isRank2 ? 'h-36 bg-gradient-to-b from-[#2D2D38] to-[#1C1C24] border-t border-white/5' : 
+                                        'h-28 bg-gradient-to-b from-[#22222D] to-[#1C1C24] border-t border-white/5'
+                                    }`}
+                                >
+                                    {player.rank}
+                                </div>
+                                {/* Top Lid Shadow */}
+                                <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/5 overflow-hidden rounded-t-xl" />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* List View */}
+            <div className="px-6 py-8 space-y-3 max-w-lg mx-auto bg-[#1C1C24] rounded-t-[3rem] mt-4 min-h-[500px]">
+                {players.slice(3).map((player, index) => {
+                    const displayRank = index + 4;
+                    const completion = Math.min(100, (player.careerScore / (players[0]?.careerScore || 1)) * 100);
+
+                    return (
                         <div 
                             key={player._id}
                             onClick={() => navigate(`/player/${player._id}`)}
-                            className="bg-white/5 border border-white/5 hover:border-emerald-500/30 p-5 rounded-3xl flex items-center gap-4 cursor-pointer transition-all hover:bg-white/[0.08] hover:translate-x-1"
+                            className="bg-[#262631] p-5 rounded-3xl flex items-center gap-5 cursor-pointer hover:bg-[#2D2D3D] transition-all border border-white/5 group shadow-xl"
                         >
-                            <span className="w-8 text-center text-xs font-black text-white/20">{index + 4}</span>
+                            <span className="text-[15px] font-black text-white/20 italic w-4">{displayRank}.</span>
                             
-                            <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-lg font-black text-white/10 uppercase">
-                                {player.name.charAt(0)}
+                            <div className="w-14 h-14 rounded-full overflow-hidden bg-black/40 border border-white/5 shadow-inner">
+                                {player.image ? (
+                                    <img src={player.image} alt={player.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-indigo-900/50 text-indigo-200 font-bold uppercase italic shadow-inner">
+                                        {player.name.charAt(0)}
+                                    </div>
+                                )}
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-black uppercase tracking-tight text-white/90 truncate">{player.name}</h4>
-                                <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.cricket_profile?.primary_role || 'All-Rounder'}</p>
+                                <h4 className="text-[17px] font-bold text-white tracking-tight truncate leading-tight mb-1">{player.name}</h4>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[12px] font-bold text-white/40 uppercase tracking-widest">{player.careerScore} pts</span>
+                                    <span className="w-1 h-1 bg-white/10 rounded-full" />
+                                    <span className="text-[12px] font-bold text-orange-400">Streak 🔥</span>
+                                </div>
                             </div>
 
-                            <div className="text-right">
-                                <p className="text-xl font-black text-emerald-500 leading-none">{player.careerScore}</p>
-                                <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mt-1">PTS</p>
+                            {/* Percentage Circle Visual */}
+                            <div className="relative w-12 h-12 flex items-center justify-center">
+                                <svg className="w-full h-full -rotate-90">
+                                    <circle cx="24" cy="24" r="20" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+                                    <circle 
+                                        cx="24" cy="24" r="20" fill="transparent" stroke={completion > 70 ? "#10b981" : "#f59e0b"} 
+                                        strokeWidth="4" strokeDasharray={`${(completion * 125) / 100} 125`}
+                                        strokeLinecap="round" className="transition-all duration-1000 delay-300"
+                                    />
+                                </svg>
+                                <span className="absolute text-[10px] font-black italic">{Math.round(completion)}%</span>
                             </div>
                         </div>
-                    ))}
-                    
-                    {filteredPlayers.length === 0 && (
-                        <div className="p-20 text-center bg-white/5 rounded-3xl border border-dashed border-white/10">
-                            <Zap className="mx-auto text-white/10 mb-4" size={48} />
-                            <p className="text-sm font-black text-white/20 uppercase tracking-[0.2em]">No Gladiators found matching your search.</p>
-                        </div>
-                    )}
-                </div>
+                    );
+                })}
+            </div>
+            
+            {/* Custom Bottom Tab (Matching the Image feel) */}
+            <div className="fixed bottom-0 left-0 right-0 h-20 bg-[#121217]/95 backdrop-blur-2xl border-t border-white/5 z-50 px-8 flex items-center justify-between">
+                {[
+                    { icon: Zap, label: 'Arena' },
+                    { icon: Trophy, label: 'League', active: true },
+                    { icon: Star, label: 'My Stats' },
+                    { icon: Search, label: 'Scout' }
+                ].map((item, i) => (
+                    <div key={i} className={`flex flex-col items-center gap-1 ${item.active ? 'text-white' : 'text-white/20'}`}>
+                        <item.icon size={22} strokeWidth={item.active ? 2.5 : 2} />
+                        <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
+                    </div>
+                ))}
             </div>
         </div>
     );

@@ -147,7 +147,7 @@ function App() {
           <Route path="/live/:id" element={<LiveScoreView />} />
           <Route path="/player/:id" element={<PlayerProfile />} />
           <Route path="/stats-dashboard" element={<PlayerStatsDashboard />} />
-          <Route path="/leaderboard" element={<WrapLayout><Leaderboard /></WrapLayout>} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
 
           {/* User Dashboard */}
           <Route path="/dashboard" element={
