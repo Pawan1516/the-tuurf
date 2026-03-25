@@ -1,0 +1,1433 @@
+[
+  {
+    "team_a": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "team_b": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliY2Y0NjVlNmQ1YTI1MmVmNzQzOTdiIiwiYmlkIjoiTk9ORSIsInQiOjE3NzM5OTEwMTMzNTUsInMiOiJjMGE4Y2Y0MjIxZWQ2NDFmZGIwMWQ3YzExY2FkYzAzMyIsImV4cCI6MTc3NDAwMTgxMzM1NX0=",
+        "qr_image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUQAAAFECAYAAABf6kfGAAAAAklEQVR4AewaftIAABmHSURBVO3BQW7k2rIgQXdC+9+yt8BRjA5AMFN13+8ws1+stdbiYq211u1irbXW7WKttdbtYq211u1irbXW7WKttdbtYq211u1irbXW7WKttdbtYq211u1irbXW7WKttdbtYq211u1irbXW7WKttdbth5dU/lLFEypTxYnKVPGEylTxhspJxaQyVUwqJxWTylTxhMpJxaQyVUwqJxWTyhsVJypPVJyonFScqJxUTCpPVEwqU8Wk8pcq3rhYa611u1hrrXW7WGutdbNfvKAyVXySylRxojJVTConFScqU8WJylTxhsoTFScqJxVPqHxSxaTyRMUTKm9UnKhMFW+oTBWTylTxhMpU8YTKVPFJKlPFGxdrrbVuF2uttW4Xa621bj98mcoTFU+oTBUnFZPKExUnKk+oTBWTylRxojKpnFRMKpPKExWTyknFpPJExRMqT1RMKm9UvKFyovKGylTxTSpPVHzTxVprrdvFWmut28Vaa63bD+urKiaVT1KZKiaVqWJSmSomlZOKSWWqmFQmlanipOKNijcq/pLKVHGi8oTKVDGpnFT8X3Kx1lrrdrHWWut2sdZa6/bD/7iKSWWqeELljYonKp5QOVE5UXmiYlKZVN6oOFGZKiaVk4pJ5ZsqTlSmikllqphU3lCZKiaVqWJSmVSmiv9lF2uttW4Xa621bhdrrbVuP3xZxb+k8kbFpDJVPFExqZxUnKhMFU+onKhMFZPKVPGEylTxRMWJylQxqUwVT6hMKp+kMlVMKlPFicqkMlVMKlPFJ1X8l1ystda6Xay11rpdrLXWuv3wYSp/SWWqmFSmikllqphUpopJZaqYVKaKk4pJZap4QmWq+EsqU8Wk8obKVPFJKlPFScWkMlVMKlPFpPKGylQxqbyhMlWcqPyXXay11rpdrLXWul2stda6/fBSxb9UMalMFW9UfFPFScWk8kTFEypTxaRyovJNKk9UTCpPVPwllanipGJSeaJiUjlRmSpOKv6XXKy11rpdrLXWul2stda6/fDHVE4qJpWTihOVN1ROKt5Q+SSVT1KZKiaVk4onVP4llTdUpopJZaqYVE5Unqj4X6JyUvFNF2uttW4Xa621bhdrrbVu9osvUjmpeENlqjhRmSqeUDmp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rLXWul2stda6/fBlKk+oPFExVUwq36RyonJS8UkVk8qJylRxUjGpTBX/ksoTFX9JZao4qfgklaliUpkqnqiYVJ6omFT+0sVaa63bxVprrdvFWmut2w8fpvJExRMqn6QyVUwVT1Q8oTJVvKEyVZyonKi8oTJVTCqTylQxqUwqJxUnKk9UnKicVDyhMlVMFScqU8WkcqIyVUwqT1RMKicVf+lirbXW7WKttdbtYq211u2HL6uYVE5UTio+qWJSmSomlROVqeKkYlI5qZhUPknlpOJE5ZNUTipOVKaKqWJSOVE5qThROamYKr6p4kRlUnmi4pNUTireuFhrrXW7WGutdbtYa611++GlijdUpoonVL5J5aRiUnlCZap4ouKTKiaVSeVfqphUPqliUpkqJpUnKk5UTipOVKaKSeWbKk5UTlROKr7pYq211u1irbXW7WKttdbth5dUpoqTiknlRGWqmComlX+pYlI5qZhUpopJ5ZtUTipOVN6oOFF5omJSeUPlRGWqmFSmik+qmFROKk5UpopJZVL5pIpJZar4pIu11lq3i7XWWreLtdZatx9eqnij4qTiRGWqmFSmiknliYoTlaniL1U8oTJVTConKlPFpDKpTBWTyhMVk8qk8kTFEypTxaQyVUwq/5LKVPFGxRMqJypTxTddrLXWul2stda6Xay11rr98JLKX6o4UTlRmSomlaliUjmpmFROKp6omFROVKaKE5UnKp6oOKmYVKaKSeWkYlJ5QmWqOFGZKiaVk4pJZVKZKiaVqWJSmSpOKiaVJ1SmijdUTireuFhrrXW7WGutdbtYa611++HDKj5J5aTikyo+qeJEZao4UXmi4pNUPkllqjhROamYVN6oeKJiUpkqJpVJZao4UXlDZar4pIo3KiaVqeKTLtZaa90u1lpr3S7WWmvdfvgylScqnlCZKr6pYlKZVJ6omFROKiaVSeWNikllqnhD5YmKNypOVCaVb1KZKiaVE5UnVKaKE5U3VL6pYlKZKt64WGutdbtYa611u1hrrXX74f8YlaniDZWTijdUpooTlScq3qg4UZkqJpWpYlI5UZkqnlA5qZhUnqiYVJ5QOVF5ouKNihOVNypOVP6li7XWWreLtdZat4u11lq3H/7HVUwqT6icVLyh8obKJ6mcVEwqJxUnFZPKVDGpvKEyVUwqk8onVbyhMlWcqJyonFRMKicVk8pUcaLyhMpfulhrrXW7WGutdbtYa611s1+8oDJVfJLKVPGGyhsVJypPVJyonFScqEwVk8oTFZPKExXfpDJVnKhMFScqJxWfpDJVTConFW+oPFHxhspUMamcVLxxsdZa63ax1lrrdrHWWutmv3hB5S9VPKEyVbyhMlWcqDxRMalMFScqJxUnKlPFpHJSMamcVDyhclIxqUwVJypPVEwqT1RMKk9UTCpPVEwqU8WJyknFicoTFZPKVPHGxVprrdvFWmut28Vaa62b/WKttRYXa621bhdrrbVuF2uttW4Xa621bhdrrbVuF2uttW4Xa621bhdrrbVuF2uttW4Xa621bhdrrbVuF2uttW4Xa621bhdrrbVuF2uttW7/DzWSI6GCmHTGAAAAAElFTkSuQmCC",
+        "generated_at": "2026-03-20T07:16:53.997Z",
+        "expires_at": "2026-03-20T10:16:53.355Z"
+      },
+      "status": "PENDING",
+      "verification_token": "c0a8cf4221ed641fdb01d7c11cadc033"
+    },
+    "start_control": {
+      "can_start": false,
+      "start_method": "PENDING"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bcf465e6d5a252ef74397c"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bcf465e6d5a252ef74397d"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "",
+        "players": [
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bcf465e6d5a252ef74397e"
+          },
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bcf465e6d5a252ef74397f"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "live_active_team": "A",
+    "_id": "69bcf465e6d5a252ef74397b",
+    "title": " vs  — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T07:16:53.348Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T07:16:54.089Z",
+    "updatedAt": "2026-03-25T08:59:29.844Z",
+    "__v": 0,
+    "stats_updated": false,
+    "commentary_log": []
+  },
+  {
+    "team_a": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "team_b": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliY2Y2MmNlNmQ1YTI1MmVmNzQzYTNkIiwiYmlkIjoiTk9ORSIsInQiOjE3NzM5OTE0NjgwOTQsInMiOiI0YmNjZWE2OGExNmE5MDk5YzQ0MDdjYWU4YzcyMWJkNCIsImV4cCI6MTc3NDAwMjI2ODA5NH0=",
+        "qr_image": "data:image/png;base64,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",
+        "generated_at": "2026-03-20T07:24:28.385Z",
+        "expires_at": "2026-03-20T10:24:28.094Z"
+      },
+      "status": "PENDING",
+      "verification_token": "4bccea68a16a9099c4407cae8c721bd4"
+    },
+    "start_control": {
+      "can_start": false,
+      "start_method": "PENDING"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "Team A",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bcf62ce6d5a252ef743a3e"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bcf62ce6d5a252ef743a3f"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "Team B",
+        "players": [
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bcf62ce6d5a252ef743a40"
+          },
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bcf62ce6d5a252ef743a41"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "live_active_team": "A",
+    "_id": "69bcf62ce6d5a252ef743a3d",
+    "title": "Team A vs Team B — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T07:24:28.092Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T07:24:28.387Z",
+    "updatedAt": "2026-03-25T08:59:29.844Z",
+    "__v": 0,
+    "stats_updated": false,
+    "commentary_log": []
+  },
+  {
+    "team_a": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "team_b": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliY2ZiMjFlNmQ1YTI1MmVmNzQzYjU5IiwiYmlkIjoiTk9ORSIsInQiOjE3NzM5OTI3Mzc4OTksInMiOiI3YjA1YzcwMmY2N2VmMWM4ODRhZWQ0OTQxNjQwZGNhOSIsImV4cCI6MTc3NDAwMzUzNzg5OX0=",
+        "qr_image": "data:image/png;base64,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",
+        "generated_at": "2026-03-20T07:45:38.593Z",
+        "expires_at": "2026-03-20T10:45:37.899Z"
+      },
+      "status": "PENDING",
+      "verification_token": "7b05c702f67ef1c884aed4941640dca9"
+    },
+    "start_control": {
+      "can_start": false,
+      "start_method": "PENDING"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bcfb21e6d5a252ef743b5a"
+          },
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bcfb21e6d5a252ef743b5b"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "",
+        "players": [
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bcfb21e6d5a252ef743b5c"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bcfb21e6d5a252ef743b5d"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "live_active_team": "A",
+    "_id": "69bcfb21e6d5a252ef743b59",
+    "title": " vs  — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T07:45:37.897Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T07:45:38.686Z",
+    "updatedAt": "2026-03-25T08:59:29.844Z",
+    "__v": 0,
+    "stats_updated": false,
+    "commentary_log": []
+  },
+  {
+    "team_a": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "team_b": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliY2ZiNTVlNmQ1YTI1MmVmNzQzYjgxIiwiYmlkIjoiTk9ORSIsInQiOjE3NzM5OTI3ODk4NzMsInMiOiJlMWFkYjBmMmYyZGJlMDI1OWNiY2UzZmIwNTBiNTY1ZiIsImV4cCI6MTc3NDAwMzU4OTg3M30=",
+        "qr_image": "data:image/png;base64,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",
+        "generated_at": "2026-03-20T07:46:29.891Z",
+        "expires_at": "2026-03-20T10:46:29.873Z"
+      },
+      "status": "PENDING",
+      "verification_token": "e1adb0f2f2dbe0259cbce3fb050b565f"
+    },
+    "start_control": {
+      "can_start": false,
+      "start_method": "PENDING"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "A",
+        "players": [
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bcfb55e6d5a252ef743b82"
+          },
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bcfb55e6d5a252ef743b83"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "B",
+        "players": [
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bcfb55e6d5a252ef743b84"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bcfb55e6d5a252ef743b85"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "live_active_team": "A",
+    "_id": "69bcfb55e6d5a252ef743b81",
+    "title": "A vs B — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T07:46:29.871Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T07:46:29.892Z",
+    "updatedAt": "2026-03-25T08:59:29.844Z",
+    "__v": 0,
+    "stats_updated": false,
+    "commentary_log": []
+  },
+  {
+    "team_a": {
+      "squad": [],
+      "overs_played": 0,
+      "score": 0,
+      "wickets": 0
+    },
+    "team_b": {
+      "squad": [],
+      "overs_played": 0,
+      "score": 0,
+      "wickets": 0
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliZDE1MWI1ZWIzNjUyZTIxODQ3MzhmIiwiYmlkIjoiTk9ORSIsInQiOjE3NzM5OTkzODc3NjAsInMiOiJmNmY2MjhkNGIxYWEzNjFhNzNjM2FkMTkyMDE2ZWE3OCIsImV4cCI6MTc3NDAxMDE4Nzc1OX0=",
+        "qr_image": "data:image/png;base64,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",
+        "generated_at": "2026-03-20T09:36:28.956Z",
+        "expires_at": "2026-03-20T12:36:27.759Z"
+      },
+      "status": "VERIFIED",
+      "verification_token": "f6f628d4b1aa361a73c3ad192016ea78"
+    },
+    "start_control": {
+      "can_start": true,
+      "start_method": "QR_SCAN"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "A",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd151b5eb3652e21847390"
+          },
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd151b5eb3652e21847391"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "B",
+        "players": [
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd151b5eb3652e21847392"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd151b5eb3652e21847393"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "_id": "69bd151b5eb3652e2184738f",
+    "title": "A vs B — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T09:36:27.753Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T09:36:28.965Z",
+    "updatedAt": "2026-03-25T08:59:30.338Z",
+    "__v": 1,
+    "stats_updated": true,
+    "commentary_log": [],
+    "live_active_team": "A"
+  },
+  {
+    "team_a": {
+      "squad": [],
+      "overs_played": 0,
+      "score": 0,
+      "wickets": 0
+    },
+    "team_b": {
+      "squad": [],
+      "overs_played": 0,
+      "score": 0,
+      "wickets": 0
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliZDJlNTdjNGYxYTNiNmFkNzhjYjY1IiwiYmlkIjoiTk9ORSIsInQiOjE3NzQwMDU4NDcyMTQsInMiOiJiNTYzYzZmYThhOTc1OTY2YzU5MTZjYTkyMWM1MDY0OCIsImV4cCI6MTc3NDAxNjY0NzIxNH0=",
+        "qr_image": "data:image/png;base64,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VUwVJypPqEwVT1ScVEwqT1RMKlPFpDJVfFLFico3qUwVb6hMFScVn6TyTRWTyidVTCqfdLHWWut2sdZa63ax1lrr9sOHqTxR8YTKGxWTyhMqU8WkclIxqUwVJypTxaQyVUwqJypTxaTyhMpUMVWcqJxUnKicqHySyknFEypTxVRxovKGylQxqTxRMalMFU9UfNLFWmut28Vaa63bxVprrdsPX1YxqZyonFScVEwqT6h8kspUMVVMKn9J5YmKE5UnVE4qnlA5UZkqTlQmlZOKJ1SmiqnijYpJZao4UZlUpopJZar4JJWTijcu1lpr3S7WWmvdLtZaa91+eKniDZWp4gmVqeKJikllqnij4kRlqjhRmVSmiicqTlT+UsUTKlPFpDJVnKicVEwqk8pUcVIxqZxUnKhMFScqn1RxonKiclLxTRdrrbVuF2uttW4Xa621bvaLF1SmiidUpopJZap4Q2WqeEJlqjhROamYVKaKE5W/VHGiclIxqUwVb6j8SxWTyknFpHJSMalMFZPKScWJylQxqXxTxaQyVXzSxVprrdvFWmut28Vaa63bDy9VvFFxUnGiclJxojJVTConKicVf6niCZWpYlI5UZkqJpVJZaqYVKaKSWWqOKk4UZkqnlA5qfimipOKE5Wp4kTlpOIJlanipOKbLtZaa90u1lpr3S7WWmvdfnhJ5S9V/JdUnKicVDyh8oTKVHGi8kTFExUnFZPKExWTyhsqU8WJylRxojJVTCpPqEwVk8pUcVIxqTyhMlWcqEwVk8pJxRsXa621bhdrrbVuF2uttW4/fFjFJ6mcVEwqb6icVEwqU8VUcaJyojJVTConFZ+kMlVMKk+onFRMKicqJxWTyknFExWTylRxojJVnKicqDyhMlW8UfFNFZ90sdZa63ax1lrrdrHWWuv2w5epPFHxhMobFScqJxWTyknFExVPqLxRMal8ksonqTyhcqLyTSpTxaRyovJGxTepvFExqUwVk8pU8cbFWmut28Vaa63bxVprrdsP/89UTCrfpDJVnKg8oXJSMalMFZPKVHFSMalMKk9UTConKlPFpHJSMalMFZPKExWTyhMqJypPVDyhMlWcVJyonFScqEwVf+lirbXW7WKttdbtYq211u2H/3EVk8pJxaQyVUwVk8oTKlPFicpJxV9SmSreUJkq3qiYVCaVJyomlScq3lCZKk5UJpWTiqliUpkqTlSmihOVJ1T+0sVaa63bxVprrdvFWmutm/3iBZWp4pNUpoo3VJ6omFROKp5Q+aSKSeWJikllqphUpor/JSpTxYnKScUnqUwVk8pU8UkqT1S8oTJVTConFW9crLXWul2stda6Xay11rr98GEq/yUqT1RMKlPFEypTxUnFpHJSMak8UfFGxaQyVUwqU8UTKv8lFZPKExWTyonKVHGiclIxqZxUTConKlPFpHKiMlVMKp90sdZa63ax1lrrdrHWWutmv1hrrcXFWmut28Vaa63bxVprrdvFWmut28Vaa63bxVprrdvFWmut28Vaa63bxVprrdvFWmut28Vaa63bxVprrdvFWmut28Vaa63bxVprrdv/AfLw/NGY4OE9AAAAAElFTkSuQmCC",
+        "generated_at": "2026-03-20T11:24:07.274Z",
+        "expires_at": "2026-03-20T14:24:07.214Z"
+      },
+      "status": "VERIFIED",
+      "verification_token": "b563c6fa8a975966c5916ca921c50648"
+    },
+    "start_control": {
+      "can_start": true,
+      "start_method": "QR_SCAN"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd2e57c4f1a3b6ad78cb66"
+          },
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd2e57c4f1a3b6ad78cb67"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "",
+        "players": [
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd2e57c4f1a3b6ad78cb68"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd2e57c4f1a3b6ad78cb69"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "_id": "69bd2e57c4f1a3b6ad78cb65",
+    "title": " vs  — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T11:24:07.183Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T11:24:07.280Z",
+    "updatedAt": "2026-03-25T08:59:30.626Z",
+    "__v": 1,
+    "stats_updated": true,
+    "commentary_log": [],
+    "live_active_team": "A"
+  },
+  {
+    "team_a": {
+      "squad": [],
+      "overs_played": 0,
+      "score": 0,
+      "wickets": 0
+    },
+    "team_b": {
+      "squad": [],
+      "overs_played": 0,
+      "score": 0,
+      "wickets": 0
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliZDQ2M2ZjNGYxYTNiNmFkNzhkMTc1IiwiYmlkIjoiTk9ORSIsInQiOjE3NzQwMTE5Njc2MzYsInMiOiJjMjAzM2FmMjYwM2ZiNDNkNjc4YTEzZWM4N2NlNjlmMSIsImV4cCI6MTc3NDAyMjc2NzYzNX0=",
+        "qr_image": "data:image/png;base64,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lZOKN1ROKiaVT6qYVE4qTlROKt64WGutdbtYa611u1hrrXX74cNUpoqp4omKE5XfpPKEylTxSRVvqPymikllUpkqnlCZKk4qTlSeUJkqJpUnVJ6omCreqJhUpoonKiaVf8nFWmut28Vaa63bxVprrZv9wQepTBWTylQxqTxRMak8UfGGylTxm1SeqPgmlScqJpWp4kRlqphUTipOVE4qJpU3Kp5QeaLim1ROKp5QmSq+6WKttdbtYq211u1irbXW7YcPq5hUpoqTihOVk4pJZao4UXlDZaqYVN6omCpOVE5UpopPqjhR+aaKSeVEZaqYVJ6omFSmiidUfpPKVDGpnFRMKlPFpDJVnKhMFW9crLXWul2stda6Xay11rrZH7ygMlU8oTJVTConFZ+k8kTFEypPVHySym+qmFROKiaVJyqeUHmi4gmVqeJE5aTiROU3VbyhMlVMKk9UvHGx1lrrdrHWWut2sdZa62Z/8ILKScWkMlU8oTJVTCpTxaQyVZyoTBWTyidVTCpTxTepnFScqEwVJyq/qWJSOak4UZkqTlROKk5UTiomlaniROWk4kTlpGJSOamYVE4q3rhYa611u1hrrXW7WGutdfvhwyqeUJkqJpWp4gmVqeINlaliUjmpOFE5UTmpOFH5popJ5aRiUpkqTlROKiaVb1KZKp5QOak4UZkqnqh4QuWNihOVk4pPulhrrXW7WGutdbtYa611++GlikllqnhCZaqYVKaKqWJSeaNiUplUpooTlTcqJpW/SWWqOKn4pIonKk5U3qh4ouIJlaniRGWqeEPlpOJEZap4Q2WqeONirbXW7WKttdbtYq211u2Hv6ziRGWqOFGZKiaVk4pJZao4UTmpOFH5JJUnKk5UpopJZap4omJSmSomlaliUvkklSdUflPFpDKpTBWTyiepPKEyVUwq33Sx1lrrdrHWWut2sdZa62Z/8ILKVPGGylTxhMpU8S9TeaNiUjmpeELliYpJ5YmKE5U3Kt5QmSqeUHmjYlKZKk5UpopJZaqYVKaKN1Smir/pYq211u1irbXW7WKttdbthw9TmSomlaliqphUpopJZao4UZkqTlQ+qeKkYlKZKp6omFSmikllqphUpoonKiaVSWWqmCpOVKaKSeWJiidUPqliUpkqJpWTipOKSWWqmFSeqJgqJpWp4kRlqnjjYq211u1irbXW7WKttdbN/uAFlaniN6mcVEwqU8WJylRxojJVTCpTxaQyVUwqU8WJylQxqUwVk8pUcaLyRsWkclJxovJExaQyVbyhMlWcqHxSxTepPFExqUwVv+lirbXW7WKttdbtYq211s3+4AWVk4pJZaqYVJ6omFTeqDhRmSomlaliUpkqJpWp4l+iMlVMKlPFpDJVTCpTxaQyVTyhclIxqbxR8UkqU8UbKt9UMamcVEwqT1S8cbHWWut2sdZa63ax1lrrZn/wi1ROKv4lKicVk8pU8YTKScUTKlPFEyonFW+ovFFxonJS8YbKb6qYVKaKSeWkYlKZKiaVk4oTlaniX3Kx1lrrdrHWWut2sdZa6/bDSypTxUnFpHKiMlVMKlPFicpJxSepvFFxovKEyknFScWk8k0Vk8obFZPKJ1WcqEwVJyonFU9UTCpTxUnFpDKpPKFyUvGbLtZaa90u1lpr3S7WWmvd7A/+w1SeqHhD5aTik1SmikllqnhC5YmKSeWk4pNUTiqeUJkqnlCZKiaVqeIJlZOKSWWqmFROKiaVJyqeUHmj4pMu1lpr3S7WWmvdLtZaa91+eEnlN1VMFU+oTBWTylQxVUwqk8pJxaQyVZyoPKEyVZxUTCqTyknFicpUMal8ksobKlPFGypTxaTyhMqJyknFpHJSMamcqEwVb1RMKlPFGxdrrbVuF2uttW4Xa621bj98WMUnqfymiicqnlA5UZkqJpUnKp5QOamYVE5UpopJ5aTiROWkYlJ5ouIJlaliUplUTiomlaniCZWTiknljYonKk5UpopPulhrrXW7WGutdbtYa611++HLVJ6oeEJlqphUpopJ5Y2KSeWJihOVqWJSmVTeqJhUPknlpGJS+U0qn6TySRWTylRxUvFExaRyovKGyknFpDJVvHGx1lrrdrHWWut2sdZa6/bD/xiVqeKkYlJ5o+IJlZOKSeWNiknlpGJSeaNiUnmi4gmVJypOVKaKSWWqeEJlUjmpmFSmihOVqWJSmSpOVE4qJpWpYlL5TRdrrbVuF2uttW4Xa621bj/8P6PyRMUbKlPFVPFExaTyRsWkclIxqUwqU8VJxaTyhMoTFScqJxUnFZPKVHFS8UkqU8VUMak8oXJSMalMFZPK33Sx1lrrdrHWWut2sdZa6/bDl1V8U8WkMqlMFU+ovFFxojJVTCpTxVRxovJExaRyUnGiclIxVTxRcaJyovKGylQxVUwqb1RMKk+oTBW/qeKkYlL5TRdrrbVuF2uttW4Xa621bj98mMrfVPFJFZPKVDGpPFExqZyonFRMFU+oTBWfVHGiclLxmypOKj6pYlJ5ouKNiicqJpVJ5aRiUpkqJpVvulhrrXW7WGutdbtYa611sz9Ya63FxVprrdvFWmut28Vaa63bxVprrdvFWmut28Vaa63bxVprrdvFWmut28Vaa63bxVprrdvFWmut28Vaa63bxVprrdvFWmut28Vaa63b/wE03SUJozOYtQAAAABJRU5ErkJggg==",
+        "generated_at": "2026-03-20T13:06:07.675Z",
+        "expires_at": "2026-03-20T16:06:07.635Z"
+      },
+      "status": "VERIFIED",
+      "verification_token": "c2033af2603fb43d678a13ec87ce69f1"
+    },
+    "start_control": {
+      "can_start": true,
+      "start_method": "QR_SCAN"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd463fc4f1a3b6ad78d176"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd463fc4f1a3b6ad78d177"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "",
+        "players": [
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd463fc4f1a3b6ad78d178"
+          },
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd463fc4f1a3b6ad78d179"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "_id": "69bd463fc4f1a3b6ad78d175",
+    "title": " vs  — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T13:06:07.633Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "In Progress",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T13:06:07.677Z",
+    "updatedAt": "2026-03-25T08:59:31.658Z",
+    "__v": 1,
+    "stats_updated": true,
+    "commentary_log": [],
+    "live_active_team": "A"
+  },
+  {
+    "team_a": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "team_b": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliZDRiOGFjNGYxYTNiNmFkNzhkMjk2IiwiYmlkIjoiTk9ORSIsInQiOjE3NzQwMTMzMjIwOTIsInMiOiI3OTZkMzU0ZjQ4MWExZDU1YmVkNzVlNjA1MTM1ODU1MiIsImV4cCI6MTc3NDAyNDEyMjA5Mn0=",
+        "qr_image": "data:image/png;base64,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",
+        "generated_at": "2026-03-20T13:28:42.117Z",
+        "expires_at": "2026-03-20T16:28:42.092Z"
+      },
+      "status": "PENDING",
+      "verification_token": "796d354f481a1d55bed75e6051358552"
+    },
+    "start_control": {
+      "can_start": false,
+      "start_method": "PENDING"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "a",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd4b8ac4f1a3b6ad78d297"
+          },
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd4b8ac4f1a3b6ad78d298"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "b",
+        "players": [
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd4b8ac4f1a3b6ad78d299"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd4b8ac4f1a3b6ad78d29a"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "live_active_team": "A",
+    "_id": "69bd4b8ac4f1a3b6ad78d296",
+    "title": "a vs b — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T13:28:42.090Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T13:28:42.118Z",
+    "updatedAt": "2026-03-25T08:59:29.844Z",
+    "__v": 0,
+    "stats_updated": false,
+    "commentary_log": []
+  },
+  {
+    "team_a": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "team_b": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliZDRkZWJjNGYxYTNiNmFkNzhkMzAyIiwiYmlkIjoiTk9ORSIsInQiOjE3NzQwMTM5MzE2MDksInMiOiIyOGViNmJjOThlMGM2YWFkYmUxOTdkNjUwZGViMmQ4MCIsImV4cCI6MTc3NDAyNDczMTYwOX0=",
+        "qr_image": "data:image/png;base64,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U8WJylTxiYe11lqvh7XWWq+HtdZarx++rOKk4kbFDZWp4kTlRsUNlUllqphUpoobFZPKN1WcqJyonFT8l1WcVJyoTBUnKicqJxUnFScVk8onVKaKGxW/6WGttdbrYa211uthrbXW64cvU5kqJpWpYlK5UTGpTConFScqN1SmiknlEyonFVPFicoNlanipOJE5YbKJ1RuVEwqNyqmikllqpgqJpWp4kRlqjhR+aaKSWVSmSomlRsVn3hYa631elhrrfV6WGut9bI/+ItUTip+k8pU8QmVk4obKp+omFSmihsqJxWfUPlExYnKScWkMlWcqPxNFZPKVHGicqNiUjmpOFGZKv5LHtZaa70e1lprvR7WWmu97A8+oDJV3FCZKiaVqWJSmSpOVG5U3FD5pooTlW+qmFSmiknlN1VMKlPFicpUMal8U8WJyknFpDJVTConFb9J5TdV/E0Pa621Xg9rrbVeD2uttV72B//DVG5U3FCZKv4mlaliUpkqbqjcqJhUTiq+SeVGxaRyUnFDZaqYVKaKGyrfVHFD5UbFDZWp4kRlqvimh7XWWq+HtdZar4e11lqvHz6k8jdVTBWTylQxqUwVn1C5UTGpTBXfpDJVnFRMKpPKScWJylQxqXyTyidUporfpHJSMancUPmbVKaKE5WpYqqYVKaKTzystdZ6Pay11no9rLXWev3wZRXfpHKjYlI5UZkqpoqTihsqJyrfVHFD5UbFicpUMalMFZPKScWkMlWcqJxU3FCZKiaVGxWTylRxonJScaIyVUwqJxU3Kk5UpopvelhrrfV6WGut9XpYa631sj/4gMpUMancqJhUpopJ5UbFJ1Q+UfEJld9UMamcVNxQuVHxm1T+yypOVKaKSWWqmFSmihOVf6liUpkqPvGw1lrr9bDWWuv1sNZa6/XD/zMVk8oNlanipOKGyknFpDJVnKicVEwqJxU3VE4qJpUTlX+pYlKZKiaVqeKGyqRyUjGpTBWTylRxojJVTCo3KiaVqWJS+Zse1lprvR7WWmu9HtZaa71++H9G5ZtUTlSmiknlm1Q+oTJVTCo3Kj5R8QmVb6o4qTipmFSmipOKT1RMKlPFico3VUwqU8Wk8i89rLXWej2stdZ6Pay11nr98MsqflPFpHKicqPib1KZKj6hcqIyVdxQmSomlUllqrihclJxQ2VSmSpOVKaKqWJS+UTFpHJSMalMFTdUpopJ5aTipGJS+Zse1lprvR7WWmu9HtZaa71++DKVf6nihsoNlaliUpkqPqFyo2KquKFyo+JGxYnKScWJyknFN1V8U8WkcqPipOJGxSdUTiomlaliUvlND2uttV4Pa621Xg9rrbVe9gdrrbV4WGut9XpYa631elhrrfV6WGut9XpYa631elhrrfV6WGut9XpYa631elhrrfV6WGut9XpYa631elhrrfV6WGut9XpYa631elhrrfX6P4IfOrp0tcL9AAAAAElFTkSuQmCC",
+        "generated_at": "2026-03-20T13:38:51.634Z",
+        "expires_at": "2026-03-20T16:38:51.609Z"
+      },
+      "status": "PENDING",
+      "verification_token": "28eb6bc98e0c6aadbe197d650deb2d80"
+    },
+    "start_control": {
+      "can_start": false,
+      "start_method": "PENDING"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd4debc4f1a3b6ad78d303"
+          },
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd4debc4f1a3b6ad78d304"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "",
+        "players": [
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd4debc4f1a3b6ad78d305"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd4debc4f1a3b6ad78d306"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "live_active_team": "A",
+    "_id": "69bd4debc4f1a3b6ad78d302",
+    "title": " vs  — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T13:38:51.608Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T13:38:51.636Z",
+    "updatedAt": "2026-03-25T08:59:29.844Z",
+    "__v": 0,
+    "stats_updated": false,
+    "commentary_log": []
+  },
+  {
+    "team_a": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "team_b": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliZDUzZThjNGYxYTNiNmFkNzhkMzZiIiwiYmlkIjoiTk9ORSIsInQiOjE3NzQwMTU0NjQwMjMsInMiOiIyZDM2MzI5ODM0ZGRkZWM5MmZmMTRhNjZmZjY1ZDA1MSIsImV4cCI6MTc3NDAyNjI2NDAyM30=",
+        "qr_image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUQAAAFECAYAAABf6kfGAAAAAklEQVR4AewaftIAABnHSURBVO3BQW7s2pLAQFLw/rfMNjTK0QEEVfm+/sgI+8Vaay0u1lpr3S7WWmvdLtZaa90u1lpr3S7WWmvdLtZaa90u1lpr3S7WWmvdLtZaa90u1lpr3S7WWmvdLtZaa90u1lpr3S7WWmvdLtZaa91+eEnlL1WcqEwVJypTxaQyVZyoTBVvqJxUTCpvVEwqU8UTKicVk8pU8YTKVHGiMlVMKicVk8pJxaRyUjGpTBWTylRxovJExaQyVUwqf6nijYu11lq3i7XWWreLtdZatx8+rOKTVJ6oOFE5UZkqnqiYVKaKE5WpYlKZVE4qJpUTlaniCZUnVKaKSWWqmFSmihOVv1QxqUwVk8qkMlVMKlPFpPJExaRyUvFExSepfNLFWmut28Vaa63bxVprrdsPX6byRMUTKlPFv6TyTRUnKpPKGypTxaRyUjGpTBWTylTxhMpJxaQyqTyhMlVMKlPFScWJyhMVT6hMFd+k8kTFN12stda6Xay11rpdrLXWuv3wP0ZlqpgqJpWp4kRlqjipOFGZKiaVqWJSmSomlZOKE5UnKp5QOVF5o2JSmSomlScqJpWp4g2VqeIJlaliUpkqJpWTiv8lF2uttW4Xa621bhdrrbVuP/w/V/FGxYnKExVvqEwVk8qJyhMqU8VUMalMFW9UTCpTxaQyVUwqk8qJyhsqU8WkclIxqUwVk8oTFU+oTBWTyqQyVfx/drHWWut2sdZa63ax1lrr9sOXVfwllZOKSWWqmCpOVKaKE5Wp4kRlqphUpoonVE5UpopJ5Q2VqeKk4qRiUpkqJpWp4gmVSeWTVKaKSWWqOFE5qZhUpopPqvgvuVhrrXW7WGutdbtYa611++HDVP6SylQxqbyhMlU8oTJVTCpTxSepTBXfVDGpTBWTyonKVDGpTBWfpDJVnFRMKlPFpDJVTCpvqEwVk8obKlPFicp/2cVaa63bxVprrdvFWmut2w8vVfxLFZPKVHFSMalMFZPKVPGEyhMVk8oTFW9UnFRMKlPFJ6m8ofJExV9SmSpOKiaVqeKk4qRiUpkqTir+P7lYa611u1hrrXW7WGutdfvhj6mcVEwqJxUnKlPFScWkMlVMKlPFVDGpTBUnKk+ofJLKVHFS8YbKExWTylQxqZyovKEyVUwqU8WkcqLyv0zlpOKbLtZaa90u1lpr3S7WWmvd7BcvqJxUfJPKVHGiclIxqTxRMak8UfFJKk9UnKg8UTGpTBVvqEwVb6i8UfGXVKaKE5WTikllqvhLKk9UvHGx1lrrdrHWWut2sdZa6/bDH1M5qZhUTiomlanikyomlUllqphUTlSmikllqniiYlKZVKaKqeIJlaniROWk4psqTlSmikllqjhRmSpOVKaKSeWTKt5QmSomlZOKSeWbLtZaa90u1lpr3S7WWmvd7BdfpHJS8S+pPFExqUwVT6icVEwqJxWTylRxonJSMak8UfGEyhsVk8pU8YTKVPGGylQxqUwVk8pUcaIyVbyh8kbFGypTxRsXa621bhdrrbVuF2uttW4/fJjKVDGpPKFyUvGEyknFicobKicVJxWTyqRyovIvqUwVk8pUcaIyVUwqT6g8oXJSMalMFZPKVDGpnKhMFU+oTBUnFZPKScWkMlWcqHzTxVprrdvFWmut28Vaa63bD/8xKlPFicpJxVQxqUwqJxUnKlPFScWJylTxRMWkclIxqXxSxUnFExVvqEwVJypTxaQyqUwVJxWTylQxqUwVn6QyVUwqJxUnFZPKVDFVfNPFWmut28Vaa63bxVprrZv94oNUTiomlTcqJpUnKiaVqWJSmSqeUJkqJpWTikllqphUpopJZar4JpUnKiaVqWJSmSomlaniRGWqeELlpGJSmSq+SeWNiknlpOJE5Y2KNy7WWmvdLtZaa90u1lpr3ewXf0jliYo3VE4qTlSmikllqphUnqiYVD6p4kRlqnhC5aRiUpkqJpWpYlKZKk5UPqliUnmjYlKZKp5QmSqeUHmiYlL5pIpvulhrrXW7WGutdbtYa611++EllaniiYoTlaniRGWqOFGZKqaKSeVE5aRiUvmkiknliYpJZaqYVKaKSWVSmSreqHij4gmVJyomlaliUpkqnlCZKiaVqWJSmSpOVCaVqeJEZaqYVP7SxVprrdvFWmut28Vaa62b/eKLVKaKSWWqOFGZKp5QmSpOVE4qJpWpYlKZKiaVqeJE5ZMqTlT+UsUTKlPFicpU8UkqU8WkclIxqZxUPKEyVUwqU8WkMlVMKlPFicpUMalMFZ90sdZa63ax1lrrdrHWWuv2w0sqb1ScqLyhcqIyVUwVJypPVEwqU8WkMlWcVEwqJxUnKk9UTCpTxYnKpHJScaJyUvGEyknFVDGpnFR8k8qJylTxhMoTKlPFScWkMlW8cbHWWut2sdZa63ax1lrr9sMfUzmpmComlROVk4oTlanipGJSOVGZKiaVqWJSmSomlSdUpoqTikllUpkqJpWTiknlROWkYlJ5QuWk4kRlqphUJpWp4qTiRGWqOFE5UXmi4gmVqeIvXay11rpdrLXWul2stda6/fBhFZPKVDGpTCqfVDGpvKFyUnFS8UbFN6lMFZPKScVJxYnKVDGpTBWTyqRyojJVPKEyVZyofJPKJ6mcVJyoTBVTxaRyovJNF2uttW4Xa621bhdrrbVuP3xZxaRyUnGi8oTKVDGpnKg8oTJVTConFZPKScVU8YbKGypTxaTyRsUnVUwqJxVvVDyhcqIyVZyonFRMKlPFicobFU9UfNLFWmut28Vaa63bxVprrZv94h9SeaPiRGWqeENlqphUpoq/pDJV/CWVk4oTlaliUpkqnlCZKiaVqWJSmSomlaliUpkqnlB5ouJEZap4QuWJiknlpGJSOal442KttdbtYq211u1irbXW7YeXVE4qJpWpYlKZKiaVSWWqmComlaniRGWqmFROVE4qTlROKqaKSeWNiknliYpJZap4omJSeaLiCZUTlW9SmSomlSdUpooTlanipGJSmVSmikllUpkqJpVPulhrrXW7WGutdbtYa611s1+8oDJVPKHySRUnKp9UcaLyv6xiUjmpOFH5pIpJ5ZsqTlSmihOVb6qYVE4qJpVvqphUpopPulhrrXW7WGutdbtYa611s198kcoTFU+oTBVPqEwVT6i8UfGGylTxhMpUMalMFZPKVDGpTBVvqJxUTCpTxaQyVTyhclLxhspU8YTKGxWTyknFEyonFZPKScUbF2uttW4Xa621bhdrrbVuP7yk8kTFpHKiMlU8oXJSMalMFZPKScWk8kkqT6hMFU9UPKEyVTyh8kTFpDJVvKEyVZxUTCpTxYnKVHGiMlVMFZPKVPFNKlPFf9nFWmut28Vaa63bxVprrdsPL1VMKp9U8UkVJxWfVDGpTCpTxUnFpHJS8YTKVHFScaLyRMWJyknFpPJGxRMqn6QyVUwVJypTxRsVk8pJxRsqf+lirbXW7WKttdbtYq211s1+8YLKVDGpTBWTyjdVTCpvVJyonFRMKlPFico3VUwqJxVPqEwVJypPVJyo/KWKSeWk4gmVqeJE5YmKE5W/VPFNF2uttW4Xa621bhdrrbVuP7xUMalMFScVT6hMFW9UnKi8UfGEyhsVk8pUMamcVLyhMlVMKk9UTCpPVJyonFRMKlPFpDJVnKhMFW+oPFHxRMWJyiepnFS8cbHWWut2sdZa63ax1lrrZr/4IpWTiknlkypOVE4qJpWpYlKZKiaVqWJSeaLiCZWpYlI5qXhC5aRiUpkqJpW/VPGEylRxojJVnKhMFZPKVPGEylTxhspUMalMFU+oTBVvXKy11rpdrLXWul2stda62S/+IZWTiknlpGJSOamYVN6omFSeqJhU/ksqnlB5omJSOak4UZkqJpWp4kRlqjhRmSomlaliUjmpmFROKp5QOamYVD6p4kRlqnjjYq211u1irbXW7WKttdbth5dUpopJZaqYKiaVSWWq+KaKSWWqmFTeqJhUpopJZaqYVJ6oOFF5o2JSmSpOKiaVJyomlaniRGWqmFSeUJkqPqliUvmkiknlpOIJlROVb7pYa611u1hrrXW7WGutdfvhpYpvqphUpoqTiknlROVE5URlqphUJpW/VPFExaQyVUwqJxWTylQxqZyofJLKExXfVDGpfJLKVPFExRMqU8VUcVIxqXzSxVprrdvFWmut28Vaa63bD39MZaqYKiaVqWJSOak4UfmkiknlpOJE5UTlpGJSOan4pIpJZaqYVKaKE5Wp4gmVqeIJlZOKSWWqeEPlmyomlaniRGWqmFSmin/pYq211u1irbXW7WKttdbth/8YlanipGJSmVSmiidUTir+SyomlanijYpJZap4QmWqmFSmiqliUpkqJpUnVKaKNypOVP5SxRsqU8WJylQxqZxUfNPFWmut28Vaa63bxVprrZv94oNUpopJ5Y2KSWWqmFSmihOVk4pJZar4JJWTijdUnqg4UZkq3lA5qZhUTiqeUDmpOFE5qZhUpopJ5ZMqJpWTiknlpOJE5Y2KT7pYa611u1hrrXW7WGutdbNffJDKGxX/ksobFScqJxUnKlPFicpUMalMFScqU8Wk8kbFicpU8YTKExUnKk9UTCpTxRMqU8WkMlVMKicVJyonFU+oTBWTyknFGxdrrbVuF2uttW4Xa621bj98WMUbKk9UTCpTxYnKVPGGyhMVk8pJxYnKVDGpPKEyVZxUnKhMFZPKScWk8kTFicoTFScqk8qJyknFicpUMam8oXJS8YTKVDGp/KWLtdZat4u11lq3i7XWWrcfXlJ5omJSmSpOVJ5QmSqmiknliYqpYlKZKiaVqWJSeUPlpGJSmSomlTcqJpWTikllqphUTlSeUJkqJpUnKk5UpoqTiknlpOJE5YmKSeWbKr7pYq211u1irbXW7WKttdbth5cqJpWp4gmVk4pJZaqYVE5Unqh4omJSOVE5UZkqpoonVD6pYlI5qZhUTiomlTcqJpU3Kk5UPknlROUNlROVk4pJ5Q2VqeKTLtZaa90u1lpr3S7WWmvdfnhJZaqYVN6omFSmipOKJyomlSdUpoqp4kRlqjhReaJiqphUnqg4qThR+aaKJyomlZOKE5WpYlJ5QmWqeENlqjhRmSreqHhDZap442KttdbtYq211u1irbXW7YeXKiaVqeINlaliUpkqJpWp4kTlk1S+qeINlaliUpkqTlSmipOKSWVSmSqmijdU3lA5qXii4qRiUpkqTlSeUDlROan4pIpJ5ZMu1lpr3S7WWmvdLtZaa93sF/8hKlPFJ6lMFZPKJ1U8oTJVnKg8UTGpTBVPqJxUTCpTxYnKScWJylRxovJJFScqb1RMKicVJypTxaQyVUwqn1Txly7WWmvdLtZaa90u1lpr3X54SeWk4kTlROWNihOVk4pJZao4UZkqTiq+SeWTKk5Upor/EpW/pHJSMal8kspJxaRyovJJFf/SxVprrdvFWmut28Vaa63bDx9WcaJyUvGEyhMVJyqTylTxhspJxaQyVZxUPKEyqZxUnKj8JZWp4o2KJ1SmipOKSeWk4omKE5Wp4qRiUjmpeELlCZWp4pMu1lpr3S7WWmvdLtZaa91++I9TmSpOKk5UnqiYVE4qpopJ5UTlk1SmipOKJ1SeUHmi4kTlCZUnVKaKE5WpYlKZKk5UpoonVKaKSeWk4g2VqeKTVKaKNy7WWmvdLtZaa90u1lpr3ewXL6icVEwqJxVPqJxUTConFZPKScWkMlW8ofJExRMqf6niCZWTiknljYonVJ6o+CSVNyomlaniRGWqeELliYpvulhrrXW7WGutdbtYa611s198kcpfqphUTipOVP5SxRMqn1Txl1SmihOVk4oTlb9UMalMFZPKVDGp/KWKE5VPqjhRmSo+6WKttdbtYq211u1irbXWzX7xgspJxRMqU8WJyhMVJypPVEwqJxVPqJxUTCpTxaRyUjGpPFExqbxRMalMFZPKVPGEylQxqTxR8UkqU8WJylRxovJExYnKVDGpvFHxSRdrrbVuF2uttW4Xa621bj+8VDGpnKicVEwqU8VJxYnKScWkMlU8UfFGxYnKExWTyiepvFExqUwVJxUnKlPFVDGpTBWTyiepfFLFExWTyhMqU8UTFZPKicpU8cbFWmut28Vaa63bxVprrZv94oNUTiq+SeWTKt5QOamYVKaKN1SeqJhUpop/SWWqmFSmihOVk4pJZaqYVE4qTlSmikllqphUTipOVE4qJpWp4pNUnqh442KttdbtYq211u1irbXWzX7xQSonFU+onFR8k8pJxaRyUvGEyjdVTCpPVJyoTBUnKlPFicoTFU+oTBWTyknFpHJSMalMFScqT1ScqEwVT6hMFZPKVDGpnFR80sVaa63bxVprrdvFWmut2w9fVjGpTBUnFZPKpHJSMalMFZPKScUTFU+oPFExqZxUTCpTxV9SmSpOVKaKSWWqmFSmiidUpopJ5aRiUplUTlROKk5U/lLFpDJVnFRMKpPKVPHGxVprrdvFWmut28Vaa63bDy+pTBUnFScqJxVPqDxRcaIyVTyh8i+pTBWTylQxqUwVk8qJyhMqf0llqphUJpVPqjhROVGZKqaKSWWqmComlScqnlCZKqaKSeWTLtZaa90u1lpr3S7WWmvdfnip4gmVk4oTlZOKT1J5omJSmSpOVE4q3qiYVKaKSeWJihOVE5WTiknlkyreqJhUpoonVKaKE5VJZaqYKp6omFROVD5J5Zsu1lpr3S7WWmvdLtZaa91+eEllqphUpopJ5UTlpOKJihOVqeJEZaqYKiaVJyomlScqTiomlW+qmFSmiknlpOJEZaqYVL6pYlKZKiaVE5Wp4pNUpopJZaqYVP5SxSddrLXWul2stda6Xay11rrZLz5IZar4JJUnKp5QmSqeUJkqTlSmiidUpopJZao4UZkqJpUnKiaVqWJSmSomlTcqJpWTiknlpGJSmSomlaniROWk4gmVqWJSmSreUDmpmFSmim+6WGutdbtYa611u1hrrXX74ctUTiomlZOKSWWqmFSmiknlCZWpYqp4Q+WJipOKE5WpYlKZKk5UnlB5omJSOan4pIpJ5aTipGJSmSreUHlCZaqYVP5SxYnKVPHGxVprrdvFWmut28Vaa62b/eIFlaniROWk4ptUTipOVE4qJpUnKk5UvqniROWJihOVk4pJZaqYVKaKSWWq+CaVqeIJlaliUnmi4kRlqnhCZao4Ufmkijcu1lpr3S7WWmvdLtZaa93sFy+oTBWTyjdVTCr/JRWTylTxhspUMamcVJyoTBWTylTxSSpPVJyonFR8k8pU8YbKScWk8kTFicpUMak8UTGpTBWTylTxxsVaa63bxVprrdvFWmutm/3iBZU3Kp5QmSomlZOKE5Wp4kTlpOJEZap4QuWk4kTlkyomlTcqnlCZKt5QmSpOVE4qnlCZKp5Q+aSKSeWJikllqviXLtZaa90u1lpr3S7WWmvdfviyiknlROWk4omKJypOVJ5QmSqmiknlL1VMKlPFEyonFZPKicpU8YbKExWTyknFJ1W8UXGiMlVMKpPKExWfpHJS8cbFWmut28Vaa63bxVprrZv94g+pnFQ8ofJExRMqJxWTylRxojJVfJPKScWk8kkVk8pJxYnKScUTKlPFicpJxRsqU8WJylQxqUwVk8obFScqb1R808Vaa63bxVprrdvFWmutm/3iBZWp4gmVqWJSmSo+SeWkYlI5qZhUTiomlaliUvmXKk5UTiomlTcqJpWp4kTlkyomlZOKE5Wp4g2Vk4pJZaqYVL6pYlKZKj7pYq211u1irbXW7WKttdbth5cq3qg4qThRmSpOVKaKSWVSeUJlqvhLFU+oTBWTyonKVDGpTCpTxTepTBUnFU+ovKFyUvGGylQxqXxSxRMqU8VJxTddrLXWul2stda6Xay11rr98JLKX6p4QmWqeKJiUjmpmFROKqaKk4pJ5URlqjhReaLiiYo3VKaKk4pJ5QmVqeJEZao4UZkqJpWp4kRlqphUpoqTiknlCZWp4kRlqphUTireuFhrrXW7WGutdbtYa611++HDKj5J5aTiCZUnVKaKSeWk4gmVT6r4JJWpYlKZKk5UTipOVE5UpopJ5aTiiYpJZao4UZkqTlROVE5UTireqPimik+6WGutdbtYa611u1hrrXX74ctUnqh4QmWqmCr+ksonVUwqJypvVEwqJypTxYnKEyonFZ+k8k0qU8WkcqJyUvGGyhsqn6QyVUwqU8UbF2uttW4Xa621bhdrrbVuP/yPUTmpeEPlpOJE5QmVqWJSOamYVJ6oeEJlqpgqJpUnKk5UTiqmihOVk4pJ5QmVE5U3VKaKk4qTihOVk4oTlaniL12stda6Xay11rpdrLXWuv3w/1zFpPKGyknFicobFScqn1RxovJJKlPFicqJylQxqTyh8kbFGypTxYnKJ6lMFZPKScWJyhMqf+lirbXW7WKttdbtYq211u2HL6v4SxUnKlPFScWkMlWcVEwqJypTxRMVk8oTKlPFpPKEylTxRMWkMlVMKicqU8VUMamcqEwVb1RMKlPFX1KZKt6oOFGZKiaVb7pYa611u1hrrXW7WGutdbNfvKDylyqeUJkqnlD5poonVN6oOFH5pIpJZap4QuWkYlKZKiaVk4pJZaqYVJ6omFSeqDhROamYVKaKE5WpYlKZKiaVJyomlanijYu11lq3i7XWWreLtdZaN/vFWmstLtZaa90u1lpr3S7WWmvdLtZaa90u1lpr3S7WWmvdLtZaa90u1lpr3S7WWmvdLtZaa90u1lpr3S7WWmvdLtZaa90u1lpr3S7WWmvd/g+eoHlmT+gcjwAAAABJRU5ErkJggg==",
+        "generated_at": "2026-03-20T14:04:24.045Z",
+        "expires_at": "2026-03-20T17:04:24.023Z"
+      },
+      "status": "PENDING",
+      "verification_token": "2d36329834dddec92ff14a66ff65d051"
+    },
+    "start_control": {
+      "can_start": false,
+      "start_method": "PENDING"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd53e8c4f1a3b6ad78d36c"
+          },
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd53e8c4f1a3b6ad78d36d"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "",
+        "players": [
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bd53e8c4f1a3b6ad78d36e"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bd53e8c4f1a3b6ad78d36f"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "DIRECT",
+      "linked_booking_id": null,
+      "opponent_status": "PENDING"
+    },
+    "live_active_team": "A",
+    "_id": "69bd53e8c4f1a3b6ad78d36b",
+    "title": " vs  — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-20T14:04:24.021Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-20T14:04:24.046Z",
+    "updatedAt": "2026-03-25T08:59:29.844Z",
+    "__v": 0,
+    "stats_updated": false,
+    "commentary_log": []
+  },
+  {
+    "team_a": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "team_b": {
+      "score": 0,
+      "wickets": 0,
+      "overs_played": 0,
+      "squad": []
+    },
+    "toss": {
+      "decision": "Pending"
+    },
+    "verification": {
+      "qr_code": {
+        "scan_attempts": 0,
+        "code": "eyJ2IjoiMS4wIiwibWlkIjoiNjliZGVhNjAxY2ZjZWQ3NTVlODVmMjY1IiwiYmlkIjoiTk9ORSIsInQiOjE3NzQwNTM5ODQwOTcsInMiOiIyNzcyMTljYmI5YjExN2NjMzdmZTUwZTA0YTJjODlmZCIsImV4cCI6MTc3NDA2NDc4NDA5N30=",
+        "qr_image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUQAAAFECAYAAABf6kfGAAAAAklEQVR4AewaftIAABmLSURBVO3BQW4ER5IAQfcC//9lX6FOcUog0U1Kswgz+wdrrbV4WGut9XpYa631elhrrfV6WGut9XpYa631elhrrfV6WGut9XpYa631elhrrfV6WGut9XpYa631elhrrfV6WGut9XpYa631elhrrfX64UMqf6nihspUMalMFScqU8WkMlV8QuWk4obKScWkMlXcUDmpmFROKk5UpopPqHxTxYnKScWJym+qmFSmiknlL1V84mGttdbrYa211uthrbXW64cvq/gmlRsqU8VJxYnKVDGpTBWTylRxo2JSmVROKk4qJpWp4obKDZWpYlKZVL5J5RMVN1Smik+oTBWTyo2KSeWk4kbFN6l808Naa63Xw1prrdfDWmut1w+/TOVGxQ2VE5WpYlL5JpUbKicVU8WJyqQyVUwqJyo3KiaVk4pJZao4UTlRmSqmihOVqWJSmSpOKk4qTlROVE4qTlSmit+kcqPiNz2stdZ6Pay11no9rLXWev3w/1zFScWkcqIyVUwqU8WkMlVMKjdUpopJZVKZKk5UpoobFZPKpDJV3KiYVG6o3FA5UZkqPqEyVZyoTBU3KiaVk4r/Tx7WWmu9HtZaa70e1lprvX74H1fxCZWp4obKVHFDZao4UTlRuaEyVUwVv6niROUTFZPKb6qYVE4qJpWpYlK5ofKJikllUpkq/pc9rLXWej2stdZ6Pay11nr98Msq/pLKVHFScUNlqrhRcUNlqphUpoobKicqU8WkMlVMKicqJxWTyg2VGxU3VH6TylQxqUwVN1Smikllqvimiv+Sh7XWWq+HtdZar4e11lqvH75M5S+pTBWTylQxqUwVk8pUMalMFZPKVDGpTBXfpDJV/JsqJpWpYlKZKiaVqWJSmSomlROVqeITFZPKVDGpfEJlqvgmlaniROW/7GGttdbrYa211uthrbXW64cPVfybKiaVqWJSmSpuqJyoTBWTylRxUjGp3Kj4RMWkcqLylyp+U8UnKm6oTBUnFZPKjYpJZaqYVKaKk4r/JQ9rrbVeD2uttV4Pa621Xj/8MZWTiknlpOJEZaqYVE4qJpWTin+TyidUpoqpYlL5JpUTlanipOKGyidUpopJZaqYVE5UTiomlU+o/CWVk4rf9LDWWuv1sNZa6/Ww1lrrZf/gAyqfqPhLKicVk8qNiknlmypuqEwVk8qNihOVGxWfUJkqTlR+U8VfUpkqJpUbFZPKVHGiMlVMKlPFicqNik88rLXWej2stdZ6Pay11nrZP/gPUzmpmFSmiknlpGJSOan4TSonFScqv6nim1ROKiaVb6qYVE4qJpWp4kRlqjhR+UsVn1D5RMWkclLxiYe11lqvh7XWWq+HtdZarx8+pHKj4kbFpHJScVIxqdyomFQ+UTGp3FCZKm5UTCpTxaRyonJSMalMFZPKb6r4popvUpkqJpWpYlI5qZhUbqh8ouJGxaTyTQ9rrbVeD2uttV4Pa621Xj98qGJSmSomlZOKSWWqmFSmihOVE5WpYlL5SxUnKpPKDZWp4hMVk8oNlaniRsWkMlWcqEwVJyonFZPKVDGpTBWTyonKVDGpnFRMKlPFVDGpnFRMKlPFicpvelhrrfV6WGut9XpYa631sn/wi1RuVNxQOak4UZkqJpWp4hMqU8WkclJxojJVTConFTdUpopJ5UbFicpvqphUpopJ5UbFDZWTihsqU8WkclIxqZxU3FCZKk5UpopPPKy11no9rLXWej2stdZ6/fDHKm6oTBU3VKaKqeKkYlKZKiaVqWKq+ITKVHGjYlK5oTJVnFRMKlPFpDJVnFTcUJkqvqliUplUpopJZaqYVD5RMalMFZPKpDJVTCqTylRxQ+UvPay11no9rLXWej2stdZ62T/4gMpJxaQyVUwqU8WkclIxqUwV36QyVUwqU8WkMlVMKjcqJpWTiknlpOJE5aTihspUMalMFScq31QxqXyiYlKZKm6oTBUnKjcqTlS+qeI3Pay11no9rLXWej2stdZ6/fBlFTdUpopJ5YbKVDGpTBUnKjdUflPFjYobFZPKicpUMamcqEwV36RyUnFDZVI5qZhUpoqTihOVk4pJZar4hMo3VUwqf+lhrbXW62GttdbrYa211sv+wS9SmSo+oTJVfJPKVDGpTBWTylQxqUwVk8pUMamcVEwqNypOVD5RMamcVEwqJxU3VKaKb1KZKiaVT1R8QmWquKEyVZyoTBWTylQxqUwV3/Sw1lrr9bDWWuv1sNZa62X/4AMqNypuqEwVk8pUMal8ouJEZaq4oTJVTCo3Kk5UpoobKicVk8pUcaJyo+KGylTxl1ROKk5UTiomlU9UTCpTxaTyiYobKlPFJx7WWmu9HtZaa70e1lprvX74Yyo3Kr6p4kTlRsWJyknFpDJV3FC5oTJVnFRMKpPKVPFNFTdUPqEyVdxQmSomlROVqeITFScqk8pUMamcVJyoTCpTxV96WGut9XpYa631elhrrfX64csqJpWp4kRlUpkqpoqTihOVb1I5qfhLFZPKiconKk5UTiomlUnlRsWkMqlMFScqU8UNlU+oTBWTym9SmSpOVKaKqWJSOVH5TQ9rrbVeD2uttV4Pa621XvYPPqAyVZyoTBWTylRxovKbKiaVqWJS+UTFpDJVTCpTxSdUpopJ5UbFpHKj4kTlExWTyknF/zKVk4pJZaqYVG5U3FCZKn7Tw1prrdfDWmut18Naa62X/YN/kcqNik+onFScqNyouKEyVUwqU8VvUpkqTlRuVEwqJxWTylTxCZWp4kRlqjhRmSpOVKaKSeWk4kRlqviEyknFpDJV3FCZKj7xsNZa6/Ww1lrr9bDWWuv1w4dUTiomlaliUpkqJpWTihsVJyonFScqJxUnKlPFicpUMancqJhUblRMKpPKScWkMlVMKt+kMlVMFZPKVPGJim9SmSomlZOKSWWqmFQmlaliUrlR8U0Pa621Xg9rrbVeD2uttV4/fFnFScWkcqLym1RuVNyomFQmlaniROWGyo2KGxUnKlPFpHKjYlI5qThRuaFyUvEJlW9S+UTFDZUbKlPFicpvelhrrfV6WGut9XpYa631sn/wAZVvqrihMlVMKjcqbqhMFZPKScWJylQxqUwVN1Smihsqf6nihspUMalMFTdUTir+TSpTxYnKJypuqJxU/KWHtdZar4e11lqvh7XWWq8fvqxiUvmEylRxovIJlanipGJSmSomlROVqeITKlPFDZWp4qTiEypTxaQyVUwqU8WkckNlqjipmFSmihOVk4obFZPKVDFVTCqfUJkqPqFyUvGJh7XWWq+HtdZar4e11lqvHz5U8Zsqvqnim1SmihsqJyqfqPhExQ2Vk4pJ5ZsqJpVPVNxQ+aaKT6hMFZ+omFROKj6hMlX8poe11lqvh7XWWq+HtdZaL/sHH1A5qZhU/lLFpPJNFScqU8WkcqNiUvmmihOVqWJSmSpOVKaKSeVGxYnKb6qYVE4qPqEyVZyo3Kg4Ufk3VXzTw1prrdfDWmut18Naa63XDx+qmFROKn6TyqRyUnGiMlWcqEwVJxUnKjcqbqhMKlPFicpUMalMFVPFScWJyicqJpWTik9UTConFZ9QmSomlaniRsWJym9SmSo+8bDWWuv1sNZa6/Ww1lrr9cOHVE5UTiomlZOKSeWk4kTlpOJEZao4UZkqJpWpYlKZKiaVqWJSmSpOVKaKSeWk4kRlqjhROVE5qbhRMalMFScVk8pJxYnKVDGpTBUnFZPKVPFNFZPKVHFD5Zse1lprvR7WWmu9HtZaa71++FDFpDJVTCqTyknFpHJSMamcVEwqk8pUcUPlRGWqmFSmim9SuaEyVUwqU8UnVE4qTlQmlZOKGypTxaQyVUwqJyqfUJkqTiomlZOKSeVE5URlqphUftPDWmut18Naa63Xw1prrdcPX1YxqZxUTCqTylTxmyomlRsqJxWTyg2VqeITFf9lFZPKjYpJZaqYVE4qJpVJ5UTlN1VMKt9UMamcVNxQuVHxTQ9rrbVeD2uttV4Pa621Xj98mcpUMancqJhUpoqTiknlROVE5aTiRsWkckPlROUTKlPFJ1SmihOVE5VvqrhRcUPlRsWk8k0qU8WNihsqU8VUcVIxqUwVn3hYa631elhrrfV6WGut9frhQypTxaQyVZxUTCpTxaRyUnGiMlVMKjdUblR8omJSmSomlUnlpOKbKk5UpooTlanihspUMalMFZPKScVUMal8QuU3VUwqU8WJylQxqUwV/6aHtdZar4e11lqvh7XWWi/7B39IZaqYVKaKGyonFZPKVHGiMlVMKicVk8qNihsqU8UNlZOKE5Wp4obKVHFD5UbFpDJVTCo3Km6ofFPFJ1ROKiaVk4pJ5aRiUpkqPvGw1lrr9bDWWuv1sNZa62X/4BepfFPFpDJVTCrfVDGp/KaKSeVGxaQyVUwqJxWTyknFpDJVnKhMFTdUpopPqEwVk8o3VUwqJxWTyknFpHJSMamcVJyofKLimx7WWmu9HtZaa70e1lprvewf/ItUpoq/pDJVTCrfVPEJlaliUjmpmFQ+UfEJlaniROWk4kTlExWTyknFpDJVfEJlqrihclJxonJScUNlqphUTio+8bDWWuv1sNZa6/Ww1lrrZf/gAypTxaQyVZyofFPFpHKj4obKjYoTlaniRGWqmFT+UsWk8omKv6QyVZyonFRMKjcqJpWTiknlRsWkclJxQ2WqmFRuVHziYa211uthrbXW62Gttdbrhy9TmSpOVKaK31RxonKiMlVMFZPKicoNlaniRsWJylRxQ2VSmSomld+kcqNiqjhROak4qZhUpoqTiknlpOJE5UbFpPKbKiaVb3pYa631elhrrfV6WGut9frhQxUnKjdUblRMKicVk8pUcVJxo2JSmSomlU9UTCpTxTep3FCZKiaVqeJE5aRiUpkqTlSmipOKE5VvUjlR+YTKicpJxaTyX/aw1lrr9bDWWuv1sNZa6/XDv6xiUpkqblScqJyoTBU3VKaKqeKk4psqJpVPqEwVJyonKlPFicpJxaQyVfwllaliUrmhMlV8QmWqOFGZKiaVGxU3VH7Tw1prrdfDWmut18Naa63XD1+mMlV8QuWkYlI5qbihMlXcUJkqJpWpYlKZKiaVk4qpYlKZKiaVqWJSmSpOKiaVE5XfpPKJikllqrhRcVLxCZUbKicqU8Wk8k0Vk8o3Pay11no9rLXWej2stdZ6/fBlFTdUTiomlRsVk8pUcVIxqUwVJxWTyonKicpJxTdVTCpTxaRyojJVTConFScqNyomlX+Tyo2KSWWqmCpOVKaKSWWq+ITKScVJxTc9rLXWej2stdZ6Pay11nrZP/hFKn+pYlKZKiaVGxWTylQxqdyomFSmiknlmypOVKaKb1K5UXGiMlVMKr+pYlKZKm6o/KaKSeUvVfybHtZaa70e1lprvR7WWmu9fvgylaliUjmpuKFyQ2Wq+ETFJyomlaniRsUNlUnlpOKGylRxUjGpTBWTyknFjYobKlPFScUNlZOKGypTxUnFicpUcUPlhspU8U0Pa621Xg9rrbVeD2uttV4/fEjlRGWqmFROVKaKE5WTiknlRsWkMlVMFZPKpHJD5YbKVHFS8QmVqWJS+aaKE5VPqEwVJyo3Kk4qPqEyVUwqJxWfUJkqvkllqvjEw1prrdfDWmut18Naa63XD7+s4hMVNyo+UTGpnFRMKlPFN1VMKicVN1RuVNyoOFE5UZkqJpVvqvimihsqU8WkckNlqphUvqnihspJxW96WGut9XpYa631elhrrfWyf/ABlaniROUvVUwqU8WJyjdVTCpTxaQyVUwq31RxonJScUPlpGJSOak4UflLFZPKVHFDZaqYVL6p4kTlmypOVKaKb3pYa631elhrrfV6WGut9frhQxWTyo2KGyonFZPKVHGiclIxqXyTylRxo2JS+YTKScUNlRsqJxWTylQxVZyoTBU3VE4qbqhMFScVk8pUcaIyqZxUTCpTxYnKicpfelhrrfV6WGut9XpYa631+uHLKiaVqeJE5aRiUrmhclIxqUwqU8VfUrlRMan8JpWp4kbFpDJVnFScqJxUTConFd+kMlVMKlPFScWNiknlm1Smik+oTBWfeFhrrfV6WGut9XpYa631+uHLVE5Upoqp4hMqU8WkcqIyVZyo/CaVqeJE5TdVTConKicVN1SmikllqjipmFSmiknlhspUcVIxqdxQOak4UTmpmFT+P3lYa631elhrrfV6WGut9bJ/8EUqn6iYVG5UfJPKVDGpfFPFicpfqphUpooTlaliUrlRMancqJhUpopJZao4UZkqJpVPVNxQOamYVE4qbqjcqJhUTiq+6WGttdbrYa211uthrbXW64cPqUwVk8onKiaVqWJSuVExqdyoOFG5oXKjYlKZKk5UpoobKicVJxUnKpPKVDGpTBXfpDJV3KiYVE4qJpWTik9UnKhMFZPKjYpJ5aRiUpkqPvGw1lrr9bDWWuv1sNZa6/XDhypOKiaVqWJSuaFyUjGpnFTcUPlExaQyVUwqN1ROKiaVGxWTyqTyiYpJ5ZsqJpWp4i9VTCo3VKaK36RyUjGpTCr/JQ9rrbVeD2uttV4Pa621Xj/8x1VMKv9lFd+kMlXcqJhUJpWpYlI5UZkqPqEyqUwVk8pUMamcVEwVJyo3VKaKGxU3VCaVqeJE5aRiUjlROamYVKaKv/Sw1lrr9bDWWuv1sNZa6/XDh1SmikllqphUTlROKk5UpopPqEwVk8pUcaJyUjGpfKJiUvlExQ2VqeKk4qRiUjmpuKHyTSpTxaRyo+KbKiaVSWWqmFR+k8pvelhrrfV6WGut9XpYa631sn/wRSpTxYnKScWk8omKE5VPVJyonFTcUJkqJpWTiknlpOJEZaq4ofKJiknlpOITKlPFpDJVTCpTxYnKScU3qUwVn1A5qbihMlV84mGttdbrYa211uthrbXW64dfpnJScaIyVUwqU8WkcqIyVdxQmVSmipOKSeWbKk5UpooTlW9SOak4UfmEyknFJyomlaliUpkqPqEyVZyoTBWTylQxqXxC5aTiNz2stdZ6Pay11no9rLXWetk/+IDKVHGiclLxm1S+qeITKlPFJ1RuVJyofKJiUrlRcaJyo2JSmSr+S1SmiknlRsWJylQxqdyoOFH5RMU3Pay11no9rLXWej2stdZ6/fDLVG6o3Kj4RMUnVKaKSeWk4hMqU8WkMlVMKlPFVHGiMlWcVEwqJypTxUnFf5nKVHFS8YmKSWWquFExqUwVk8r/koe11lqvh7XWWq+HtdZarx++TOVGxQ2VGyonKicVJxUnFScqU8WNikllqvgmlRsqU8VUcaJyUjGpTBV/SeWbVKaKqeJEZaq4oXJD5aRiUpkq/k0Pa621Xg9rrbVeD2uttV4//LKKSeVE5aTiRGWqOFGZKj6hMlWcVEwqJxW/SeWk4kTlROUTKlPFicpUMVXcUDmpOFGZVKaKqeKGylRxo2JSOamYVKaKb1I5qfjEw1prrdfDWmut18Naa62X/YM/pHJScUNlqviEyo2KSWWqOFGZKk5UTipOVE4qJpVvqphUpopJ5UbFDZWTihOVqeKbVKaKE5WpYlKZKiaVk4pJZao4UflExW96WGut9XpYa631elhrrfX64UMqU8VJxaRyojJVTBWTylRxojJVfKJiUjmpmFSmihsqn1A5qThR+aaKSWWqmFSmik+o3FC5UfFNFZPKjYpJ5YbKN1VMKlPFNz2stdZ6Pay11no9rLXWev3woYpPVJxUnKjcUJkqJpWpYlK5UfFNFZPKVHFDZaqYVE5UpopJZVKZKiaVk4pJZar4RMUNlanihspJxYnKVPGbVE4qbqicqEwVv+lhrbXW62GttdbrYa211uuHD6n8pYqTipOKSeVGxaQyVUwqJxU3VG6oTBUnKjcqblScVPwmlRsqU8WJylRxo2JSOan4TRUnKicqU8UnVE4qPvGw1lrr9bDWWuv1sNZa6/XDl1V8k8pJxQ2VqeJEZaqYKk4qTlROVD5R8ZtUpoobKlPFpHJD5aRiUjmpuFExqUwVJypTxYnKN6lMFZPKjYpPVEwqU8U3Pay11no9rLXWej2stdZ6/fDLVG5U3FCZKiaVqeJGxaTyb6qYVCaVT1RMKpPKJ1RuVJyoTBWTyqRyovKbVKaKSeVE5aRiUpkqfpPKb6qYVKaKTzystdZ6Pay11no9rLXWev3w/1zFicpUMalMFd+kclIxqUwVk8pU8YmKSWWquFExqZyo3FCZKiaVGxWTylQxqdxQOVH5JpWTipOKE5WTihOVf9PDWmut18Naa63Xw1prrdcP/+MqJpUbFZPKVHGi8omKE5UTlRsqU8WJylRxojJVTCpTxUnFpDJV3Kg4UflExSdUpooTlUnlRsWkMlWcqEwVJyo3VP7Sw1prrdfDWmut18Naa63XD7+s4i9VnKhMKlPFpHJScUPlExWTylQxqUwVJyo3VG5U/C9ROVGZKj5RMalMFScVn6iYVL6p4kRlqphUftPDWmut18Naa63Xw1prrZf9gw+o/KWKGyonFZPKVHGiMlXcUPkvqZhUblScqEwVn1D5N1VMKjcqJpUbFScqJxUnKlPFpDJV3FC5UTGpTBWfeFhrrfV6WGut9XpYa631sn+w1lqLh7XWWq+HtdZar4e11lqvh7XWWq+HtdZar4e11lqvh7XWWq+HtdZar4e11lqvh7XWWq+HtdZar4e11lqvh7XWWq+HtdZar4e11lqv/wN3Bx2tPArnDwAAAABJRU5ErkJggg==",
+        "generated_at": "2026-03-21T00:46:24.382Z",
+        "expires_at": "2026-03-21T03:46:24.097Z"
+      },
+      "status": "EXPIRED",
+      "verification_token": "277219cbb9b117cc37fe50e04a2c89fd"
+    },
+    "start_control": {
+      "can_start": false,
+      "start_method": "PENDING"
+    },
+    "quick_teams": {
+      "team_a": {
+        "name": "hero",
+        "players": [
+          {
+            "input": "7993962018",
+            "input_type": "MOBILE",
+            "user_id": "69b9b49a53e85d0c7bb6e3e4",
+            "display_name": "Pavan",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bdea601cfced755e85f266"
+          },
+          {
+            "input": "7337573732",
+            "input_type": "MOBILE",
+            "user_id": "69bafe73cf9b1cdad42934ed",
+            "display_name": "pavan kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bdea601cfced755e85f267"
+          }
+        ],
+        "colour": "#3b82f6"
+      },
+      "team_b": {
+        "name": "zero",
+        "players": [
+          {
+            "input": "9100712018",
+            "input_type": "MOBILE",
+            "user_id": "69bb05fcfb80fc665b460714",
+            "display_name": "KALLURI PAVAN KUMAR",
+            "role": "Batsman",
+            "is_captain": true,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 1,
+            "_id": "69bdea601cfced755e85f268"
+          },
+          {
+            "input": "9963080352",
+            "input_type": "MOBILE",
+            "user_id": "69baf8e1d7690e220c81b4d2",
+            "display_name": "Kumar",
+            "role": "Batsman",
+            "is_captain": false,
+            "is_wk": false,
+            "is_linked": true,
+            "sms_invite_sent": false,
+            "claim_token": null,
+            "batting_position": 2,
+            "_id": "69bdea601cfced755e85f269"
+          }
+        ],
+        "colour": "#ef4444"
+      }
+    },
+    "converted_to_teams": {
+      "done": false,
+      "team_a_id": null,
+      "team_b_id": null,
+      "converted_at": null
+    },
+    "match_creation": {
+      "created_via": "BOOKING",
+      "linked_booking_id": "69bdc5f4b2b96f81bd1f5368",
+      "opponent_status": "PENDING"
+    },
+    "live_active_team": "A",
+    "_id": "69bdea601cfced755e85f265",
+    "booking_id": "69bdc5f4b2b96f81bd1f5368",
+    "title": "hero vs zero — Quick Match",
+    "format": "T3",
+    "start_time": "2026-03-21T00:46:24.095Z",
+    "location": "The Turf",
+    "is_offline_match": false,
+    "match_mode": "QUICK",
+    "current_innings_index": 0,
+    "status": "Scheduled",
+    "innings": [],
+    "player_checkin": [],
+    "createdAt": "2026-03-21T00:46:24.384Z",
+    "updatedAt": "2026-03-25T08:59:29.844Z",
+    "__v": 0,
+    "stats_updated": false,
+    "commentary_log": []
+  }
+]

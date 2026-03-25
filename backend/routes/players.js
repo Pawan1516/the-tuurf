@@ -424,10 +424,10 @@ router.post('/stats/bulk-update', verifyToken, roleGuard(['PLAYER', 'CAPTAIN', '
             if (player) {
                 if (!player.stats) player.stats = {};
                 if (!player.stats.batting) player.stats.batting = { matches: 0, innings: 0, runs: 0, balls_faced: 0, fifties: 0, hundreds: 0, high_score: 0, strike_rate: 0, fours: 0, sixes: 0, not_outs: 0 };
-                if (!player.stats.bowling) player.stats.bowling = { matches: 0, wickets: 0, overs: 0, balls_bowled: 0, runs_conceded: 0, best_bowling: { wickets: 0, runs: 0 }, five_wicket_hauls: 0 };
+                if (!player.stats.bowling) player.stats.bowling = { matches: 0, wickets: 0, overs: 0, balls_bowled: 0, runs_conceded: 0, best_bowling: { wickets: 0, runs: 0 }, five_wicket_hauls: 0, three_wicket_hauls: 0 };
 
                 // --- BATTING UPDATE ---
-                if (stat.b > 0) {
+                if (stat.b > 0 || stat.r > 0) {
                     player.stats.batting.matches += 1;
                     player.stats.batting.innings += 1;
                     player.stats.batting.runs += (stat.r || 0);
@@ -435,7 +435,7 @@ router.post('/stats/bulk-update', verifyToken, roleGuard(['PLAYER', 'CAPTAIN', '
                     player.stats.batting.fours += (stat.fours || 0);
                     player.stats.batting.sixes += (stat.sixes || 0);
                     
-                    if (!stat.is_out) player.stats.batting.not_outs += 1;
+                    if (!stat.is_out && stat.b > 0) player.stats.batting.not_outs += 1;
 
                     if (stat.r >= 100) player.stats.batting.hundreds += 1;
                     else if (stat.r >= 50) player.stats.batting.fifties += 1;
@@ -469,6 +469,7 @@ router.post('/stats/bulk-update', verifyToken, roleGuard(['PLAYER', 'CAPTAIN', '
                     player.stats.bowling.overs = Number((player.stats.bowling.balls_bowled / 6).toFixed(1));
 
                     if (stat.w >= 5) player.stats.bowling.five_wicket_hauls += 1;
+                    else if (stat.w >= 3) player.stats.bowling.three_wicket_hauls += 1;
 
                     // Best Bowling
                     const currentBest = player.stats.bowling.best_bowling || { wickets: 0, runs: 0 };

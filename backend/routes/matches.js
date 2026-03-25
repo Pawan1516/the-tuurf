@@ -448,7 +448,7 @@ router.post('/:id/live-update', async (req, res) => {
         match.live_data.run_rate = totalOvers > 0 ? ((req.body.runs || 0) / totalOvers).toFixed(2) : '0.00';
         if (req.body.target && req.body.inningsNum === 2) {
             const remainingRuns = req.body.target - (req.body.runs || 0);
-            const totalMatchOvers = req.body.overs || 20;
+            const totalMatchOvers = req.body.formatOvers || 20;
             const remainingOvers = totalMatchOvers - totalOvers;
             match.live_data.required_run_rate = remainingOvers > 0 ? (remainingRuns / remainingOvers).toFixed(2) : '0.00';
             match.live_data.runs_needed = remainingRuns;
@@ -601,9 +601,11 @@ router.get('/players/:id', async (req, res) => {
             status: 'Completed',
             $or: [
                 { 'team_a.squad': player._id },
-                { 'team_b.squad': player._id }
+                { 'team_b.squad': player._id },
+                { 'quick_teams.team_a.players.user_id': player._id },
+                { 'quick_teams.team_b.players.user_id': player._id }
             ]
-        }).sort({ end_time: -1 }).limit(10);
+        }).sort({ end_time: -1 }).limit(25);
 
         // Fetch leaderboard ranks
         const battingRank = await User.countDocuments({ 'stats.batting.runs': { $gt: player.stats.batting.runs } }) + 1;

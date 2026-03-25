@@ -71,13 +71,48 @@ const CameraScanner = ({ onScan }) => {
 
     useEffect(() => {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            setCamError('Camera API not supported in this browser.');
+            setCamError('Camera API not supported in this browser (HTTPS required).');
             return;
         }
 
-        navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-        }).then(stream => {
+        const startCamera = async () => {
+            const constraintsList = [
+                // 1. Try rear camera with high resolution
+                { video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+                // 2. Try rear camera with ideal high resolution
+                { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+                // 3. Try any rear camera without resolution constraints
+                { video: { facingMode: { exact: 'environment' } } },
+                { video: { facingMode: { ideal: 'environment' } } },
+                // 4. Fallback to any available camera
+                { video: true }
+            ];
+
+            let stream = null;
+            let lastErr = null;
+
+            for (const constraints of constraintsList) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    break; // Success!
+                } catch (err) {
+                    console.warn(`Failed with constraints: ${JSON.stringify(constraints)}`, err);
+                    lastErr = err;
+                }
+            }
+
+            if (!stream) {
+                console.error('All camera constraint attempts failed:', lastErr);
+                if (lastErr && (lastErr.name === 'NotAllowedError' || lastErr.name === 'PermissionDeniedError')) {
+                    setCamError('Camera permission denied. Click the camera icon in your browser address bar and allow access, then try again.');
+                } else if (lastErr && lastErr.name === 'NotFoundError') {
+                    setCamError('No camera found on this device.');
+                } else {
+                    setCamError(`Camera error: ${lastErr ? lastErr.message : 'Unknown'}`);
+                }
+                return;
+            }
+
             streamRef.current = stream;
             const video = videoRef.current;
             if (video) {
@@ -87,19 +122,12 @@ const CameraScanner = ({ onScan }) => {
                         setIsReady(true);
                         // Scan every 200ms
                         intervalRef.current = setInterval(scanFrame, 200);
-                    });
+                    }).catch(e => console.error('Video play error:', e));
                 };
             }
-        }).catch(err => {
-            console.error('Camera error:', err);
-            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                setCamError('Camera permission denied. Click the camera icon in your browser address bar and allow access, then try again.');
-            } else if (err.name === 'NotFoundError') {
-                setCamError('No camera found on this device.');
-            } else {
-                setCamError(`Camera error: ${err.message}`);
-            }
-        });
+        };
+
+        startCamera();
 
         return () => stopCamera();
     }, [scanFrame, stopCamera]);

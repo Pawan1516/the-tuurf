@@ -105,7 +105,7 @@ io.on('connection', (socket) => {
         console.log(`📡 Socket ${socket.id} joined match_${matchId}`);
     });
 
-    socket.on('join:profile', (userId) => {
+    socket.on('join_profile', (userId) => {
         socket.join(`profile:${userId}`);
         console.log(`📡 Socket ${socket.id} joined profile:${userId}`);
     });

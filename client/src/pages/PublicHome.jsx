@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { slotsAPI, matchesAPI } from '../api/client';
-import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer } from 'lucide-react';
+import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer, Activity } from 'lucide-react';
 import io from 'socket.io-client';
 
 const PublicHome = () => {
@@ -179,105 +179,117 @@ const PublicHome = () => {
             {/* MAIN INTERFACE OVERLAPPING HERO */}
             <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-10 md:-mt-32 relative z-20 mb-8 md:mb-32">
                 
-                {/* LIVE SCOREBOARD (NEW POSITION) */}
+                {/* LIVE ARENA INTEL - PREMIUM OVERHAUL */}
                 {liveMatches.length > 0 && (
-                    <div className="bg-[#1e293b] rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 mb-8 md:mb-12 shadow-[0_30px_100px_rgba(0,0,0,0.2)] border border-white/5 overflow-hidden relative">
-                        <div className="flex items-center justify-between mb-8 px-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_15px_#ef4444]"></div>
-                                <h3 className="text-xs md:text-sm font-black uppercase tracking-[0.3em] text-emerald-400">Live Arena Intel</h3>
-                            </div>
-                            <span className="text-[9px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">{liveMatches.length} Active Matches</span>
+                    <div className="bg-[#050805] rounded-[3rem] p-8 md:p-14 mb-16 shadow-[0_50px_100px_rgba(0,0,0,0.4)] border border-white/10 overflow-hidden relative">
+                        {/* Mesh Gradients Background */}
+                        <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
+                            <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-emerald-600/20 blur-[120px] rounded-full"></div>
+                            <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/10 blur-[120px] rounded-full"></div>
                         </div>
 
-                        <div className={`flex gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-6 ${liveMatches.length === 1 ? 'justify-center' : ''}`}>
+                        <div className="relative z-10 flex items-center justify-between mb-12 px-2">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                                    <Zap size={20} className="text-emerald-500 fill-emerald-500 animate-pulse" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm md:text-base font-black uppercase tracking-[0.4em] text-emerald-400 leading-none">Arena Deployment</h3>
+                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-2">{liveMatches.length} Operational Units</p>
+                                </div>
+                            </div>
+                            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
+                                <Activity size={14} className="text-emerald-500" />
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Global Sync Active</span>
+                            </div>
+                        </div>
+
+                        <div className={`relative z-10 flex gap-6 md:gap-10 overflow-x-auto no-scrollbar pb-8 ${liveMatches.length === 1 ? 'justify-center' : ''}`}>
                             {liveMatches.map((match) => (
                                 <Link 
                                     key={match._id} 
                                     to={`/live/${match._id}`}
-                                    className="flex-shrink-0 w-[290px] md:w-[380px] bg-white/5 border border-white/10 rounded-[2rem] p-6 hover:bg-white/10 transition-all group relative overflow-hidden"
+                                    className="flex-shrink-0 w-[310px] md:w-[420px] bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-500 group relative overflow-hidden shadow-2xl"
                                 >
-                                    <div className="absolute top-0 right-0 p-5">
-                                        <div className={`px-3 py-1 border rounded-full ${match.status === 'In Progress' ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10'}`}>
-                                            <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${match.status === 'In Progress' ? 'text-red-400' : 'text-slate-400'}`}>
-                                                {match.status === 'In Progress' ? 'LIVE' : match.status === 'Completed' ? 'FINISHED' : 'UPCOMING'}
-                                            </span>
+                                    {/* Card Glow */}
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{match.format || 'T20'} • {match.venue || 'Main Arena'}</span>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></div>
+                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Active Intel</span>
+                                            </div>
+                                        </div>
+                                        <div className={`px-4 py-1.5 rounded-full border text-[9px] font-[1000] uppercase tracking-widest ${
+                                            match.status === 'In Progress' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : 'bg-white/5 border-white/10 text-white/40'
+                                        }`}>
+                                            {match.status === 'In Progress' ? 'LIVE' : match.status === 'Completed' ? 'FINAL' : 'UPCOMING'}
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-6">
-                                        <div className="space-y-5">
-                                            {/* Team A Row */}
-                                            <div className="flex items-center justify-between">
+                                    <div className="space-y-8">
+                                        {[
+                                            { team: match.team_a, active: match.live_active_team === 'A', idx: 0 },
+                                            { team: match.team_b, active: match.live_active_team === 'B', idx: 1 }
+                                        ].map((t) => (
+                                            <div key={t.idx} className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${match.live_active_team === 'A' ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/10'}`}>
-                                                        <Users size={18} className={match.status === 'Completed' && match.result?.winner?.toString() === (match.team_a?.team_id?._id || match.team_a?.team_id)?.toString() ? "text-yellow-400" : (match.live_active_team === 'A' ? "text-emerald-400" : "text-white/20")} />
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-500 ${
+                                                        t.active ? 'bg-emerald-500/20 border-emerald-500/40 scale-110 shadow-lg shadow-emerald-500/10' : 'bg-white/5 border-white/10 opacity-40'
+                                                    }`}>
+                                                        <Users size={22} className={t.active ? 'text-emerald-400' : 'text-white'} />
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className={`text-sm md:text-base font-black truncate max-w-[140px] ${match.live_active_team === 'A' ? 'text-white' : 'text-white/60'}`}>
-                                                            {match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || 'Team A'}
+                                                        <span className={`text-base md:text-lg font-black tracking-tight truncate max-w-[160px] ${t.active ? 'text-white' : 'text-white/40'}`}>
+                                                            {t.team?.team_id?.name || match.quick_teams?.[t.idx === 0 ? 'team_a' : 'team_b']?.name || (t.idx === 0 ? 'Team A' : 'Team B')}
                                                         </span>
-                                                        {match.live_active_team === 'A' && match.status === 'In Progress' && (
-                                                            <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">Batting</span>
+                                                        {t.active && match.status === 'In Progress' && (
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Zap size={10} className="text-emerald-400 animate-bounce" />
+                                                                <span className="text-[9px] font-black text-emerald-400/60 uppercase tracking-widest">Deploying</span>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
                                                 {(match.status === 'In Progress' || match.status === 'Completed') && (
-                                                    <span className={`text-xl md:text-2xl font-black font-mono tracking-tighter ${match.live_active_team === 'A' ? 'text-white' : 'text-white/40'}`}>
-                                                        {match.team_a?.score || 0}
-                                                        <span className="text-emerald-500/50 ml-1 text-sm md:text-lg">/ {match.team_a?.wickets || 0}</span>
-                                                    </span>
+                                                    <div className="text-right">
+                                                        <span className={`text-2xl md:text-3xl font-[1000] tracking-tighter ${t.active ? 'text-white' : 'text-white/20'}`}>
+                                                            {t.team?.score || 0}
+                                                        </span>
+                                                        <span className={`text-sm md:text-base font-black ml-1.5 ${t.active ? 'text-emerald-500/60' : 'text-white/10'}`}>
+                                                            / {t.team?.wickets || 0}
+                                                        </span>
+                                                    </div>
                                                 )}
                                             </div>
+                                        ))}
+                                    </div>
 
-                                            {/* Team B Row */}
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${match.live_active_team === 'B' ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/10'}`}>
-                                                        <Users size={18} className={match.status === 'Completed' && match.result?.winner?.toString() === (match.team_b?.team_id?._id || match.team_b?.team_id)?.toString() ? "text-yellow-400" : (match.live_active_team === 'B' ? "text-emerald-400" : "text-white/20")} />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className={`text-sm md:text-base font-black truncate max-w-[140px] ${match.live_active_team === 'B' ? 'text-white' : 'text-white/60'}`}>
-                                                            {match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || 'Team B'}
-                                                        </span>
-                                                        {match.live_active_team === 'B' && match.status === 'In Progress' && (
-                                                            <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">Batting</span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                {(match.status === 'In Progress' || match.status === 'Completed') && (
-                                                    <span className={`text-xl md:text-2xl font-black font-mono tracking-tighter ${match.live_active_team === 'B' ? 'text-white' : 'text-white/40'}`}>
-                                                        {match.team_b?.score || 0}
-                                                        <span className="text-emerald-500/50 ml-1 text-sm md:text-lg">/ {match.team_b?.wickets || 0}</span>
+                                    <div className="mt-10 pt-8 border-t border-white/5 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            {match.status === 'Completed' ? (
+                                                <div className="flex items-center gap-2 text-yellow-500/60 bg-yellow-500/5 px-3 py-1.5 rounded-lg border border-yellow-500/10">
+                                                    <Trophy size={14} className="text-yellow-400" />
+                                                    <span className="text-[9px] font-black uppercase tracking-widest truncate max-w-[150px]">
+                                                        {match.result?.winner?.name || 'Match'} Victory
                                                     </span>
-                                                )}
-                                            </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2.5 text-white/20">
+                                                    <Timer size={14} />
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                                                        {match.status === 'In Progress' ? 
+                                                            formatOvers(match.innings?.[match.current_innings_index || 0]?.overs_completed) + ' OVS' : 
+                                                            new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
-
-                                        <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                                            <div className="flex items-center gap-2">
-                                                {match.status === 'Completed' ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <Trophy size={14} className="text-yellow-400" />
-                                                        <span className="text-[10px] font-black text-yellow-400 uppercase tracking-widest truncate max-w-[150px]">
-                                                            {match.result?.winner?.name || 'Match'} won by {match.result?.margin || 'Result'}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <Timer size={14} className="text-white/20" />
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                                {match.status === 'In Progress' ? 
-                                                                    formatOvers(match.innings?.[match.current_innings_index || 0]?.overs_completed) + ' Overs' : 
-                                                                    new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                        </span>
-                                                    </>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-2 text-emerald-400 group-hover:gap-4 transition-all bg-emerald-500/5 px-4 py-2 rounded-xl">
-                                                <span className="text-[9px] font-black uppercase tracking-widest">{match.status === 'Completed' ? 'Recap' : 'View Intel'}</span>
-                                                <ChevronRight size={14} />
-                                            </div>
+                                        <div className="flex items-center gap-3 bg-emerald-600 px-5 py-2.5 rounded-xl group-hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-950/20">
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Enter Intel</span>
+                                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                         </div>
                                     </div>
                                 </Link>

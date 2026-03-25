@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import apiClient from '../api/client';
@@ -104,14 +104,92 @@ export default function ScoringDashboard() {
         extras: { wides: 0, noballs: 0, byes: 0 },
         batters: [], bowlers: [],
         currentOverBalls: [], overHistory: [], log: [],
-        overs: 20, history: [],
+        formatOvers: 20, history: [],
         pendingMilestone: null, milestoneLog: [], lastOverSummary: null,
         partnership: { runs: 0, balls: 0 },
         inningsNum: 1, target: null, 
         pendingWicket: null
     });
 
-    const updateState = (updates) => setState(prev => ({ ...prev, ...updates }));
+    const ScoreboardCard = memo(({ runs, wickets, overNum, ballInOver, overs, teamName, currentOverBalls, inn1Score, inn1Wickets, inningsNum, target, runRate, requiredRunRate }) => (
+        <div className="space-y-4">
+            {/* Top Stat Strip */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex justify-between items-center">
+                    <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">CRR</span>
+                    <span className="text-sm font-black text-emerald-500">{runRate || '0.00'}</span>
+                </div>
+                {inningsNum === 2 && target && (
+                    <div className="bg-yellow-400/5 border border-yellow-400/20 rounded-2xl p-3 flex justify-between items-center">
+                        <span className="text-[9px] font-black text-yellow-400/60 uppercase tracking-widest">RRR</span>
+                        <span className="text-sm font-black text-yellow-400">{requiredRunRate || '0.00'}</span>
+                    </div>
+                )}
+            </div>
+
+            <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-[2.5rem] p-8 text-center relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex flex-col items-start gap-1">
+                        <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{teamName}</p>
+                        {inningsNum === 2 && (
+                            <p className="text-[9px] font-black text-white/15 uppercase tracking-widest">Target: {target}</p>
+                        )}
+                    </div>
+                    {inningsNum === 2 && inn1Score !== undefined && (
+                        <div className="text-right">
+                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest leading-none mb-1">Innings 1</p>
+                             <p className="text-sm font-black text-white/40">{inn1Score}/{inn1Wickets}</p>
+                        </div>
+                    )}
+                </div>
+                <div className="flex items-end justify-center gap-1 mb-2">
+                    <span className="text-6xl font-black tracking-tighter">{runs}</span>
+                    <span className="text-4xl text-white/20 font-bold">/</span>
+                    <span className="text-4xl text-emerald-500 font-bold">{wickets}</span>
+                </div>
+                <p className="text-xs font-bold text-white/40 mb-6">Over {overNum}.{ballInOver} <span className="opacity-50 tracking-widest text-[10px] uppercase ml-1">of {overs}</span></p>
+                <div className="flex gap-2 justify-center">
+                    {currentOverBalls.map((b, i) => (
+                        <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border ${
+                            b === 'W' ? 'bg-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 
+                            b === '4' ? 'bg-blue-600 border-blue-400' :
+                            b === '6' ? 'bg-orange-500 border-orange-400' :
+                            'bg-white/10 border-white/10 text-white/60'
+                        }`}>{b === '·' ? '0' : b}</div>
+                    ))}
+                    {Array.from({ length: 6 - currentOverBalls.length }).map((_, i) => (
+                        <div key={i} className="w-8 h-8 rounded-full border border-white/5 opacity-20"></div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    ));
+
+    const ScoringButtons = memo(({ onRecord, onWicket, onUndo, onSwap }) => (
+        <div className="bg-white/2 rounded-[2.5rem] p-4 space-y-3 border border-white/5">
+            <div className="grid grid-cols-4 gap-2">
+                {[0, 1, 2, 3].map(r => (
+                    <button key={r} onClick={() => onRecord(r)} className="h-16 bg-white/5 rounded-2xl border border-white/10 text-xl font-black hover:bg-white/10 transition-colors uppercase">{r}</button>
+                ))}
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+                <button onClick={() => onRecord(4)} className="h-16 bg-blue-600/20 border-2 border-blue-500 text-blue-400 text-xl font-black rounded-2xl hover:bg-blue-600/30 transition-all uppercase">4</button>
+                <button onClick={() => onRecord(6)} className="h-16 bg-orange-600/20 border-2 border-orange-500 text-orange-400 text-xl font-black rounded-2xl hover:bg-orange-600/30 transition-all uppercase">6</button>
+                <button onClick={() => onRecord('wd')} className="h-16 bg-purple-600/10 border border-purple-500 text-purple-400 text-sm font-black rounded-2xl uppercase">Wd</button>
+                <button onClick={() => onRecord('nb')} className="h-16 bg-purple-600/10 border border-purple-500 text-purple-400 text-sm font-black rounded-2xl uppercase">Nb</button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                <button onClick={onWicket} className="h-16 bg-red-600 border-2 border-red-400 text-white text-xl font-black rounded-2xl shadow-lg shadow-red-500/20 uppercase tracking-widest">Wicket</button>
+                <div className="grid grid-cols-2 gap-2">
+                    <button onClick={onUndo} className="h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/40 hover:text-white transition-colors"><Undo2 size={24} /></button>
+                    <button onClick={onSwap} className="h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/60 hover:text-white transition-colors text-xs font-black uppercase">⇄</button>
+                </div>
+            </div>
+        </div>
+    ));
+
+    const updateState = useCallback((updates) => setState(prev => ({ ...prev, ...updates })), []);
 
     useEffect(() => {
         PlayerDB.initializePresets(PRESET_TEAMS);
@@ -141,7 +219,7 @@ export default function ScoringDashboard() {
                     ]);
                 }
                 if (matchData.format && matchData.format.startsWith('T')) {
-                    setState(s => ({ ...s, overs: parseInt(matchData.format.replace('T', '')) || 20 }));
+                    setState(s => ({ ...s, formatOvers: parseInt(matchData.format.replace('T', '')) || 20 }));
                 }
                 
                 if (matchData.live_data && Object.keys(matchData.live_data).length > 2) {
@@ -172,7 +250,7 @@ export default function ScoringDashboard() {
         }
     };
 
-    const PlayerProfileModal = ({ player, onClose }) => {
+    const PlayerProfileModal = memo(({ player, onClose }) => {
         const [stats, setStats] = useState(null);
         useEffect(() => {
             const load = async () => {
@@ -202,7 +280,18 @@ export default function ScoringDashboard() {
                             </div>
                             <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center">
                                 <p className="text-2xl font-black">{stats.runs}</p>
-                                <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest mt-1">Total Runs</p>
+                                <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest mt-1">Runs</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-center">
+                                <p className="text-lg font-black text-blue-400">{stats.fours}</p>
+                                <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest mt-1">Fours</p>
+                            </div>
+                            <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-center">
+                                <p className="text-lg font-black text-orange-400">{stats.sixes}</p>
+                                <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest mt-1">Sixes</p>
                             </div>
                         </div>
                         
@@ -235,7 +324,7 @@ export default function ScoringDashboard() {
                 </div>
             </div>
         );
-    };
+    });
 
     // --- Setup Logic ---
     const startQuickMatch = (taId, tbId, overs) => {
@@ -251,7 +340,7 @@ export default function ScoringDashboard() {
         setState(prev => ({
             ...prev,
             phase: 'toss',
-            overs: overs,
+            formatOvers: overs,
             batters: [],
             bowlers: []
         }));
@@ -269,7 +358,7 @@ export default function ScoringDashboard() {
         setState(prev => ({
             ...prev,
             phase: 'toss',
-            overs: setupState.overs,
+            formatOvers: setupState.overs,
             batters: [],
             bowlers: []
         }));
@@ -282,7 +371,7 @@ export default function ScoringDashboard() {
     };
 
     // --- Core Logic ---
-    const initTeams = (batTeam, bowlTeam) => {
+    const initTeams = useCallback((batTeam, bowlTeam) => {
         const bt = TEAMS[batTeam];
         const bwt = TEAMS[bowlTeam];
         if (!bt || !bwt) return;
@@ -292,7 +381,7 @@ export default function ScoringDashboard() {
             batters: bt.players.map((p, i) => ({ 
                 name: p.name, 
                 user_id: p.user_id,
-                r: 0, b: 0, f: 0, s: 0, sr: 0, out: false, batting: false, milestones: [] 
+                r: 0, b: 0, fours: 0, sixes: 0, sr: 0, out: false, batting: false, milestones: [] 
             })),
             bowlers: bwt.players.map((p, i) => ({ 
                 name: p.name, 
@@ -302,7 +391,7 @@ export default function ScoringDashboard() {
             })),
             striker: null, nonStriker: null, currentBowlerIdx: null, prevBowlerIdx: null
         }));
-    };
+    }, [TEAMS]);
 
     const saveCheckpoint = () => {
         setState(prev => {
@@ -325,6 +414,7 @@ export default function ScoringDashboard() {
                 runs: state.runs,
                 wickets: state.wickets,
                 overs: state.overNum + (state.ballInOver / 6),
+                formatOvers: state.formatOvers,
                 overNum: state.overNum,
                 ballInOver: state.ballInOver,
                 totalBalls: state.totalBalls,
@@ -361,7 +451,7 @@ export default function ScoringDashboard() {
         }
     }, [state.runs, state.wickets, state.totalBalls, state.phase, syncWithBackend]);
 
-    const recordBall = (type) => {
+    const recordBall = useCallback((type) => {
         if (state.phase !== 'batting') return;
         saveCheckpoint();
         
@@ -391,7 +481,6 @@ export default function ScoringDashboard() {
             } else if (isBye) {
                 next.runs++; next.extras.byes++; bw.balls++; next.ballInOver++; next.totalBalls++;
                 next.currentOverBalls.push('B'); next.freeHit = false;
-                // Swap on odd legbyes/byes if needed, but usually byes are just 1
                 const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t;
             } else {
                 const runs = type;
@@ -405,7 +494,6 @@ export default function ScoringDashboard() {
             next.batters[prev.striker] = striker;
             next.bowlers[bwIdx] = bw;
             
-            // Milestone Tracking
             if (striker.r >= 100 && !striker.milestones.includes(100)) {
                 striker.milestones.push(100);
                 next.pendingMilestone = { name: striker.name, typ: 'CENTURY', val: 100 };
@@ -414,16 +502,14 @@ export default function ScoringDashboard() {
                 next.pendingMilestone = { name: striker.name, typ: 'HALF-CENTURY', val: 50 };
             }
 
-            // Over Transition
             if (next.ballInOver >= 6 && next.phase === 'batting') {
                  next.overHistory.push([...next.currentOverBalls]);
                  next.currentOverBalls = []; next.overNum++; next.ballInOver = 0;
                  next.prevBowlerIdx = next.currentBowlerIdx; next.currentBowlerIdx = null;
                  const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t;
-                 next.phase = next.overNum >= next.overs ? 'innings_over' : 'select_bowler';
+                 next.phase = next.overNum >= next.formatOvers ? 'innings_over' : 'select_bowler';
             }
 
-            // Match Result Tracking
             if (next.inningsNum === 2 && next.target) {
                 const teams = [match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || 'Team A', match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || 'Team B'];
                 if (next.runs >= next.target) {
@@ -441,22 +527,18 @@ export default function ScoringDashboard() {
                 }
             }
             const resPayload = {
-                inning: next.inningsNum,
-                over: next.overNum,
-                ball: next.ballInOver,
-                batter_id: striker.user_id,
-                bowler_id: bw.user_id,
-                runs: isWide || isNB || isBye ? 0 : type,
-                is_four: !isWide && !isNB && !isBye && type === 4,
-                is_six: !isWide && !isNB && !isBye && type === 6,
-                extra_type: isWide ? 'wide' : isNB ? 'noball' : isBye ? 'bye' : null,
-                is_wicket: false
+                inning: next.inningsNum, over: next.overNum, ball: next.ballInOver,
+                batter_id: striker.user_id, bowler_id: bw.user_id, runs: isWide || isNB || isBye ? 0 : type,
+                is_four: !isWide && !isNB && !isBye && type == 4,
+                is_six: !isWide && !isNB && !isBye && type == 6,
+                fours: striker.fours || 0, sixes: striker.sixes || 0,
+                extra_type: isWide ? 'wide' : isNB ? 'noball' : isBye ? 'bye' : null, is_wicket: false
             };
-            apiClient.post(`/matches/${id}/ball`, resPayload).catch(e => console.error("Ball recording failed:", e));
+            apiClient.post(`/matches/${id}/ball`, resPayload).catch(e => {});
 
             return next;
         });
-    };
+    }, [state.phase, id, match]);
 
     const finalizeWicket = (nextBatterIdx = null) => {
         saveCheckpoint();
@@ -505,7 +587,7 @@ export default function ScoringDashboard() {
                 next.currentOverBalls = []; next.overNum++; next.ballInOver = 0;
                 next.prevBowlerIdx = next.currentBowlerIdx; next.currentBowlerIdx = null;
                 const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t;
-                next.phase = next.overNum >= next.overs ? 'innings_over' : 'select_bowler';
+                next.phase = next.overNum >= next.formatOvers ? 'innings_over' : 'select_bowler';
             }
 
             if (next.inningsNum === 2 && next.target) {
@@ -563,7 +645,7 @@ export default function ScoringDashboard() {
                 // Actually, let's use wickets left from state
                 const totalWickets = 10; // Assuming 11 players
                 margin = totalWickets - state.wickets;
-            } else if (state.overNum >= state.overs || state.wickets >= 10) {
+            } else if (state.overNum >= state.formatOvers || state.wickets >= 10) {
                 const target = state.target;
                 if (state.runs < target - 1) {
                     winner = state.battingTeam === 'A' ? match.team_b.team_id : match.team_a.team_id;
@@ -1040,33 +1122,21 @@ export default function ScoringDashboard() {
                 {/* Batting Phase (Main Scoreboard) */}
                 {state.phase === 'batting' && (
                     <>
-                        {/* Scoreboard Card */}
-                        <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-[2.5rem] p-8 text-center relative overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
-                            <div className="flex justify-between items-center mb-6">
-                                <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{TEAMS[state.battingTeam]?.name}</p>
-                                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Live</p>
-                            </div>
-                            <div className="flex items-end justify-center gap-1 mb-2">
-                                <span className="text-6xl font-black tracking-tighter">{state.runs}</span>
-                                <span className="text-4xl text-white/20 font-bold">/</span>
-                                <span className="text-4xl text-emerald-500 font-bold">{state.wickets}</span>
-                            </div>
-                            <p className="text-xs font-bold text-white/40 mb-6">Over {state.overNum}.{state.ballInOver} <span className="opacity-50 tracking-widest text-[10px] uppercase ml-1">of {state.overs}</span></p>
-                            <div className="flex gap-2 justify-center">
-                                {state.currentOverBalls.map((b, i) => (
-                                    <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border ${
-                                        b === 'W' ? 'bg-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 
-                                        b === '4' ? 'bg-blue-600 border-blue-400' :
-                                        b === '6' ? 'bg-orange-500 border-orange-400' :
-                                        'bg-white/10 border-white/10 text-white/60'
-                                    }`}>{b === '·' ? '0' : b}</div>
-                                ))}
-                                {Array.from({ length: 6 - state.currentOverBalls.length }).map((_, i) => (
-                                    <div key={i} className="w-8 h-8 rounded-full border border-white/5 opacity-20"></div>
-                                ))}
-                            </div>
-                        </div>
+                        <ScoreboardCard 
+                            runs={state.runs} 
+                            wickets={state.wickets} 
+                            overNum={state.overNum} 
+                            ballInOver={state.ballInOver} 
+                            overs={state.formatOvers} 
+                            teamName={TEAMS[state.battingTeam]?.name} 
+                            currentOverBalls={state.currentOverBalls} 
+                            inn1Score={state.inn1Score}
+                            inn1Wickets={state.inn1Wickets}
+                            inningsNum={state.inningsNum}
+                            target={state.target}
+                            runRate={(state.runs / (state.overNum + state.ballInOver/6 || 1)).toFixed(2)}
+                            requiredRunRate={state.inningsNum === 2 ? ((state.target - state.runs) / (((state.formatOvers * 6) - (state.overNum * 6 + state.ballInOver)) / 6 || 1)).toFixed(2) : '0.00'}
+                        />
 
                         {/* Crease & Bowler Details */}
                         <div className="grid grid-cols-2 gap-3">
@@ -1089,26 +1159,12 @@ export default function ScoringDashboard() {
                         </div>
 
                         {/* Scoring Buttons */}
-                        <div className="bg-white/2 rounded-[2.5rem] p-4 space-y-3 border border-white/5">
-                            <div className="grid grid-cols-4 gap-2">
-                                {[0, 1, 2, 3].map(r => (
-                                    <button key={r} onClick={() => recordBall(r)} className="h-16 bg-white/5 rounded-2xl border border-white/10 text-xl font-black hover:bg-white/10 transition-colors uppercase">{r}</button>
-                                ))}
-                            </div>
-                            <div className="grid grid-cols-4 gap-2">
-                                <button onClick={() => recordBall(4)} className="h-16 bg-blue-600/20 border-2 border-blue-500 text-blue-400 text-xl font-black rounded-2xl hover:bg-blue-600/30 transition-all uppercase">4</button>
-                                <button onClick={() => recordBall(6)} className="h-16 bg-orange-600/20 border-2 border-orange-500 text-orange-400 text-xl font-black rounded-2xl hover:bg-orange-600/30 transition-all uppercase">6</button>
-                                <button onClick={() => recordBall('wd')} className="h-16 bg-purple-600/10 border border-purple-500 text-purple-400 text-sm font-black rounded-2xl uppercase">Wd</button>
-                                <button onClick={() => recordBall('nb')} className="h-16 bg-purple-600/10 border border-purple-500 text-purple-400 text-sm font-black rounded-2xl uppercase">Nb</button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <button onClick={() => updateState({ phase: 'wicket_type' })} className="h-16 bg-red-600 border-2 border-red-400 text-white text-xl font-black rounded-2xl shadow-lg shadow-red-500/20 uppercase tracking-widest">Wicket</button>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button onClick={handleUndo} className="h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/40 hover:text-white transition-colors"><Undo2 size={24} /></button>
-                                    <button onClick={() => updateState({ striker: state.nonStriker, nonStriker: state.striker })} className="h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/60 hover:text-white transition-colors text-xs font-black uppercase">⇄</button>
-                                </div>
-                            </div>
-                        </div>
+                        <ScoringButtons 
+                            onRecord={recordBall}
+                            onWicket={() => updateState({ phase: 'wicket_type' })}
+                            onUndo={handleUndo}
+                            onSwap={() => updateState({ striker: state.nonStriker, nonStriker: state.striker })}
+                        />
                     </>
                 )}
 
@@ -1121,7 +1177,7 @@ export default function ScoringDashboard() {
                         </div>
                         <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 max-h-[60vh] overflow-y-auto space-y-2">
                             {TEAMS[state.bowlingTeam]?.players?.map((p, i) => {
-                                const dis = i === state.prevBowlerIdx || state.bowlers[i]?.overs >= (state.overs / 5);
+                                const dis = i === state.prevBowlerIdx || state.bowlers[i]?.overs >= (state.formatOvers / 5);
                                 return (
                                     <button key={i} disabled={dis} onClick={() => updateState({ currentBowlerIdx: i, phase: 'batting' })} className="w-full p-6 rounded-2xl border border-white/5 bg-white/5 text-left flex items-center justify-between hover:bg-emerald-500/10 transition-colors disabled:opacity-20">
                                         <div>
@@ -1147,7 +1203,7 @@ export default function ScoringDashboard() {
                                 <Trophy className="text-emerald-500" size={40} />
                             </div>
                             <h2 className="text-3xl font-black uppercase tracking-tighter">Innings Over!</h2>
-                            <p className="text-white/40 font-medium mt-2">Target: <span className="text-white font-bold">{state.runs + 1}</span> runs in {state.overs} overs</p>
+                            <p className="text-white/40 font-medium mt-2">Target: <span className="text-white font-bold">{state.runs + 1}</span> runs in {state.formatOvers} overs</p>
                         </div>
 
                         <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 space-y-6">
@@ -1183,7 +1239,7 @@ export default function ScoringDashboard() {
                                     runs: 0, wickets: 0, overNum: 0, ballInOver: 0, totalBalls: 0,
                                     currentOverBalls: [], overHistory: [],
                                     striker: null, nonStriker: null, currentBowlerIdx: null,
-                                    batters: TEAMS[nextBattingTeam].players.map(p => ({ ...p, r:0, b:0, f:0, s:0, sr:0, out:false, batting:false, milestones: [] })),
+                                    batters: TEAMS[nextBattingTeam].players.map(p => ({ ...p, r:0, b:0, fours:0, sixes:0, sr:0, out:false, batting:false, milestones: [] })),
                                     bowlers: TEAMS[nextBowlingTeam].players.map(p => ({ ...p, o:0, r:0, w:0, eco:0, balls:0 }))
                                 };
                             });
