@@ -4,21 +4,27 @@ const User = require('../models/User');
 class StatsService {
     async updatePlayerStats(matchId, io = null) {
         try {
-            const match = await Match.findById(matchId);
-            if (!match) throw new Error('Match not found');
+            // Atomically claim this update task to prevent double-processing
+            const match = await Match.findOneAndUpdate(
+                { _id: matchId, stats_updated: { $ne: true }, $or: [{ 'verification.status': 'VERIFIED' }, { is_offline_match: true }] },
+                { $set: { stats_updated: true } },
+                { new: true }
+            );
 
-            if (match.stats_updated) {
-                console.log(`Match ${matchId}: stats already updated, skipping`);
-                return { skipped: true };
-            }
-
-            if (match.verification?.status !== 'VERIFIED' && !match.is_offline_match) {
+            if (!match) {
+                // Let's re-check if it's missing or if it's just not verified yet
+                const mCheck = await Match.findById(matchId);
+                if (!mCheck) throw new Error('Match not found');
+                if (mCheck.stats_updated) {
+                    console.log(`Match ${matchId}: stats already updated, skipping`);
+                    return { skipped: true };
+                }
                 console.log(`Match ${matchId}: not verified, stats skipped`);
                 return { updated: false, reason: 'Not verified' };
             }
 
-            match.stats_updated = true;
-            await match.save();
+            // Start calculating
+            console.log(`Processing stats for match ${matchId}...`);
 
             const resolveUserId = (id) => {
                 if (!id) return null;
@@ -152,13 +158,11 @@ class StatsService {
                     updates.$set['stats.bowling.best_bowling.runs'] = stats.bowling.runs_conceded;
                 }
 
-                const b_innings = (user.stats?.batting?.innings || 0) + stats.batting.innings;
-                const b_notouts = (user.stats?.batting?.not_outs || 0) + stats.batting.not_outs;
-                const b_divisor = b_innings - b_notouts;
+                const totalMatches = (user.stats?.batting?.matches || 0) + 1;
                 const totalRuns = (user.stats?.batting?.runs || 0) + stats.batting.runs;
                 const totalBalls = (user.stats?.batting?.balls_faced || 0) + stats.batting.balls_faced;
                 
-                const average = b_divisor > 0 ? (totalRuns / b_divisor) : totalRuns;
+                const average = totalMatches > 0 ? (totalRuns / totalMatches) : 0;
                 const sr = totalBalls > 0 ? (totalRuns / totalBalls) * 100 : 0;
                 
                 const totalBowledBalls = (user.stats?.bowling?.balls_bowled || 0) + stats.bowling.balls_bowled;
@@ -190,6 +194,9 @@ class StatsService {
             if (bulkOps.length > 0) {
                 await User.bulkWrite(bulkOps);
             }
+
+            // Atomically mark match as updated at the very end
+            await Match.updateOne({ _id: matchId }, { $set: { stats_updated: true } });
 
             console.log(`🚀 Match ${matchId}: Bulk updated ${bulkOps.length} career profiles.`);
             return { success: true };

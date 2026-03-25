@@ -231,8 +231,11 @@ router.post('/:id/complete', async (req, res) => {
         if (!match.stats_updated) {
             const statsService = require('../services/statsService');
             const io = req.app.get('socketio');
-            statsService.updatePlayerStats(match._id, io).catch(err => {
-                console.error('StatsService error heavily logging:', err.message);
+            // Using setImmediate to trigger in next event loop while response finishes
+            setImmediate(() => {
+                statsService.updatePlayerStats(match._id, io).catch(err => {
+                    console.error('Stats Update Fail (complete):', err.message);
+                });
             });
         }
         
@@ -433,15 +436,6 @@ router.post('/:id/live-update', async (req, res) => {
             }
         }
 
-        // --- STATS UPDATE TRIGGER ---
-        if (req.body.status === 'Completed' && !match.stats_updated) {
-            const statsService = require('../services/statsService');
-            const io = req.app.get('socketio');
-            statsService.updatePlayerStats(match._id, io).catch(err => {
-                console.error('StatsService error in live-update:', err.message);
-            });
-        }
-        // ----------------------------
 
         // Calculate run rate and required run rate
         const totalOvers = (req.body.overNum || 0) + (req.body.ballInOver || 0) / 6;
@@ -514,6 +508,16 @@ router.post('/:id/live-update', async (req, res) => {
         match.markModified('team_b');
 
         await match.save();
+
+        if (req.body.status === 'Completed' && !match.stats_updated) {
+            const statsService = require('../services/statsService');
+            const io = req.app.get('socketio');
+            setImmediate(() => {
+                statsService.updatePlayerStats(match._id, io).catch(err => {
+                    console.error('Stats Update Fail (live):', err.message);
+                });
+            });
+        }
 
         // 🔥 SOCKET.IO BROADCAST — Real-time to all connected viewers
         const io = req.app.get('socketio');

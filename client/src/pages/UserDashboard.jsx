@@ -55,7 +55,7 @@ const UserDashboard = () => {
         const socket = io(process.env.NODE_ENV === 'production' ? 'https://the-tuurf-ufkd.onrender.com' : 'http://localhost:5001');
         
         if (user?._id) {
-            socket.emit('join:profile', user._id);
+            socket.emit('join_profile', user._id);
             socket.on('stats:updated', (data) => {
                 console.log('🚀 Career stats updated via socket:', data);
                 // Re-fetch profile to show new stats
