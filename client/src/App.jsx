@@ -33,6 +33,7 @@ import ScoringDashboard from './pages/ScoringDashboard';
 import LiveScoreView from './pages/LiveScoreView';
 import PlayerProfile from './pages/PlayerProfile';
 import PlayerStatsDashboard from './pages/PlayerStatsDashboard';
+import Leaderboard from './pages/Leaderboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import CricBotWidget from './components/CricBotWidget';
 import FirebaseAuthTest from './pages/FirebaseAuthTest';
@@ -57,6 +58,8 @@ const NavLinks = () => {
 
     return (
         <div className="flex items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-400">
+            <Link to="/leaderboard" className="hover:text-emerald-600 transition-colors">Hall of Fame</Link>
+            <span className="opacity-20 text-slate-900">•</span>
             <Link to="/login" className="bg-slate-100 hover:bg-emerald-600 hover:text-white px-4 py-2 rounded-xl transition-all text-slate-900">Login</Link>
             <span className="opacity-20 text-slate-900 hidden sm:block">•</span>
             <Link to="/admin/login" className="hover:text-emerald-600 transition-colors hidden sm:block">Admin</Link>
@@ -139,6 +142,7 @@ function App() {
           <Route path="/live/:id" element={<LiveScoreView />} />
           <Route path="/player/:id" element={<PlayerProfile />} />
           <Route path="/stats-dashboard" element={<PlayerStatsDashboard />} />
+          <Route path="/leaderboard" element={<WrapLayout><Leaderboard /></WrapLayout>} />
 
           {/* User Dashboard */}
           <Route path="/dashboard" element={

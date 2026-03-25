@@ -162,6 +162,15 @@ const PublicHome = () => {
                         Select your squad. Lock your slot
                     </p>
 
+                    <div className="flex flex-wrap justify-center gap-4 mb-4 md:mb-10">
+                        <Link 
+                            to="/leaderboard" 
+                            className="bg-white/10 hover:bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/20 backdrop-blur-md transition-all shadow-2xl flex items-center gap-3"
+                        >
+                            <Trophy size={16} className="text-yellow-400" /> Hall of Fame
+                        </Link>
+                    </div>
+
                     {/* SLIDER DOTS */}
                     <div className="flex justify-center gap-2 md:gap-3">
                         {heroImages.map((_, idx) => (
@@ -202,6 +211,12 @@ const PublicHome = () => {
                                 <Activity size={14} className="text-emerald-500" />
                                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Global Sync Active</span>
                             </div>
+                            <Link 
+                                to="/leaderboard"
+                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-lg"
+                            >
+                                <Trophy size={14} className="text-yellow-400" /> Rankings
+                            </Link>
                         </div>
 
                         <div className={`relative z-10 flex gap-6 md:gap-10 overflow-x-auto no-scrollbar pb-8 ${liveMatches.length === 1 ? 'justify-center' : ''}`}>

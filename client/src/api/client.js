@@ -149,5 +149,12 @@ export const matchesAPI = {
   getPlayerProfile: (id) => apiClient.get(`/matches/players/${id}`)
 };
 
+// Leaderboard APIs
+export const leaderboardAPI = {
+  getOverall: () => apiClient.get('/leaderboards/overall'),
+  getTopRuns: () => apiClient.get('/leaderboards/runs'),
+  getTopWickets: () => apiClient.get('/leaderboards/wickets')
+};
+
 export default apiClient;
 

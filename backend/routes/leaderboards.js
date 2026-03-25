@@ -58,4 +58,42 @@ router.get('/economy', async (req, res) => {
     }
 });
 
+// @route   GET /api/leaderboards/overall
+// @desc    Get top players based on Career Score (Points)
+// @access  Public
+router.get('/overall', async (req, res) => {
+    try {
+        const players = await User.aggregate([
+            {
+                $addFields: {
+                    careerScore: {
+                        $add: [
+                            { $multiply: [{ $ifNull: ["$stats.batting.runs", 0] }, 1] },
+                            { $multiply: [{ $ifNull: ["$stats.bowling.wickets", 0] }, 20] },
+                            { $multiply: [{ $ifNull: ["$stats.fielding.catches", 0] }, 10] },
+                            { $multiply: [{ $ifNull: ["$stats.fielding.run_outs", 0] }, 15] }
+                        ]
+                    }
+                }
+            },
+            { $match: { careerScore: { $gt: 0 } } },
+            { $sort: { careerScore: -1 } },
+            { $limit: 25 },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    careerScore: 1,
+                    stats: 1,
+                    cricket_profile: 1
+                }
+            }
+        ]);
+
+        res.json({ success: true, players });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 module.exports = router;
