@@ -44,26 +44,37 @@ const NavLinks = () => {
     const location = useLocation();
     const isHomePage = location.pathname === '/';
 
+    const leaderboardLink = <Link key="lb" to="/leaderboard" className="hover:text-emerald-600 transition-colors uppercase font-black text-[10px] tracking-widest text-slate-400">Hall of Fame</Link>;
+
     if (user) {
         let dashboardPath = '/dashboard';
         const role = (user.role || '').toLowerCase();
         if (role === 'admin') dashboardPath = '/admin/dashboard';
         else if (role === 'worker') dashboardPath = '/worker/dashboard';
 
-        // User specifically asked to remove Dashboard/Logout from Home Page
-        if (isHomePage) return null;
-
         return (
             <div className="flex items-center gap-4">
-                <Link to={dashboardPath} className="text-emerald-600 font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] hover:text-emerald-700 transition-colors">Dashboard</Link>
-                <button onClick={logout} className="bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all">Logout</button>
+                {leaderboardLink}
+                {!isHomePage && (
+                    <>
+                        <span className="opacity-20 text-slate-900">•</span>
+                        <Link to={dashboardPath} className="text-emerald-600 font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] hover:text-emerald-700 transition-colors">Dashboard</Link>
+                        <button onClick={logout} className="bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all">Logout</button>
+                    </>
+                )}
+                {isHomePage && (
+                     <>
+                        <span className="opacity-20 text-slate-900">•</span>
+                        <Link to={dashboardPath} className="bg-emerald-600 text-white px-4 py-2 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest">Dashboard</Link>
+                     </>
+                )}
             </div>
         );
     }
 
     return (
         <div className="flex items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-400">
-            <Link to="/leaderboard" className="hover:text-emerald-600 transition-colors">Hall of Fame</Link>
+            {leaderboardLink}
             <span className="opacity-20 text-slate-900">•</span>
             <Link to="/login" className="bg-slate-100 hover:bg-emerald-600 hover:text-white px-4 py-2 rounded-xl transition-all text-slate-900">Login</Link>
             <span className="opacity-20 text-slate-900 hidden sm:block">•</span>
