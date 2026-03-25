@@ -2,7 +2,18 @@
 
 ## Project Overview
 
-**The Turf** is a comprehensive sports turf booking and management web application built with modern technologies. It allows users to book time slots, workers to manage bookings, and admins to oversee the entire operation.
+**The Turf** is a comprehensive sports turf booking and management web application built with modern technologies. It features high-fidelity real-time scoring, automated player career tracking, and a competitive "Gladiators" leaderboard system to elevate the local sports experience.
+
+---
+
+## ✨ Key Features
+
+-   **Seamless Booking**: Real-time slot availability with automated pricing (day/night/weekend).
+-   **Gladiator Leaderboard**: Automated career points system (1pt/Run, 20pts/Wicket, 10pts/Catch) with a 3D podium for top performers.
+-   **Career Profiling**: Individual player stacks showing historical batting (runs, avg, S/R, boundaries) and bowling (wickets, economy) stats.
+-   **Live Arena Intel**: Real-time match scoring dashboard with Socket.IO synchronization.
+-   **QR Verification**: Instant booking verification on-field using mobile cameras (optimized for flagship Android/iOS).
+-   **WhatsApp HUD**: Automated notifications for booking confirmations and status updates via Twilio.
 
 ---
 
