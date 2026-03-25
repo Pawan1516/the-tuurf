@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, ChevronLeft, Search, Star, Zap } from 'lucide-react';
 import { leaderboardAPI } from '../api/client';
+import { Trophy as TrophyIcon, ChevronLeft as BackIcon, Search as SearchIcon, Star as StarIcon, Zap as ZapIcon } from 'lucide-react';
 
 const Leaderboard = () => {
     const [players, setPlayers] = useState([]);
@@ -35,34 +35,37 @@ const Leaderboard = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#121217] flex flex-col items-center justify-center gap-6">
-                <div className="w-10 h-10 border-4 border-white/10 border-t-white rounded-full animate-spin"></div>
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+                <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#121217] text-white font-sans overflow-x-hidden pb-20">
+        <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-x-hidden pb-20">
             {/* Header */}
-            <header className="px-6 pt-12 pb-6 flex items-center justify-center relative">
+            <header className="px-6 pt-12 pb-6 flex items-center justify-center relative bg-white border-b border-slate-100">
                 <button 
                     onClick={() => navigate('/')}
-                    className="absolute left-6 top-12 p-1 hover:bg-white/5 rounded-full"
+                    className="absolute left-6 top-12 p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors"
                 >
-                    <ChevronLeft size={28} />
+                    <BackIcon size={28} />
                 </button>
-                <h1 className="text-xl font-medium tracking-wide">The Turf Squad</h1>
+                <h1 className="text-xl font-bold tracking-tight text-slate-800">The Turf Squad</h1>
+                <button className="absolute right-6 top-12 p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors">
+                    <SearchIcon size={26} />
+                </button>
             </header>
 
             {/* Toggle Switch */}
-            <div className="px-6 mb-12">
-                <div className="flex bg-[#1C1C24] p-1.5 rounded-2xl max-w-sm mx-auto">
+            <div className="px-6 mb-8 mt-6">
+                <div className="flex bg-slate-100 p-1.5 rounded-2xl max-w-sm mx-auto shadow-sm">
                     {['Team members', 'Leaderboard'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveToggle(tab)}
-                            className={`flex-1 py-3.5 rounded-xl text-sm font-medium transition-all ${
-                                activeToggle === tab ? 'bg-[#32323D] text-white shadow-xl' : 'text-white/40'
+                            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+                                activeToggle === tab ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'text-slate-400'
                             }`}
                         >
                             {tab}
@@ -71,8 +74,8 @@ const Leaderboard = () => {
                 </div>
             </div>
 
-            {/* 3D Podium Section */}
-            <div className="relative px-6 flex justify-center items-end gap-2 pt-24 pb-8 min-h-[400px]">
+            {/* 3D Podium Section - Green & White Theme */}
+            <div className="relative px-6 flex justify-center items-end gap-3 pt-20 pb-12 min-h-[420px] bg-white border-b border-slate-100 shadow-sm">
                 {topThree.map((player) => {
                     const isRank1 = player.rank === 1;
                     const isRank2 = player.rank === 2;
@@ -87,60 +90,60 @@ const Leaderboard = () => {
                             }`}
                         >
                             {/* Avatar & Info Floating Above Block */}
-                            <div className="flex flex-col items-center mb-6 w-full">
+                            <div className="flex flex-col items-center mb-6 w-full drop-shadow-lg">
                                 {isRank1 && (
                                     <div className="mb-2 animate-bounce">
-                                        <Trophy className="text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" size={32} />
+                                        <TrophyIcon className="text-yellow-500 fill-yellow-500" size={32} />
                                     </div>
                                 )}
                                 
-                                <div className={`relative mb-3 group`}>
-                                    <div className={`rounded-full overflow-hidden border-2 bg-[#1C1C24] ${
-                                        isRank1 ? 'w-20 h-20 md:w-24 md:h-24 border-yellow-500/50' : 'w-16 h-16 md:w-18 md:h-18 border-white/10'
+                                <div className={`relative mb-3`}>
+                                    <div className={`rounded-full overflow-hidden border-4 bg-white shadow-xl ${
+                                        isRank1 ? 'w-24 h-24 md:w-28 md:h-28 border-emerald-500' : 'w-18 h-18 md:w-20 md:h-20 border-white'
                                     }`}>
                                         {player.image ? (
                                             <img src={player.image} alt={player.name} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 font-bold text-xl uppercase italic">
+                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-50 to-emerald-100 font-black text-2xl text-emerald-700 uppercase italic">
                                                 {player.name.charAt(0)}
                                             </div>
                                         )}
                                     </div>
                                 </div>
                                 
-                                <span className={`text-center font-bold tracking-tight mb-1 truncate w-full ${isRank1 ? 'text-[13px]' : 'text-[11px]'} text-white/90`}>
+                                <span className={`text-center font-black tracking-tight mb-1 truncate w-full ${isRank1 ? 'text-[15px]' : 'text-[12px]'} text-slate-800`}>
                                     {player.name}
                                 </span>
                                 
-                                <div className="bg-[#262631] px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg border border-white/5">
+                                <div className={`${isRank1 ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'} px-3 py-1 rounded-full flex items-center gap-1.5 shadow-md border border-slate-100`}>
                                     <span className="text-[10px] md:text-[12px] font-black tabular-nums">
-                                        {player.careerScore}
+                                        {player.careerScore} pts
                                     </span>
-                                    <Zap size={10} className="text-orange-500 fill-orange-500" />
+                                    <ZapIcon size={12} className={isRank1 ? 'text-yellow-300 fill-yellow-300' : 'text-orange-500 fill-orange-500'} />
                                 </div>
                             </div>
 
-                            {/* 3D Block Stand */}
+                            {/* 3D Block Stand - Green/Gray Gradients */}
                             <div className="relative w-full perspective-[1000px]">
                                 <div 
-                                    className={`w-full rounded-t-xl transition-all shadow-[-10px_0_30px_rgba(0,0,0,0.5)] flex items-center justify-center font-black italic text-4xl md:text-5xl text-white/10 ${
-                                        isRank1 ? 'h-48 bg-gradient-to-b from-[#3D3D4D] to-[#1C1C24] border-t border-white/10' : 
-                                        isRank2 ? 'h-36 bg-gradient-to-b from-[#2D2D38] to-[#1C1C24] border-t border-white/5' : 
-                                        'h-28 bg-gradient-to-b from-[#22222D] to-[#1C1C24] border-t border-white/5'
+                                    className={`w-full rounded-t-2xl transition-all shadow-xl flex items-center justify-center font-black italic text-5xl md:text-6xl text-white/50 ${
+                                        isRank1 ? 'h-52 bg-gradient-to-b from-emerald-500 to-emerald-700 border-t border-emerald-400' : 
+                                        isRank2 ? 'h-40 bg-gradient-to-b from-slate-200 to-slate-300 border-t border-white' : 
+                                        'h-32 bg-gradient-to-b from-slate-200 to-slate-400 border-t border-white shadow-inner'
                                     }`}
                                 >
-                                    {player.rank}
+                                    <span className={isRank1 ? 'text-white/20' : 'text-slate-400/30'}>{player.rank}</span>
                                 </div>
-                                {/* Top Lid Shadow */}
-                                <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/5 overflow-hidden rounded-t-xl" />
+                                {/* Top Highlight */}
+                                <div className={`absolute top-0 left-0 right-0 h-1.5 overflow-hidden rounded-t-2xl ${isRank1 ? 'bg-white/20' : 'bg-white/50'}`} />
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            {/* List View */}
-            <div className="px-6 py-8 space-y-3 max-w-lg mx-auto bg-[#1C1C24] rounded-t-[3rem] mt-4 min-h-[500px]">
+            {/* List View - Clean White Style */}
+            <div className="px-5 py-10 space-y-4 max-w-lg mx-auto min-h-[500px]">
                 {players.slice(3).map((player, index) => {
                     const displayRank = index + 4;
                     const completion = Math.min(100, (player.careerScore / (players[0]?.careerScore || 1)) * 100);
@@ -149,56 +152,62 @@ const Leaderboard = () => {
                         <div 
                             key={player._id}
                             onClick={() => navigate(`/player/${player._id}`)}
-                            className="bg-[#262631] p-5 rounded-3xl flex items-center gap-5 cursor-pointer hover:bg-[#2D2D3D] transition-all border border-white/5 group shadow-xl"
+                            className="bg-white p-4 rounded-3xl flex items-center gap-5 cursor-pointer hover:bg-slate-50 transition-all border border-slate-100 shadow-sm hover:shadow-md group active:scale-[0.98]"
                         >
-                            <span className="text-[15px] font-black text-white/20 italic w-4">{displayRank}.</span>
+                            <span className="text-[15px] font-black text-slate-300 italic w-5">{displayRank}.</span>
                             
-                            <div className="w-14 h-14 rounded-full overflow-hidden bg-black/40 border border-white/5 shadow-inner">
+                            <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-50 border-2 border-slate-100 shadow-inner group-hover:border-emerald-200 transition-colors">
                                 {player.image ? (
                                     <img src={player.image} alt={player.name} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-indigo-900/50 text-indigo-200 font-bold uppercase italic shadow-inner">
+                                    <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-emerald-600 font-black italic shadow-inner">
                                         {player.name.charAt(0)}
                                     </div>
                                 )}
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-[17px] font-bold text-white tracking-tight truncate leading-tight mb-1">{player.name}</h4>
+                                <h4 className="text-[17px] font-bold text-slate-800 tracking-tight truncate leading-tight mb-1">{player.name}</h4>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-[12px] font-bold text-white/40 uppercase tracking-widest">{player.careerScore} pts</span>
-                                    <span className="w-1 h-1 bg-white/10 rounded-full" />
-                                    <span className="text-[12px] font-bold text-orange-400">Streak 🔥</span>
+                                    <span className="text-[12px] font-black text-emerald-600 uppercase tracking-widest">{player.careerScore} pts</span>
+                                    {completion > 50 && <span className="text-[12px] font-bold text-orange-500 animate-pulse">Hot 🔥</span>}
                                 </div>
                             </div>
 
-                            {/* Percentage Circle Visual */}
+                            {/* Percentage Ring */}
                             <div className="relative w-12 h-12 flex items-center justify-center">
                                 <svg className="w-full h-full -rotate-90">
-                                    <circle cx="24" cy="24" r="20" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+                                    <circle cx="24" cy="24" r="20" fill="transparent" stroke="#F1F5F9" strokeWidth="5" />
                                     <circle 
-                                        cx="24" cy="24" r="20" fill="transparent" stroke={completion > 70 ? "#10b981" : "#f59e0b"} 
-                                        strokeWidth="4" strokeDasharray={`${(completion * 125) / 100} 125`}
+                                        cx="24" cy="24" r="20" fill="transparent" stroke="#10b981" 
+                                        strokeWidth="5" strokeDasharray={`${(completion * 125) / 100} 125`}
                                         strokeLinecap="round" className="transition-all duration-1000 delay-300"
                                     />
                                 </svg>
-                                <span className="absolute text-[10px] font-black italic">{Math.round(completion)}%</span>
+                                <span className="absolute text-[10px] font-black text-slate-400">{Math.round(completion)}%</span>
                             </div>
                         </div>
                     );
                 })}
+
+                {players.length <= 3 && (
+                    <div className="py-24 text-center text-slate-200 flex flex-col items-center gap-4">
+                        <TrophyIcon size={56} className="opacity-10" />
+                        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-300">New Gladiators Joining soon...</p>
+                    </div>
+                )}
             </div>
             
-            {/* Custom Bottom Tab (Matching the Image feel) */}
-            <div className="fixed bottom-0 left-0 right-0 h-20 bg-[#121217]/95 backdrop-blur-2xl border-t border-white/5 z-50 px-8 flex items-center justify-between">
+            {/* Custom Bottom Tab Bar - White Theme */}
+            <div className="fixed bottom-0 left-0 right-0 h-20 bg-white/95 backdrop-blur-xl border-t border-slate-100 z-50 px-8 flex items-center justify-between shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
                 {[
-                    { icon: Zap, label: 'Arena' },
-                    { icon: Trophy, label: 'League', active: true },
-                    { icon: Star, label: 'My Stats' },
-                    { icon: Search, label: 'Scout' }
+                    { icon: ZapIcon, label: 'Arena' },
+                    { icon: TrophyIcon, label: 'League', active: true },
+                    { icon: StarIcon, label: 'My Stats' },
+                    { icon: SearchIcon, label: 'Scout' }
                 ].map((item, i) => (
-                    <div key={i} className={`flex flex-col items-center gap-1 ${item.active ? 'text-white' : 'text-white/20'}`}>
-                        <item.icon size={22} strokeWidth={item.active ? 2.5 : 2} />
+                    <div key={i} className={`flex flex-col items-center gap-1 transition-all ${item.active ? 'text-emerald-600 scale-110' : 'text-slate-300'}`}>
+                        <item.icon size={22} strokeWidth={item.active ? 3 : 2} fill={item.active ? 'rgba(16, 185, 129, 0.1)' : 'none'} />
                         <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
                     </div>
                 ))}
