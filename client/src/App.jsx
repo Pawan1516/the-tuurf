@@ -77,8 +77,6 @@ const NavLinks = () => {
             {leaderboardLink}
             <span className="opacity-20 text-slate-900">•</span>
             <Link to="/login" className="bg-slate-100 hover:bg-emerald-600 hover:text-white px-4 py-2 rounded-xl transition-all text-slate-900">Login</Link>
-            <span className="opacity-20 text-slate-900 hidden sm:block">•</span>
-            <Link to="/admin/login" className="hover:text-emerald-600 transition-colors hidden sm:block">Admin</Link>
         </div>
     );
 };
