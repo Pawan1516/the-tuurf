@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Briefcase } from 'lucide-react';
@@ -41,12 +41,17 @@ import { slotsAPI } from './api/client';
 
 const NavLinks = () => {
     const { user, logout } = React.useContext(AuthContext);
+    const location = useLocation();
+    const isHomePage = location.pathname === '/';
 
     if (user) {
         let dashboardPath = '/dashboard';
         const role = (user.role || '').toLowerCase();
         if (role === 'admin') dashboardPath = '/admin/dashboard';
         else if (role === 'worker') dashboardPath = '/worker/dashboard';
+
+        // User specifically asked to remove Dashboard/Logout from Home Page
+        if (isHomePage) return null;
 
         return (
             <div className="flex items-center gap-4">
