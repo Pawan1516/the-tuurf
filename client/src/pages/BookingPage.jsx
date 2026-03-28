@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { slotsAPI, bookingsAPI } from '../api/client';
+import { slotsAPI, bookingsAPI, aiAPI } from '../api/client';
 import AuthContext from '../context/AuthContext';
-import { Calendar, Clock, User, Phone, MapPin, ShieldCheck, ChevronRight, Info, Zap, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, User, Phone, MapPin, ShieldCheck, ChevronRight, Info, Zap, ArrowLeft, Sparkles } from 'lucide-react';
 
 const BookingPage = () => {
     const { slotId } = useParams();
@@ -29,6 +29,22 @@ const BookingPage = () => {
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [paymentType, setPaymentType] = useState('advance'); // 'advance' or 'full'
+    const [aiRecommendation, setAiRecommendation] = useState('');
+    const [aiLoading, setAiLoading] = useState(false);
+
+    useEffect(() => {
+        if (formData.date) {
+            setAiLoading(true);
+            aiAPI.recommendSlot(formData.date, 'evening')
+                .then(res => {
+                    if (res.data && res.data.success) {
+                        setAiRecommendation(res.data.recommendation);
+                    }
+                })
+                .catch(err => console.error("AI Recommendation failed", err))
+                .finally(() => setAiLoading(false));
+        }
+    }, [formData.date]);
 
     useEffect(() => {
         if (formData.startTime && formData.endTime && formData.date) {
@@ -310,6 +326,28 @@ const BookingPage = () => {
                                 <User size={24} />
                             </div>
                         </div>
+
+                        {/* AI Agent Recommendation Banner */}
+                        {(aiLoading || aiRecommendation) && (
+                            <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50 shadow-inner flex gap-4 items-start">
+                                <div className="bg-emerald-100 p-2.5 rounded-xl shrink-0">
+                                    <Sparkles size={20} className="text-emerald-600 animate-pulse" />
+                                </div>
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800 mb-1">AI Agent Suggestion</h4>
+                                    {aiLoading ? (
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <div className="w-4 h-4 border-2 border-emerald-400 border-t-emerald-600 rounded-full animate-spin"></div>
+                                            <p className="text-xs text-emerald-600 font-medium">Analyzing crowd levels and history...</p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-emerald-900 leading-relaxed font-medium whitespace-pre-line">
+                                            {aiRecommendation}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         <form onSubmit={handleSubmit} className="space-y-10">
                             <div className="space-y-4">

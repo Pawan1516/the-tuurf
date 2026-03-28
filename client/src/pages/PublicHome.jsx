@@ -40,8 +40,15 @@ const PublicHome = () => {
             // 1. Fetch Slots (Primary)
             try {
                 const res = await slotsAPI.getAll(selectedDate);
-                if (Array.isArray(res.data)) setSlots(res.data);
-                else setSlots([]);
+                if (Array.isArray(res.data)) {
+                    setSlots(res.data);
+                } else if (res.data && res.data.success === false) {
+                    console.error('Slot sync error:', res.data.message);
+                    setSlots([]);
+                    // Optional: show error message in UI if needed
+                } else {
+                    setSlots([]);
+                }
             } catch (err) {
                 console.error('Error fetching slots:', err);
                 setSlots([]);

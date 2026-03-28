@@ -953,4 +953,68 @@ router.post('/:id/complete', async (req, res) => {
     }
 });
 
+// @route   GET /api/matches/:id/prediction
+// @desc    Get AI-driven match prediction
+// @access  Public
+router.get('/:id/prediction', async (req, res) => {
+    try {
+        const match = await Match.findById(req.params.id)
+            .populate('team_a.team_id team_b.team_id')
+            .populate('team_a.squad team_b.squad', 'name profile.stats stats')
+            .populate('quick_teams.team_a.players.user_id quick_teams.team_b.players.user_id', 'name profile.stats stats');
+
+        if (!match) return res.status(404).json({ success: false, message: 'Match Node Failure.' });
+
+        // Clean match data for AI context
+        const context = {
+            title: match.title,
+            format: match.format,
+            teams: {
+                team_a: {
+                    name: match.team_a.team_id?.name || match.quick_teams?.team_a?.name || 'Team A',
+                    score: match.team_a.score,
+                    wickets: match.team_a.wickets,
+                    overs: match.team_a.overs_played
+                },
+                team_b: {
+                    name: match.team_b.team_id?.name || match.quick_teams?.team_b?.name || 'Team B',
+                    score: match.team_b.score,
+                    wickets: match.team_b.wickets,
+                    overs: match.team_b.overs_played
+                }
+            },
+            currentInnings: match.current_innings_index + 1,
+            battingTeam: match.live_active_team,
+            live_data: {
+                striker: match.live_data?.striker,
+                non_striker: match.live_data?.non_striker,
+                bowler: match.live_data?.bowler,
+                run_rate: match.live_data?.run_rate,
+                req_run_rate: match.live_data?.required_run_rate,
+                runs_needed: match.live_data?.runs_needed,
+                balls_remaining: match.live_data?.balls_remaining
+            }
+        };
+
+        let prediction = {
+            winner: "Neutral",
+            probability: "50%",
+            leadingTeam: "Analyzing...",
+            keyPlayer: "N/A",
+            reason: "AI Prediction node is currently synchronizing."
+        };
+
+        try {
+            prediction = await AIService.generateMatchPrediction(context);
+        } catch (aiErr) {
+            console.error('AI Prediction Execution Failed:', aiErr.message);
+        }
+
+        res.json({ success: true, prediction });
+    } catch (err) {
+        console.error('AI Prediction Route Error:', err);
+        res.status(500).json({ success: false, message: 'Strategic AI Node Failure' });
+    }
+});
+
 module.exports = router;

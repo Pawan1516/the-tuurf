@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { createOrder, verifyPaymentSignature } = require('../services/payment');
 const Booking = require('../models/Booking');
+const Slot = require('../models/Slot');
 
 // Create Razorpay order (PUBLIC)
 router.post('/create-order', async (req, res) => {
@@ -51,6 +52,16 @@ router.post('/verify', async (req, res) => {
     );
 
     if (!isSignatureValid) {
+      // If signature is invalid, reject the booking and free the slot
+      const failedBooking = await Booking.findByIdAndUpdate(bookingId, {
+         paymentStatus: 'failed',
+         bookingStatus: 'rejected',
+         updatedAt: Date.now()
+      });
+      if (failedBooking && failedBooking.slot) {
+         await Slot.findByIdAndUpdate(failedBooking.slot, { status: 'free', holdExpiresAt: null });
+      }
+
       return res.status(400).json({
         success: false,
         message: 'Payment signature verification failed'
@@ -62,6 +73,7 @@ router.post('/verify', async (req, res) => {
       bookingId,
       {
         paymentStatus: 'verified',
+        bookingStatus: 'confirmed', // Automatically confirm booking once payment is verified
         paymentId: razorpayPaymentId,
         updatedAt: Date.now()
       },
@@ -73,6 +85,10 @@ router.post('/verify', async (req, res) => {
         success: false,
         message: 'Booking not found'
       });
+    }
+
+    if (booking.slot) {
+       await Slot.findByIdAndUpdate(booking.slot, { status: 'booked', holdExpiresAt: null });
     }
 
     res.json({

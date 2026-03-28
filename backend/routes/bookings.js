@@ -199,14 +199,16 @@ router.post('/', async (req, res) => {
 
     if (userId) bookingData.user = userId;
 
-    if (mongoose.connection.readyState !== 1) {
-      // Rollback slot if DB is down (though findOneAndUpdate already happened)
+    let savedBooking;
+    try {
+      const booking = new Booking(bookingData);
+      savedBooking = await booking.save();
+    } catch (saveError) {
+      console.error('CRITICAL: Booking Save Failed. Rolling back slot hold.', saveError);
+      // Rollback slot if save fails
       await Slot.findByIdAndUpdate(slotId, { status: 'free', holdExpiresAt: null });
-      throw new Error('Database connection lost');
+      throw new Error(`Data synchronization failed: ${saveError.message}`);
     }
-
-    const booking = new Booking(bookingData);
-    const savedBooking = await booking.save();
 
     const slotDate = new Date(slot.date).toLocaleDateString();
     const timeRange = `${formatTime12h(slot.startTime)} – ${formatTime12h(slot.endTime)}`;
@@ -528,10 +530,16 @@ router.put('/:id/payment', verifyToken, roleGuard(['worker', 'admin']), async (r
     if (paymentId) updateData.paymentId = paymentId;
     if (transactionId) updateData.transactionId = transactionId;
 
+    let newSlotStatus = null;
+
     // If verifiying payment, automatically confirm the booking
     if (paymentStatus === 'verified') {
       updateData.bookingStatus = 'confirmed';
       updateData.confirmedAt = Date.now();
+      newSlotStatus = 'booked';
+    } else if (paymentStatus === 'failed') {
+      updateData.bookingStatus = 'rejected';
+      newSlotStatus = 'free';
     }
 
     const booking = await Booking.findByIdAndUpdate(
@@ -539,6 +547,15 @@ router.put('/:id/payment', verifyToken, roleGuard(['worker', 'admin']), async (r
       updateData,
       { new: true }
     );
+
+    if (booking && booking.slot && newSlotStatus) {
+      const slotId = booking.slot._id || booking.slot;
+      const slotUpdate = { status: newSlotStatus };
+      if (newSlotStatus === 'booked' || newSlotStatus === 'free') {
+        slotUpdate.holdExpiresAt = null;
+      }
+      await Slot.findByIdAndUpdate(slotId, slotUpdate);
+    }
 
     res.json({ success: true, booking });
   } catch (error) {

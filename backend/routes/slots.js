@@ -9,10 +9,6 @@ const roleGuard = require('../middleware/roleGuard');
 // Get all slots (PUBLIC with optional date filter)
 router.get('/', async (req, res) => {
   try {
-    if (require('mongoose').connection.readyState !== 1) {
-      return res.status(503).json({ success: false, message: 'Database connection unstable' });
-    }
-
     const { date } = req.query;
     let query = { status: { $ne: 'expired' } }; // Never show expired slots to public
 

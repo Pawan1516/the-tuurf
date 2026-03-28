@@ -1,93 +1,76 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY || 'dummy_key',
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 
 class AIService {
-    /**
-     * @desc Generate one-line punchy commentary for a ball
-     */
+    static async callAI(prompt, system = "You are a professional cricket analyst.") {
+        const models = [
+            "gemini-3.1-flash-live-preview-preview-12-2025",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash"
+        ];
+        let lastError = null;
+        for (const mName of models) {
+            try {
+                const model = genAI.getGenerativeModel({ model: mName });
+                const fullPrompt = `${system}\n\nUser: ${prompt}`;
+                const result = await model.generateContent(fullPrompt);
+                return result.response.text();
+            } catch (err) {
+                lastError = err;
+                if (err.status !== 404) break;
+            }
+        }
+        throw lastError;
+    }
+
     static async generateCommentary(context) {
         try {
             const { ball, batsman, bowler, match, situation } = context;
-            
-            const prompt = `You are a live cricket commentator for 'The Turf'. Generate ONE punchy, engaging sentence for this ball:
+            const prompt = `Generate ONE punchy, engaging sentence for this ball:
             EVENT: ${ball.type === 'normal' ? ball.runs + ' runs' : ball.type}
             BATSMAN: ${batsman.name} (${batsman.runs} off ${batsman.balls})
             BOWLER: ${bowler.name} (Econ: ${bowler.economy})
             MATCH STATE: ${match.team} needs ${match.required} off ${match.ballsLeft} balls.
-            SITUATION: ${situation}
-            
-            Keep it under 60 tokens. Be dramatic if it's a high pressure situation.`;
-
-            const message = await anthropic.messages.create({
-                model: "claude-3-sonnet-20240229",
-                max_tokens: 60,
-                temperature: 0.8,
-                system: "You are a live cricket commentator. Return only the commentary line.",
-                messages: [{ role: "user", content: prompt }],
-            });
-
-            return message.content[0].text;
+            SITUATION: ${situation}`;
+            return await this.callAI(prompt, "You are a live cricket commentator. Return only the commentary line.");
         } catch (error) {
-            console.error('AI Commentary Error:', error);
-            return "A solid delivery there."; // Fallback
+            return "Solid delivery on target.";
         }
     }
 
-    /**
-     * @desc TurfBot - AI In-App Assistant
-     */
     static async turfBotChat(userInput, conversationHistory, userContext) {
         try {
-            const systemPrompt = `You are TurfBot, the cricket assistant for 'The Turf' platform. 
-            You have access to the user's stats, team, and match history.
-            CONTEXT: ${JSON.stringify(userContext)}
-            Answer concisely and helpfully. If asked for stats, use the provided JSON context. 
-            Be encouraging like a coach.`;
-
-            const message = await anthropic.messages.create({
-                model: "claude-3-sonnet-20240229",
-                max_tokens: 300,
-                temperature: 0.4,
-                system: systemPrompt,
-                messages: [
-                    ...conversationHistory,
-                    { role: "user", content: userInput }
-                ],
-            });
-
-            return message.content[0].text;
+            const historyStr = conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n');
+            const prompt = `Context: ${JSON.stringify(userContext)}\nHistory:\n${historyStr}\nUser: ${userInput}`;
+            return await this.callAI(prompt, "You are TurfBot, an encouraging cricket coach assistant.");
         } catch (error) {
-            console.error('TurfBot Error:', error);
-            return "I'm having trouble analyzing the stats right now, but you're doing great on the field!";
+            return "Coach is busy - but keep training hard!";
         }
     }
 
-    /**
-     * @desc Generate individual post-match report
-     */
     static async generatePostMatchReport(matchData, playerData) {
         try {
-            const prompt = `Analyze this player's performance in MS Paint... just kidding. 
-            Use this data to generate a short, professional post-match debrief.
-            MATCH: ${matchData.title} (${matchData.result})
-            PLAYER STATS: ${JSON.stringify(playerData)}
-            Include: Performance Grade, Batting/Bowling analysis, Turning point contribution, and Focus for next match.`;
-
-            const message = await anthropic.messages.create({
-                model: "claude-3-sonnet-20240229",
-                max_tokens: 500,
-                temperature: 0.5,
-                system: "You are a professional cricket analyst. Return a structured JSON-like text report.",
-                messages: [{ role: "user", content: prompt }],
-            });
-
-            return message.content[0].text;
+            const prompt = `Report for: ${matchData.title}\nStats: ${JSON.stringify(playerData)}`;
+            return await this.callAI(prompt, "Professional cricket debrief analyst.");
         } catch (error) {
-            console.error('Post-Match AI Error:', error);
-            return "Technical difficulties with the AI Analyst. We'll have your report shortly!";
+            return "Report sync pending.";
+        }
+    }
+
+    static async generateMatchPrediction(matchData) {
+        try {
+            const prompt = `JSON Prediction only: ${JSON.stringify(matchData)}`;
+            const resultText = await this.callAI(prompt, "Cricket prediction engine. Output JSON only: {winner, probability, reasoning}");
+            try {
+                return JSON.parse(resultText);
+            } catch (pErr) {
+                const clean = resultText.replace(/```json|```/g, "").trim();
+                return JSON.parse(clean);
+            }
+        } catch (error) {
+            return { winner: "Neutral", probability: "50%", reason: "Calculating..." };
         }
     }
 }

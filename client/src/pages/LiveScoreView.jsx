@@ -16,6 +16,7 @@ export default function LiveScoreView() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('commentary'); // commentary, scorecard, overs
+    const [prediction, setPrediction] = useState(null);
     const [newBallFlash, setNewBallFlash] = useState(false);
     const socketRef = useRef(null);
     const commentaryEndRef = useRef(null);
@@ -35,7 +36,22 @@ export default function LiveScoreView() {
             }
         };
 
+        const fetchPrediction = async () => {
+            // Use match state directly to avoid temporal dead zone with isMatchEnded
+            if (match && (match.status === 'Completed')) return;
+            try {
+                const res = await apiClient.get(`/matches/${id}/prediction`);
+                if (res.data.success) {
+                    setPrediction(res.data.prediction);
+                }
+            } catch (err) {
+                console.error("Prediction fetch failed");
+            }
+        };
+
         fetchMatch();
+        // Fetch prediction initially
+        setTimeout(fetchPrediction, 2000);
 
         const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
         socketRef.current = socket;
@@ -49,6 +65,9 @@ export default function LiveScoreView() {
             setLiveData(prev => ({ ...prev, ...data }));
             setNewBallFlash(true);
             setTimeout(() => setNewBallFlash(false), 800);
+            
+            // Randomly refresh prediction on significant updates (e.g. status changes or every 5 balls)
+            if (Math.random() > 0.8) fetchPrediction();
         });
 
         socket.on('match:ball', (data) => {
@@ -60,6 +79,7 @@ export default function LiveScoreView() {
         });
 
         const pollTimer = setInterval(fetchMatch, 10000);
+        const predTimer = setInterval(fetchPrediction, 60000); // Refresh prediction every minute
 
         return () => {
             if (socketRef.current) {
@@ -67,8 +87,9 @@ export default function LiveScoreView() {
                 socketRef.current.disconnect();
             }
             clearInterval(pollTimer);
+            clearInterval(predTimer);
         };
-    }, [id]);
+    }, [id, match?.status]);
 
     if (loading) return (
         <div className="min-h-screen bg-white flex flex-col items-center justify-center text-slate-900 p-6">
@@ -188,6 +209,59 @@ export default function LiveScoreView() {
                         </div>
                     </div>
                 </div>
+
+                {/* AI PREDICTION INTEL */}
+                {!isMatchEnded && prediction && (
+                    <div className="bg-[#050805] rounded-[2rem] p-6 shadow-xl border border-emerald-500/20 relative overflow-hidden group">
+                        {/* Background Pulsing Glow */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full animate-pulse"></div>
+                        
+                        <div className="relative z-10 flex items-center justify-between gap-6">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-1.5 bg-emerald-500/10 rounded-lg">
+                                        <Zap size={14} className="text-emerald-500 fill-emerald-500 animate-pulse" />
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Match Forecast Intelligence</span>
+                                </div>
+                                
+                                <h4 className="text-xl font-black text-white tracking-tight mb-2">
+                                    <span className="text-emerald-400">{prediction.winner}</span> is favored to win
+                                </h4>
+                                
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-1 flex-shrink-0">
+                                        <div className="w-1.5 h-1.5 bg-emerald-500/40 rounded-full mt-1"></div>
+                                    </div>
+                                    <p className="text-[11px] font-bold text-white/40 leading-relaxed uppercase tracking-wide italic">
+                                        "{prediction.reason}"
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center p-4 bg-white/5 rounded-3xl border border-white/5 min-w-[100px]">
+                                <span className="text-2xl font-[1000] text-emerald-500 tracking-tighter leading-none mb-1">
+                                    {prediction.probability}
+                                </span>
+                                <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Victory Prob.</span>
+                            </div>
+                        </div>
+
+                        {/* Analysis Footer */}
+                        <div className="relative z-10 mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Crucial Impact →</span>
+                                <span className="text-[9px] font-black text-emerald-400/80 uppercase tracking-tight">{prediction.keyPlayer}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+                                <Activity size={10} className="text-blue-400" />
+                                <span className="text-[8px] font-black text-blue-400/60 uppercase tracking-widest leading-none">
+                                    {prediction.leadingTeam} leading
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* TARGET & SITUATION HUD */}
                 <div className="space-y-4">

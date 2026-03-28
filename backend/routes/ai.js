@@ -4,6 +4,9 @@ const AIService = require('../services/aiService');
 const Match = require('../models/Match');
 const User = require('../models/User');
 const verifyToken = require('../middleware/verifyToken');
+const { slotBookingAgent, revenueBookingAnalyst, notificationAgent } = require('../services/demoAgents');
+const Slot = require('../models/Slot');
+const Booking = require('../models/Booking');
 
 // @route   POST /api/ai/commentary
 // @desc    Generate ball commentary
@@ -62,6 +65,191 @@ router.get('/post-match/:matchId/:uid', verifyToken, async (req, res) => {
         res.json({ success: true, report });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/ai/recommend-slot
+// @desc    Get AI slot recommendation based on agentic AI
+// @access  Private
+router.post('/recommend-slot', verifyToken, async (req, res) => {
+    try {
+        const { date, preference } = req.body;
+        
+        let targetDate = new Date();
+        if (date) {
+            targetDate = new Date(date);
+        }
+        targetDate.setUTCHours(0,0,0,0);
+        
+        const slotsObj = await Slot.find({ date: targetDate, status: 'free' }).select('startTime -_id').lean();
+        
+        const slotsForAI = slotsObj.map(s => {
+            const h = parseInt(s.startTime.split(':')[0]);
+            let crowd = 'low';
+            let recommended = false;
+            
+            // Basic crowd level mock based on time
+            if (h >= 17) {
+                crowd = 'high';
+                if (h === 18) recommended = true;
+            } else if (h >= 12) {
+                crowd = 'medium';
+            }
+            
+            return {
+                time: s.startTime,
+                available: true,
+                crowd,
+                ...(recommended && { recommended: true })
+            };
+        });
+
+        const recommendation = await slotBookingAgent(slotsForAI, preference || 'evening');
+        res.json({ success: true, recommendation });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/ai/analyze-revenue
+// @desc    Get REAL AI business analyst insights
+// @access  Private (Admin)
+router.post('/analyze-revenue', verifyToken, async (req, res) => {
+    try {
+        const { analysisType } = req.body;
+        
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        
+        // Fetch Real Booking Aggregates
+        const [totalBookings, revenueData, slotsSummary] = await Promise.all([
+            Booking.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+            Booking.aggregate([
+                { $match: { createdAt: { $gte: thirtyDaysAgo }, bookingStatus: 'confirmed' } },
+                { $group: { _id: null, total: { $sum: "$amount" } } }
+            ]),
+            Slot.countDocuments({ status: 'free', date: { $gte: new Date() } })
+        ]);
+
+        const bookingData = {
+          period: "Last 30 Days",
+          total_bookings: totalBookings,
+          revenue: revenueData[0]?.total || 0,
+          upcoming_availability: slotsSummary,
+          system_status: "Operational"
+        };
+
+        const insights = await revenueBookingAnalyst(analysisType || "Revenue optimization & strategy", bookingData);
+        res.json({ success: true, insights });
+    } catch (err) {
+        console.error("AI Analysis Error:", err);
+        res.status(500).json({ success: false, message: `AI Analysis blocked: ${err.message}` });
+    }
+});
+
+// @route   POST /api/ai/generate-notifications
+// @desc    Get REAL AI contextual notifications
+// @access  Private (Admin)
+router.post('/generate-notifications', verifyToken, async (req, res) => {
+    try {
+        const { context, matchInfo } = req.body;
+        
+        // Fetch actual live matches on the turf
+        let matchInfoStr = matchInfo;
+        if (!matchInfoStr) {
+            const liveMatch = await Match.findOne({ status: 'In Progress' }).populate('team_a.team_id team_b.team_id').sort({ updatedAt: -1 });
+            if (liveMatch) {
+                matchInfoStr = `LIVE SCORE: ${liveMatch.team_a.team_id?.name || 'A'} vs ${liveMatch.team_b.team_id?.name || 'B'}. Result so far: ${liveMatch.result?.winner || 'Pending'}`;
+            } else {
+                matchInfoStr = "No live matches. Generic turf promo.";
+            }
+        }
+
+        // Fetch Real availability for tonight
+        const tonight = new Date();
+        tonight.setUTCHours(12,0,0,0); // Check from noon onwards
+        const slotsObj = await Slot.find({ date: { $gte: new Date() }, status: 'free' }).limit(5);
+
+        const businessData = {
+            available_slots_count: slotsObj.length,
+            next_available: slotsObj[0]?.startTime || "Not found",
+            peak_demand_tonight: "High (6PM-10PM)"
+        };
+
+        const result = await notificationAgent(
+            context || "Contextual push for tonight",
+            matchInfoStr,
+            businessData
+        );
+        
+        let parsedNotifications = result;
+        if (typeof result === 'string') {
+            try {
+                parsedNotifications = JSON.parse(result);
+            } catch(e) {
+                const clean = result.replace(/```json|```/g, "").trim();
+                parsedNotifications = JSON.parse(clean);
+            }
+        }
+
+        res.json({ success: true, notifications: parsedNotifications.notifications || parsedNotifications, contextUsed: matchInfoStr });
+    } catch (err) {
+        console.error("Notification Generation Error:", err);
+        res.status(500).json({ success: false, message: `Notification Engine blocked: ${err.message}` });
+    }
+});
+
+// @route   POST /api/ai/broadcast-notification
+// @desc    Broadcast an AI generated notification to users
+// @access  Private (Admin)
+router.post('/broadcast-notification', verifyToken, async (req, res) => {
+    try {
+        const { title, body } = req.body;
+        if (!title || !body) return res.status(400).json({ success: false, message: "Missing notification content" });
+
+        // Get all unique phone numbers - using 365 days to ensure we find your test users!
+        const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+        const recentNumbers = await Booking.find({ createdAt: { $gte: yearAgo } }).distinct('userPhone');
+        
+        if (recentNumbers.length === 0) {
+            console.warn("⚠️ No booking phone numbers found in the database. Broadcast cancelled.");
+            return res.json({ success: false, message: "No users found with recent bookings. Try making a test booking first!" });
+        }
+
+        console.log(`📣 Broadcasting to ${recentNumbers.length} unique phone numbers found.`);
+
+        let successCount = 0;
+        let failCount = 0;
+        const msgText = `🔔 *${title}*\n\n${body}`;
+
+        for (const phone of recentNumbers) {
+            if (phone && phone.length >= 10) {
+                try {
+                    // Normalize number: ensure it's just digits, take last 10, prefix with +91 (India)
+                    const clean = phone.replace(/\D/g,'').slice(-10);
+                    const formatted = `whatsapp:+91${clean}`;
+                    
+                    console.log(`📤 Attempting broadcast to: ${formatted}`);
+                    const result = await sendWhatsAppNotification(formatted, msgText);
+                    
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        console.error(`❌ Broadcast failed for ${formatted}: ${result.error}`);
+                        failCount++;
+                    }
+                } catch(e) { 
+                    console.error(`❌ Unexpected error broadcasting to ${phone}: ${e.message}`);
+                    failCount++;
+                }
+                // Optional: throttling for rate limits if many users
+                await new Promise(r => setTimeout(r, 200));
+            }
+        }
+
+        res.json({ success: true, message: `Notification broadcasted. Success: ${successCount}, Fail: ${failCount}` });
+    } catch (err) {
+        console.error("Broadcast Error:", err);
+        res.status(500).json({ success: false, message: `Broadcast Engine Error: ${err.message}` });
     }
 });
 

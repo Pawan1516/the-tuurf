@@ -7,6 +7,8 @@ const Leaderboard = () => {
     const [players, setPlayers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeToggle, setActiveToggle] = useState('Leaderboard');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -25,13 +27,17 @@ const Leaderboard = () => {
         fetchLeaderboard();
     }, []);
 
-    // Podium order: [Rank 2, Rank 1, Rank 3]
+    const filteredPlayers = players.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // Podium order: [Rank 2, Rank 1, Rank 3] (Original positions without filter)
     const topThree = [];
     if (players.length > 0) {
         if (players[1]) topThree.push({ ...players[1], rank: 2 });
         if (players[0]) topThree.push({ ...players[0], rank: 1 });
         if (players[2]) topThree.push({ ...players[2], rank: 3 });
     }
+
+    const showPodium = !searchQuery && !isSearching;
 
     if (loading) {
         return (
@@ -44,21 +50,47 @@ const Leaderboard = () => {
     return (
         <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-x-hidden pb-10">
             {/* Header */}
-            <header className="px-6 pt-12 pb-6 flex items-center justify-center relative bg-white border-b border-slate-100">
+            <header className="px-6 pt-12 pb-6 flex items-center justify-between relative bg-white border-b border-slate-100 min-h-[90px]">
                 <button 
-                    onClick={() => navigate('/')}
-                    className="absolute left-6 top-12 p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors"
+                    onClick={() => {
+                        if (isSearching) {
+                            setIsSearching(false);
+                            setSearchQuery('');
+                        } else {
+                            navigate('/');
+                        }
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors z-10 relative"
                 >
                     <BackIcon size={28} />
                 </button>
-                <h1 className="text-xl font-bold tracking-tight text-slate-800">The Turf </h1>
-                <button className="absolute right-6 top-12 p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors">
-                    <SearchIcon size={26} />
-                </button>
+                
+                {isSearching ? (
+                    <input 
+                        type="text" 
+                        autoFocus
+                        placeholder="Search players..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1 mx-4 bg-slate-50 border border-slate-200 px-5 py-2.5 rounded-full outline-none focus:border-emerald-500 transition-all text-sm font-semibold z-10 relative"
+                    />
+                ) : (
+                    <h1 className="text-xl font-bold tracking-tight text-slate-800 absolute left-1/2 -translate-x-1/2">The Turf </h1>
+                )}
+                
+                {!isSearching && (
+                    <button 
+                        onClick={() => setIsSearching(true)}
+                        className="p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors z-10 relative"
+                    >
+                        <SearchIcon size={26} />
+                    </button>
+                )}
             </header>
 
             {/* 3D Podium Section - Green & White Theme */}
-            <div className="relative px-6 flex justify-center items-end gap-3 pt-24 pb-12 min-h-[420px] bg-white border-b border-slate-100 shadow-sm">
+            {showPodium && (
+                <div className="relative px-6 flex justify-center items-end gap-3 pt-24 pb-12 min-h-[420px] bg-white border-b border-slate-100 shadow-sm animate-in fade-in zoom-in duration-500">
                 {topThree.map((player) => {
                     const isRank1 = player.rank === 1;
                     const isRank2 = player.rank === 2;
@@ -124,11 +156,12 @@ const Leaderboard = () => {
                     );
                 })}
             </div>
+            )}
 
             {/* List View - Clean White Style */}
-            <div className="px-5 py-10 space-y-4 max-w-lg mx-auto min-h-[500px]">
-                {players.slice(3).map((player, index) => {
-                    const displayRank = index + 4;
+            <div className={`px-5 py-10 space-y-4 max-w-lg mx-auto ${searchQuery ? 'min-h-[500px]' : ''}`}>
+                {(searchQuery ? filteredPlayers : players.slice(3)).map((player, index) => {
+                    const displayRank = searchQuery ? (players.findIndex(p => p._id === player._id) + 1) : index + 4;
                     const completion = Math.min(100, (player.careerScore / (players[0]?.careerScore || 1)) * 100);
 
                     return (
@@ -164,7 +197,14 @@ const Leaderboard = () => {
                     );
                 })}
 
-                {players.length <= 3 && (
+                {filteredPlayers.length === 0 && searchQuery && (
+                    <div className="py-24 text-center text-slate-200 flex flex-col items-center gap-4 animate-in fade-in duration-300">
+                        <SearchIcon size={56} className="opacity-20 text-slate-400" />
+                        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">No players found</p>
+                    </div>
+                )}
+
+                {players.length <= 3 && !searchQuery && (
                     <div className="py-24 text-center text-slate-200 flex flex-col items-center gap-4">
                         <TrophyIcon size={56} className="opacity-10" />
                         <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-300">New Gladiators Joining soon...</p>

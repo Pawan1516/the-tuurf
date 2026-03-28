@@ -15,6 +15,7 @@ const WhatsAppBooking = require('./models/WhatsAppBooking');
 const Booking = require('./models/Booking');
 const Slot = require('./models/Slot');
 const { processCricBotCommand } = require('./services/aiAgent');
+const { runBookingOptimizer } = require('./services/bookingOptimizer');
 const cors = require('cors');
 const { sendWhatsAppNotification } = require('./services/whatsapp');
 
@@ -44,24 +45,31 @@ const connectDB = async () => {
     console.error('❌ MONGODB_URI is not set in .env');
     return;
   }
+  
+  if (mongoose.connection.readyState === 1) return; // Already connected
+
   try {
+    console.log('🔄 Initializing system-wide database connection...');
     await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 15000,
-      family: 4, // Force IPv4 — avoids IPv6 Atlas issues
-      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 20000,
+      socketTimeoutMS: 60000,
+      connectTimeoutMS: 20000,
+      family: 4, 
+      maxPoolSize: 20,
       retryWrites: true,
+      heartbeatFrequencyMS: 10000,
     });
-    console.log('✅ MongoDB Connected Successfully');
+    console.log('✅ MongoDB Cluster Unified - Protocol Stable');
+    
+    // Seed and generate only if not already done (optional)
     await seedSettings();
     const { autoGenerateSlots } = require('./utils/slotGenerator');
     await autoGenerateSlots(30);
   } catch (err) {
-    console.error('❌ MongoDB Connection Error:', err.message);
-    console.log('💡 Fix: MongoDB Atlas → Network Access → Add 0.0.0.0/0 to allow all IPs');
-    console.log('🔄 Retrying in 10 seconds...');
-    setTimeout(connectDB, 10000); // Auto-retry
+    console.error('❌ Cluster Synchronization Critical Error:', err.message);
+    console.log('💡 Diagnostics: Verify Atlas Whitelist (0.0.0.0/0) and Credentials');
+    console.log('🔄 Re-syncing in 10s...');
+    setTimeout(connectDB, 10000);
   }
 };
 
@@ -124,6 +132,10 @@ io.on('connection', (socket) => {
 app.set('socketio', io);
 
 app.use(cors());
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
@@ -143,6 +155,24 @@ app.use('/api/players', playerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/leaderboards', leaderboardRoutes);
 app.use('/api/formats', formatRoutes);
+
+// ─── Autonomous Booking Optimizer Endpoint ────────────────────────────────────
+app.post('/api/optimizer/run', async (req, res) => {
+  try {
+    const result = await runBookingOptimizer();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/optimizer/status', (req, res) => {
+  res.json({
+    status: 'running',
+    message: 'Booking Optimizer is active. Runs every 60 minutes.',
+    nextRun: new Date(Date.now() + (60 - new Date().getMinutes() % 60) * 60000).toISOString()
+  });
+});
 
 // Twilio Client
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -323,4 +353,17 @@ server.listen(PORT, () => {
   console.log(`🏟️ THE TURF — Automachine running on port ${PORT}`);
   console.log(`📡 WEBHOOK: POST /webhook`);
   console.log(`🔑 ADMIN: http://localhost:${PORT}/admin`);
+
+  // ─── Autonomous Booking Optimizer Scheduler ───────────────────────────────
+  // Run once 30 seconds after startup (after DB connects), then every 60 mins
+  setTimeout(async () => {
+    console.log('🤖 Running initial Booking Optimization pass...');
+    await runBookingOptimizer().catch(e => console.error('Optimizer startup run failed:', e.message));
+  }, 30000);
+
+  setInterval(async () => {
+    await runBookingOptimizer().catch(e => console.error('Optimizer scheduled run failed:', e.message));
+  }, 60 * 60 * 1000); // Every 60 minutes
+
+  console.log('🤖 Booking Optimizer: Scheduled (every 60 min)');
 });

@@ -156,5 +156,13 @@ export const leaderboardAPI = {
   getTopWickets: () => apiClient.get('/leaderboards/wickets')
 };
 
+// AI APIs
+export const aiAPI = {
+  recommendSlot: (date, preference) => apiClient.post('/ai/recommend-slot', { date, preference }),
+  analyzeRevenue: (analysisType) => apiClient.post('/ai/analyze-revenue', { analysisType }),
+  generateNotifications: (context, matchInfo) => apiClient.post('/ai/generate-notifications', { context, matchInfo }),
+  broadcastNotification: (title, body) => apiClient.post('/ai/broadcast-notification', { title, body })
+};
+
 export default apiClient;
 

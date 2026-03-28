@@ -17,10 +17,11 @@ import {
   X,
   Download,
   Settings,
-  ScanLine
+  ScanLine,
+  Bell
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
-import { adminAPI } from '../../api/client';
+import { adminAPI, aiAPI } from '../../api/client';
 import MobileNav from '../../components/MobileNav';
 import AdminSidebar from '../../components/AdminSidebar';
 
@@ -34,6 +35,18 @@ const AdminDashboard = () => {
   const [period, setPeriod] = useState('all');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
+
+  // AI Analyst State
+  const [analystInsights, setAnalystInsights] = useState('');
+  const [analyzingRevenue, setAnalyzingRevenue] = useState(false);
+  const [analysisType, setAnalysisType] = useState('Revenue optimization & pricing strategy');
+  
+  // Notification Agent State
+  const [notiContext, setNotiContext] = useState('');
+  const [notiLoading, setNotiLoading] = useState(false);
+  const [generatedNotis, setGeneratedNotis] = useState(null);
+  const [generatedContext, setGeneratedContext] = useState('');
+  const [broadcastingIndex, setBroadcastingIndex] = useState(null);
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -101,6 +114,57 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     logout();
     navigate('/admin/login');
+  };
+
+  const handleAnalyzeRevenue = async () => {
+    setAnalyzingRevenue(true);
+    setAnalystInsights('');
+    try {
+      const res = await aiAPI.analyzeRevenue(analysisType);
+      if(res.data && res.data.success) {
+        setAnalystInsights(res.data.insights);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('AI Analysis request blocked by server.');
+    } finally {
+      setAnalyzingRevenue(false);
+    }
+  };
+
+  const handleGenerateNotifications = async () => {
+    setNotiLoading(true);
+    setGeneratedNotis(null);
+    setGeneratedContext('');
+    try {
+      const res = await aiAPI.generateNotifications(notiContext, "");
+      if(res.data && res.data.success) {
+        setGeneratedNotis(res.data.notifications);
+        setGeneratedContext(res.data.contextUsed || '');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Notification Generation blocked by server.');
+    } finally {
+      setNotiLoading(false);
+    }
+  };
+
+  const handleBroadcast = async (noti, index) => {
+    if(!window.confirm(`Broadcast "${noti.title}" to all recent users?`)) return;
+    
+    setBroadcastingIndex(index);
+    try {
+      const res = await aiAPI.broadcastNotification(noti.title, noti.body);
+      if(res.data && res.data.success) {
+        alert(res.data.message || 'Notification broadcasted successfully!');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to broadcast notification.');
+    } finally {
+      setBroadcastingIndex(null);
+    }
   };
 
   // Helper to generate a simple SVG line chart from dailyRevenue
@@ -320,6 +384,124 @@ const AdminDashboard = () => {
                   <p className="text-[9px] font-bold text-purple-600 uppercase tracking-tighter">Real-time DB Integrity</p>
                 </div>
               </div>
+            </div>
+
+            {/* AI Analyst Input / Output Area */}
+            <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col md:flex-row gap-6">
+               <div className="md:w-1/3 flex flex-col gap-4">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">🧠 Business Analyst</p>
+                  <select 
+                     value={analysisType} 
+                     onChange={(e) => setAnalysisType(e.target.value)}
+                     className="bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 rounded-2xl outline-none font-black text-xs text-gray-900 uppercase tracking-wider transition-all"
+                  >
+                     <option value="Revenue optimization & pricing strategy">Revenue Optimization</option>
+                     <option value="Booking pattern analysis & peak hours">Booking Patterns</option>
+                     <option value="Weekend vs weekday demand">Weekend vs Weekday</option>
+                  </select>
+                  <button
+                     onClick={handleAnalyzeRevenue}
+                     disabled={analyzingRevenue}
+                     className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all"
+                  >
+                     {analyzingRevenue ? (
+                         <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                     ) : <Briefcase size={16} />}
+                     Execute Analysis
+                  </button>
+               </div>
+               
+               <div className="md:w-2/3 bg-gray-900 border border-gray-800 p-6 rounded-[2rem] shadow-inner text-white min-h-[150px] relative overflow-hidden flex items-center">
+                  <div className="absolute top-0 right-0 p-8 opacity-5">
+                      <PieChart size={120} />
+                  </div>
+                  {analyzingRevenue ? (
+                      <div className="w-full flex justify-center items-center gap-3 animate-pulse">
+                         <div className="w-5 h-5 border-2 border-emerald-400 border-t-emerald-600 rounded-full animate-spin"></div>
+                         <p className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em]">Processing historical telemetry...</p>
+                      </div>
+                  ) : analystInsights ? (
+                      <div className="relative z-10 w-full space-y-4">
+                         <h4 className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em]">Execution Result: {analysisType}</h4>
+                         <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-line font-medium">
+                            {analystInsights}
+                         </div>
+                      </div>
+                  ) : (
+                      <div className="relative z-10 w-full text-center">
+                         <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em]">Awaiting Analysis Query</p>
+                      </div>
+                  )}
+               </div>
+            </div>
+
+            {/* Notification Agent Input / Output Area */}
+            <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col md:flex-row gap-6">
+               <div className="md:w-1/3 flex flex-col gap-4">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">🤖 Notification Agent</p>
+                  <input 
+                     value={notiContext} 
+                     onChange={(e) => setNotiContext(e.target.value)}
+                     placeholder="Context (e.g. Slots running out)"
+                     className="bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 rounded-2xl outline-none font-medium text-xs text-gray-900 transition-all"
+                  />
+                  <button
+                     onClick={handleGenerateNotifications}
+                     disabled={notiLoading}
+                     className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all"
+                  >
+                     {notiLoading ? (
+                         <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                     ) : <Bell size={16} />}
+                     Generate Push Alerts
+                  </button>
+               </div>
+               
+               <div className="md:w-2/3 bg-gray-50 border border-gray-100 p-6 rounded-[2rem] shadow-inner text-gray-900 min-h-[150px] relative overflow-hidden flex items-center">
+                  <div className="absolute top-0 right-0 p-8 opacity-5">
+                      <Bell size={120} />
+                  </div>
+                  {notiLoading ? (
+                      <div className="w-full flex justify-center items-center gap-3 animate-pulse">
+                         <div className="w-5 h-5 border-2 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                         <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">Synthesizing Contextual Hooks...</p>
+                      </div>
+                  ) : generatedNotis && generatedNotis.length > 0 ? (
+                      <div className="relative z-10 w-full space-y-4">
+                         <div className="flex justify-between items-center">
+                            <h4 className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">Generated Broadcast Options</h4>
+                            {generatedContext && (
+                                <p className="text-[9px] font-bold text-gray-500 uppercase px-2 py-1 bg-gray-100 rounded-md truncate max-w-[200px]">
+                                    Data: {generatedContext}
+                                </p>
+                            )}
+                         </div>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {generatedNotis.map((noti, idx) => (
+                               <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all">
+                                  <div className="flex justify-between items-start mb-2">
+                                     <span className="text-2xl">{noti.icon}</span>
+                                     <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{noti.type}</span>
+                                  </div>
+                                  <h5 className="font-black text-xs text-gray-900 tracking-tight leading-tight mb-1">{noti.title}</h5>
+                                  <p className="text-[10px] text-gray-500 font-medium leading-relaxed">{noti.body}</p>
+                                  <button 
+                                     onClick={() => handleBroadcast(noti, idx)}
+                                     disabled={broadcastingIndex !== null}
+                                     className="mt-3 w-full bg-blue-50 hover:bg-blue-600 disabled:bg-blue-200 hover:text-white text-blue-600 text-[8px] font-black uppercase py-2 rounded-lg transition-colors tracking-widest"
+                                  >
+                                     {broadcastingIndex === idx ? 'Sending...' : 'Broadcast'}
+                                  </button>
+                               </div>
+                            ))}
+                         </div>
+                      </div>
+                  ) : (
+                      <div className="relative z-10 w-full text-center">
+                         <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em]">Standby for Context Input</p>
+                      </div>
+                  )}
+               </div>
             </div>
           </div>
 

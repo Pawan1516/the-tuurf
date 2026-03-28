@@ -58,16 +58,18 @@ const NavLinks = () => {
                         <button onClick={logout} className="bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all">Logout</button>
                     </>
                 )}
-                {isHomePage && (
-                    <Link to={dashboardPath} className="bg-emerald-600 text-white px-4 py-2 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest">Dashboard</Link>
-                )}
             </div>
         );
     }
 
     return (
-        <div className="flex items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-400">
-            <Link to="/login" className="bg-slate-100 hover:bg-emerald-600 hover:text-white px-4 py-2 rounded-xl transition-all text-slate-900">Login</Link>
+        <div className="flex items-center gap-3 md:gap-4">
+            <Link 
+                to="/login" 
+                className="bg-emerald-600 text-white hover:bg-emerald-700 px-6 py-2.5 rounded-2xl transition-all shadow-lg shadow-emerald-600/20 active:scale-95 text-[10px] md:text-xs font-black uppercase tracking-widest leading-none border border-emerald-500/20"
+            >
+                Login
+            </Link>
         </div>
     );
 };
@@ -83,7 +85,10 @@ const Layout = ({ children, turfName = "The Turf" }) => (
                     </div>
                     <span className="text-lg md:text-xl font-black text-slate-900 tracking-tighter uppercase whitespace-nowrap">{turfName}</span>
                 </Link>
-                <NavLinks />
+                <div className="flex items-center gap-4">
+                    <Link to="/login" className="bg-emerald-600 text-white hover:bg-emerald-700 px-6 py-2 rounded-xl transition-all shadow-lg active:scale-95 text-[10px] font-black uppercase tracking-widest hidden md:flex border border-emerald-500/20">Login</Link>
+                    <NavLinks />
+                </div>
             </div>
         </nav>
         <main>{children}</main>
