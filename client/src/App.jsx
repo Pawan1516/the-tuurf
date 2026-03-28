@@ -63,10 +63,10 @@ const NavLinks = () => {
     }
 
     return (
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
             <Link 
                 to="/login" 
-                className="bg-emerald-600 text-white hover:bg-emerald-700 px-6 py-2.5 rounded-2xl transition-all shadow-lg shadow-emerald-600/20 active:scale-95 text-[10px] md:text-xs font-black uppercase tracking-widest leading-none border border-emerald-500/20"
+                className="bg-emerald-600 text-white hover:bg-emerald-700 px-4 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl transition-all shadow-lg shadow-emerald-600/20 active:scale-95 text-[9px] md:text-sm font-black uppercase tracking-widest leading-none border border-emerald-500/20"
             >
                 Login
             </Link>
@@ -85,10 +85,7 @@ const Layout = ({ children, turfName = "The Turf" }) => (
                     </div>
                     <span className="text-lg md:text-xl font-black text-slate-900 tracking-tighter uppercase whitespace-nowrap">{turfName}</span>
                 </Link>
-                <div className="flex items-center gap-4">
-                    <Link to="/login" className="bg-emerald-600 text-white hover:bg-emerald-700 px-6 py-2 rounded-xl transition-all shadow-lg active:scale-95 text-[10px] font-black uppercase tracking-widest hidden md:flex border border-emerald-500/20">Login</Link>
-                    <NavLinks />
-                </div>
+                <NavLinks />
             </div>
         </nav>
         <main>{children}</main>
