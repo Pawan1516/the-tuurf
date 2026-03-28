@@ -195,7 +195,7 @@ const PublicHome = () => {
             {/* MAIN INTERFACE OVERLAPPING HERO */}
             <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-10 md:-mt-32 relative z-20 mb-8 md:mb-32">
 
-                {/* LIVE ARENA INTEL - PREMIUM OVERHAUL */}
+                {/* LIVE ARENA INTEL - DYNAMICALLY SHOW ONLY WHEN ACTIVE */}
                 {liveMatches.length > 0 && (
                     <div className="bg-[#050805] rounded-[3rem] p-8 md:p-14 mb-16 shadow-[0_50px_100px_rgba(0,0,0,0.4)] border border-white/10 overflow-hidden relative">
                         {/* Mesh Gradients Background */}
@@ -207,11 +207,15 @@ const PublicHome = () => {
                         <div className="relative z-10 flex items-center justify-between mb-12 px-2">
                             <div className="flex items-center gap-4">
                                 <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                                    <Zap size={20} className="text-emerald-500 fill-emerald-500 animate-pulse" />
+                                    <Zap size={20} className={`text-emerald-500 fill-emerald-500 ${liveMatches.some(m => m.status === 'In Progress') ? 'animate-pulse' : ''}`} />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm md:text-base font-black uppercase tracking-[0.4em] text-emerald-400 leading-none">Live Arena</h3>
-                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-2">{liveMatches.length} Today's Matches</p>
+                                    <h3 className="text-sm md:text-base font-black uppercase tracking-[0.4em] text-emerald-400 leading-none">
+                                        {liveMatches.some(m => m.status === 'In Progress') ? 'Live Arena' : 'Recent Results'}
+                                    </h3>
+                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-2">
+                                        {liveMatches.filter(m => m.status === 'In Progress').length || '0'} Live • {liveMatches.filter(m => m.status === 'Completed').length || '0'} Final
+                                    </p>
                                 </div>
                             </div>
                             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
