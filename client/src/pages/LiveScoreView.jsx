@@ -71,7 +71,7 @@ export default function LiveScoreView() {
     }, [id]);
 
     if (loading) return (
-        <div className="min-h-screen bg-[#050805] flex flex-col items-center justify-center text-white p-6">
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center text-slate-900 p-6">
             <div className="relative">
                 <div className="w-20 h-20 border-4 border-emerald-500/20 rounded-full"></div>
                 <div className="w-20 h-20 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
@@ -82,7 +82,7 @@ export default function LiveScoreView() {
     );
 
     if (error || !match) return (
-        <div className="min-h-screen bg-[#050805] flex flex-col items-center justify-center text-white p-6 text-center">
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center text-slate-900 p-6 text-center">
             <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mb-6 border border-red-500/20">
                 <Info className="w-10 h-10 text-red-500" />
             </div>
@@ -110,12 +110,12 @@ export default function LiveScoreView() {
         if (ball === '4') return 'bg-blue-600 border-blue-400 text-white shadow-[0_0_10px_rgba(37,99,235,0.3)]';
         if (ball === '6') return 'bg-amber-500 border-amber-300 text-white shadow-[0_0_15px_rgba(245,158,11,0.4)]';
         if (ball === 'Wd' || ball === 'Nb') return 'bg-purple-500 border-purple-400 text-white';
-        if (ball === '·') return 'bg-white/5 border-white/10 text-white/20';
-        return 'bg-white/10 border-white/20 text-white/50';
+        if (ball === '·') return 'bg-emerald-100/50 border-emerald-100 text-emerald-300';
+        return 'bg-emerald-50 border-emerald-100 text-emerald-400';
     };
 
     return (
-        <div className="min-h-screen bg-[#050805] text-white font-sans overflow-x-hidden pb-24 selection:bg-emerald-500/30">
+        <div className="min-h-screen bg-emerald-50 text-slate-900 font-sans overflow-x-hidden pb-24 selection:bg-emerald-500/30">
             {/* Dynamic Background */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-40">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/20 blur-[120px] rounded-full"></div>
@@ -123,9 +123,9 @@ export default function LiveScoreView() {
             </div>
 
             {/* Custom Navbar */}
-            <header className="sticky top-0 z-[100] bg-[#050805]/80 backdrop-blur-2xl border-b border-white/5">
+            <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-2xl border-b border-emerald-100">
                 <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <button onClick={() => navigate(-1)} className="p-2.5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                    <button onClick={() => navigate(-1)} className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-colors">
                         <ChevronLeft size={18} />
                     </button>
                     
@@ -149,8 +149,8 @@ export default function LiveScoreView() {
                         <button onClick={() => {
                             navigator.clipboard.writeText(window.location.href);
                             alert("Intel Link Copied!");
-                        }} className="p-2.5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
-                            <Share2 size={18} className="text-white/60" />
+                        }} className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-colors">
+                            <Share2 size={18} className="text-emerald-600" />
                         </button>
                     </div>
                 </div>
@@ -159,31 +159,31 @@ export default function LiveScoreView() {
             <main className="max-w-2xl mx-auto px-4 py-6 space-y-6 relative z-10">
                 
                 {/* MATCH SUMMARY STRIP (Top Tier Intel) */}
-                <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-3xl p-4 flex items-center justify-between shadow-xl">
+                <div className="bg-white border border-emerald-100 rounded-3xl p-4 flex items-center justify-between shadow-sm">
                     <div className="flex-1 flex items-center gap-4">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-0.5">{teamAName}</span>
-                            <span className="text-sm font-black text-white">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">{teamAName}</span>
+                            <span className="text-sm font-black text-slate-800">
                                 {liveData?.inningsNum === 2 ? (liveData?.inn1_scorecard?.score || 0) : currentScore.runs}/
                                 {liveData?.inningsNum === 2 ? (liveData?.inn1_scorecard?.wickets || 0) : currentScore.wickets}
-                                <span className="text-[9px] font-bold text-white/20 ml-1">({liveData?.inningsNum === 2 ? (liveData?.inn1_scorecard?.overs || 0) : currentScore.overs})</span>
+                                <span className="text-[9px] font-bold text-slate-300 ml-1">({liveData?.inningsNum === 2 ? (liveData?.inn1_scorecard?.overs || 0) : currentScore.overs})</span>
                             </span>
                         </div>
                     </div>
                     
                     <div className="px-4 flex flex-col items-center">
-                        <div className="h-8 w-px bg-white/10"></div>
+                        <div className="h-8 w-px bg-emerald-100"></div>
                         <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] my-1">VS</span>
-                        <div className="h-8 w-px bg-white/10"></div>
+                        <div className="h-8 w-px bg-emerald-100"></div>
                     </div>
 
                     <div className="flex-1 flex items-center justify-end gap-4 text-right">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-0.5">{teamBName}</span>
-                            <span className={`text-sm font-black ${liveData?.inningsNum === 2 ? 'text-emerald-400' : 'text-white/40'}`}>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">{teamBName}</span>
+                            <span className={`text-sm font-black ${liveData?.inningsNum === 2 ? 'text-emerald-600' : 'text-slate-300'}`}>
                                 {liveData?.inningsNum === 2 ? currentScore.runs : '—'}/
                                 {liveData?.inningsNum === 2 ? currentScore.wickets : '—'}
-                                <span className="text-[9px] font-bold text-white/20 ml-1">({liveData?.inningsNum === 2 ? currentScore.overs : '0.0'})</span>
+                                <span className="text-[9px] font-bold text-slate-200 ml-1">({liveData?.inningsNum === 2 ? currentScore.overs : '0.0'})</span>
                             </span>
                         </div>
                     </div>
@@ -198,8 +198,8 @@ export default function LiveScoreView() {
                                 <p className="text-2xl font-black text-yellow-400">{liveData.target} <span className="text-xs font-bold text-yellow-400/40 ml-1">RUNS</span></p>
                             </div>
                             <div className="text-right">
-                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Required</p>
-                                <p className="text-xl font-black text-white">{liveData.runs_needed} <span className="text-[10px] text-white/20">off {liveData.balls_remaining}</span></p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Required</p>
+                                <p className="text-xl font-black text-slate-800">{liveData.runs_needed} <span className="text-[10px] text-slate-400">off {liveData.balls_remaining}</span></p>
                             </div>
                         </div>
                     )}
@@ -229,16 +229,13 @@ export default function LiveScoreView() {
 
                 {/* BROADCAST SCOREBOARD CARD */}
                 <div className={`relative group overflow-hidden rounded-[2.5rem] p-8 border transition-all duration-700 ${
-                    newBallFlash ? 'border-emerald-500/50 shadow-[0_0_50px_rgba(16,185,129,0.1)] scale-[1.01]' : 'border-white/10 shadow-2xl'
-                } bg-gradient-to-br from-emerald-950/20 via-[#0A0F0A] to-[#050805]`}>
-                    
-                    {/* Animated light rays */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-50"></div>
+                    newBallFlash ? 'border-emerald-500/50 shadow-[0_0_50px_rgba(16,185,129,0.1)] scale-[1.01]' : 'border-emerald-100 shadow-sm'
+                } bg-white`}>
                     
                     {/* Format Strip */}
                     <div className="flex justify-center mb-8">
-                        <div className="bg-white/5 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
+                        <div className="bg-emerald-50 border border-emerald-100 px-4 py-1.5 rounded-full">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">
                                 {match.format || 'T20'} Series • {liveData?.inningsNum === 2 ? '2nd Innings' : '1st Innings'}
                             </span>
                         </div>
@@ -247,66 +244,66 @@ export default function LiveScoreView() {
                     {/* Team Logos and Names */}
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex flex-col items-center gap-4 flex-1">
-                            <div className="w-16 h-16 rounded-[1.5rem] flex items-center justify-center border-2 border-white/5 relative group-hover:scale-110 transition-transform duration-500" style={{ backgroundColor: teamAColor + '10' }}>
+                            <div className="w-16 h-16 rounded-[1.5rem] flex items-center justify-center border-2 border-emerald-50 relative group-hover:scale-110 transition-transform duration-500" style={{ backgroundColor: teamAColor + '10' }}>
                                 <Users size={28} style={{ color: teamAColor }} />
                                 {liveData?.live_active_team === 'A' && !isMatchEnded && (
-                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-[#0A0F0A] flex items-center justify-center">
+                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
                                         <Zap size={10} className="text-white fill-white" />
                                     </div>
                                 )}
                             </div>
                             <div className="text-center">
-                                <h3 className="text-sm md:text-base font-black uppercase tracking-tight leading-none mb-1">{teamAName}</h3>
+                                <h3 className="text-sm md:text-base font-black uppercase tracking-tight leading-none mb-1 text-slate-800">{teamAName}</h3>
                                 {liveData?.inn1_scorecard && liveData?.inningsNum === 2 && (
-                                    <p className="text-[10px] font-bold text-white/30 truncate">{liveData.inn1_scorecard.score}/{liveData.inn1_scorecard.wickets}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 truncate">{liveData.inn1_scorecard.score}/{liveData.inn1_scorecard.wickets}</p>
                                 )}
                             </div>
                         </div>
 
                         <div className="flex flex-col items-center gap-2 px-6">
-                            <div className="text-[11px] font-black text-white/10 uppercase tracking-widest">VS</div>
-                            <div className="h-12 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+                            <div className="text-[11px] font-black text-emerald-200 uppercase tracking-widest">VS</div>
+                            <div className="h-12 w-px bg-emerald-100"></div>
                         </div>
 
                         <div className="flex flex-col items-center gap-4 flex-1">
-                            <div className="w-16 h-16 rounded-[1.5rem] flex items-center justify-center border-2 border-white/5 relative group-hover:scale-110 transition-transform duration-500" style={{ backgroundColor: teamBColor + '10' }}>
+                            <div className="w-16 h-16 rounded-[1.5rem] flex items-center justify-center border-2 border-emerald-50 relative group-hover:scale-110 transition-transform duration-500" style={{ backgroundColor: teamBColor + '10' }}>
                                 <Users size={28} style={{ color: teamBColor }} />
                                 {liveData?.live_active_team === 'B' && !isMatchEnded && (
-                                    <div className="absolute -bottom-1 -left-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-[#0A0F0A] flex items-center justify-center">
+                                    <div className="absolute -bottom-1 -left-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
                                         <Zap size={10} className="text-white fill-white" />
                                     </div>
                                 )}
                             </div>
                             <div className="text-center">
-                                <h3 className="text-sm md:text-base font-black uppercase tracking-tight leading-none mb-1">{teamBName}</h3>
+                                <h3 className="text-sm md:text-base font-black uppercase tracking-tight leading-none mb-1 text-slate-800">{teamBName}</h3>
                             </div>
                         </div>
                     </div>
 
                     {/* Main Score Display */}
                     {isMatchEnded ? (
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-[2rem] p-6 flex flex-col items-center justify-center gap-4 mb-6 text-center">
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-[2rem] p-6 flex flex-col items-center justify-center gap-4 mb-6 text-center">
                             <div className="w-12 h-12 bg-yellow-400/20 rounded-full flex items-center justify-center border border-yellow-400/20">
-                                <Trophy size={24} className="text-yellow-400" />
+                                <Trophy size={24} className="text-yellow-600" />
                             </div>
                             <div>
-                                <h4 className="text-xl font-black text-emerald-100 mb-1">{liveData?.result || 'Match Completed'}</h4>
-                                <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Official Result Recorded</p>
+                                <h4 className="text-xl font-black text-emerald-600 mb-1">{liveData?.result || 'Match Completed'}</h4>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Official Result Recorded</p>
                             </div>
                         </div>
                     ) : (
                         <div className="text-center mb-10">
                             <div className="inline-flex items-baseline gap-2">
-                                <span className="text-7xl md:text-8xl font-[1000] tracking-tighter text-white drop-shadow-2xl">{currentScore.runs}</span>
-                                <span className="text-4xl md:text-5xl font-black text-emerald-500">/ {currentScore.wickets}</span>
+                                <span className="text-7xl md:text-8xl font-[1000] tracking-tighter text-slate-900">{currentScore.runs}</span>
+                                <span className="text-4xl md:text-5xl font-black text-emerald-600">/ {currentScore.wickets}</span>
                             </div>
                             <div className="flex items-center justify-center gap-3 mt-4">
-                                <div className="px-4 py-1.5 bg-white/5 rounded-full border border-white/5 flex items-center gap-2">
-                                    <Timer size={12} className="text-white/30" />
-                                    <span className="text-xs font-black text-white/60 tracking-widest">{currentScore.overs || '0.0'} <span className="text-[10px] font-bold text-white/20">OVERS</span></span>
+                                <div className="px-4 py-1.5 bg-emerald-50 rounded-full border border-emerald-100 flex items-center gap-2">
+                                    <Timer size={12} className="text-emerald-400" />
+                                    <span className="text-xs font-black text-emerald-600 tracking-widest">{currentScore.overs || '0.0'} <span className="text-[10px] font-bold text-emerald-200">OVERS</span></span>
                                 </div>
-                                <div className="px-4 py-1.5 bg-emerald-500/10 rounded-full border border-emerald-500/10">
-                                    <span className="text-xs font-black text-emerald-400 tracking-widest">CRR: {liveData?.run_rate || '0.00'}</span>
+                                <div className="px-4 py-1.5 bg-emerald-600 rounded-full shadow-lg shadow-emerald-600/10">
+                                    <span className="text-xs font-black text-white tracking-widest">CRR: {liveData?.run_rate || '0.00'}</span>
                                 </div>
                             </div>
                         </div>
@@ -315,24 +312,23 @@ export default function LiveScoreView() {
                     {/* Target Logic (2nd Innings) */}
                     {liveData?.target && !isMatchEnded && (
                         <div className="relative mt-8">
-                            <div className="absolute inset-0 bg-yellow-400/5 blur-3xl rounded-full"></div>
-                            <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 overflow-hidden">
+                            <div className="relative bg-emerald-50 border border-emerald-100 rounded-[2rem] p-6 overflow-hidden">
                                 <div className="absolute top-0 right-0 p-3">
                                     <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
                                 </div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-yellow-400/40 text-center mb-4">Target Pursuit</p>
                                 <div className="grid grid-cols-3 gap-4 items-center">
                                     <div className="text-center group-hover:scale-105 transition-transform">
-                                        <p className="text-3xl font-black text-yellow-400 leading-none mb-1">{liveData.runs_needed}</p>
-                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Needed</p>
+                                        <p className="text-3xl font-black text-yellow-600 leading-none mb-1">{liveData.runs_needed}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Needed</p>
                                     </div>
                                     <div className="text-center scale-110">
-                                        <p className="text-3xl font-black text-white leading-none mb-1">{liveData.balls_remaining}</p>
-                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Balls</p>
+                                        <p className="text-3xl font-black text-slate-800 leading-none mb-1">{liveData.balls_remaining}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Balls</p>
                                     </div>
                                     <div className="text-center">
-                                        <p className="text-3xl font-black text-blue-400 leading-none mb-1">{liveData.required_run_rate}</p>
-                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Req. RR</p>
+                                        <p className="text-3xl font-black text-blue-600 leading-none mb-1">{liveData.required_run_rate}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Req. RR</p>
                                     </div>
                                 </div>
                             </div>
@@ -341,12 +337,12 @@ export default function LiveScoreView() {
 
                     {/* Partnership Footer */}
                     {!isMatchEnded && (
-                        <div className="mt-8 flex items-center justify-between px-2 pt-6 border-t border-white/5">
+                        <div className="mt-8 flex items-center justify-between px-2 pt-6 border-t border-emerald-100">
                             <div className="flex items-center gap-2">
-                                <Users size={14} className="text-white/20" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Partnership</span>
+                                <Users size={14} className="text-emerald-300" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Partnership</span>
                             </div>
-                            <p className="text-sm font-black text-white/80">{liveData?.partnership?.runs || 0} <span className="text-[10px] text-white/30 ml-0.5">({liveData?.partnership?.balls || 0})</span></p>
+                            <p className="text-sm font-black text-slate-700">{liveData?.partnership?.runs || 0} <span className="text-[10px] text-slate-400 ml-0.5">({liveData?.partnership?.balls || 0})</span></p>
                         </div>
                     )}
                 </div>
@@ -354,8 +350,8 @@ export default function LiveScoreView() {
                 {/* ACTIVE COMBATANTS (Striker, Non-Striker, Bowler) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Batting Duo */}
-                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 space-y-4">
-                        <div className="flex items-center gap-2 pb-3 border-b border-white/5">
+                    <div className="bg-white border border-emerald-100 rounded-[2rem] p-5 space-y-4 shadow-sm">
+                        <div className="flex items-center gap-2 pb-3 border-b border-emerald-50">
                             <span className="w-2 h-4 bg-emerald-500 rounded-full"></span>
                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">At the Crease</h4>
                         </div>
@@ -365,51 +361,51 @@ export default function LiveScoreView() {
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
                                         <span className="text-[10px] animate-bounce">🏏</span>
-                                        <p className="text-sm font-black truncate text-white">{liveData?.striker?.name || '—'}</p>
+                                        <p className="text-sm font-black truncate text-slate-800">{liveData?.striker?.name || '—'}</p>
                                     </div>
-                                    <p className="text-[9px] font-bold text-emerald-500/60 uppercase tracking-widest">SR: {((liveData?.striker?.runs / (liveData?.striker?.balls || 1)) * 100).toFixed(1)}</p>
+                                    <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">SR: {((liveData?.striker?.runs / (liveData?.striker?.balls || 1)) * 100).toFixed(1)}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-2xl font-black text-emerald-400 leading-none">{liveData?.striker?.runs || 0}</p>
-                                    <p className="text-[10px] font-bold text-white/30 truncate mt-1">{liveData?.striker?.balls || 0} balls</p>
+                                    <p className="text-2xl font-black text-emerald-600 leading-none">{liveData?.striker?.runs || 0}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 truncate mt-1">{liveData?.striker?.balls || 0} balls</p>
                                 </div>
                             </div>
                             {/* Non-Striker */}
-                            <div className="bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+                            <div className="bg-emerald-50/50 border border-emerald-50 rounded-2xl p-4 flex items-center justify-between">
                                 <div className="min-w-0">
-                                    <p className="text-sm font-black truncate text-white/40 mb-1">{liveData?.non_striker?.name || '—'}</p>
-                                    <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">Non-Striker</p>
+                                    <p className="text-sm font-black truncate text-slate-400 mb-1">{liveData?.non_striker?.name || '—'}</p>
+                                    <p className="text-[9px] font-bold text-emerald-200 uppercase tracking-widest">Non-Striker</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-xl font-black text-white/40 leading-none">{liveData?.non_striker?.runs || 0}</p>
-                                    <p className="text-[10px] font-bold text-white/20 truncate mt-1">{liveData?.non_striker?.balls || 0} balls</p>
+                                    <p className="text-xl font-black text-slate-400 leading-none">{liveData?.non_striker?.runs || 0}</p>
+                                    <p className="text-[10px] font-bold text-slate-300 truncate mt-1">{liveData?.non_striker?.balls || 0} balls</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Current Bowler */}
-                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5">
-                        <div className="flex items-center gap-2 pb-3 border-b border-white/5 mb-4">
+                    <div className="bg-white border border-emerald-100 rounded-[2rem] p-5 shadow-sm">
+                        <div className="flex items-center gap-2 pb-3 border-b border-emerald-50 mb-4">
                             <span className="w-2 h-4 bg-rose-500 rounded-full"></span>
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-400">Attacking Force</h4>
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">Attacking Force</h4>
                         </div>
                         <div className="bg-rose-500/5 border border-rose-500/10 rounded-3xl p-6 h-[calc(100%-48px)] flex flex-col justify-between">
                             <div className="text-center">
-                                <p className="text-[10px] font-black text-rose-400/60 uppercase tracking-[0.3em] mb-3">Bowling Now</p>
-                                <h4 className="text-xl font-black text-white mb-1 truncate">{liveData?.bowler?.name || 'Waiting...'}</h4>
-                                <div className="inline-block px-3 py-1 bg-white/5 rounded-full border border-white/5">
-                                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">{liveData?.bowler?.w || 0} Wkts • ECO {liveData?.bowler?.eco || '0.0'}</span>
+                                <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] mb-3">Bowling Now</p>
+                                <h4 className="text-xl font-black text-slate-800 mb-1 truncate">{liveData?.bowler?.name || 'Waiting...'}</h4>
+                                <div className="inline-block px-3 py-1 bg-white border border-rose-100 rounded-full">
+                                    <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">{liveData?.bowler?.w || 0} Wkts • ECO {liveData?.bowler?.eco || '0.0'}</span>
                                 </div>
                             </div>
                             <div className="flex items-center justify-between pt-6 border-t border-rose-500/10 mt-6">
-                                <div className="text-center flex-1 border-r border-rose-500/10">
-                                    <p className="text-2xl font-black text-white leading-none">{liveData?.bowler?.r || 0}</p>
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Runs</p>
+                                <div className="text-center flex-1 border-r border-rose-50">
+                                    <p className="text-2xl font-black text-slate-800 leading-none">{liveData?.bowler?.r || 0}</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Runs</p>
                                 </div>
                                 <div className="text-center flex-1">
-                                    <p className="text-2xl font-black text-rose-500 leading-none">{liveData?.bowler?.w || 0}</p>
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Wkts</p>
+                                    <p className="text-2xl font-black text-rose-600 leading-none">{liveData?.bowler?.w || 0}</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Wkts</p>
                                 </div>
                             </div>
                         </div>
@@ -417,11 +413,11 @@ export default function LiveScoreView() {
                 </div>
 
                 {/* RECENT FORM / RECENT BALLS */}
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6">
+                <div className="bg-white border border-emerald-100 rounded-[2rem] p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-2">
                             <Activity size={14} className="text-emerald-500" />
-                            <p className="text-[10px] font-[1000] uppercase tracking-[0.3em] text-white/20">Current Over Pulse</p>
+                            <p className="text-[10px] font-[1000] uppercase tracking-[0.3em] text-emerald-200">Current Over Pulse</p>
                         </div>
                         <div className="px-2 py-0.5 bg-emerald-500/10 rounded-md border border-emerald-500/20">
                             <span className="text-[9px] font-black text-emerald-400 uppercase tracking-tighter">Real-Time</span>
@@ -446,7 +442,7 @@ export default function LiveScoreView() {
                 </div>
 
                 {/* TABS ENGINE */}
-                <div className="bg-white/5 backdrop-blur-md rounded-[1.8rem] p-1.5 border border-white/10 flex">
+                <div className="bg-white rounded-[1.8rem] p-1.5 border border-emerald-100 flex shadow-sm">
                     {[
                         { key: 'commentary', label: 'Feed', icon: Activity },
                         { key: 'scorecard', label: 'Scorecard', icon: BarChart3 },
@@ -472,11 +468,11 @@ export default function LiveScoreView() {
                     {activeTab === 'commentary' && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {(liveData?.commentary_log || []).length === 0 ? (
-                                <div className="bg-white/5 border-2 border-dashed border-white/5 rounded-[2.5rem] p-16 flex flex-col items-center justify-center text-center">
-                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6">
-                                        <Volume2 className="text-white/10" size={32} />
+                                <div className="bg-white border-2 border-dashed border-emerald-100 rounded-[2.5rem] p-16 flex flex-col items-center justify-center text-center">
+                                    <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
+                                        <Volume2 className="text-emerald-200" size={32} />
                                     </div>
-                                    <p className="text-xs font-black text-white/20 uppercase tracking-widest max-w-[200px] leading-relaxed">Intelligence Feed is silent. Waiting for the match to commence.</p>
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest max-w-[200px] leading-relaxed">Intelligence Feed is silent. Waiting for the match to commence.</p>
                                 </div>
                             ) : (
                                 liveData.commentary_log.map((entry, i) => (
@@ -484,8 +480,8 @@ export default function LiveScoreView() {
                                         {/* Vertical Connector */}
                                         <div className="absolute left-[15px] top-10 bottom-[-20px] w-px bg-white/5 group-last:hidden"></div>
                                         
-                                        <div className={`relative bg-white/5 border border-white/10 rounded-[1.8rem] p-5 transition-all ${
-                                            i === 0 ? 'border-emerald-500/30 bg-emerald-500/5 shadow-lg' : ''
+                                        <div className={`relative bg-white border border-emerald-100 rounded-[1.8rem] p-5 shadow-sm transition-all ${
+                                            i === 0 ? 'border-emerald-500 bg-emerald-50' : ''
                                         }`}>
                                             <div className="absolute top-[-10px] left-[-22px]">
                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border-2 z-10 transition-transform group-hover:scale-110 ${getBallColor(entry.ball)}`}>
@@ -494,15 +490,15 @@ export default function LiveScoreView() {
                                             </div>
 
                                             <div className="flex items-start justify-between gap-4 mb-2">
-                                                <p className="text-[13px] font-bold text-white/90 leading-relaxed flex-1">{entry.text}</p>
+                                                <p className="text-[13px] font-bold text-slate-800 leading-relaxed flex-1">{entry.text}</p>
                                                 <div className="text-right flex-shrink-0">
-                                                    <p className="text-[10px] font-black text-emerald-400 leading-none">{entry.runs}-{entry.wickets}</p>
+                                                    <p className="text-[10px] font-black text-emerald-600 leading-none">{entry.runs}-{entry.wickets}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-3 pt-3 border-t border-white/5">
-                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{entry.overs} Over</span>
-                                                <div className="w-1 h-1 bg-white/10 rounded-full"></div>
-                                                <span className="text-[9px] font-bold text-emerald-500/40 uppercase tracking-widest">Arena Capture</span>
+                                            <div className="flex items-center gap-3 pt-3 border-t border-emerald-100/50">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{entry.overs} Over</span>
+                                                <div className="w-1 h-1 bg-emerald-100 rounded-full"></div>
+                                                <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Arena Capture</span>
                                             </div>
                                         </div>
                                     </div>
@@ -516,13 +512,13 @@ export default function LiveScoreView() {
                     {activeTab === 'scorecard' && (
                         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                             {/* Batting Section */}
-                            <div className="bg-[#0A0F0A] border border-white/10 rounded-[2.5rem] overflow-hidden">
-                                <div className="bg-white/5 px-6 py-5 flex justify-between items-center border-b border-white/5">
+                            <div className="bg-white border border-emerald-100 rounded-[2.5rem] overflow-hidden shadow-sm">
+                                <div className="bg-emerald-50 px-6 py-5 flex justify-between items-center border-b border-emerald-100">
                                     <div className="flex items-center gap-3">
                                         <div className="w-2 h-6 bg-emerald-500 rounded-full"></div>
-                                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Batting Order</h4>
+                                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">Batting Order</h4>
                                     </div>
-                                    <span className="text-[11px] font-black text-emerald-400 font-mono">{currentScore.runs}/{currentScore.wickets} <span className="text-white/20 ml-1">({currentScore.overs})</span></span>
+                                    <span className="text-[11px] font-black text-emerald-600 font-mono">{currentScore.runs}/{currentScore.wickets} <span className="text-emerald-200 ml-1">({currentScore.overs})</span></span>
                                 </div>
                                 <div className="p-2 overflow-x-auto no-scrollbar">
                                     <table className="w-full">
@@ -566,15 +562,15 @@ export default function LiveScoreView() {
                             </div>
 
                             {/* Bowling Section */}
-                            <div className="bg-[#0A0F0A] border border-white/10 rounded-[2.5rem] overflow-hidden">
-                                <div className="bg-white/5 px-6 py-5 flex items-center gap-3 border-b border-white/5">
+                            <div className="bg-white border border-emerald-100 rounded-[2.5rem] overflow-hidden shadow-sm">
+                                <div className="bg-emerald-50 px-6 py-5 flex items-center gap-3 border-b border-emerald-100">
                                     <div className="w-2 h-6 bg-rose-500 rounded-full"></div>
-                                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Bowling Attack</h4>
+                                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-rose-600">Bowling Attack</h4>
                                 </div>
                                 <div className="p-2 overflow-x-auto no-scrollbar">
                                     <table className="w-full">
                                         <thead>
-                                            <tr className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] border-b border-white/5">
+                                            <tr className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-b border-emerald-50">
                                                 <th className="text-left px-4 py-4">Executioner</th>
                                                 <th className="px-2 py-4">O</th>
                                                 <th className="px-2 py-4">R</th>
@@ -582,14 +578,14 @@ export default function LiveScoreView() {
                                                 <th className="px-2 py-4 text-right">ECO</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-white/5">
+                                        <tbody className="divide-y divide-emerald-50">
                                             {(liveData?.scorecard?.bowlers || []).map((bw, i) => (
-                                                <tr key={i} className="hover:bg-white/5 transition-colors">
-                                                    <td className="px-4 py-5 text-xs font-black text-white/80">{bw.name}</td>
-                                                    <td className="px-2 py-5 text-center text-xs font-bold text-white/40">{bw.overs}</td>
-                                                    <td className="px-2 py-5 text-center text-xs font-black">{bw.runs}</td>
-                                                    <td className="px-2 py-5 text-center text-xs font-black text-rose-500">{bw.wickets}</td>
-                                                    <td className="px-4 py-5 text-right font-mono text-[10px] font-bold text-white/40">{bw.eco}</td>
+                                                <tr key={i} className="hover:bg-emerald-50 transition-colors">
+                                                    <td className="px-4 py-5 text-xs font-black text-slate-700">{bw.name}</td>
+                                                    <td className="px-2 py-5 text-center text-xs font-bold text-slate-400">{bw.overs}</td>
+                                                    <td className="px-2 py-5 text-center text-xs font-black text-slate-800">{bw.runs}</td>
+                                                    <td className="px-2 py-5 text-center text-xs font-black text-rose-600">{bw.wickets}</td>
+                                                    <td className="px-4 py-5 text-right font-mono text-[10px] font-bold text-slate-400">{bw.eco}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -603,25 +599,25 @@ export default function LiveScoreView() {
                     {activeTab === 'overs' && (
                         <div className="space-y-4 animate-in fade-in duration-500">
                            {(liveData?.over_summaries || []).length === 0 ? (
-                                <div className="bg-white/5 border-2 border-dashed border-white/5 rounded-[2.5rem] p-16 flex flex-col items-center justify-center text-center">
-                                    <p className="text-xs font-black text-white/20 uppercase tracking-widest leading-relaxed">Intelligence data populating... Complete 1 over to view stats.</p>
+                                <div className="bg-white border-2 border-dashed border-emerald-100 rounded-[2.5rem] p-16 flex flex-col items-center justify-center text-center">
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-relaxed">Intelligence data populating... Complete 1 over to view stats.</p>
                                 </div>
                             ) : (
                                 [...(liveData.over_summaries || [])].reverse().map((over, i) => (
-                                    <div key={i} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2rem] p-6 flex flex-col gap-4">
+                                    <div key={i} className="bg-white border border-emerald-100 rounded-[2rem] p-6 flex flex-col gap-4 shadow-sm">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-                                                    <span className="text-xs font-[1000] text-emerald-500">#{over.over_number}</span>
+                                                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center border border-emerald-100">
+                                                    <span className="text-xs font-[1000] text-emerald-600">#{over.over_number}</span>
                                                 </div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Innings Milestone</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Innings Milestone</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xl font-black text-white leading-none">{over.runs}</p>
-                                                <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Runs Scored</p>
+                                                <p className="text-xl font-black text-slate-800 leading-none">{over.runs}</p>
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Runs Scored</p>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2.5 flex-wrap pt-4 border-t border-white/5">
+                                        <div className="flex gap-2.5 flex-wrap pt-4 border-t border-emerald-50">
                                             {(over.balls || []).map((ball, j) => (
                                                 <div key={j} className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black border-2 ${getBallColor(ball)}`}>
                                                     {ball}
@@ -638,14 +634,14 @@ export default function LiveScoreView() {
 
             {/* FLOATING ACTION NAVIGATION */}
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-md z-[100]">
-                <div className="bg-[#0A0F0A]/80 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex items-center shadow-2xl overflow-hidden shadow-emerald-950/20">
+                <div className="bg-white/90 backdrop-blur-3xl border border-emerald-100 rounded-full p-2 flex items-center shadow-2xl overflow-hidden shadow-emerald-900/10">
                     <Link 
                         to="/" 
-                        className="flex-1 flex flex-col items-center justify-center py-2.5 rounded-full hover:bg-white/5 transition-all group"
+                        className="flex-1 flex flex-col items-center justify-center py-2.5 rounded-full hover:bg-emerald-50 transition-all group"
                     >
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-colors">Surface</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-300 group-hover:text-emerald-600 transition-colors">Surface</span>
                     </Link>
-                    <div className="w-px h-6 bg-white/5 mx-2"></div>
+                    <div className="w-px h-6 bg-emerald-100 mx-2"></div>
                     <Link 
                         to="/login" 
                         className="flex-[1.5] flex items-center justify-center gap-3 bg-emerald-600 px-6 py-3.5 rounded-full shadow-lg shadow-emerald-600/20 group hover:bg-emerald-500 transition-all"
@@ -653,12 +649,12 @@ export default function LiveScoreView() {
                         <Zap size={14} className="group-hover:animate-bounce" />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em]">Deployment</span>
                     </Link>
-                    <div className="w-px h-6 bg-white/5 mx-2"></div>
+                    <div className="w-px h-6 bg-emerald-100 mx-2"></div>
                     <button 
                          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                         className="flex-1 flex flex-col items-center justify-center py-2.5 rounded-full hover:bg-white/5 transition-all group"
+                         className="flex-1 flex flex-col items-center justify-center py-2.5 rounded-full hover:bg-emerald-50 transition-all group"
                     >
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-colors">Skyline</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-300 group-hover:text-emerald-600 transition-colors">Skyline</span>
                     </button>
                 </div>
             </div>

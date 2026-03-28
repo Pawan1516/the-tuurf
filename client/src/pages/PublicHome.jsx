@@ -203,8 +203,8 @@ const PublicHome = () => {
                                     <Zap size={20} className="text-emerald-500 fill-emerald-500 animate-pulse" />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm md:text-base font-black uppercase tracking-[0.4em] text-emerald-400 leading-none">Book Your Slot</h3>
-                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-2">{liveMatches.length} Today's Slots</p>
+                                    <h3 className="text-sm md:text-base font-black uppercase tracking-[0.4em] text-emerald-400 leading-none">Live Arena</h3>
+                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-2">{liveMatches.length} Today's Matches</p>
                                 </div>
                             </div>
                             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
@@ -234,7 +234,7 @@ const PublicHome = () => {
                                             <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{match.format || 'T20'} • {match.venue || 'Main Arena'}</span>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></div>
-                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Active Intel</span>
+                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Active </span>
                                             </div>
                                         </div>
                                         <div className={`px-4 py-1.5 rounded-full border text-[9px] font-[1000] uppercase tracking-widest ${match.status === 'In Progress' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : 'bg-white/5 border-white/10 text-white/40'
@@ -301,7 +301,7 @@ const PublicHome = () => {
                                             )}
                                         </div>
                                         <div className="flex items-center gap-3 bg-emerald-600 px-5 py-2.5 rounded-xl group-hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-950/20">
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Enter Intel</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest">View Match</span>
                                             <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                         </div>
                                     </div>
@@ -346,7 +346,7 @@ const PublicHome = () => {
                         {/* NAVY HEADER */}
                         <div className="bg-[#1e293b] p-4 md:p-12 flex flex-col md:flex-row justify-between items-center text-white relative gap-3 md:gap-8">
                             <div className="space-y-1.5 flex-1 w-full text-center md:text-left">
-                                <h2 className="text-xl md:text-2xl font-black uppercase tracking-[0.1em] text-emerald-400 leading-none">Arena Deployment</h2>
+                                <h2 className="text-xl md:text-2xl font-black uppercase tracking-[0.1em] text-emerald-400 leading-none">Today's Slots</h2>
                                 <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em] md:tracking-[0.4em]">
                                     {new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                                 </p>

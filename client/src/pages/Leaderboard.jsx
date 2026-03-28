@@ -51,7 +51,7 @@ const Leaderboard = () => {
                 >
                     <BackIcon size={28} />
                 </button>
-                <h1 className="text-xl font-bold tracking-tight text-slate-800">The Turf Squad</h1>
+                <h1 className="text-xl font-bold tracking-tight text-slate-800">The Turf </h1>
                 <button className="absolute right-6 top-12 p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors">
                     <SearchIcon size={26} />
                 </button>
