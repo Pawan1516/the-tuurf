@@ -81,14 +81,16 @@ const Layout = ({ children, turfName = "The Turf" }) => (
     <div className="min-h-screen bg-gray-50 font-sans selection:bg-emerald-100 selection:text-emerald-900">
         {/* ── Top Nav ── */}
         <nav className="bg-white sticky top-0 z-[100] border-b border-gray-50 h-16 md:h-20 flex items-center shadow-sm shadow-emerald-500/5">
-            <div className="max-w-7xl mx-auto px-3 md:px-6 w-full flex justify-between items-center h-full">
-                <Link to="/" className="flex items-center gap-1.5 md:gap-3 group max-w-[140px] md:max-w-none">
-                    <div className="bg-emerald-600 text-white p-1.2 md:p-2 rounded-lg md:rounded-xl shadow-lg shadow-emerald-200 group-hover:rotate-12 transition-transform shrink-0">
-                        <Briefcase size={16} className="md:w-[18px] md:h-[18px]" />
+            <div className="max-w-7xl mx-auto px-3 md:px-6 w-full flex items-center justify-between h-full gap-2">
+                <Link to="/" className="flex items-center gap-2 group min-w-0 flex-1">
+                    <div className="bg-emerald-600 text-white p-1.5 rounded-lg shadow-lg shadow-emerald-200 shrink-0">
+                        <Briefcase size={16} />
                     </div>
-                    <span className="text-sm md:text-xl font-black text-slate-900 tracking-tighter uppercase truncate">{turfName}</span>
+                    <span className="text-[11px] md:text-xl font-black text-slate-900 tracking-tighter uppercase truncate block">
+                        {turfName}
+                    </span>
                 </Link>
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                     <NavLinks />
                 </div>
             </div>

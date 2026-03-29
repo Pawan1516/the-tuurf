@@ -25,7 +25,7 @@ router.post('/create-order', async (req, res) => {
     res.json({
       success: true,
       order: result.order,
-      keyId: process.env.RAZORPAY_KEY_ID
+      keyId: process.env.RAZORPAY_KEY_ID || null
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

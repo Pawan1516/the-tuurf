@@ -73,6 +73,10 @@ const PaymentPage = () => {
             }
 
             const { order, keyId } = orderRes.data;
+            
+            if (!keyId) {
+                throw new Error('Payment Terminal initialization failed: System Identifier Missing. Please notify administration.');
+            }
 
             // 2. Configure Razorpay Options
             const options = {
@@ -128,7 +132,7 @@ const PaymentPage = () => {
                 const rzp = new window.Razorpay(options);
                 rzp.open();
             } else {
-                throw new Error('Payment Gateway (Razorpay) script not loaded');
+                throw new Error('Payment Gateway (Razorpay) script not loaded. Attempting re-initialization...');
             }
         } catch (err) {
             console.error('Razorpay Error:', err);

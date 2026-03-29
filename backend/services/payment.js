@@ -13,15 +13,23 @@ if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
 const createOrder = async (amount, currency = 'INR', receipt = '') => {
   try {
     if (!razorpay) {
-      // Return mock order for development without Razorpay keys
+      // Only return mock order if NOT in production
+      if (process.env.NODE_ENV !== 'production') {
+        return {
+          success: true,
+          order: {
+            id: `order_${Date.now()}`,
+            amount: amount * 100,
+            currency,
+            receipt: receipt || `receipt_${Date.now()}`
+          }
+        };
+      }
+      
+      // In production, missing keys is a hard failure
       return {
-        success: true,
-        order: {
-          id: `order_${Date.now()}`,
-          amount: amount * 100,
-          currency,
-          receipt: receipt || `receipt_${Date.now()}`
-        }
+        success: false,
+        error: 'Payment gateway credentials missing in production environment.'
       };
     }
 
