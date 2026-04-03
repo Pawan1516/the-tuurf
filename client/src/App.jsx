@@ -52,9 +52,6 @@ const NavLinks = () => {
 
         return (
             <div className="flex items-center gap-2 md:gap-4">
-                <Link to={dashboardPath} className="bg-emerald-500 text-white px-3 md:px-6 py-2 rounded-xl text-[9px] md:text-xs font-black uppercase tracking-widest shadow-md active:scale-95 transition-all">
-                    Dashboard
-                </Link>
                 <button 
                   onClick={logout} 
                   className="bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-2 md:px-4 py-2 rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all"

@@ -125,27 +125,46 @@ Current limitations include the lack of multi-match simultaneous scoring by a si
 
 ---
 
-## 10. Conclusion
-"The Turf" successfully demonstrates that a premium digital experience can significantly elevate the management of physical sports facilities. By combining real-time data with secure financial processing and AI insights, the ecosystem provides a holistic solution for both players and administrators.
+## 11. CrewAI Autonomous Multi-Agent System (New Integration 🔥)
+
+To further automate venue operations and enhance the user booking experience, a CrewAI-based multi-agent system has been integrated into the "The Turf" ecosystem. This system moves beyond simple rule-based logic to an autonomous decision-making framework.
+
+### 11.1 Agent Roles and Responsibilities
+- **Booking Agent**: Specialized in analyzing slot availability, pricing, and user preferences to find the best possible time for a user.
+- **Pricing Agent**: A dynamic pricing analyst that identifies peak hours and suggests discounts or premium rates based on demand patterns.
+- **Notification Agent**: Handles all communication between the system and the user, ensuring timely booking confirmations and match reminders.
+- **Tournament Agent**: An advanced organizer that manages complex scheduling, team registrations, and match brackets automatically.
+- **Supervisor Agent**: The master AI coordinator that parses user intent and delegates tasks to the appropriate specialized agents.
+
+### 11.2 Key Features
+- **Autonomous Delegation**: The system can intelligently decide which agent is best suited for a specific user request.
+- **Tool-Integrated Workflow**: Each agent is equipped with specific tools (e.g., `checkAvailability`, `bookTurf`) to interact directly with the backend database.
+- **Cross-Agent Collaboration**: For example, a "Booking Task" may trigger the Pricing Agent to check for discounts before the Booking Agent finalizes the slot.
 
 ---
 
-## 11. Future Scope
-*   **Tournament Brackets**: Automated generation of league tables and tournament brackets.
-*   **Video Integration**: Automated video highlights using AI to detect wickets or fours from local camera feeds.
-*   **Subscription Models**: Monthly membership plans with prioritized booking slots.
+## 12. Conclusion
+"The Turf" successfully demonstrates that a premium digital experience can significantly elevate the management of physical sports facilities. By combining real-time data, secure financial processing, and an autonomous multi-agent AI system, the ecosystem provides a holistic, future-proof solution for both players and administrators.
 
 ---
 
-## 12. References
+## 13. Future Scope
+*   **Tournament Brackets**: Fully automated generation and live tracking of league tables.
+*   **Video Highlights (AI)**: Using computer vision to detect key match moments (wickets/fours) from local venue cameras.
+*   **Voice-Activated Booking**: Integrating Twilio Voice or WhatsApp Audio to allow users to book slots via natural language voice commands.
+
+---
+
+## 14. References
 1.  **React Documentation** (2026). Component lifecycle and State Management.
 2.  **Razorpay Developer Docs** (2026). Webhook integration and Signature Verification.
-3.  **Socket.io.org** (2026). Scaling real-time applications with WebSocket.
-4.  **Tailwind Labs** (2026). Modern utility-first CSS frameworks.
+3.  **CrewAI Framework** (2026). Multi-agent Orchestration and Task Delegation.
+4.  **Socket.io.org** (2026). Scaling real-time applications with WebSocket.
+5.  **Tailwind Labs** (2026). Modern utility-first CSS frameworks.
 
 ---
 
-## 13. Appendix
+## 15. Appendix
 ### Sample API Endpoint - Create Booking
 `POST /api/bookings`
 ```json
@@ -156,3 +175,4 @@ Current limitations include the lack of multi-match simultaneous scoring by a si
   "paymentType": "full"
 }
 ```
+

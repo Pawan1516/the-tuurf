@@ -7,6 +7,7 @@ const verifyToken = require('../middleware/verifyToken');
 const { slotBookingAgent, revenueBookingAnalyst, notificationAgent } = require('../services/demoAgents');
 const Slot = require('../models/Slot');
 const Booking = require('../models/Booking');
+const { sendWhatsAppNotification } = require('../services/whatsapp');
 
 // @route   POST /api/ai/commentary
 // @desc    Generate ball commentary

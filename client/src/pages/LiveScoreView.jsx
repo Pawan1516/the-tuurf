@@ -6,7 +6,9 @@ import io from 'socket.io-client';
 
 const SOCKET_URL = process.env.NODE_ENV === 'production' 
     ? 'https://the-tuurf-ufkd.onrender.com' 
-    : 'http://localhost:5001';
+    : window.location.hostname === 'localhost' 
+        ? 'http://localhost:5001' 
+        : `http://${window.location.hostname}:5001`;
 
 export default function LiveScoreView() {
     const { id } = useParams();
@@ -24,7 +26,7 @@ export default function LiveScoreView() {
     useEffect(() => {
         const fetchMatch = async () => {
             try {
-                const res = await apiClient.get(`/matches/${id}`);
+                const res = await apiClient.get(`/matches/${id}?t=${new Date().getTime()}`);
                 const matchData = res.data.match || res.data; 
                 setMatch(matchData);
                 setLiveData(matchData.live_data || {});
@@ -68,8 +70,8 @@ export default function LiveScoreView() {
             setLiveData(prev => ({ ...prev, ...data }));
         });
 
-        const pollTimer = setInterval(fetchMatch, 15000);
-        const predTimer = setInterval(fetchPrediction, 60000);
+        const pollTimer = setInterval(fetchMatch, 1000);
+        const predTimer = setInterval(fetchPrediction, 30000);
 
         return () => {
             if (socketRef.current) {
@@ -145,7 +147,7 @@ export default function LiveScoreView() {
                         {!isMatchEnded ? (
                             <div className="flex items-center gap-1.5">
                                 <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></div>
-                                <span className="text-[11px] font-black uppercase text-red-600 tracking-tight">Live Match</span>
+                                <span className="text-[11px] font-black uppercase text-red-600 tracking-tight">🔴 Tracking Live</span>
                             </div>
                         ) : (
                             <div className="flex items-center gap-1.5">

@@ -7,7 +7,9 @@ import io from 'socket.io-client';
 const PublicHome = () => {
     const SOCKET_URL = process.env.NODE_ENV === 'production'
         ? 'https://the-tuurf-ufkd.onrender.com'
-        : 'http://localhost:5001';
+        : window.location.hostname === 'localhost' 
+            ? 'http://localhost:5001' 
+            : `http://${window.location.hostname}:5001`;
     const getISODate = (date = new Date()) => {
         return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
     };
@@ -84,7 +86,7 @@ const PublicHome = () => {
     };
 
     useEffect(() => {
-        const interval = setInterval(fetchLiveMatches, 20000); // Fallback Polling
+        const interval = setInterval(fetchLiveMatches, 2000); // Super-fast Fallback Polling
 
         // --- REAL-TIME INTEL (Workflow 5) ---
         const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });

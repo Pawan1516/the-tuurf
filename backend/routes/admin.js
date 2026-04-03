@@ -418,7 +418,7 @@ router.post('/system/sync-slots', verifyToken, roleGuard(['admin']), async (req,
 router.get('/system/status', verifyToken, roleGuard(['admin']), async (req, res) => {
   try {
     const hasAI = !!process.env.OPENAI_API_KEY;
-    const hasWA = !!process.env.WA_ACCESS_TOKEN;
+    const hasWA = !!process.env.TWILIO_ACCOUNT_SID;
     const dbStatus = require('mongoose').connection.readyState === 1 ? 'Operational' : 'Disconnected';
 
     res.json({

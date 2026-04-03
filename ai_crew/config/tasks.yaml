@@ -1,0 +1,63 @@
+process_turf_booking_request:
+  description: Process a user's turf booking request by parsing their requirements
+    (date, time, sport type, budget), checking availability, comparing pricing options,
+    and completing the booking automatically. Handle requests like 'Book cricket turf
+    tomorrow evening under ₹1000' by finding the best available slot that matches
+    user preferences.
+  expected_output: A comprehensive booking response including booking confirmation
+    details, slot information (date, time, sport type, price), booking ID, and next
+    steps for the user. If booking fails, provide alternative suggestions with available
+    time slots and pricing options.
+  agent: turf_booking_specialist
+
+analyze_pricing_strategy:
+  description: Analyze current turf pricing based on demand patterns, time slots,
+    and market conditions to provide pricing recommendations. Identify peak hours,
+    low-demand periods, and suggest optimal pricing strategies that balance revenue
+    with customer satisfaction.
+  expected_output: A detailed pricing analysis report with recommendations including
+    peak hour pricing, discount opportunities for low-demand periods, suggested price
+    adjustments, and revenue optimization strategies. Include specific price points
+    for different time slots and sports.
+  agent: dynamic_pricing_analyst
+  async_execution: true
+
+send_user_notifications:
+  description: Send appropriate notifications to users including booking confirmations,
+    pre-match reminders (1 hour before), promotional offers, and important updates.
+    Customize messages based on user preferences and booking history.
+  expected_output: Confirmation of all notifications sent including message type,
+    delivery status, and user engagement metrics. Provide a summary of notification
+    activities and any failed deliveries that need attention.
+  agent: user_notification_manager
+  async_execution: true
+  context:
+  - process_turf_booking_request
+
+organize_tournament:
+  description: Automatically organize sports tournaments when requested by creating
+    tournament schedules, allocating time slots, managing team registrations, creating
+    match brackets, and coordinating all tournament logistics from start to finish.
+  expected_output: A complete tournament plan including tournament schedule, team
+    allocations, match brackets, venue assignments, participant contact information,
+    and coordination timeline. Provide tournament ID and management dashboard access
+    for organizers.
+  agent: tournament_organizer
+  context:
+  - analyze_pricing_strategy
+
+coordinate_turf_operations:
+  description: Analyze user requests to understand intent (booking, cancellation,
+    tournament, inquiry) and coordinate with specialized agents to provide comprehensive
+    turf management services. Combine results from all agents into a unified response
+    for users.
+  expected_output: A structured final response containing the complete resolution
+    of the user's request, including booking confirmations, pricing information, notifications
+    sent, and any additional recommendations or next steps. Format as a comprehensive
+    user-friendly summary.
+  agent: ai_coordinator_and_task_supervisor
+  context:
+  - send_user_notifications
+  - organize_tournament
+  - analyze_pricing_strategy
+  - process_turf_booking_request

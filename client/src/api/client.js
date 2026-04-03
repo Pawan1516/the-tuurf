@@ -1,6 +1,6 @@
 import axios from 'axios';
 // API configuration
-let API_BASE_URL = 'http://localhost:5001/api';
+let API_BASE_URL = '/api';
 
 if (process.env.NODE_ENV === 'production') {
   API_BASE_URL = 'https://the-tuurf-ufkd.onrender.com/api';
@@ -142,7 +142,7 @@ export const chatbotAPI = {
 
 // Matches APIs
 export const matchesAPI = {
-  getLive: () => apiClient.get('/matches/live'),
+  getLive: () => apiClient.get(`/matches/live?t=${new Date().getTime()}`),
   getById: (id) => apiClient.get(`/matches/${id}`),
   getMyHistory: () => apiClient.get('/matches/my-history'),
   getAll: (filters) => apiClient.get('/matches', { params: filters }),
