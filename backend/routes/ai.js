@@ -222,32 +222,48 @@ router.post('/broadcast-notification', verifyToken, async (req, res) => {
         let failCount = 0;
         const msgText = `🔔 *${title}*\n\n${body}`;
 
+        // 1. WhatsApp Broadcast (Keep existing)
         for (const phone of recentNumbers) {
             if (phone && phone.length >= 10) {
                 try {
-                    // Normalize number: ensure it's just digits, take last 10, prefix with +91 (India)
                     const clean = phone.replace(/\D/g,'').slice(-10);
                     const formatted = `whatsapp:+91${clean}`;
-                    
-                    console.log(`📤 Attempting broadcast to: ${formatted}`);
                     const result = await sendWhatsAppNotification(formatted, msgText);
-                    
-                    if (result.success) {
-                        successCount++;
-                    } else {
-                        console.error(`❌ Broadcast failed for ${formatted}: ${result.error}`);
-                        failCount++;
-                    }
-                } catch(e) { 
-                    console.error(`❌ Unexpected error broadcasting to ${phone}: ${e.message}`);
-                    failCount++;
-                }
-                // Optional: throttling for rate limits if many users
+                    if (result.success) successCount++;
+                    else failCount++;
+                } catch(e) { failCount++; }
                 await new Promise(r => setTimeout(r, 200));
             }
         }
 
-        res.json({ success: true, message: `Notification broadcasted. Success: ${successCount}, Fail: ${failCount}` });
+        // 2. WEB PUSH Broadcast (FCM)
+        let fcmSuccess = 0;
+        let fcmFail = 0;
+        try {
+            const firebase = require('../services/firebase');
+            const usersWithToken = await User.find({ fcmToken: { $ne: null } }).select('fcmToken');
+            const tokens = usersWithToken.map(u => u.fcmToken);
+
+            if (tokens.length > 0) {
+                const message = {
+                    notification: { title, body },
+                    tokens: tokens,
+                };
+                const response = await firebase.messaging().sendEachForMulticast(message);
+                fcmSuccess = response.successCount;
+                fcmFail = response.failureCount;
+                console.log(`🚀 FCM Broadcast: ${fcmSuccess} success, ${fcmFail} fail.`);
+            }
+        } catch (fcmErr) {
+            console.error("FCM Broadcast Error:", fcmErr.message);
+        }
+
+        res.json({ 
+            success: true, 
+            message: `Notification broadcasted.`,
+            whatsapp: { success: successCount, fail: failCount },
+            webPush: { success: fcmSuccess, fail: fcmFail }
+        });
     } catch (err) {
         console.error("Broadcast Error:", err);
         res.status(500).json({ success: false, message: `Broadcast Engine Error: ${err.message}` });

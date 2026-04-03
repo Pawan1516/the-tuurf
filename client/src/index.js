@@ -12,3 +12,5 @@ root.render(
     </AuthProvider>
   </React.StrictMode>
 );
+
+// Proxy tunnel architecture rebuilt.

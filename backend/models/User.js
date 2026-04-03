@@ -107,6 +107,10 @@ const userSchema = new mongoose.Schema({
         photo: String,
         date_of_birth: Date,
         gender: { type: String, enum: ['Male', 'Female', 'Other'] }
+    },
+    fcmToken: {
+        type: String,
+        default: null
     }
 }, { 
     timestamps: true,

@@ -6,9 +6,7 @@ import io from 'socket.io-client';
 
 const SOCKET_URL = process.env.NODE_ENV === 'production' 
     ? 'https://the-tuurf-ufkd.onrender.com' 
-    : window.location.hostname === 'localhost' 
-        ? 'http://localhost:5001' 
-        : `http://${window.location.hostname}:5001`;
+    : '';
 
 export default function LiveScoreView() {
     const { id } = useParams();
@@ -191,8 +189,13 @@ export default function LiveScoreView() {
                                 <Users size={24} style={{ color: teamAColor }} />
                             </div>
                             <h3 className="text-xs font-black uppercase text-slate-800 leading-tight mb-1">{teamAName}</h3>
-                            {liveData?.inn1_scorecard && liveData?.inningsNum === 2 && (
-                                <p className="text-[10px] font-bold text-slate-400">{liveData.inn1_scorecard.score}/{liveData.inn1_scorecard.wickets}</p>
+                            {/* Render score if Team A is batting currently */}
+                            {liveData?.battingTeam === 0 && (
+                                <p className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md mt-1">Batting</p>
+                            )}
+                            {/* Render 1st Innings score if Team A batted first */}
+                            {liveData?.inningsNum === 2 && liveData?.battingTeam === 1 && liveData?.inn1Score !== undefined && (
+                                <p className="text-xs font-bold text-slate-500 mt-1">{liveData.inn1Score}/{liveData.inn1Wickets} <span className="text-[9px]">({liveData.inn1Overs} ov)</span></p>
                             )}
                         </div>
 
@@ -222,6 +225,14 @@ export default function LiveScoreView() {
                                 <Users size={24} style={{ color: teamBColor }} />
                             </div>
                             <h3 className="text-xs font-black uppercase text-slate-800 leading-tight mb-1">{teamBName}</h3>
+                            {/* Render score if Team B is batting currently */}
+                            {liveData?.battingTeam === 1 && (
+                                <p className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md mt-1">Batting</p>
+                            )}
+                            {/* Render 1st Innings score if Team B batted first */}
+                            {liveData?.inningsNum === 2 && liveData?.battingTeam === 0 && liveData?.inn1Score !== undefined && (
+                                <p className="text-xs font-bold text-slate-500 mt-1">{liveData.inn1Score}/{liveData.inn1Wickets} <span className="text-[9px]">({liveData.inn1Overs} ov)</span></p>
+                            )}
                         </div>
                     </div>
 

@@ -2,6 +2,7 @@ import { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../api/client';
 import { auth } from '../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { requestNotificationPermission } from '../utils/notifications';
 
 const AuthContext = createContext();
 
@@ -21,7 +22,10 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     setLoading(false);
-  }, [token]);
+    if (user) {
+      requestNotificationPermission(user.id || user._id);
+    }
+  }, [token, user]);
 
   const login = async (role, email, password, requestedRole, phone) => {
     try {

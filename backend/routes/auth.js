@@ -343,4 +343,27 @@ router.put('/profile', verifyToken, async (req, res) => {
     }
 });
 
+router.post('/update-fcm-token', verifyToken, async (req, res) => {
+    try {
+        const { fcmToken } = req.body;
+        if (!fcmToken) return res.status(400).json({ success: false, message: 'FCM Token required.' });
+
+        const userId = req.user.id || req.user._id;
+        const user = await User.findByIdAndUpdate(userId, { fcmToken }, { new: true });
+        
+        if (!user) {
+            // Check Admin/Worker too if needed, but usually push is for users
+            const admin = await Admin.findByIdAndUpdate(userId, { fcmToken }, { new: true });
+            if (!admin) {
+                const worker = await Worker.findByIdAndUpdate(userId, { fcmToken }, { new: true });
+                if (!worker) return res.status(404).json({ success: false, message: 'User not found' });
+            }
+        }
+
+        res.json({ success: true, message: 'FCM Token updated' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 module.exports = router;

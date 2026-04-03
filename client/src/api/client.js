@@ -56,6 +56,7 @@ export const authAPI = {
   sendOTP: (phone) => apiClient.post('/auth/send-otp', { phone }),
   verifyOTP: (phone, code) => apiClient.post('/auth/verify-otp', { phone, code }),
   updateProfile: (data) => apiClient.put('/auth/profile', data),
+  updateFCMToken: (data) => apiClient.post('/auth/update-fcm-token', data),
 };
 
 // Slots APIs

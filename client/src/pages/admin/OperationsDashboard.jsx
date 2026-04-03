@@ -290,6 +290,50 @@ const OperationsDashboard = () => {
                             Emergency Override
                         </button>
                     </div>
+
+                    {/* Broadcast Notification Panel */}
+                    <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 overflow-hidden group">
+                        <Activity size={24} className="text-blue-500 mb-4" />
+                        <h2 className="text-white font-black uppercase text-sm tracking-tight mb-2">Web Push Broadcast</h2>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight leading-relaxed mb-6">Send a real-time web notification to all subscribed users.</p>
+                        
+                        <div className="space-y-3">
+                            <input 
+                                type="text" 
+                                id="notif-title"
+                                placeholder="NOTIFICATION TITLE" 
+                                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white placeholder-gray-500 focus:border-emerald-500 transition-all outline-none"
+                            />
+                            <textarea 
+                                id="notif-body"
+                                placeholder="NOTIFICATION BODY" 
+                                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white placeholder-gray-500 focus:border-emerald-500 transition-all outline-none h-24"
+                            />
+                            <button 
+                                onClick={async () => {
+                                    const title = document.getElementById('notif-title').value;
+                                    const body = document.getElementById('notif-body').value;
+                                    if (!title || !body) return toast.warning('Missing content');
+                                    
+                                    try {
+                                        toast.info('Initiating Broadcast Protocol...');
+                                        const { aiAPI } = await import('../../api/client');
+                                        const res = await aiAPI.broadcastNotification(title, body);
+                                        if (res.data.success) {
+                                            toast.success(`Broadcast Complete! Web: ${res.data.webPush.success}, WA: ${res.data.whatsapp.success}`);
+                                            document.getElementById('notif-title').value = '';
+                                            document.getElementById('notif-body').value = '';
+                                        }
+                                    } catch (err) {
+                                        toast.error('Protocol Failure: ' + err.message);
+                                    }
+                                }}
+                                className="w-full bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest px-6 py-4 rounded-xl transition-all shadow-lg"
+                            >
+                                <Zap size={14} className="inline mr-2" /> Execute Global Broadcast
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             </div>

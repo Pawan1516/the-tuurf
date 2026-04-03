@@ -29,6 +29,10 @@ const workerSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Slot',
     }],
+    fcmToken: {
+        type: String,
+        default: null
+    }
 }, { timestamps: true });
 
 workerSchema.pre('save', async function (next) {

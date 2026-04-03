@@ -1,7 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { onMessageListener } from './utils/notifications';
 import { Briefcase } from 'lucide-react';
 import AdminLogin from './pages/admin/Login';
 import WorkerLogin from './pages/worker/Login';
@@ -128,6 +129,19 @@ function App() {
       }
     };
     fetchSettings();
+  }, []);
+
+  React.useEffect(() => {
+    onMessageListener().then(payload => {
+      console.log('Foreground Message:', payload);
+      toast.info(
+        <div className="flex flex-col">
+          <span className="font-bold">{payload.notification.title}</span>
+          <span>{payload.notification.body}</span>
+        </div>,
+        { position: "top-right", autoClose: 5000 }
+      );
+    }).catch(err => console.log('failed: ', err));
   }, []);
 
   const WrapLayout = ({ children }) => <Layout turfName={settings.TURF_NAME}>{children}</Layout>;

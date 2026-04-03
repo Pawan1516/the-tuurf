@@ -7,9 +7,7 @@ import io from 'socket.io-client';
 const PublicHome = () => {
     const SOCKET_URL = process.env.NODE_ENV === 'production'
         ? 'https://the-tuurf-ufkd.onrender.com'
-        : window.location.hostname === 'localhost' 
-            ? 'http://localhost:5001' 
-            : `http://${window.location.hostname}:5001`;
+        : '';
     const getISODate = (date = new Date()) => {
         return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
     };
@@ -105,8 +103,10 @@ const PublicHome = () => {
                         ...data,
                         status: data.status || m.status,
                         // Ensure top-level scores are updated from live payload
-                        team_a: { ...m.team_a, score: data.live_active_team === 'A' ? data.runs : (data.inn1_scorecard?.score || m.team_a.score), wickets: data.live_active_team === 'A' ? data.wickets : (data.inn1_scorecard?.wickets || m.team_a.wickets) },
-                        team_b: { ...m.team_b, score: data.live_active_team === 'B' ? data.runs : m.team_b.score, wickets: data.live_active_team === 'B' ? data.wickets : m.team_b.wickets }
+                        // The socket broadcasts inn1Score / inn1Wickets for the team that batted first.
+                        // team_a is index 0. If battingTeam is 0, they are batting now -> data.runs. If battingTeam is 1, they batted first -> data.inn1Score.
+                        team_a: { ...m.team_a, score: data.battingTeam === 0 ? data.runs : (data.inn1Score !== undefined ? data.inn1Score : m.team_a.score), wickets: data.battingTeam === 0 ? data.wickets : (data.inn1Wickets !== undefined ? data.inn1Wickets : m.team_a.wickets) },
+                        team_b: { ...m.team_b, score: data.battingTeam === 1 ? data.runs : (data.inn1Score !== undefined ? data.inn1Score : m.team_b.score), wickets: data.battingTeam === 1 ? data.wickets : (data.inn1Wickets !== undefined ? data.inn1Wickets : m.team_b.wickets) }
                     };
                 }
                 return m;

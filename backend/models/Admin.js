@@ -20,6 +20,10 @@ const adminSchema = new mongoose.Schema({
         default: 'admin',
         enum: ['admin'],
     },
+    fcmToken: {
+        type: String,
+        default: null
+    }
 }, { timestamps: true });
 
 adminSchema.pre('save', async function (next) {
