@@ -2,7 +2,12 @@ import { messaging, getToken, onMessage } from '../firebase';
 import { authAPI } from '../api/client';
 import { toast } from 'react-toastify';
 
-const VAPID_KEY = "BNvJqIuV_Y2B1_xR8d2OqZ5Fp_R_KqK_q9_K9_K9_K9_K9_K9_K9_K9_K9_K9_K9_K9_K9_K9"; // 🚨 USER SHOULD PROVIDE THIS OR I USE A PLACEHOLDER
+const VAPID_KEY = "BNRvVzGhWb6ZpFhous0nLoEdHeFSKxufV_av4F84uB8gN586DR4H9H4s4XLDGR_ixENnTiksVEjqKpugAJlJbW8"; 
+
+export const getNotificationStatus = () => {
+  if (!('Notification' in window)) return 'unsupported';
+  return Notification.permission;
+};
 
 export const requestNotificationPermission = async (userId) => {
   try {
@@ -14,7 +19,7 @@ export const requestNotificationPermission = async (userId) => {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       const token = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || VAPID_KEY
+        vapidKey: process.env.REACT_APP_FIREBASE_VAPID_KEY || VAPID_KEY
       });
 
       if (token) {

@@ -8,26 +8,28 @@ async function callAI(systemPrompt, userMessage) {
     if (!apiKey) throw new Error('GEMINI_API_KEY is not defined');
     
     const models = [
-        "gemini-3.1-flash-live-preview-preview-12-2025",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash"
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-pro",
+        "gemini-2.0-flash-exp"
     ];
     let lastError = null;
 
     for (const modelName of models) {
         try {
+            console.log(`🧠 AI Engine: Attempting call with ${modelName}...`);
             const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({ model: modelName });
             const fullPrompt = `${systemPrompt}\n\nUser:\n${userMessage}`;
             const result = await model.generateContent(fullPrompt);
             return result.response.text();
         } catch(err) {
-            console.warn(`⚠️ AI Engine: ${modelName} returned status ${err.status || 'ERROR'}. Attempting fallback...`);
+            console.warn(`⚠️ AI Engine: ${modelName} failed. Status: ${err.status || 'UNKNOWN'}. Error: ${err.message}`);
             lastError = err;
-            if (err.status !== 404) break; // If it's not a 404 (e.g., quota), don't bother trying other models
+            // Continue to next model regardless of error type
         }
     }
-    throw new Error(`AI Engine Failure: All models returned 404 or quota errors. ${lastError?.message}`);
+    throw new Error(`AI Engine Failure: All 4 models exhausted. Last error: ${lastError?.message}`);
 }
 
 /**
@@ -88,17 +90,23 @@ User History: Last booked 6PM slot twice. Prefers weekday evenings.`;
 /**
  * 🔔 4. Notification Agent
  */
-async function notificationAgent(context, matchName) {
+async function notificationAgent(context, matchName, businessData = {}) {
     const SYSTEM_PROMPT = `You are a smart notification generator for a cricket turf booking app.
-Generate exactly 3 short, engaging push notifications.
+Generate exactly 3 short, engaging push notifications based on live match status and turf availability.
 Return JSON only: {"notifications": [{"icon":"<emoji>","title":"<short title>","body":"<under 15 words>"},...]}
 No preamble. No markdown.`;
 
     const USER_MESSAGE = `Context: ${context}
-Match: ${matchName}`;
+Match: ${matchName}
+Turf Availability: ${JSON.stringify(businessData)}`;
 
     const replyText = await callAI(SYSTEM_PROMPT, USER_MESSAGE);
-    return JSON.parse(replyText); // Parse JSON response
+    try {
+        return JSON.parse(replyText);
+    } catch (e) {
+        const clean = replyText.replace(/```json|```\n|```/g, "").trim();
+        return JSON.parse(clean);
+    }
 }
 
 /**

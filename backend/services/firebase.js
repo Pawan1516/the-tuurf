@@ -6,7 +6,12 @@ let firebaseApp = null;
 
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    let saString = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+    // Remove wrapping quotes if they exist (common in .env)
+    if (saString.startsWith("'") && saString.endsWith("'")) saString = saString.slice(1, -1);
+    if (saString.startsWith('"') && saString.endsWith('"')) saString = saString.slice(1, -1);
+    
+    const serviceAccount = JSON.parse(saString);
     firebaseApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });

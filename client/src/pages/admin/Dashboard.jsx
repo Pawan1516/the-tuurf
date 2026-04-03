@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import {
   LayoutDashboard,
   Calendar,
@@ -445,16 +446,32 @@ const AdminDashboard = () => {
                      placeholder="Context (e.g. Slots running out)"
                      className="bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 rounded-2xl outline-none font-medium text-xs text-gray-900 transition-all"
                   />
-                  <button
-                     onClick={handleGenerateNotifications}
-                     disabled={notiLoading}
-                     className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all"
-                  >
-                     {notiLoading ? (
-                         <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
-                     ) : <Bell size={16} />}
-                     Generate Push Alerts
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                        onClick={handleGenerateNotifications}
+                        disabled={notiLoading}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all"
+                    >
+                        {notiLoading ? (
+                            <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                        ) : <Bell size={16} />}
+                        Generate Push Alerts
+                    </button>
+                    <button
+                        onClick={async () => {
+                          try {
+                            const res = await aiAPI.broadcastNotification("TEST 🚀", "If you see this, notifications are WORKING!");
+                            if(res.data.success) toast.success("Test signal dispatched!");
+                          } catch (e) {
+                            toast.error("Test signal failed. Check console.");
+                          }
+                        }}
+                        className="bg-gray-100 hover:bg-emerald-600 hover:text-white text-gray-500 p-4 rounded-2xl transition-all shadow-sm flex items-center justify-center"
+                        title="Send Test Signal"
+                    >
+                        <Zap size={18} />
+                    </button>
+                  </div>
                </div>
                
                <div className="md:w-2/3 bg-gray-50 border border-gray-100 p-6 rounded-[2rem] shadow-inner text-gray-900 min-h-[150px] relative overflow-hidden flex items-center">

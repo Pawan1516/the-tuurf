@@ -93,6 +93,8 @@ export default function ScoringDashboard() {
 
     const [quickMatchState, setQuickMatchState] = useState({ teamAId: null, teamBId: null, overs: 20, step: 'pick_a' });
     const [editSquadId, setEditSquadId] = useState(null);
+    const [recentTeams, setRecentTeams] = useState([]);
+    const [lastMatch, setLastMatch] = useState(null);
 
     const [state, setState] = useState({
         phase: 'match_setup', // Initial phase for new matches
@@ -237,6 +239,19 @@ export default function ScoringDashboard() {
             }
         };
         fetchMatch();
+
+        const fetchHistory = async () => {
+            try {
+                const res = await apiClient.get('/matches/history/teams');
+                if (res.data.success) {
+                    setRecentTeams(res.data.teams || []);
+                    setLastMatch(res.data.last_match);
+                }
+            } catch (err) {
+                console.error("History fetch fail:", err);
+            }
+        };
+        fetchHistory();
     }, [id, navigate]);
 
     const handleEditPlayerProfile = (name) => {
@@ -751,6 +766,40 @@ export default function ScoringDashboard() {
                             </button>
                         </div>
 
+                        {lastMatch && (
+                            <button 
+                                onClick={() => {
+                                    const ta = lastMatch.quick_teams?.team_a || { name: lastMatch.team_a?.team_id?.name, players: lastMatch.live_data?.inn1Batters || [] };
+                                    const tb = lastMatch.quick_teams?.team_b || { name: lastMatch.team_b?.team_id?.name, players: lastMatch.live_data?.inn2Batters || [] };
+                                    
+                                    setTeams([
+                                        { name: ta.name, short: (ta.name.slice(0,3)).toUpperCase(), players: (ta.players || []).map(p => ({ name: typeof p === 'string' ? p : p.display_name || p.name, user_id: p.user_id || null })) },
+                                        { name: tb.name, short: (tb.name.slice(0,3)).toUpperCase(), players: (tb.players || []).map(p => ({ name: typeof p === 'string' ? p : p.display_name || p.name, user_id: p.user_id || null })) }
+                                    ]);
+                                    
+                                    setState(prev => ({
+                                        ...prev,
+                                        phase: 'toss',
+                                        formatOvers: lastMatch.format?.replace('T','') || 20,
+                                        batters: [],
+                                        bowlers: []
+                                    }));
+                                }}
+                                className="w-full mt-4 p-6 bg-white/5 border border-white/10 rounded-[2rem] flex items-center justify-between group hover:border-amber-500/40 transition-all hover:bg-amber-500/5"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                                        <RefreshCw size={20} className="text-amber-500 group-hover:rotate-180 transition-transform duration-500" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Instant Rematch</p>
+                                        <p className="text-xs font-bold">{lastMatch.quick_teams?.team_a?.name || lastMatch.team_a?.team_id?.name} vs {lastMatch.quick_teams?.team_b?.name || lastMatch.team_b?.team_id?.name}</p>
+                                    </div>
+                                </div>
+                                <span className="text-[8px] font-black uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full text-white/20">Last Match</span>
+                            </button>
+                        )}
+
                         {/* Custom Setup Modal/Step */}
                         {setupState.step === 1 && (
                             <div className="mt-8 space-y-4 bg-white/5 border border-white/10 rounded-[2rem] p-6 animate-in zoom-in-95 duration-300">
@@ -861,6 +910,30 @@ export default function ScoringDashboard() {
                                         </div>
                                     ))}
                                 </div>
+                                
+                                {recentTeams.length > 0 && (
+                                    <div className="space-y-3 mt-6">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-white/20">🏆 Recent Teams</p>
+                                        <div className="grid gap-2">
+                                            {recentTeams.map(t => (
+                                                <button key={t.id} onClick={() => {
+                                                    const newT = { id: t.id, name: t.name, emoji: '🏠', players: t.players, short: t.short };
+                                                    setPresetTeams(prev => [newT, ...prev.filter(x => x.id !== t.id)]);
+                                                    setQuickMatchState({ ...quickMatchState, teamAId: t.id, step: 'pick_b' });
+                                                }} className="w-full p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between group hover:bg-emerald-500/10 transition-all">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center font-black text-[10px] text-emerald-400">{t.short}</div>
+                                                        <div className="text-left">
+                                                            <p className="text-xs font-black uppercase tracking-tight">{t.name}</p>
+                                                            <p className="text-[10px] text-white/30 truncate max-w-[150px]">{t.players.slice(0, 3).join(', ')}...</p>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/20">PREV MATCH</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -884,6 +957,30 @@ export default function ScoringDashboard() {
                                         </button>
                                     ))}
                                 </div>
+
+                                {recentTeams.filter(t => t.id !== quickMatchState.teamAId).length > 0 && (
+                                    <div className="space-y-3 mt-6">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-white/20">🏆 Recent Opponents</p>
+                                        <div className="grid gap-2">
+                                            {recentTeams.filter(t => t.id !== quickMatchState.teamAId).map(t => (
+                                                <button key={t.id} onClick={() => {
+                                                    const newT = { id: t.id, name: t.name, emoji: '🛡️', players: t.players, short: t.short };
+                                                    setPresetTeams(prev => [newT, ...prev.filter(x => x.id !== t.id)]);
+                                                    setQuickMatchState({ ...quickMatchState, teamBId: t.id, step: 'confirm' });
+                                                }} className="w-full p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl flex items-center justify-between group hover:bg-amber-500/10 transition-all">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center font-black text-[10px] text-amber-500">{t.short}</div>
+                                                        <div className="text-left">
+                                                            <p className="text-xs font-black uppercase tracking-tight">{t.name}</p>
+                                                            <p className="text-[10px] text-white/30 truncate max-w-[150px]">{t.players.slice(0, 3).join(', ')}...</p>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/20">PREV MATCH</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                                 <button onClick={() => setQuickMatchState({ ...quickMatchState, step: 'pick_a', teamAId: null })} className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-white/20">Change Team A</button>
                             </div>
                         )}
@@ -1274,9 +1371,59 @@ export default function ScoringDashboard() {
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => updateState({ phase: 'summary' })} className="py-6 bg-white/5 border border-white/10 rounded-3xl font-black uppercase tracking-widest text-xs">Full Scorecard</button>
-                            <button onClick={() => { updateCareerStats(); navigate('/admin/operations'); }} className="py-6 bg-emerald-500 text-black rounded-3xl font-black uppercase tracking-widest text-xs shadow-lg">Done</button>
+                        <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 space-y-4">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white/30 text-center">Post-Match Action</p>
+                            
+                            {/* Option 1: Instant Rematch (Same Players) */}
+                            <button 
+                                onClick={() => {
+                                    // Reset to TOSS but keep TEAMS as is
+                                    setState(prev => ({
+                                        ...prev,
+                                        phase: 'toss',
+                                        inningsNum: 1,
+                                        runs: 0, wickets: 0, ballInOver: 0, overNum: 0, totalBalls: 0,
+                                        striker: null, nonStriker: null, currentBowlerIdx: null,
+                                        currentOverBalls: [], overHistory: [], log: [],
+                                        history: [], batters: [], bowlers: [], target: null,
+                                        tossWinner: null, battingTeam: null, bowlingTeam: null, bbChoice: null
+                                    }));
+                                    toast.success("Preparing Rematch... Time for a New Toss!");
+                                }} 
+                                className="w-full p-6 bg-emerald-600 rounded-3xl flex items-center justify-between group shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
+                            >
+                                <div className="flex items-center gap-4 text-left">
+                                    <RefreshCw className="text-white animate-spin-slow group-hover:rotate-180 transition-transform duration-500" />
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-tight">Same Players</p>
+                                        <p className="text-[9px] text-white/60 uppercase">Instant 2nd Match (Re-toss)</p>
+                                    </div>
+                                </div>
+                                <ArrowLeft className="rotate-180" size={16} />
+                            </button>
+                            
+                            {/* Option 2: Same Teams, but different members */}
+                            <button 
+                                onClick={() => {
+                                    updateState({ phase: 'match_setup' });
+                                    setSetupState(s => ({ ...s, step: 1 })); // Jump to custom squad setup
+                                    toast.info("Updating Squads...");
+                                }}
+                                className="w-full p-6 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-between hover:bg-white/10 active:scale-95 transition-all"
+                            >
+                                <div className="flex items-center gap-4 text-left">
+                                    <Users className="text-emerald-400" />
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-tight">Same Teams, New Members</p>
+                                        <p className="text-[9px] text-white/20 uppercase">Edit squad before playing</p>
+                                    </div>
+                                </div>
+                            </button>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={() => updateState({ phase: 'summary' })} className="py-5 bg-white/5 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px]">Scorecard</button>
+                                <button onClick={() => { updateCareerStats(); navigate('/admin/operations'); }} className="py-5 bg-white/10 border border-white/20 rounded-2xl font-black uppercase tracking-widest text-[10px]">All Done</button>
+                            </div>
                         </div>
                     </div>
                 )}

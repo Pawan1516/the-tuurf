@@ -1,67 +1,67 @@
-const { createCanvas, loadImage } = require('canvas');
-const QRCode = require('qrcode');
+const Jimp = require('jimp');
+const qr = require('qr-image');
 const fs = require('fs');
 const path = require('path');
 
 /**
- * 🎫 Generates a green-themed digital pass for THE TURF
+ * 🎫 Generates a green-themed digital pass for THE TURF (Pure JS version - no canvas required)
  */
 async function generateBookingPass(id, name, sport, slot) {
     const width = 420;
     const height = 420;
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
 
-    // 1. Background (Dark Green #1a6b3c)
-    ctx.fillStyle = '#1a6b3c';
-    ctx.fillRect(0, 0, width, height);
-
-    // 2. Inner Rounded Card
-    ctx.fillStyle = '#FFFFFF';
+    // 1. Create Background (Dark Green #1a6b3c = 0x1a6b3cFF)
+    const image = new Jimp(width, height, 0x1a6b3cFF);
+    
+    // 2. Inner White Card (Simulate rounded rect with a simple rect or just a clean white block)
     const padding = 20;
-    ctx.beginPath();
-    ctx.roundRect(padding, padding, width - (padding * 2), height - (padding * 2), 20);
-    ctx.fill();
+    const cardWidth = width - (padding * 2);
+    const cardHeight = height - (padding * 2);
+    
+    const card = new Jimp(cardWidth, cardHeight, 0xFFFFFFFF);
+    // Mimic rounded corners by making a few pixels transparent at corners if we had masking,
+    // but for now, simple clean card is better than a crashing server.
+    
+    image.composite(card, padding, padding);
 
-    // 3. Header Text
-    ctx.fillStyle = '#1a6b3c';
-    ctx.font = 'bold 24px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('THE TURF STADIUM', width / 2, 60);
+    // 3. Generate QR Code using qr-image (Pure JS, returns buffer)
+    const qrBuffer = qr.imageSync(`BOOKING:${id}`, { type: 'png', margin: 1, size: 7 });
+    const qrImage = await Jimp.read(qrBuffer);
+    
+    // Resize QR to fit nicely
+    qrImage.resize(180, 180);
+    
+    // Composite QR onto white card
+    image.composite(qrImage, (width - 180) / 2, 100);
 
-    ctx.fillStyle = '#666666';
-    ctx.font = '14px Arial';
-    ctx.fillText('Official Booking Pass', width / 2, 80);
+    // 4. Add Text using Jimp standard fonts
+    try {
+        const fontTitle = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+        const fontSubtitle = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+        
+        // Header
+        const title = "THE TURF STADIUM";
+        const titleX = (width - Jimp.measureText(fontTitle, title)) / 2;
+        image.print(fontTitle, titleX, 60, title);
+        
+        // User Info
+        const userText = name.toUpperCase();
+        const userX = (width - Jimp.measureText(fontSubtitle, userText)) / 2;
+        image.print(fontSubtitle, userX, 305, userText);
+        
+        // Info
+        const details = `${sport} | ${slot}`;
+        const detailX = (width - Jimp.measureText(fontSubtitle, details)) / 2;
+        image.print(fontSubtitle, detailX, 330, details);
+        
+        // ID
+        const idText = `ID: ${id}`;
+        const idX = (width - Jimp.measureText(fontSubtitle, idText)) / 2;
+        image.print(fontSubtitle, idX, 365, idText);
 
-    // 4. Generate QR Code
-    const qrBuffer = await QRCode.toBuffer(`BOOKING:${id}`, {
-        margin: 1,
-        width: 180,
-        color: {
-            dark: '#1a6b3c',
-            light: '#FFFFFF'
-        }
-    });
-    const qrImage = await loadImage(qrBuffer);
-    ctx.drawImage(qrImage, (width - 180) / 2, 100);
-
-    // 5. Booking Details
-    ctx.fillStyle = '#1a6b3c';
-    ctx.font = 'bold 18px Arial';
-    ctx.fillText(name.toUpperCase(), width / 2, 305);
-
-    ctx.fillStyle = '#000000';
-    ctx.font = '16px Arial';
-    ctx.fillText(`${sport} | ${slot}`, width / 2, 330);
-
-    ctx.fillStyle = '#1a6b3c';
-    ctx.font = 'bold 20px Courier New';
-    ctx.fillText(`ID: ${id}`, width / 2, 365);
-
-    // 6. Security Seal
-    ctx.strokeStyle = '#1a6b3c';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(padding + 10, 310, width - (padding * 2) - 20, 1);
+    } catch (err) {
+        console.warn('Text rendering skipped in pass:', err.message);
+    }
 
     // Save File
     const filename = `pass_${id}_${Date.now()}.png`;
@@ -72,14 +72,9 @@ async function generateBookingPass(id, name, sport, slot) {
     }
 
     const filePath = path.join(publicDir, filename);
-    const out = fs.createWriteStream(filePath);
-    const stream = canvas.createPNGStream();
-    stream.pipe(out);
+    await image.writeAsync(filePath);
 
-    return new Promise((resolve, reject) => {
-        out.on('finish', () => resolve(filename));
-        out.on('error', reject);
-    });
+    return filename;
 }
 
 module.exports = { generateBookingPass };

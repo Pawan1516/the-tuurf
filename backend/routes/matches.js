@@ -2,10 +2,69 @@ const express = require('express');
 const router = express.Router();
 const Match = require('../models/Match');
 const Booking = require('../models/Booking');
+const Team = require('../models/Team');
 const AIService = require('../services/aiService');
 const QRService = require('../services/qrService');
 const verifyToken = require('../middleware/verifyToken');
 const verifyMatch = require('../middleware/verifyMatch');
+
+// @route   GET /api/matches/history/teams
+// @desc    Extract unique historical teams/squads from past matches
+// @access  Public
+router.get('/history/teams', async (req, res) => {
+    try {
+        const pastMatches = await Match.find({ status: 'Completed' })
+            .select('team_a team_b quick_teams title start_time format')
+            .populate('team_a.team_id team_b.team_id')
+            .sort({ start_time: -1 })
+            .limit(50);
+
+        const registeredTeams = await Team.find().populate('members.user_id');
+
+        const historyPool = [];
+        const seenNames = new Set();
+
+        // 1. Add Registered Teams (Highest Priority)
+        registeredTeams.forEach(t => {
+            if (!seenNames.has(t.name)) {
+                historyPool.push({ 
+                    id: t._id, 
+                    name: t.name, 
+                    short: t.short_name || t.name.slice(0,3).toUpperCase(), 
+                    players: t.members?.map(m => m.user_id?.name).filter(Boolean) || [],
+                    type: 'official_registered_team' 
+                });
+                seenNames.add(t.name);
+            }
+        });
+
+        // 2. Add Recent Match Teams
+        pastMatches.forEach(m => {
+            // Check Quick Teams
+            if (m.quick_teams?.team_a?.name) {
+                if (!seenNames.has(m.quick_teams.team_a.name)) {
+                    historyPool.push({ id: `q-${m._id}-a`, name: m.quick_teams.team_a.name, short: (m.quick_teams.team_a.name.slice(0,3)).toUpperCase(), players: m.quick_teams.team_a.players.map(p => p.display_name || p.name), type: 'past_walkin' });
+                    seenNames.add(m.quick_teams.team_a.name);
+                }
+            }
+            if (m.quick_teams?.team_b?.name) {
+                if (!seenNames.has(m.quick_teams.team_b.name)) {
+                    historyPool.push({ id: `q-${m._id}-b`, name: m.quick_teams.team_b.name, short: (m.quick_teams.team_b.name.slice(0,3)).toUpperCase(), players: m.quick_teams.team_b.players.map(p => p.display_name || p.name), type: 'past_walkin' });
+                    seenNames.add(m.quick_teams.team_b.name);
+                }
+            }
+            // Check Official Teams from Match Data
+            if (m.team_a?.team_id?.name && !seenNames.has(m.team_a.team_id.name)) {
+                historyPool.push({ id: `o-${m._id}-a`, name: m.team_a.team_id.name, short: m.team_a.team_id.short_name || 'TMA', players: m.live_data?.scorecard?.batsmen?.map(b => b.name) || [], type: 'past_official' });
+                seenNames.add(m.team_a.team_id.name);
+            }
+        });
+
+        res.json({ success: true, teams: historyPool, last_match: pastMatches[0] });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 
 // @route   GET /api/matches/live
 // @desc    Get only active in-progress matches for today

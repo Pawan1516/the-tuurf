@@ -6,23 +6,26 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 class AIService {
     static async callAI(prompt, system = "You are a professional cricket analyst.") {
         const models = [
-            "gemini-3.1-flash-live-preview-preview-12-2025",
-            "gemini-2.5-flash",
-            "gemini-2.0-flash"
+            "gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "gemini-pro",
+            "gemini-2.0-flash-exp"
         ];
         let lastError = null;
         for (const mName of models) {
             try {
+                console.log(`🤖 AIService: Attempting call with ${mName}...`);
                 const model = genAI.getGenerativeModel({ model: mName });
                 const fullPrompt = `${system}\n\nUser: ${prompt}`;
                 const result = await model.generateContent(fullPrompt);
                 return result.response.text();
             } catch (err) {
+                console.warn(`⚠️ AIService: ${mName} failed. Status: ${err.status || 'UNKNOWN'}. Error: ${err.message}`);
                 lastError = err;
-                if (err.status !== 404) break;
+                // Move to next model
             }
         }
-        throw lastError;
+        throw new Error(`AIService Exhausted: All 4 models failed. Last error: ${lastError?.message}`);
     }
 
     static async generateCommentary(context) {

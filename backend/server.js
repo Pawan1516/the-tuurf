@@ -7,6 +7,11 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
 
+// 🚀 Fix: Ensure global fetch is available for AI/SDKs (Required for some Node environments)
+if (!global.fetch) {
+    global.fetch = require('node-fetch');
+}
+
 const data = require('./data');
 const messages = require('./messages');
 const agent = require('./agent');

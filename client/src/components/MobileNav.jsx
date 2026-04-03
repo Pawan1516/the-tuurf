@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, User, LogOut, Home, Menu, X, Activity, ScanLine, Briefcase, Settings } from 'lucide-react';
+import { LayoutDashboard, Calendar, User, LogOut, Home, Menu, X, Activity, ScanLine, Briefcase, Settings, Bell } from 'lucide-react';
+import { requestNotificationPermission } from '../utils/notifications';
+import { toast } from 'react-toastify';
 
 // ─── Bottom Tab Bar (mobile primary nav) ────────────
 const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
@@ -61,13 +63,33 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
                         <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest leading-none mt-0.5">{portalType}</p>
                     </div>
                 </div>
-                <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 px-3.5 py-2 rounded-xl transition-all"
-                >
-                    <LogOut size={16} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Out</span>
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={async () => {
+                            const success = await requestNotificationPermission(user?.id);
+                            if (success) {
+                                toast.success('Notifications Enabled Successfully!');
+                            } else {
+                                toast.info('Check browser settings to allow notifications');
+                            }
+                        }}
+                        className={`p-2.5 rounded-xl transition-all ${
+                            window.Notification?.permission === 'granted' 
+                            ? 'bg-emerald-50 text-emerald-600' 
+                            : 'bg-yellow-50 text-yellow-600'
+                        }`}
+                        title="Notification Settings"
+                    >
+                        <Bell size={20} className={window.Notification?.permission === 'granted' ? 'text-emerald-600' : 'text-yellow-600'} />
+                    </button>
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 px-3.5 py-2 rounded-xl transition-all"
+                    >
+                        <LogOut size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Out</span>
+                    </button>
+                </div>
             </header>
 
             {/* ── Bottom Tab Bar (Universal) — Fixed at bottom with horizontal scroll ── */}
