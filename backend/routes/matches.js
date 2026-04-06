@@ -71,28 +71,41 @@ router.get('/history/teams', async (req, res) => {
 // @access  Public
 router.get('/live', async (req, res) => {
     try {
-        const istMidnight = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-        istMidnight.setHours(0,0,0,0);
+        // Use a more robust IST date calculation
+        const now = new Date();
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const istDate = new Date(now.getTime() + istOffset);
+        
+        const istMidnight = new Date(istDate);
+        istMidnight.setUTCHours(0,0,0,0);
+        istMidnight.setTime(istMidnight.getTime() - istOffset); // Back to UTC
+        
         const istNextMidnight = new Date(istMidnight);
         istNextMidnight.setDate(istNextMidnight.getDate() + 1);
-        // Get all live in-progress matches for today
+
+        // Get all live and upcoming matches for today
         const activeMatches = await Match.find({ 
-            status: 'In Progress',
+            status: { $in: ['In Progress', 'Scheduled'] },
             start_time: { $gte: istMidnight, $lte: istNextMidnight }
         })
         .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
-        .sort({ updatedAt: -1 });
+        .sort({ status: 1, updatedAt: -1 }); // 'In Progress' before 'Scheduled'
 
-        // Also get recently finished matches (last 12 hours)
-        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+        // Also get recently finished matches (last 24 hours)
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const completedMatches = await Match.find({ 
             status: 'Completed',
-            updatedAt: { $gte: twelveHoursAgo }
+            updatedAt: { $gte: twentyFourHoursAgo }
         })
         .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
         .sort({ updatedAt: -1 });
         
-        const finalMatches = [...activeMatches, ...completedMatches];
+        // Remove duplicates and combine
+        const matchMap = new Map();
+        activeMatches.forEach(m => matchMap.set(m._id.toString(), m));
+        completedMatches.forEach(m => matchMap.set(m._id.toString(), m));
+        
+        const finalMatches = Array.from(matchMap.values());
 
         res.json({ success: true, matches: finalMatches });
     } catch (err) {

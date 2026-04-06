@@ -205,7 +205,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} className="lg:hidden" />
 
       <div className="flex flex-1">
         <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />

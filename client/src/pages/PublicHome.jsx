@@ -7,7 +7,7 @@ import io from 'socket.io-client';
 const PublicHome = () => {
     const SOCKET_URL = process.env.NODE_ENV === 'production'
         ? 'https://the-tuurf-ufkd.onrender.com'
-        : '';
+        : 'http://localhost:5001';
         
     const getISODate = (date = new Date()) => {
         return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
@@ -121,8 +121,8 @@ const PublicHome = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-            {/* HERO SECTION */}
-            <section className="relative h-[250px] sm:h-[300px] md:h-[420px] w-full flex flex-col items-center justify-center overflow-hidden">
+            {/* HERO SECTION - Taller more premium feel */}
+            <section className="relative h-[320px] sm:h-[400px] md:h-[520px] w-full flex flex-col items-center justify-center overflow-hidden">
                 {heroImages.map((img, idx) => (
                     <img
                         key={idx}
@@ -132,32 +132,37 @@ const PublicHome = () => {
                     />
                 ))}
 
-                <div className="relative z-10 text-center space-y-4 px-6">
+                <div className="relative z-10 text-center space-y-6 px-6 max-w-4xl mx-auto">
                     <div className="flex flex-col items-center justify-center mb-6">
-                         <span className="text-emerald-400 text-[10px] md:text-xs font-black uppercase tracking-[0.5em] mb-2 drop-shadow-lg">Smart Sports Arena</span>
-                         <div className="h-1 w-24 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50"></div>
+                         <span className="text-emerald-400 text-[10px] md:text-sm font-black uppercase tracking-[0.6em] mb-3 drop-shadow-lg animate-pulse">Smart Sports Arena</span>
+                         <div className="h-1 w-32 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50"></div>
                     </div>
-                    <h1 className="text-3xl sm:text-4xl md:text-8xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-2xl">
-                        {pageConfig?.hero?.title || 'Feel Free'} <span className="text-emerald-400">{pageConfig?.hero?.highlight || 'Play Better'}</span>
+                    <h1 className="text-4xl sm:text-5xl md:text-8xl font-black text-white tracking-tighter uppercase leading-[0.9] drop-shadow-2xl">
+                        {pageConfig?.hero?.title || 'Feel Free'} <span className="text-emerald-400 underline decoration-emerald-500/30 underline-offset-8">{pageConfig?.hero?.highlight || 'Play Better'}</span>
                     </h1>
-                    <p className="text-[10px] md:text-sm font-black text-white/80 uppercase tracking-[0.4em] mb-4 drop-shadow-lg">
+                    <p className="text-[11px] md:text-base font-black text-white/80 uppercase tracking-[0.4em] mb-4 drop-shadow-lg">
                         {pageConfig?.hero?.subtext || 'Select your squad. Lock your slot'}
                     </p>
 
                     <div className="flex flex-wrap justify-center gap-4 mb-4">
                         <Link
                             to="/leaderboard"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all flex items-center gap-3"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 md:px-12 py-4 md:py-6 rounded-2xl md:rounded-3xl text-[10px] md:text-xs font-black uppercase tracking-widest shadow-2xl transition-all flex items-center gap-4 active:scale-95"
                         >
-                            <Trophy size={16} className="text-yellow-400" /> Leaderboard
+                            <Trophy size={20} className="text-yellow-400" /> View Arena Ranking
                         </Link>
                     </div>
 
-                    <div className="flex justify-center gap-2">
+                    <div className="flex justify-center gap-3">
                         {heroImages.map((_, idx) => (
-                            <button key={idx} onClick={() => setCurrentImageIndex(idx)} className={`h-1 rounded-full transition-all duration-500 ${idx === currentImageIndex ? 'w-8 bg-emerald-400' : 'w-2 bg-white/30'}`} />
+                            <button key={idx} onClick={() => setCurrentImageIndex(idx)} className={`h-1.5 rounded-full transition-all duration-500 ${idx === currentImageIndex ? 'w-10 bg-emerald-400' : 'w-2.5 bg-white/30'}`} />
                         ))}
                     </div>
+                </div>
+                {/* Scroll Indicator */}
+                <div className="absolute bottom-16 md:bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50 hidden md:flex">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Explore Arena</span>
+                    <div className="w-[1px] h-12 bg-gradient-to-b from-white to-transparent"></div>
                 </div>
             </section>
 
@@ -181,9 +186,11 @@ const PublicHome = () => {
                                         <div className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase ${
                                             match.status === 'Completed' 
                                             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
+                                            : match.status === 'Scheduled'
+                                            ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
                                             : 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse'
                                         }`}>
-                                            {match.status === 'Completed' ? 'FINISH' : 'LIVE'}
+                                            {match.status === 'Completed' ? 'FINISH' : match.status === 'Scheduled' ? 'WAITING' : 'LIVE'}
                                         </div>
                                     </div>
                                      <div className="space-y-6">
@@ -209,6 +216,11 @@ const PublicHome = () => {
                                                       {match.result?.winner?.name || match.quick_teams?.team_a?.name || 'Match'} won {match.result?.won_by || 'by margin'}
                                                   </span>
                                               </div>
+                                          ) : match.status === 'Scheduled' ? (
+                                              <div className="flex items-center gap-3">
+                                                  <Timer size={14} className="text-blue-400" />
+                                                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Waiting for Toss</span>
+                                              </div>
                                           ) : (
                                               <div className="flex items-center gap-3">
                                                   <Activity size={14} className="text-rose-400 animate-pulse" />
@@ -219,9 +231,11 @@ const PublicHome = () => {
                                           <div className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
                                               match.status === 'Completed' 
                                               ? 'bg-emerald-600 text-white group-hover:bg-emerald-500 shadow-lg shadow-emerald-600/20' 
+                                              : match.status === 'Scheduled'
+                                              ? 'bg-blue-600 text-white group-hover:bg-blue-500 shadow-lg shadow-blue-600/20'
                                               : 'bg-white/10 text-white group-hover:bg-white/20'
                                           }`}>
-                                              {match.status === 'Completed' ? 'View Result' : 'Live Score'}
+                                              {match.status === 'Completed' ? 'View Result' : match.status === 'Scheduled' ? 'Ready' : 'Live Score'}
                                           </div>
                                      </div>
                                 </Link>
@@ -252,7 +266,35 @@ const PublicHome = () => {
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto">
+                        <div className="md:hidden p-6 space-y-4">
+                            {loading ? (
+                                <div className="py-24 text-center animate-pulse font-black text-slate-300 uppercase tracking-widest">Awaiting Arena Data...</div>
+                            ) : slots.length === 0 ? (
+                                <div className="py-24 text-center font-black text-slate-300 uppercase tracking-widest">Zero Slots in Registry</div>
+                            ) : slots.sort((a,b) => a.startTime.localeCompare(b.startTime)).map(slot => (
+                                <div key={slot._id} className={`p-6 rounded-[2rem] border-2 transition-all group ${slot.status === 'free' ? 'bg-white border-slate-100 hover:border-emerald-500 shadow-lg shadow-slate-100' : 'bg-slate-50 border-transparent opacity-60'}`}>
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div>
+                                            <p className="text-2xl font-black text-slate-900 leading-none">{formatTime12h(slot.startTime)}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sessions End {formatTime12h(slot.endTime)}</p>
+                                        </div>
+                                        <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${slot.status === 'free' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-500 border-rose-100'}`}>
+                                            {slot.status === 'free' ? 'AVAILABLE' : 'RESERVED'}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-4 pt-6 border-t border-slate-50">
+                                        <p className="text-xl font-black text-slate-900 tracking-tighter">₹{slot.price}</p>
+                                        {slot.status === 'free' ? (
+                                            <Link to={`/book/${slot._id}`} className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-200 group-active:scale-95 transition-all">Select Slot</Link>
+                                        ) : (
+                                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">SLOT LOCKED</span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-[#1e293b] text-white/40 text-[11px] font-black uppercase tracking-widest border-t border-white/5">

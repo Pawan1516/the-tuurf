@@ -37,6 +37,7 @@ import PlayerStatsDashboard from './pages/PlayerStatsDashboard';
 import Leaderboard from './pages/Leaderboard';
 import TurfDetailPage from './pages/TurfDetailPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import MobileNav from './components/MobileNav';
 import CricBotWidget from './components/CricBotWidget';
 import FirebaseAuthTest from './pages/FirebaseAuthTest';
 import { slotsAPI } from './api/client';
@@ -80,7 +81,7 @@ const NavLinks = () => {
 
 const Layout = ({ children, turfName = "The Turf" }) => (
     <div className="min-h-screen bg-gray-50 font-sans selection:bg-emerald-100 selection:text-emerald-900">
-        <nav className="bg-white sticky top-0 z-[100] border-b border-gray-50 h-16 md:h-24 flex items-center shadow-sm shadow-emerald-500/5">
+        <nav className="bg-white sticky top-0 z-[100] border-b border-gray-50 h-16 md:h-24 flex items-center shadow-sm shadow-emerald-500/5 hidden md:flex">
             <div className="max-w-7xl mx-auto px-3 md:px-6 w-full flex items-center justify-between h-full gap-2">
                 <Link to="/" className="flex items-center gap-3 group min-w-0 flex-1 h-full">
                     <img 
@@ -157,7 +158,15 @@ function App() {
     }).catch(err => console.log('failed: ', err));
   }, []);
 
-  const WrapLayout = ({ children }) => <Layout turfName={settings.TURF_NAME}>{children}</Layout>;
+  const WrapLayout = ({ children }) => {
+    const { user, logout } = React.useContext(AuthContext);
+    return (
+      <Layout turfName={settings.TURF_NAME}>
+        <MobileNav user={user} logout={logout} dashboardTitle={settings.TURF_NAME} className="md:hidden" />
+        {children}
+      </Layout>
+    );
+  };
 
   return (
     <Router>

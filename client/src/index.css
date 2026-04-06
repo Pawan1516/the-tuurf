@@ -5,9 +5,8 @@
 /* ── Global Mobile-First Resets ───────────────────────────────────────── */
 @layer base {
   html {
-    /* Smooth scroll & prevent tap highlight on mobile */
+    /* Prevent tap highlight on mobile */
     -webkit-tap-highlight-color: transparent;
-    scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }
 

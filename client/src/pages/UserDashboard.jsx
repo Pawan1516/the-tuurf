@@ -221,7 +221,7 @@ const UserDashboard = () => {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} className="md:hidden" />
 
             <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
                 <div className="p-8 border-b border-gray-50 flex items-center gap-4">

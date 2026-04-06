@@ -83,7 +83,7 @@ export default function LiveScoreView() {
 
     useEffect(() => {
         if (activeTab === 'commentary' && commentaryEndRef.current) {
-            commentaryEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            commentaryEndRef.current.scrollIntoView({ behavior: 'auto' });
         }
     }, [liveData?.commentary_log, activeTab]);
 
@@ -549,7 +549,7 @@ export default function LiveScoreView() {
                     </Link>
                     <div className="w-px h-6 bg-white/10 mx-2"></div>
                     <button 
-                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                         onClick={() => window.scrollTo({ top: 0, behavior: 'auto' })}
                          className="flex-1 flex items-center justify-center p-2 rounded-2xl hover:bg-white/5 transition-colors"
                     >
                         <TrendingUp size={16} className="text-white/40" />
