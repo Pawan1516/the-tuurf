@@ -83,15 +83,16 @@ router.get('/live', async (req, res) => {
         .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
         .sort({ updatedAt: -1 });
 
-        // Also get the single most recently finished match (can be from yesterday)
-        const completedMatch = await Match.findOne({ status: 'Completed' })
-            .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
-            .sort({ updatedAt: -1 });
+        // Also get recently finished matches (last 12 hours)
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+        const completedMatches = await Match.find({ 
+            status: 'Completed',
+            updatedAt: { $gte: twelveHoursAgo }
+        })
+        .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
+        .sort({ updatedAt: -1 });
         
-        const finalMatches = [...activeMatches];
-        if (completedMatch) {
-            finalMatches.push(completedMatch);
-        }
+        const finalMatches = [...activeMatches, ...completedMatches];
 
         res.json({ success: true, matches: finalMatches });
     } catch (err) {

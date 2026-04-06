@@ -1,81 +1,68 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+// Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+/**
+ * Generates dynamic AI analysis for a turf based on its performance data
+ * @param {Object} turf - The turf object from DB
+ * @param {Array} recentBookings - Optional context for occupancy
+ */
+exports.generateTurfAnalysis = async (turf) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-class AIService {
-    static async callAI(prompt, system = "You are a professional cricket analyst.") {
-        const models = [
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
-            "gemini-pro",
-            "gemini-2.0-flash-exp"
-        ];
-        let lastError = null;
-        for (const mName of models) {
-            try {
-                console.log(`🤖 AIService: Attempting call with ${mName}...`);
-                const model = genAI.getGenerativeModel({ model: mName });
-                const fullPrompt = `${system}\n\nUser: ${prompt}`;
-                const result = await model.generateContent(fullPrompt);
-                return result.response.text();
-            } catch (err) {
-                console.warn(`⚠️ AIService: ${mName} failed. Status: ${err.status || 'UNKNOWN'}. Error: ${err.message}`);
-                lastError = err;
-                // Move to next model
-            }
+    const prompt = `
+      You are an expert Sports Business & Tactical AI Analyst for "The Turf" booking platform.
+      Analyze the following turf venue and provide TWO distinct perspectives:
+      1. AI Tactical Analyst (Focus on player experience, play style, and timing)
+      2. Business Arena Insight (Focus on demand, revenue, and occupancy)
+
+      VENUE DATA:
+      Name: ${turf.name}
+      Location: ${turf.location}
+      Sports: ${turf.sports.join(', ')}
+      Size: ${turf.groundSize}
+      Amenities: ${turf.amenities.join(', ')}
+      Rating: ${turf.rating} (${turf.reviewCount} reviews)
+      Pricing: Weekday Day: ${turf.pricing.weekdayDay}, Weekday Night: ${turf.pricing.weekdayNight}
+      Opening: ${turf.openingHour} AM, Closing: ${turf.closingHour} PM
+
+      REQUIREMENTS:
+      - Be concise but professional.
+      - Sound data-driven and futuristic.
+      - Return a JSON object with this structure:
+      {
+        "aiAnalysis": {
+          "bestTime": "Specific 3-hour window",
+          "idealGroupSize": "e.g. 5 vs 5",
+          "playStyle": "High-impact description of play style",
+          "summary": "1-2 sentence tactical advice"
+        },
+        "businessAnalysis": {
+          "revenueStatus": "Demand status (e.g. Peak, Growing, Steady)",
+          "occupancyRate": "Estimated % based on rating/reviews",
+          "matchIntensity": "e.g. Professional / Casual / Mixed",
+          "summary": "1-2 sentence business insight"
         }
-        throw new Error(`AIService Exhausted: All 4 models failed. Last error: ${lastError?.message}`);
-    }
+      }
 
-    static async generateCommentary(context) {
-        try {
-            const { ball, batsman, bowler, match, situation } = context;
-            const prompt = `Generate ONE punchy, engaging sentence for this ball:
-            EVENT: ${ball.type === 'normal' ? ball.runs + ' runs' : ball.type}
-            BATSMAN: ${batsman.name} (${batsman.runs} off ${batsman.balls})
-            BOWLER: ${bowler.name} (Econ: ${bowler.economy})
-            MATCH STATE: ${match.team} needs ${match.required} off ${match.ballsLeft} balls.
-            SITUATION: ${situation}`;
-            return await this.callAI(prompt, "You are a live cricket commentator. Return only the commentary line.");
-        } catch (error) {
-            return "Solid delivery on target.";
-        }
-    }
+      Return ONLY the JSON.
+    `;
 
-    static async turfBotChat(userInput, conversationHistory, userContext) {
-        try {
-            const historyStr = conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n');
-            const prompt = `Context: ${JSON.stringify(userContext)}\nHistory:\n${historyStr}\nUser: ${userInput}`;
-            return await this.callAI(prompt, "You are TurfBot, an encouraging cricket coach assistant.");
-        } catch (error) {
-            return "Coach is busy - but keep training hard!";
-        }
-    }
-
-    static async generatePostMatchReport(matchData, playerData) {
-        try {
-            const prompt = `Report for: ${matchData.title}\nStats: ${JSON.stringify(playerData)}`;
-            return await this.callAI(prompt, "Professional cricket debrief analyst.");
-        } catch (error) {
-            return "Report sync pending.";
-        }
-    }
-
-    static async generateMatchPrediction(matchData) {
-        try {
-            const prompt = `JSON Prediction only: ${JSON.stringify(matchData)}`;
-            const resultText = await this.callAI(prompt, "Cricket prediction engine. Output JSON only: {winner, probability, reasoning}");
-            try {
-                return JSON.parse(resultText);
-            } catch (pErr) {
-                const clean = resultText.replace(/```json|```/g, "").trim();
-                return JSON.parse(clean);
-            }
-        } catch (error) {
-            return { winner: "Neutral", probability: "50%", reason: "Calculating..." };
-        }
-    }
-}
-
-module.exports = AIService;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    // Clean JSON if Gemini adds markdown blocks
+    const cleanJson = text.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleanJson);
+  } catch (error) {
+    console.error("AI Analysis Error:", error);
+    // Fallback to static data if AI fails
+    return {
+      aiAnalysis: turf.aiAnalysis,
+      businessAnalysis: turf.businessAnalysis
+    };
+  }
+};

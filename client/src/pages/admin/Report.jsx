@@ -13,7 +13,8 @@ import {
   ShieldCheck,
   TrendingUp,
   Cpu,
-  Settings
+  Settings,
+  Zap
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
@@ -28,6 +29,8 @@ const AdminReport = () => {
   const [period, setPeriod] = useState('all');
   const [error, setError] = useState('');
   const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -46,6 +49,20 @@ const AdminReport = () => {
     navigate('/admin/login');
   };
 
+  const fetchAIInsights = async () => {
+    setAnalyzing(true);
+    try {
+        const { data } = await adminAPI.getExpertHub();
+        if (data.success) {
+            setAiAnalysis(data.report.businessAnalyst);
+        }
+    } catch (err) {
+        console.error('AI Insight error:', err);
+    } finally {
+        setAnalyzing(false);
+    }
+  };
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -58,6 +75,7 @@ const AdminReport = () => {
       }
     };
     fetchSettings();
+    fetchAIInsights();
   }, []);
 
   const handleDownloadReport = async (format = 'pdf') => {
@@ -201,14 +219,50 @@ const AdminReport = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-xl shadow-emerald-900/5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-5 text-emerald-900">
-                  <Cpu size={100} />
+                <div className="bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-10 border border-emerald-500/20 shadow-2xl relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-8 opacity-10 text-emerald-400 rotate-12 group-hover:rotate-0 transition-transform duration-1000">
+                     <Cpu size={140} />
+                   </div>
+                   <div className="relative z-10 space-y-6">
+                      <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20">
+                            <Zap size={14} className="text-emerald-400 fill-emerald-400 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">AI Analyst Connected</span>
+                         </div>
+                         <button 
+                            onClick={fetchAIInsights}
+                            disabled={analyzing}
+                            className="bg-white/5 hover:bg-white/10 p-2 rounded-lg text-white/40 hover:text-white transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                         >
+                            <TrendingUp size={14} className="rotate-45" />
+                         </button>
+                      </div>
+                      
+                      {analyzing ? (
+                         <div className="space-y-4 animate-pulse">
+                            <div className="h-4 bg-white/5 rounded-full w-3/4"></div>
+                            <div className="h-3 bg-white/5 rounded-full w-full"></div>
+                            <div className="h-3 bg-white/5 rounded-full w-2/3"></div>
+                         </div>
+                      ) : (
+                         <div className="space-y-4">
+                            <h4 className="text-sm font-black text-white uppercase tracking-widest leading-tight">
+                               Strategy: <span className="text-emerald-400">{aiAnalysis?.status || 'Active Analysis'}</span>
+                            </h4>
+                            <p className="text-[11px] font-medium text-slate-400 leading-relaxed italic">
+                               "{aiAnalysis?.report || 'System is currently synthesizing revenue trajectory. Click refresh to connect.'}"
+                            </p>
+                         </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2 pt-4 border-t border-white/5">
+                         <ShieldCheck size={12} className="text-emerald-500" />
+                         <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Synchronized with Mumbai Node · Gemini High Intensity</span>
+                      </div>
+                   </div>
                 </div>
               </div>
             </div>
-
-          </div>
         </div>
       </main>
     </div>

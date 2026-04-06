@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { bookingsAPI, slotsAPI } from '../api/client';
-import {
-    CheckCircle,
-    Clock4,
-    RefreshCw,
-    Trophy,
-    ShieldCheck,
-    Hash,
-    Zap,
-    ArrowRight,
-    AlertCircle,
-    XCircle,
-    User,
-    Phone,
-    Calendar,
-    MapPin
+import { 
+    CheckCircle, 
+    Clock4, 
+    RefreshCw, 
+    Trophy, 
+    ShieldCheck, 
+    Hash, 
+    Zap, 
+    ArrowRight, 
+    AlertCircle, 
+    XCircle, 
+    User, 
+    Phone, 
+    Calendar, 
+    MapPin,
+    FileText
 } from 'lucide-react';
+import { BookingReceiptModal } from '../components/BookingReceipt';
+import { receiptsAPI } from '../api/client';
 
 const SuccessPage = () => {
     const location = useLocation();
@@ -26,16 +29,33 @@ const SuccessPage = () => {
     const [settings, setSettings] = useState({ TURF_NAME: 'The Turf', TURF_LOCATION: 'The Turf Stadium' });
     const [liveStatus, setLiveStatus] = useState(initialBooking?.bookingStatus || 'pending');
     const [polling, setPolling] = useState(true);
+    const [showReceipt, setShowReceipt] = useState(false);
+    const [receiptData, setReceiptData] = useState(null);
+
+    // Fetch receipt when confirmed
+    const loadReceipt = async (id) => {
+        try {
+            const res = await receiptsAPI.getById(id);
+            if (res.data.success) {
+                setReceiptData(res.data.receipt);
+                setShowReceipt(true);
+            }
+        } catch (err) {
+            console.error('Receipt fetch error:', err);
+        }
+    };
 
     useEffect(() => {
         if (!initialBooking) {
             navigate('/');
+        } else if (initialBooking.bookingStatus === 'confirmed') {
+            loadReceipt(initialBooking._id);
         }
     }, [initialBooking, navigate]);
 
     // Poll for live status updates every 5 seconds
     useEffect(() => {
-        if (!initialBooking?._id) return;
+        if (!initialBooking?._id || !polling) return;
 
         const pollStatus = async () => {
             try {
@@ -47,6 +67,9 @@ const SuccessPage = () => {
                 // Stop polling if final state reached
                 if (['confirmed', 'rejected'].includes(updated.bookingStatus)) {
                     setPolling(false);
+                    if (updated.bookingStatus === 'confirmed') {
+                        loadReceipt(updated._id);
+                    }
                 }
             } catch (err) {
                 console.error('Status poll error:', err);
@@ -56,7 +79,7 @@ const SuccessPage = () => {
         pollStatus(); // Initial fetch
         const interval = setInterval(pollStatus, 5000);
         return () => clearInterval(interval);
-    }, [initialBooking]);
+    }, [initialBooking, polling]);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -166,8 +189,16 @@ const SuccessPage = () => {
                             <div className="absolute top-[-40px] left-[-40px] w-64 h-64 bg-emerald-500 rounded-full blur-[100px]"></div>
                         </div>
 
-                        <div className={`w-20 h-20 md:w-24 md:h-24 ${config.badgeBg} backdrop-blur-xl rounded-2xl md:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 md:mb-8 border ${config.badgeBorder} shadow-2xl relative z-10`}>
-                            {React.cloneElement(config.icon, { size: 40 })}
+                        <div className={`w-20 h-20 md:w-28 md:h-28 ${config.badgeBg} backdrop-blur-xl rounded-2xl md:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 md:mb-8 border ${config.badgeBorder} shadow-2xl relative z-10 p-4`}>
+                            <img 
+                                src="/logo.png" 
+                                alt="The Turf Logo" 
+                                className="w-full h-full object-contain brightness-110"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
+                                }}
+                            />
                         </div>
                         <h1 className="text-3xl md:text-4xl font-black mb-3 tracking-tighter uppercase relative z-10">
                             {config.title}
@@ -325,6 +356,15 @@ const SuccessPage = () => {
                             </div>
                         </div>
 
+                        {liveStatus === 'confirmed' && (
+                            <button
+                                onClick={() => setShowReceipt(true)}
+                                className="w-full bg-emerald-50 text-emerald-700 font-black py-4 rounded-xl md:rounded-[2rem] border border-emerald-100 transition-all hover:bg-emerald-100 active:scale-95 flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em]"
+                            >
+                                <FileText size={16} /> View Digital Receipt
+                            </button>
+                        )}
+
                         <button
                             onClick={() => navigate('/')}
                             className="w-full bg-gray-900 hover:bg-black text-white font-black py-5 md:py-7 rounded-xl md:rounded-[2rem] shadow-2xl shadow-gray-900/10 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 md:gap-4 text-[11px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] group"
@@ -334,6 +374,14 @@ const SuccessPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Receipt Modal */}
+            {showReceipt && (
+                <BookingReceiptModal 
+                  receipt={receiptData} 
+                  onClose={() => setShowReceipt(false)} 
+                />
+            )}
         </div>
     );
 };

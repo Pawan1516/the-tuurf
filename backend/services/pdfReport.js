@@ -54,8 +54,21 @@ const generateBookingReport = async (filters = {}) => {
   }
 };
 
+const path = require('path');
+const fs = require('fs');
+
 const createPDF = (bookings, stats) => {
   const doc = new PDFDocument();
+
+  // Logo
+  const logoPath = path.join(__dirname, '../../client/public/logo.png');
+  if (fs.existsSync(logoPath)) {
+    doc.image(logoPath, (doc.page.width - 60) / 2, 30, { width: 60 });
+    doc.moveDown(4);
+  } else {
+    // Fallback or just space
+    doc.moveDown(2);
+  }
 
   // Header
   doc.fontSize(24).font('Helvetica-Bold').text('The Turf - Booking Report', { align: 'center' });

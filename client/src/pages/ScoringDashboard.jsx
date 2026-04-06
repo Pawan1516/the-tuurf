@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import apiClient from '../api/client';
-import { ShieldAlert, Trophy, Coins, Users, User, ArrowLeft, RefreshCw, Undo2, LogOut } from 'lucide-react';
+import { ShieldAlert, Trophy, Coins, Users, User, ArrowLeft, RefreshCw, Undo2, LogOut, Zap, CheckCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { PlayerDB } from '../utils/playerDb';
 
@@ -110,7 +110,9 @@ export default function ScoringDashboard() {
         pendingMilestone: null, milestoneLog: [], lastOverSummary: null,
         partnership: { runs: 0, balls: 0 },
         inningsNum: 1, target: null, 
-        pendingWicket: null
+        pendingWicket: null,
+        aiLoading: false,
+        aiRecommendation: null
     });
 
     const ScoreboardCard = memo(({ runs, wickets, overNum, ballInOver, overs, teamName, currentOverBalls, inn1Score, inn1Wickets, inningsNum, target, runRate, requiredRunRate }) => (
@@ -686,6 +688,22 @@ export default function ScoringDashboard() {
         } catch (err) {
             console.error("Match Completion Persistence Failed:", err);
             toast.error("Match completion failed: " + (err.response?.data?.message || err.message));
+        }
+    };
+    const handleAiMatchmake = async (choice) => {
+        updateState({ aiLoading: true, aiRecommendation: null });
+        try {
+            const res = await apiClient.post('/matchmaking/post-match', { matchId: id, choice });
+            if (res.data.success) {
+                updateState({ aiRecommendation: res.data });
+                toast.success("AI Recommendation ready!");
+            } else {
+                toast.error(res.data.message || "Matchmaking failed.");
+            }
+        } catch (err) {
+            toast.error("Could not reach AI agent.");
+        } finally {
+            updateState({ aiLoading: false });
         }
     };
 
@@ -1401,6 +1419,84 @@ export default function ScoringDashboard() {
                                 </div>
                                 <ArrowLeft className="rotate-180" size={16} />
                             </button>
+
+                            <div className="w-px h-10 bg-white/5 mx-auto"></div>
+
+                            {/* Option 3: AI Selection (The Modern Choice) */}
+                            {!state.aiRecommendation ? (
+                                <button 
+                                    onClick={() => handleAiMatchmake('different')}
+                                    disabled={state.aiLoading}
+                                    className="w-full p-6 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl flex items-center justify-between group shadow-xl shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50"
+                                >
+                                    <div className="flex items-center gap-4 text-left">
+                                        {state.aiLoading ? (
+                                            <RefreshCw className="text-white animate-spin" />
+                                        ) : (
+                                            <div className="bg-white/20 p-2 rounded-xl">
+                                                <Zap className="text-white fill-white" size={20} />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="text-xs font-black uppercase tracking-tight">AI Recommended Squad</p>
+                                            <p className="text-[9px] text-emerald-100/60 uppercase">Matches players by skill level & location</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">New</span>
+                                </button>
+                            ) : (
+                                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-3xl p-6 animate-in zoom-in-95 duration-300">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle className="text-emerald-500" size={16} />
+                                            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest">AI Squad Suggestions</span>
+                                        </div>
+                                        <button onClick={() => updateState({ aiRecommendation: null })} className="text-[9px] font-black uppercase text-white/30 hover:text-white">Clear</button>
+                                    </div>
+                                    
+                                    <div className="space-y-2 mb-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                                        {(state.aiRecommendation.suggestedTeam || []).map((p, i) => (
+                                            <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-6 h-6 bg-emerald-500/10 rounded-full flex items-center justify-center text-[9px] font-black text-emerald-500">{i+1}</div>
+                                                    <div>
+                                                        <p className="text-[11px] font-black uppercase">{p.name}</p>
+                                                        <p className="text-[8px] font-bold text-white/30 uppercase tracking-widest">{p.role} · {p.skillLevel}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[10px] font-black text-emerald-400">{p.compatibilityScore}%</p>
+                                                    <p className="text-[7px] font-bold text-white/10 uppercase tracking-widest">Match</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={() => {
+                                            const recTeam = state.aiRecommendation.suggestedTeam.map(p => ({ name: p.name, user_id: p.id }));
+                                            setTeams(prev => [
+                                                prev[0], // Keep admin team as is
+                                                { name: 'AI Opponents', short: 'AIO', players: recTeam }
+                                            ]);
+                                            setState(prev => ({
+                                                ...prev,
+                                                phase: 'toss',
+                                                inningsNum: 1, runs: 0, wickets: 0, ballInOver: 0, overNum: 0, totalBalls: 0,
+                                                striker: null, nonStriker: null, currentBowlerIdx: null,
+                                                currentOverBalls: [], overHistory: [], log: [],
+                                                history: [], batters: [], bowlers: [], target: null,
+                                                tossWinner: null, battingTeam: null, bowlingTeam: null, bbChoice: null,
+                                                aiRecommendation: null
+                                            }));
+                                            toast.success("AI Squad imported! Good luck!");
+                                        }}
+                                        className="w-full py-3 bg-emerald-500 text-emerald-950 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-400 transition-colors shadow-lg"
+                                    >
+                                        Import Squad for Next Game
+                                    </button>
+                                </div>
+                            )}
                             
                             {/* Option 2: Same Teams, but different members */}
                             <button 

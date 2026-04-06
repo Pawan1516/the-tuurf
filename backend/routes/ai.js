@@ -287,4 +287,18 @@ router.post('/broadcast-notification', verifyToken, async (req, res) => {
     }
 });
 
+// @route   GET /api/ai/expert-hub
+// @desc    Get real-time AI expert hub strategy (4 experts)
+// @access  Private (Admin)
+const ExpertStrategy = require('../services/expertStrategyService');
+router.get('/expert-hub', verifyToken, async (req, res) => {
+    try {
+        const report = await ExpertStrategy.generateExpertStrategyReport();
+        res.json({ success: true, report });
+    } catch (err) {
+        console.error("AI Expert Hub Error:", err);
+        res.status(500).json({ success: false, message: `Strategy Engine Overload: ${err.message}` });
+    }
+});
+
 module.exports = router;

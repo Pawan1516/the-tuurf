@@ -55,9 +55,15 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf" }) => {
             {/* ── Top Header (Universal) ── */}
             <header className="bg-white/95 backdrop-blur-md px-5 h-16 flex items-center justify-between sticky top-0 z-[60] border-b border-gray-100 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="bg-emerald-600 text-white p-2 rounded-xl shadow-md shadow-emerald-200">
-                        <LayoutDashboard size={18} />
-                    </div>
+                    <img 
+                        src="/logo.png" 
+                        alt="The Turf Mobile" 
+                        className="h-10 w-auto object-contain bg-white rounded-lg p-0.5 border border-emerald-500/10"
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
+                        }}
+                    />
                     <div>
                         <h1 className="text-base font-black text-gray-900 tracking-tight leading-none uppercase">{dashboardTitle}</h1>
                         <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest leading-none mt-0.5">{portalType}</p>

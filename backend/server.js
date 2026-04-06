@@ -39,6 +39,9 @@ const playerRoutes = require('./routes/players');
 const aiRoutes = require('./routes/ai');
 const leaderboardRoutes = require('./routes/leaderboards');
 const formatRoutes = require('./routes/formats');
+const turfRoutes = require('./routes/turfs');
+const matchmakingRoutes = require('./routes/matchmaking');
+const receiptRoutes = require('./routes/receipts');
 
 
 const seedSettings = require('./utils/settingsSeeder');
@@ -146,6 +149,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Mount original routes
+const pageConfigRoutes = require('./routes/pageConfig');
+app.use('/api/config', pageConfigRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/slots', slotRoutes);
 app.use('/api/bookings', bookingRoutes);
@@ -160,6 +165,9 @@ app.use('/api/players', playerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/leaderboards', leaderboardRoutes);
 app.use('/api/formats', formatRoutes);
+app.use('/api/turfs', turfRoutes);
+app.use('/api/matchmaking', matchmakingRoutes);
+app.use('/api/receipts', receiptRoutes);
 
 // ─── Autonomous Booking Optimizer Endpoint ────────────────────────────────────
 app.post('/api/optimizer/run', async (req, res) => {

@@ -72,6 +72,12 @@ export const slotsAPI = {
   getSettings: () => apiClient.get('/slots/settings')
 };
 
+// Config APIs
+export const configAPI = {
+  get: (pageName) => apiClient.get(`/config/${pageName}`),
+  update: (pageName, data) => apiClient.post(`/config/${pageName}`, data),
+};
+
 // Bookings APIs
 export const bookingsAPI = {
   create: (data) => apiClient.post('/bookings', data),
@@ -162,7 +168,33 @@ export const aiAPI = {
   recommendSlot: (date, preference) => apiClient.post('/ai/recommend-slot', { date, preference }),
   analyzeRevenue: (analysisType) => apiClient.post('/ai/analyze-revenue', { analysisType }),
   generateNotifications: (context, matchInfo) => apiClient.post('/ai/generate-notifications', { context, matchInfo }),
-  broadcastNotification: (title, body) => apiClient.post('/ai/broadcast-notification', { title, body })
+  broadcastNotification: (title, body) => apiClient.post('/ai/broadcast-notification', { title, body }),
+  getExpertHub: () => apiClient.get('/ai/expert-hub'),
+};
+
+// Turfs APIs
+export const turfsAPI = {
+  getAll: (filters) => apiClient.get('/turfs', { params: filters }),
+  getById: (id) => apiClient.get(`/turfs/${id}`),
+  getPricing: (id, date) => apiClient.get(`/turfs/${id}/pricing`, { params: { date } }),
+  addReview: (id, data) => apiClient.post(`/turfs/${id}/review`, data),
+  create: (data) => apiClient.post('/turfs', data),
+  update: (id, data) => apiClient.put(`/turfs/${id}`, data),
+  getAnalysis: (id) => apiClient.get(`/turfs/${id}/analysis`),
+};
+
+// Matchmaking APIs
+export const matchmakingAPI = {
+  findPlayers: (sport, teamSize) => apiClient.post('/matchmaking/find', { sport, teamSize }),
+  rebookSameTeam: (matchId) => apiClient.post('/matchmaking/rebook', { matchId }),
+  postMatch: (matchId, choice) => apiClient.post('/matchmaking/post-match', { matchId, choice }),
+  getAnalytics: () => apiClient.get('/matchmaking/analytics'),
+};
+
+// Receipts APIs
+export const receiptsAPI = {
+  getById: (id) => apiClient.get(`/receipts/${id}`),
+  download: (id) => apiClient.get(`/receipts/download/${id}`, { responseType: 'blob' }),
 };
 
 export default apiClient;

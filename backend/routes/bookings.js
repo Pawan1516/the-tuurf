@@ -418,6 +418,25 @@ router.put('/:id/status', verifyToken, roleGuard(['admin', 'worker']), async (re
     booking.updatedAt = Date.now();
     if (status === 'confirmed' && !booking.confirmedAt) {
       booking.confirmedAt = Date.now();
+      
+      // Generate Receipt ID: TRF-YYYY-Last4BookingId
+      const year = new Date().getFullYear();
+      booking.receiptId = `TRF-${year}-${booking._id.toString().slice(-4).toUpperCase()}`;
+
+      // Generate secure QR Token (JWT)
+      const jwt = require('jsonwebtoken');
+      booking.qrToken = jwt.sign(
+        { bookingId: booking._id, receiptId: booking.receiptId, timestamp: Date.now() },
+        process.env.JWT_SECRET || 'the-turf-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      // Capture Player Stats (demo/mock for now, or fetch from DB)
+      booking.playerStatsAtBooking = {
+        careerPoints: 608,
+        leaderboardRank: 1,
+        totalBookings: 10
+      };
     }
     await booking.save();
     console.log(`[Status Change] Booking ${booking._id} set to ${status}`);
@@ -537,6 +556,23 @@ router.put('/:id/payment', verifyToken, roleGuard(['worker', 'admin']), async (r
       updateData.bookingStatus = 'confirmed';
       updateData.confirmedAt = Date.now();
       newSlotStatus = 'booked';
+
+      // Generate Receipt Data
+      const year = new Date().getFullYear();
+      updateData.receiptId = `TRF-${year}-${booking._id.toString().slice(-4).toUpperCase()}`;
+      
+      const jwt = require('jsonwebtoken');
+      updateData.qrToken = jwt.sign(
+        { bookingId: booking._id, receiptId: updateData.receiptId, timestamp: Date.now() },
+        process.env.JWT_SECRET || 'the-turf-secret-key',
+        { expiresIn: '24h' }
+      );
+      
+      updateData.playerStatsAtBooking = {
+        careerPoints: 608,
+        leaderboardRank: 1,
+        totalBookings: 10
+      };
     } else if (paymentStatus === 'failed') {
       updateData.bookingStatus = 'rejected';
       newSlotStatus = 'free';

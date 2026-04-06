@@ -45,9 +45,15 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf" }) => {
         <aside className="hidden lg:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
             {/* Logo Section */}
             <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-                <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
-                    <Shield size={24} />
-                </div>
+                <img 
+                    src="/logo.png" 
+                    alt="The Turf Admin" 
+                    className="h-14 w-auto object-contain p-1.5 bg-white rounded-2xl shadow-xl shadow-emerald-900/10 border border-emerald-500/10"
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
+                    }}
+                />
                 <div>
                     <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{turfName}</h1>
                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin Protocol</p>

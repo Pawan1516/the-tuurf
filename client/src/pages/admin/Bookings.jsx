@@ -403,10 +403,15 @@ const AdminBookings = () => {
                       {filteredBookings.map((b) => (
                         <tr key={b._id} className="hover:bg-emerald-50/20 transition-colors">
                           <td className="px-6 py-6 font-black uppercase">{b.userName}</td>
-                          <td className="px-6 py-6 font-bold">{b.userPhone}</td>
+                          <td className="px-6 py-6 font-bold cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleDirectChat(b)}>
+  {b.userPhone}
+</td>
                           <td className="px-6 py-6 text-xs">{b.slot?.date ? new Date(b.slot.date).toLocaleDateString() : 'N/A'}<br/>{formatTime12h(b.slot?.startTime)}</td>
                           <td className="px-6 py-6"><span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase border ${getStatusTheme(b.bookingStatus)}`}>{b.bookingStatus}</span></td>
-                          <td className="px-6 py-6 font-black">₹{b.amount}</td>
+                          <td className="px-6 py-6 font-black flex items-center gap-2">
+                             <span>₹{b.amount}</span>
+                             {b.paymentStatus === 'verified' && <ShieldCheck size={14} className="text-emerald-500" />}
+                          </td>
                           <td className="px-6 py-6">
                             <div className="flex gap-1 justify-center">
                               <button onClick={() => handleStatusChange(b._id, 'confirmed')} className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Check size={16} /></button>

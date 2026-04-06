@@ -60,6 +60,22 @@ const bookingSchema = new mongoose.Schema({
     enum: ['LOW', 'MEDIUM', 'HIGH'],
     default: 'LOW'
   },
+  receiptId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  qrToken: {
+    type: String
+  },
+  paymentMode: {
+    type: String
+  },
+  playerStatsAtBooking: {
+    careerPoints: Number,
+    leaderboardRank: Number,
+    totalBookings: Number
+  },
   confirmedAt: {
     type: Date,
     default: null
