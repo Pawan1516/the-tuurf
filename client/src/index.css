@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,11 +12,17 @@
   }
 
   body {
+    font-family: 'Outfit', sans-serif;
     /* Prevent horizontal overflow on mobile */
     overflow-x: hidden;
     /* Better font rendering */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #f8fafc;
+    color: #0f172a;
+    /* ── GPU Acceleration ── */
+    transform: translate3d(0,0,0);
+    backface-visibility: hidden;
   }
 
   /* Ensure all interactive elements are at least 44px (Apple HIG minimum) */
@@ -24,7 +31,22 @@
     cursor: pointer;
   }
 
-  /* Hide scrollbar but allow scrolling */
+  /* Custom Scrollbar System - Clean & Premium */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+  }
+
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 }
@@ -39,7 +61,23 @@
   }
   .mb-nav {
     /* Pushes content above bottom nav on mobile */
-    margin-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+    margin-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Glassmorphism Utilities — Refined for Performance */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.08)];
+    will-change: transform, opacity;
+  }
+  .glass-dark {
+    @apply bg-slate-900/80 backdrop-blur-3xl border border-white/10 shadow-2xl;
+    will-change: transform, opacity;
+  }
+  .premium-gradient {
+    background: radial-gradient(100% 100% at 50% 0%, rgba(16, 185, 129, 0.05) 0%, rgba(248, 250, 252, 0) 100%), #f8fafc;
+  }
+  .nav-glass {
+    @apply bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0 z-[100] shadow-sm;
   }
 }
 

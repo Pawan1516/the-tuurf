@@ -197,63 +197,70 @@ const WorkerDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+    <div className="min-h-screen premium-gradient flex flex-col md:flex-row overflow-hidden font-sans">
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} className="md:hidden" />
 
-      {/* Sidebar (Desktop Only) */}
-      <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
-        <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-          <img 
-              src="/logo.png" 
-              alt="The Turf Worker" 
-              className="h-14 w-auto object-contain p-1.5 bg-white rounded-2xl shadow-xl shadow-emerald-900/10 border border-emerald-500/10"
-              onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
-              }}
-          />
-          <div>
-            <h1 className="text-lg font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
-            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Worker Ops</p>
-          </div>
+      {/* Sidebar (Desktop Only) - Field Operations Mode */}
+      <aside className="hidden md:flex w-96 bg-white/70 backdrop-blur-2xl border-r border-slate-100 flex-col sticky top-0 h-screen z-50 animate-in fade-in slide-in-from-left duration-700">
+        <div className="p-10 border-b border-slate-100/50 flex items-center gap-5">
+            <div className="bg-slate-900 p-3 rounded-[1.5rem] shadow-2xl relative group">
+                <img 
+                    src="/logo.png" 
+                    alt="Logo" 
+                    className="h-10 w-auto object-contain brightness-100 group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+            </div>
+            <div>
+                <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none uppercase">{settings.TURF_NAME}</h1>
+                <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mt-1 shrink-0">Field Ops</p>
+            </div>
         </div>
 
-        <nav className="flex-1 p-6 space-y-2">
+        <nav className="flex-1 p-8 space-y-3 overflow-y-auto no-scrollbar">
           {navItems.map((item) => (
             <NavItem key={item.to} to={item.to} label={item.label} icon={item.icon} active={window.location.pathname === item.to} />
           ))}
         </nav>
 
-        <div className="p-6 border-t border-gray-50">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex flex-col">
-              <span className="text-sm font-black text-gray-900 truncate w-36 uppercase">{user?.name || 'Assigned Worker'}</span>
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Ground Operations</span>
-            </div>
+        <div className="p-8 mt-auto">
+          <div className="p-8 bg-slate-900 rounded-[2.5rem] border border-white/5 mb-8 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[50px] rounded-full"></div>
+              <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-2 relative z-10">Field Agent</p>
+              <h3 className="text-xl font-black text-white uppercase truncate relative z-10 tracking-tighter leading-none">{user?.name || 'Assigned Worker'}</h3>
+              <div className="flex items-center gap-2 mt-3 relative z-10">
+                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
+                  <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Ground Status: Ready</p>
+              </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-between p-5 rounded-2xl bg-gray-900 text-white hover:bg-black transition-all group"
-          >
-            <div className="flex items-center gap-3">
-              <LogOut size={18} className="text-emerald-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Logout</span>
-            </div>
-            <ChevronRight size={14} className="opacity-30 group-hover:translate-x-1 transition-transform" />
+          <button onClick={handleLogout} className="w-full flex items-center justify-between p-5 rounded-[2rem] bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all group border border-rose-500/20">
+              <div className="flex items-center gap-3">
+                  <LogOut size={18} className="group-hover:rotate-180 transition-transform duration-500" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Sign Out Hub</span>
+              </div>
+              <ChevronRight size={14} className="opacity-30 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto relative">
-        <header className="hidden md:flex bg-white/80 backdrop-blur-md px-10 h-24 items-center justify-between sticky top-0 z-40 border-b border-gray-100">
+      <main className="flex-1 overflow-y-auto relative gpu-layer animate-fade-up">
+        {/* Glassmorphic Command Header */}
+        <header className="hidden md:flex nav-glass px-12 h-28 items-center justify-between sticky top-0 z-40 mb-10">
           <div className="flex flex-col">
-            <h2 className="text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Dashboard</h2>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Operations Overview</p>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">Operations Panel</h2>
+            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mt-1 shrink-0 flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                 Field Ground Control
+            </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-8">
+            <div className="w-px h-10 bg-slate-100"></div>
             <div className="flex flex-col items-end">
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
-              <p className="text-xl font-black text-gray-900 tracking-tighter tabular-nums leading-none">{currentTime.toLocaleTimeString()}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
+              <div className="flex items-center gap-2">
+                  <p className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums leading-none">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <span className="text-[10px] font-black text-slate-400 uppercase mt-1">{currentTime.toLocaleTimeString([], { second: '2-digit' })}</span>
+              </div>
             </div>
           </div>
         </header>

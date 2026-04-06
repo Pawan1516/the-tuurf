@@ -220,79 +220,100 @@ const UserDashboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
+        <div className="min-h-screen premium-gradient flex flex-col md:flex-row overflow-hidden">
             <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} className="md:hidden" />
 
-            <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
-                <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-                    <img 
-                        src="/logo.png" 
-                        alt="The Turf Player" 
-                        className="h-14 w-auto object-contain p-1.5 bg-white rounded-2xl shadow-xl shadow-emerald-900/10 border border-emerald-500/10"
-                        onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
-                        }}
-                    />
+            <aside className="hidden md:flex w-96 bg-white/70 backdrop-blur-2xl border-r border-slate-100 flex-col sticky top-0 h-screen z-50 animate-in fade-in slide-in-from-left duration-700">
+                <div className="p-10 border-b border-slate-100/50 flex items-center gap-5">
+                    <div className="bg-slate-900 p-3 rounded-[1.5rem] shadow-2xl relative group">
+                        <img 
+                            src="/logo.png" 
+                            alt="Logo" 
+                            className="h-10 w-auto object-contain brightness-100 group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></div>
+                    </div>
                     <div>
-                        <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{settings.TURF_NAME}</h1>
-                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Player Dashboard</p>
+                        <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none uppercase">{settings.TURF_NAME}</h1>
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-1 shrink-0">Arena Network</p>
                     </div>
                 </div>
 
-                <div className="flex-1 p-6 space-y-2">
-                    <div className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 mb-8">
-                        <p className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest mb-1">Authenticated As</p>
-                        <h3 className="text-lg font-black text-emerald-900 uppercase truncate text-sm">{user?.name}</h3>
-                        <p className="text-[10px] font-bold text-emerald-600/60 truncate">+91 {user?.phone}</p>
+                <div className="flex-1 p-8 space-y-3 overflow-y-auto no-scrollbar">
+                    <div className="p-8 bg-slate-900 rounded-[2.5rem] border border-white/5 mb-10 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full"></div>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-2 relative z-10">Digital ID</p>
+                        <h3 className="text-xl font-black text-white uppercase truncate relative z-10 tracking-tight">{user?.name}</h3>
+                        <div className="flex items-center gap-2 mt-2 relative z-10">
+                             <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
+                             <p className="text-[10px] font-bold text-white/40 tabular-nums uppercase tracking-widest">+91 {user?.phone}</p>
+                        </div>
                     </div>
 
                     <button
                         onClick={() => navigate('/dashboard')}
-                        className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${window.location.pathname === '/dashboard'
-                            ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-                            : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'
+                        className={`w-full flex items-center justify-between px-8 py-5 rounded-[2rem] transition-all group ${window.location.pathname === '/dashboard'
+                            ? 'bg-emerald-600 text-white shadow-[0_20px_40px_-5px_rgba(16,185,129,0.3)]'
+                            : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
                             }`}
                     >
-                        <LayoutDashboard size={20} />
-                        <span className="text-xs font-black uppercase tracking-widest">My Bookings</span>
+                        <div className="flex items-center gap-4">
+                            <LayoutDashboard size={20} className={window.location.pathname === '/dashboard' ? 'text-white' : 'text-slate-300 group-hover:text-emerald-500 transition-colors'} />
+                            <span className="text-xs font-black uppercase tracking-widest">Activity Feed</span>
+                        </div>
+                        {window.location.pathname === '/dashboard' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                     </button>
 
-                    <button onClick={() => navigate('/')} className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-gray-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all group">
-                        <Calendar size={20} className="group-hover:text-emerald-600" />
-                        <span className="text-xs font-black uppercase tracking-widest">Book New Slot</span>
+                    <button onClick={() => navigate('/')} className="w-full flex items-center justify-between px-8 py-5 rounded-[2rem] text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all group">
+                        <div className="flex items-center gap-4">
+                             <Calendar size={20} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                             <span className="text-xs font-black uppercase tracking-widest">Reserve Slot</span>
+                        </div>
+                        <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    </button>
+
+                    <button onClick={() => navigate('/leaderboard')} className="w-full flex items-center justify-between px-8 py-5 rounded-[2rem] text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all group">
+                        <div className="flex items-center gap-4">
+                             <Trophy size={20} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                             <span className="text-xs font-black uppercase tracking-widest">Leaderboard</span>
+                        </div>
+                        <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                     </button>
                 </div>
 
-                <div className="p-6 border-t border-gray-50">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-between p-5 rounded-2xl bg-gray-900 text-white hover:bg-black transition-all group">
+                <div className="p-8 mt-auto">
+                    <button onClick={handleLogout} className="w-full flex items-center justify-between p-6 rounded-[2rem] bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all group border border-rose-500/20">
                         <div className="flex items-center gap-3">
-                            <LogOut size={18} className="text-emerald-400" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Sign Out</span>
+                            <LogOut size={18} className="group-hover:rotate-180 transition-transform duration-500" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Sign Out Hub</span>
                         </div>
                         <ChevronRight size={14} className="opacity-30 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
             </aside>
 
-            <main className="flex-1 overflow-y-auto">
-                <header className="hidden md:flex bg-white/80 backdrop-blur-md px-10 h-24 items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-                    <div className="flex gap-8">
+            <main className="flex-1 overflow-y-auto gpu-layer">
+                <header className="hidden md:flex nav-glass px-12 h-28 items-center justify-between sticky top-0 z-40">
+                    <div className="flex gap-12 h-full items-center">
                         <button 
                             onClick={() => setActiveTab('bookings')}
-                            className={`text-xl font-black tracking-tighter uppercase pb-2 border-b-4 transition-all ${activeTab === 'bookings' ? 'text-gray-900 border-emerald-600' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>
-                            Activity Log
+                            className={`text-2xl font-black tracking-tighter uppercase h-full border-b-[6px] transition-all pt-2 ${activeTab === 'bookings' ? 'text-slate-900 border-emerald-600' : 'text-slate-300 border-transparent hover:text-slate-500'}`}>
+                            Activity Feed
                         </button>
                         <button 
                             onClick={() => setActiveTab('profile')}
-                            className={`text-xl font-black tracking-tighter uppercase pb-2 border-b-4 transition-all ${activeTab === 'profile' ? 'text-gray-900 border-emerald-600' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>
-                            Profile & Stats
+                            className={`text-2xl font-black tracking-tighter uppercase h-full border-b-[6px] transition-all pt-2 ${activeTab === 'profile' ? 'text-slate-900 border-emerald-600' : 'text-slate-300 border-transparent hover:text-slate-500'}`}>
+                            Broadcast Profile
                         </button>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-6">
+                        <div className="w-px h-8 bg-slate-100"></div>
                         <div className="text-right">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Operational Status</p>
-                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">System Online</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Network Status</p>
+                            <div className="flex items-center gap-2 justify-end">
+                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Operations Live</p>
+                            </div>
                         </div>
                     </div>
                 </header>

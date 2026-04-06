@@ -42,33 +42,33 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf" }) => {
     };
 
     return (
-        <aside className="hidden lg:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
-            {/* Logo Section */}
-            <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-                <img 
-                    src="/logo.png" 
-                    alt="The Turf Admin" 
-                    className="h-14 w-auto object-contain p-1.5 bg-white rounded-2xl shadow-xl shadow-emerald-900/10 border border-emerald-500/10"
-                    onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
-                    }}
-                />
+        <aside className="hidden lg:flex w-96 bg-white/70 backdrop-blur-2xl border-r border-slate-100 flex-col sticky top-0 h-screen z-50 animate-in fade-in slide-in-from-left duration-700">
+            {/* Logo Section - Hub Protocol */}
+            <div className="p-10 border-b border-slate-100/50 flex items-center gap-5">
+                <div className="bg-slate-900 p-3 rounded-[1.5rem] shadow-2xl relative group">
+                    <img 
+                        src="/logo.png" 
+                        alt="Logo" 
+                        className="h-10 w-auto object-contain brightness-100 group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+                </div>
                 <div>
-                    <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{turfName}</h1>
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Admin Protocol</p>
+                    <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none uppercase">{turfName}</h1>
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mt-1 shrink-0">Admin Terminal</p>
                 </div>
             </div>
 
-            {/* Navigation Section */}
-            <div className="flex-1 p-6 space-y-1.5 overflow-y-auto custom-scrollbar">
-                {/* Admin Profile Mini-Card */}
-                <div className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 mb-6 group hover:bg-emerald-600 transition-all duration-500">
-                    <p className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest mb-1 group-hover:text-white/40">Authenticated Role</p>
-                    <h3 className="text-sm font-black text-emerald-900 uppercase truncate group-hover:text-white">{user?.name || 'Administrator'}</h3>
-                    <div className="flex items-center gap-2 mt-2">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full group-hover:bg-white animate-pulse"></span>
-                        <p className="text-[9px] font-bold text-emerald-600/60 uppercase group-hover:text-white/60">System Online</p>
+            {/* Navigation Section - Operational Flow */}
+            <div className="flex-1 p-8 space-y-1.5 overflow-y-auto no-scrollbar">
+                {/* Admin Profile Mini-Card - High Visibility */}
+                <div className="p-8 bg-slate-900 rounded-[2.5rem] border border-white/5 mb-8 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full"></div>
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-2 relative z-10">Command Access</p>
+                    <h3 className="text-xl font-black text-white uppercase truncate relative z-10 tracking-tighter leading-none">{user?.name || 'God Mode'}</h3>
+                    <div className="flex items-center gap-2 mt-3 relative z-10">
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                        <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Protocol Active</p>
                     </div>
                 </div>
 
@@ -79,17 +79,17 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf" }) => {
                         <Link
                             key={item.to}
                             to={item.to}
-                            className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all group ${
+                            className={`w-full flex items-center justify-between px-8 py-5 rounded-[2rem] transition-all group ${
                                 isActive
-                                ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-                                : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'
+                                ? 'bg-emerald-600 text-white shadow-[0_20px_40px_-5px_rgba(16,185,129,0.3)]'
+                                : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
                             }`}
                         >
                             <div className="flex items-center gap-4">
-                                <Icon size={18} className={isActive ? 'text-white' : 'group-hover:text-emerald-600'} />
-                                <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>
+                                <Icon size={20} className={isActive ? 'text-white' : 'text-slate-300 group-hover:text-emerald-500 transition-colors'} />
+                                <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
                             </div>
-                            {isActive && <ChevronRight size={14} className="opacity-40" />}
+                            {isActive && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                         </Link>
                     );
                 })}

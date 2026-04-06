@@ -9,6 +9,7 @@ import AuthContext, { AuthProvider } from './context/AuthContext';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import PublicHome from './pages/PublicHome';
+import AboutUs from './pages/AboutUs';
 import BookingPage from './pages/BookingPage';
 import PaymentPage from './pages/PaymentPage';
 import SuccessPage from './pages/SuccessPage';
@@ -50,60 +51,65 @@ const NavLinks = () => {
 
     if (user) {
         return (
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-3 md:gap-6">
+                <Link 
+                    to="/dashboard" 
+                    className={`text-[10px] md:text-sm font-black uppercase tracking-widest transition-all ${location.pathname === '/dashboard' ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Dashboard
+                </Link>
                 <button 
                   onClick={logout} 
-                  className="bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-2 md:px-4 py-2 rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all"
+                  className="bg-slate-900 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:bg-black active:scale-95 transition-all"
                 >
-                  Out
+                  Sign Out
                 </button>
             </div>
         );
     }
 
     return (
-        <div className="flex items-center gap-2 md:gap-4">
-            <a
-                href="/#about"
-                className="hidden md:flex items-center gap-1.5 text-slate-500 hover:text-emerald-600 transition-colors text-[10px] font-black uppercase tracking-widest"
-            >
-                🏟️ About Arena
-            </a>
+        <div className="flex items-center gap-3 md:gap-6">
             <Link 
                 to="/login" 
-                className="bg-emerald-600 text-white hover:bg-emerald-700 px-4 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl transition-all shadow-lg shadow-emerald-600/20 active:scale-95 text-[10px] md:text-sm font-black uppercase tracking-widest leading-none border border-emerald-500/20"
+                className="bg-emerald-600 text-white hover:bg-emerald-500 px-6 md:px-10 py-3 md:py-4 rounded-2xl md:rounded-3xl transition-all shadow-2xl shadow-emerald-600/20 active:scale-95 text-xs md:text-sm font-black uppercase tracking-[0.1em] leading-none border border-emerald-400/20"
             >
-                Login
+                Enter Arena
             </Link>
         </div>
     );
 };
 
 const Layout = ({ children, turfName = "The Turf" }) => (
-    <div className="min-h-screen bg-gray-50 font-sans selection:bg-emerald-100 selection:text-emerald-900">
-        <nav className="bg-white sticky top-0 z-[100] border-b border-gray-50 h-16 md:h-24 flex items-center shadow-sm shadow-emerald-500/5 hidden md:flex">
-            <div className="max-w-7xl mx-auto px-3 md:px-6 w-full flex items-center justify-between h-full gap-2">
-                <Link to="/" className="flex items-center gap-3 group min-w-0 flex-1 h-full">
-                    <img 
-                        src="/logo.png" 
-                        alt="The Turf Logo" 
-                        className="h-12 md:h-16 w-auto object-contain group-hover:scale-105 transition-transform duration-500 py-1"
-                        onError={(e) => {
-                            e.target.onerror = null; 
-                            e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png'; // Fallback
-                        }}
-                    />
+    <div className="min-h-screen premium-gradient font-sans selection:bg-emerald-500 selection:text-white pb-safe">
+        <nav className="nav-glass md:h-28 flex items-center hidden md:flex animate-fade-up">
+            <div className="max-w-7xl mx-auto px-8 w-full flex items-center justify-between h-full gap-4">
+                <Link to="/" className="flex items-center gap-4 group h-full">
+                    <div className="bg-white p-2 rounded-2xl shadow-xl shadow-emerald-500/5 border border-emerald-500/10 group-hover:rotate-12 transition-transform duration-500">
+                        <img 
+                            src="/logo.png" 
+                            alt="Logo" 
+                            className="h-12 md:h-14 w-auto object-contain"
+                            onError={(e) => {
+                                e.target.onerror = null; 
+                                e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
+                            }}
+                        />
+                    </div>
                     <div className="flex flex-col">
-                        <span className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase leading-none">{turfName}</span>
-                        <span className="text-[8px] md:text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-0.5">Premium Sports Arena</span>
+                        <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">{turfName} <span className="text-emerald-500">Miyapur</span></span>
+                        <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
+                             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                             Premium Sports Network
+                        </span>
                     </div>
                 </Link>
-                <div className="shrink-0">
+                <div className="shrink-0 flex items-center gap-6 h-full">
                     <NavLinks />
                 </div>
             </div>
         </nav>
-        <main>{children}</main>
+        <main className="gpu-layer animate-fade-up min-h-[60vh]">{children}</main>
         <footer className="bg-[#0f172a] text-white py-16 md:py-24 mt-16 md:mt-32 pb-safe border-t border-white/5">
             <div className="max-w-7xl mx-auto px-6 text-center space-y-12">
                 <div className="flex flex-col items-center gap-6">
@@ -116,11 +122,13 @@ const Layout = ({ children, turfName = "The Turf" }) => (
                     </div>
                 </div>
                 <p className="text-gray-400 text-sm max-w-md mx-auto mb-4 md:mb-8">Premium booking platform for cricket and football turfs. Elevate your game with us.</p>
-                <div className="flex items-center justify-center gap-4 mt-6 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-6 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                    <Link to="/about" className="hover:text-emerald-400 transition-colors">About Platform</Link>
+                    <span className="opacity-20 text-gray-700 hidden sm:inline">•</span>
                     <Link to="/login" className="hover:text-emerald-400 transition-colors">Player Login</Link>
-                    <span className="opacity-20 text-gray-700">•</span>
+                    <span className="opacity-20 text-gray-700 hidden sm:inline">•</span>
                     <Link to="/admin/login" className="hover:text-emerald-400 transition-colors">Admin</Link>
-                    <span className="opacity-20 text-gray-700">•</span>
+                    <span className="opacity-20 text-gray-700 hidden sm:inline">•</span>
                     <Link to="/worker/login" className="hover:text-emerald-400 transition-colors">Worker</Link>
                 </div>
                 <p className="text-xs text-gray-600 mt-6">© 2026 {turfName} Inc. Built with ❤️ for sports enthusiasts.</p>
@@ -173,6 +181,7 @@ function App() {
       <Routes>
           <Route path="/" element={<WrapLayout><PublicHome /></WrapLayout>} />
           <Route path="/home" element={<WrapLayout><PublicHome /></WrapLayout>} />
+          <Route path="/about" element={<WrapLayout><AboutUs /></WrapLayout>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/login" element={<AdminLogin />} />

@@ -380,26 +380,37 @@ const TurfDetailPage = () => {
   if (!turf) return <div className="min-h-screen flex items-center justify-center text-slate-400">Turf not found</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen premium-gradient pb-20 font-sans">
       {showPostMatch && <PostMatchModal matchId="latest" onClose={() => setShowPostMatch(false)} />}
 
-      {/* Back Nav */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 hover:text-emerald-600 transition-colors group">
-            <div className="bg-gray-50 group-hover:bg-emerald-50 p-2 rounded-xl transition-colors"><ArrowLeft size={16} /></div>
-            <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">All Turfs</span>
-          </button>
-          {turf.isFeatured && (
-            <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-emerald-100">
-              <Zap size={10} className="fill-emerald-600" /> Featured Venue
+      {/* Back Nav - Premium Operations Header */}
+      <div className="nav-glass sticky top-0 z-[100] transition-all">
+        <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-4 group p-3 hover:bg-slate-50/10 rounded-[1.5rem] transition-all">
+              <div className="bg-slate-900 text-white p-3.5 rounded-2xl shadow-xl transition-transform group-hover:-translate-x-1 group-hover:bg-black"><ArrowLeft size={20} /></div>
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-1">Arena Network</span>
+                <span className="text-xl font-black text-slate-900 tracking-tighter uppercase">Return</span>
+              </div>
+            </button>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {turf.isFeatured && (
+              <div className="hidden md:flex items-center gap-3 bg-emerald-500/10 text-emerald-600 text-[10px] font-black uppercase tracking-[0.3em] px-6 py-3 rounded-2xl border border-emerald-500/20 shadow-sm animate-pulse">
+                <Zap size={14} className="fill-emerald-600" /> Featured Arena Hub
+              </div>
+            )}
+            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20">
+               <Shield size={20} />
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 py-12 gpu-layer animate-fade-up">
+        <div className="grid lg:grid-cols-3 gap-10">
 
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
@@ -433,8 +444,9 @@ const TurfDetailPage = () => {
             </div>
 
             {/* Title & Rating */}
-            <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-xl shadow-emerald-900/5">
-              <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none mb-3">
+            <div className="glass-card p-8 md:p-12 relative group overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-emerald-300"></div>
+              <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none mb-4 group-hover:scale-[1.01] transition-transform duration-500 origin-left">
                 {turf.name}
               </h1>
               <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -505,7 +517,7 @@ const TurfDetailPage = () => {
             </div>
 
             {/* Sports & Info */}
-            <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-xl shadow-emerald-900/5">
+            <div className="glass-card p-8 md:p-12">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-5">Venue Details</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 {[
@@ -542,8 +554,10 @@ const TurfDetailPage = () => {
             <PricingChart slots={pricing} />
 
             {/* Reviews */}
-            <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-xl shadow-emerald-900/5">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Player Reviews</h3>
+            <div className="glass-card p-8 md:p-12">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                <Star size={14} className="text-yellow-400" /> Player Reviews
+              </h3>
               <div className="space-y-4 mb-8">
                 {(turf.reviews || []).slice(0, 5).map((r, i) => (
                   <div key={i} className="bg-slate-50 rounded-2xl p-4">
@@ -594,42 +608,49 @@ const TurfDetailPage = () => {
           </div>
 
           {/* Right Sticky Column — Booking & Post-Match */}
-          <div className="space-y-6">
-            {/* Booking Card */}
-            <div className="bg-slate-900 rounded-[2rem] p-6 md:p-8 text-white sticky top-24 shadow-2xl shadow-slate-900/20">
-              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-2">Starting From</p>
-              <div className="flex items-end gap-2 mb-6">
-                <span className="text-5xl font-black tracking-tighter text-white">₹{turf.pricing?.weekdayDay || 1000}</span>
-                <span className="text-slate-400 text-sm mb-1">/hour</span>
-              </div>
+          <div className="lg:sticky lg:top-36 space-y-8">
+            {/* Booking Card - Operations Terminal Style */}
+            <div className="bg-slate-950 rounded-[3rem] p-10 text-white shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)] relative overflow-hidden group border border-white/5">
+               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-transparent"></div>
+               <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 blur-[80px] rounded-full group-hover:bg-emerald-500/20 transition-all duration-700"></div>
+               
+               <div className="flex items-center gap-2 mb-10 relative z-10">
+                  <div className="w-2 h-4 bg-emerald-500 rounded-sm"></div>
+                  <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em]">Booking Protocol</p>
+               </div>
 
-              <div className="space-y-3 mb-6">
-                {[
-                  { label: 'Weekday Day', price: turf.pricing?.weekdayDay },
-                  { label: 'Weekday Night', price: turf.pricing?.weekdayNight },
-                  { label: 'Weekend Day', price: turf.pricing?.weekendDay },
-                  { label: 'Weekend Night', price: turf.pricing?.weekendNight },
-                ].map(p => (
-                  <div key={p.label} className="flex justify-between text-xs">
-                    <span className="text-slate-400 font-medium">{p.label}</span>
-                    <span className="font-black text-white">₹{p.price}/hr</span>
-                  </div>
-                ))}
-              </div>
+               <div className="flex items-baseline gap-2 mb-12 relative z-10">
+                 <span className="text-7xl font-black tracking-tighter text-white drop-shadow-2xl">₹{turf.pricing?.weekdayDay || 1000}</span>
+                 <span className="text-emerald-500/60 text-sm font-bold uppercase tracking-widest">/ Hr Base</span>
+               </div>
 
-              <Link
-                to="/book/custom"
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-600/20 hover:shadow-emerald-500/30"
-              >
-                Book This Turf <ChevronRight size={16} />
-              </Link>
+               <div className="space-y-4 mb-10 relative z-10">
+                 <h4 className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em] mb-4">Rate Matrix</h4>
+                 {[
+                   { label: 'Weekday Prime', price: turf.pricing?.weekdayNight },
+                   { label: 'Weekend Morning', price: turf.pricing?.weekendDay },
+                   { label: 'Weekend Prime', price: turf.pricing?.weekendNight },
+                 ].map(p => (
+                   <div key={p.label} className="flex justify-between items-center px-5 py-4 bg-white/5 rounded-2xl border border-white/5 group-hover:bg-white/10 transition-all">
+                     <span className="text-[10px] text-white/60 font-black uppercase tracking-wider">{p.label}</span>
+                     <span className="font-black text-emerald-400 text-base">₹{p.price}</span>
+                   </div>
+                 ))}
+               </div>
 
-              <div className="flex items-center justify-center gap-2 mt-4">
-                <Clock size={12} className="text-slate-500" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  Open {turf.openingHour}:00 – {turf.closingHour}:00
-                </span>
-              </div>
+               <Link
+                 to="/book/custom"
+                 className="w-full bg-white hover:bg-emerald-500 text-slate-900 hover:text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 transition-all duration-500 shadow-[0_20px_40px_-5px_rgba(255,255,255,0.1)] group/btn relative z-10"
+               >
+                 Initiate Sequence <ChevronRight size={18} className="group-hover/btn:translate-x-2 transition-transform duration-500" />
+               </Link>
+
+               <div className="flex items-center justify-center gap-3 mt-8 opacity-40 relative z-10">
+                 <Clock size={14} />
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                   Arena Window: {turf.openingHour}:00 – {turf.closingHour}:00
+                 </span>
+               </div>
             </div>
 
             {/* Post-Match AI Card */}

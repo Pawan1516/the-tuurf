@@ -49,55 +49,52 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
     return (
         <div className={`contents ${className}`}>
             {/* ── Top Header (Universal) ── */}
-            <header className="bg-white/95 backdrop-blur-md px-5 h-16 flex items-center justify-between sticky top-0 z-[60] border-b border-gray-100 shadow-sm md:hidden">
+            <header className="bg-white/80 backdrop-blur-xl px-5 h-16 flex items-center justify-between sticky top-0 z-[60] border-b border-gray-100/50 md:hidden">
                 <div className="flex items-center gap-3">
-                    <img 
-                        src="/logo.png" 
-                        alt="The Turf Mobile" 
-                        className="h-10 w-auto object-contain bg-white rounded-lg p-0.5 border border-emerald-500/10"
-                        onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
-                        }}
-                    />
-                    <div>
-                        <h1 className="text-base font-black text-gray-900 tracking-tight leading-none uppercase">{dashboardTitle}</h1>
-                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest leading-none mt-0.5">{portalType}</p>
+                    <div className="relative">
+                        <img 
+                            src="/logo.png" 
+                            alt="The Turf Mobile" 
+                            className="h-10 w-auto object-contain bg-white rounded-xl border border-emerald-500/10 shadow-sm"
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
+                            }}
+                        />
+                        {user && <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></div>}
+                    </div>
+                    <div className="min-w-0">
+                        <h1 className="text-sm font-black text-slate-900 tracking-tight leading-none uppercase truncate">{dashboardTitle}</h1>
+                        <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest leading-none mt-1 opacity-70">{portalType}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {user && (
-                        <button
-                            onClick={async () => {
-                                const success = await requestNotificationPermission(user?.id);
-                                if (success) {
-                                    toast.success('Notifications Enabled Successfully!');
-                                } else {
-                                    toast.info('Check browser settings to allow notifications');
-                                }
-                            }}
-                            className={`p-2.5 rounded-xl transition-all ${
-                                window.Notification?.permission === 'granted' 
-                                ? 'bg-emerald-50 text-emerald-600' 
-                                : 'bg-yellow-50 text-yellow-600'
-                            }`}
-                            title="Notification Settings"
-                        >
-                            <Bell size={20} className={window.Notification?.permission === 'granted' ? 'text-emerald-600' : 'text-yellow-600'} />
-                        </button>
-                    )}
                     {user ? (
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-2 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 px-3.5 py-2 rounded-xl transition-all"
-                        >
-                            <LogOut size={16} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Out</span>
-                        </button>
+                         <div className="flex items-center gap-3">
+                             <button
+                                onClick={async () => {
+                                    const success = await requestNotificationPermission(user?.id);
+                                    if (success) toast.success('Alerts Active');
+                                }}
+                                className={`p-2.5 rounded-xl transition-all ${
+                                    window.Notification?.permission === 'granted' 
+                                    ? 'bg-emerald-50/50 text-emerald-600' 
+                                    : 'bg-yellow-50/50 text-yellow-600'
+                                }`}
+                            >
+                                <Bell size={18} />
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="bg-slate-900 text-white p-2.5 rounded-xl shadow-lg active:scale-95 transition-all"
+                            >
+                                <LogOut size={18} />
+                            </button>
+                         </div>
                     ) : (
                         <Link
                             to="/login"
-                            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                            className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"
                         >
                             Login
                         </Link>
@@ -105,9 +102,9 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
                 </div>
             </header>
 
-            {/* ── Bottom Tab Bar (Universal) — Fixed at bottom with horizontal scroll ── */}
-            <nav className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe overflow-x-auto overflow-y-hidden no-scrollbar md:hidden">
-                <div className="flex items-stretch justify-center h-16 px-2 min-w-max mx-auto max-w-lg">
+            {/* ── Bottom Tab Bar (Universal) ── */}
+            <nav className="fixed bottom-0 left-0 right-0 z-[60] pb-safe md:hidden px-4 mb-4">
+                <div className="bg-white/90 backdrop-blur-2xl border border-gray-100/50 rounded-[2.5rem] shadow-[0_8px_32px_rgba(0,0,0,0.12)] flex items-stretch justify-center h-20 px-4 max-w-lg mx-auto">
                     {displayTabs.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = location.pathname === tab.to || 
@@ -116,17 +113,17 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
                             <Link
                                 key={tab.to}
                                 to={tab.to}
-                                className={`flex flex-col items-center justify-center gap-1 transition-all px-4 ${
-                                    isActive ? 'text-emerald-600' : 'text-gray-400'
+                                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all relative ${
+                                    isActive ? 'text-emerald-600' : 'text-slate-400 opacity-60'
                                 }`}
-                                style={{ minWidth: '64px' }}
                             >
-                                <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-emerald-50' : ''}`}>
-                                    <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+                                <div className={`p-2 rounded-2xl transition-all duration-300 ${isActive ? 'bg-emerald-50 scale-110' : 'hover:bg-slate-50'}`}>
+                                    <Icon size={20} className={isActive ? 'text-emerald-600' : 'text-slate-400'} strokeWidth={isActive ? 2.5 : 2} />
                                 </div>
-                                <span className={`text-[9px] font-black uppercase tracking-wider ${isActive ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                <span className={`text-[8px] font-black uppercase tracking-[0.1em] transition-all ${isActive ? 'opacity-100' : 'opacity-0 scale-90 translate-y-1'}`}>
                                     {tab.label}
                                 </span>
+                                {isActive && <div className="absolute -bottom-1 w-1 h-1 bg-emerald-500 rounded-full"></div>}
                             </Link>
                         );
                     })}

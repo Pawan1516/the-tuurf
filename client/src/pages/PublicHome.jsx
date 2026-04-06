@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { configAPI, slotsAPI, matchesAPI } from '../api/client';
-import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer, Activity } from 'lucide-react';
+import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer, Activity, ArrowRight } from 'lucide-react';
 import io from 'socket.io-client';
 
 const PublicHome = () => {
@@ -120,7 +120,7 @@ const PublicHome = () => {
     });
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <div className="min-h-screen premium-gradient flex flex-col font-sans">
             {/* HERO SECTION - Taller more premium feel */}
             <section className="relative h-[320px] sm:h-[400px] md:h-[520px] w-full flex flex-col items-center justify-center overflow-hidden">
                 {heroImages.map((img, idx) => (
@@ -168,74 +168,95 @@ const PublicHome = () => {
 
             <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-10 md:-mt-32 relative z-20 mb-8 md:mb-32">
                 {liveMatches.length > 0 && (
-                    <div className="bg-[#050805] rounded-[3rem] p-8 md:p-14 mb-16 shadow-2xl border border-white/10 overflow-hidden relative">
-                         <div className="relative z-10 flex items-center justify-between mb-12">
+                    <div className="bg-[#050805] rounded-[2rem] md:rounded-[4rem] p-6 md:p-16 mb-16 shadow-2xl border border-white/10 overflow-hidden relative group">
+                         {/* Abstract background detail */}
+                         <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full group-hover:bg-emerald-500/20 transition-all duration-1000"></div>
+                         
+                         <div className="relative z-10 flex items-center justify-between mb-10 md:mb-16">
                             <div className="flex items-center gap-4">
-                                <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                                    <Zap size={20} className="text-emerald-500 fill-emerald-500 animate-pulse" />
+                                <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                    <Zap size={24} className="text-emerald-500 fill-emerald-500 animate-pulse" />
                                 </div>
-                                <h3 className="text-base font-black uppercase tracking-[0.4em] text-emerald-400">Live Arena</h3>
+                                <div>
+                                    <h3 className="text-lg md:text-2xl font-black uppercase tracking-[0.4em] text-emerald-400 leading-none">Live Arena</h3>
+                                    <p className="text-[10px] md:text-[11px] font-bold text-white/30 uppercase tracking-[0.2em] mt-2 hidden md:block">Real-time match analytics and broadcast</p>
+                                </div>
                             </div>
-                            <Link to="/leaderboard" className="flex items-center gap-2 px-6 py-2 bg-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Ranking</Link>
+                            <Link to="/leaderboard" className="hidden md:flex items-center gap-3 px-8 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-full text-xs font-black uppercase tracking-widest shadow-[0_20px_40px_-5px_rgba(16,185,129,0.3)] transition-all active:scale-95">
+                                <Trophy size={16} /> Global Ranking
+                            </Link>
                         </div>
-                        <div className="relative z-10 flex gap-6 overflow-x-auto no-scrollbar pb-8">
-                            {liveMatches.map(match => (
-                                <Link key={match._id} to={`/live/${match._id}`} className="flex-shrink-0 w-[310px] md:w-[420px] bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 hover:bg-white/10 transition-all group overflow-hidden">
-                                    <div className="flex justify-between items-start mb-8">
-                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{match.format || 'T20'} • {match.venue || 'Main Arena'}</span>
-                                        <div className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase ${
+                        <div className="relative z-10 flex gap-4 md:gap-10 overflow-x-auto no-scrollbar pb-10 -mx-2 px-2 gpu-layer">
+                            {liveMatches.map((match, idx) => (
+                                <Link 
+                                    key={match._id} 
+                                    to={`/live/${match._id}`} 
+                                    className={`flex-shrink-0 w-[85vw] md:w-[480px] bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 hover:bg-white/10 transition-all group overflow-hidden relative animate-fade-up`}
+                                    style={{ animationDelay: `${idx * 100}ms` }}
+                                >
+                                    <div className="flex justify-between items-start mb-8 md:mb-12">
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">{match.format || 'T20'} Segment</span>
+                                            <p className="text-white font-black uppercase text-sm md:text-lg tracking-tight">{match.venue || 'Miyapur Arena'}</p>
+                                        </div>
+                                        <div className={`px-5 py-2 rounded-full border text-[9px] font-black uppercase tracking-widest ${
                                             match.status === 'Completed' 
                                             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
                                             : match.status === 'Scheduled'
                                             ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
                                             : 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse'
                                         }`}>
-                                            {match.status === 'Completed' ? 'FINISH' : match.status === 'Scheduled' ? 'WAITING' : 'LIVE'}
+                                            {match.status === 'Completed' ? 'FINALIZED' : match.status === 'Scheduled' ? 'WAITING' : 'IN PLAY'}
                                         </div>
                                     </div>
-                                     <div className="space-y-6">
+                                     <div className="space-y-8 mb-12">
                                          {[
                                             { team: match.team_a, quick: match.quick_teams?.team_a, defaultName: 'Team A' },
                                             { team: match.team_b, quick: match.quick_teams?.team_b, defaultName: 'Team B' }
                                          ].map((item, idx) => (
                                              <div key={idx} className="flex items-center justify-between">
-                                                 <span className="text-white font-black uppercase tracking-tight">
+                                                 <span className="text-white/60 text-xs md:text-sm font-black uppercase tracking-widest">
                                                      {item.team?.team_id?.name || item.quick?.name || item.defaultName}
                                                  </span>
-                                                 <span className="text-2xl font-black text-white">{item.team?.score || 0} / {item.team?.wickets || 0}</span>
+                                                 <div className="flex items-baseline gap-2">
+                                                     <span className="text-2xl md:text-4xl font-black text-white tracking-tighter">{item.team?.score || 0}</span>
+                                                     <span className="text-sm md:text-lg font-black text-white/30">/{item.team?.wickets || 0}</span>
+                                                 </div>
                                              </div>
                                          ))}
                                      </div>
 
                                      {/* MATCH FOOTER CTA */}
-                                     <div className="mt-10 pt-8 border-t border-white/5 flex items-center justify-between">
-                                          {match.status === 'Completed' ? (
-                                              <div className="flex items-center gap-3">
-                                                  <Trophy size={14} className="text-yellow-400" />
-                                                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                                                      {match.result?.winner?.name || match.quick_teams?.team_a?.name || 'Match'} won {match.result?.won_by || 'by margin'}
-                                                  </span>
-                                              </div>
-                                          ) : match.status === 'Scheduled' ? (
-                                              <div className="flex items-center gap-3">
-                                                  <Timer size={14} className="text-blue-400" />
-                                                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Waiting for Toss</span>
-                                              </div>
-                                          ) : (
-                                              <div className="flex items-center gap-3">
-                                                  <Activity size={14} className="text-rose-400 animate-pulse" />
-                                                  <span className="text-[10px] font-black uppercase tracking-widest text-rose-400">In Progress</span>
-                                              </div>
-                                          )}
+                                     <div className="pt-8 border-t border-white/5 flex items-center justify-between">
+                                          <div className="flex-1 min-w-0 pr-4">
+                                              {match.status === 'Completed' ? (
+                                                  <div className="flex items-center gap-2">
+                                                      <Trophy size={14} className="text-yellow-400 shrink-0" />
+                                                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 truncate">
+                                                          {match.live_data?.result ? match.live_data.result : (typeof match.result === 'string' ? match.result : `${match.result?.winner?.name || 'Winner'} won ${match.result?.won_by || 'match'}`)}
+                                                      </span>
+                                                  </div>
+                                              ) : match.status === 'Scheduled' ? (
+                                                  <div className="flex items-center gap-2">
+                                                      <Timer size={14} className="text-blue-400 shrink-0" />
+                                                      <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Match Setup Ready</span>
+                                                  </div>
+                                              ) : (
+                                                  <div className="flex items-center gap-2">
+                                                      <Activity size={14} className="text-rose-400 animate-pulse shrink-0" />
+                                                      <p className="text-[10px] font-black uppercase tracking-widest text-rose-400 truncate">Tracking Real-time</p>
+                                                  </div>
+                                              )}
+                                          </div>
                                           
-                                          <div className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                                          <div className={`px-6 py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all shadow-xl ${
                                               match.status === 'Completed' 
-                                              ? 'bg-emerald-600 text-white group-hover:bg-emerald-500 shadow-lg shadow-emerald-600/20' 
+                                              ? 'bg-emerald-600 text-white group-hover:bg-emerald-500' 
                                               : match.status === 'Scheduled'
-                                              ? 'bg-blue-600 text-white group-hover:bg-blue-500 shadow-lg shadow-blue-600/20'
-                                              : 'bg-white/10 text-white group-hover:bg-white/20'
+                                              ? 'bg-blue-600 text-white group-hover:bg-blue-500'
+                                              : 'bg-white text-black group-hover:bg-emerald-400'
                                           }`}>
-                                              {match.status === 'Completed' ? 'View Result' : match.status === 'Scheduled' ? 'Ready' : 'Live Score'}
+                                              {match.status === 'Completed' ? 'View Details' : match.status === 'Scheduled' ? 'Join' : 'Live Arena'}
                                           </div>
                                      </div>
                                 </Link>
@@ -245,17 +266,17 @@ const PublicHome = () => {
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    <div className="lg:col-span-3 bg-white rounded-[2.5rem] p-6 shadow-xl flex lg:flex-col overflow-x-auto lg:overflow-x-visible gap-4 no-scrollbar">
+                    <div className="lg:col-span-3 glass-card rounded-[2.5rem] p-6 shadow-xl flex lg:flex-col overflow-x-auto lg:overflow-x-visible gap-4 no-scrollbar">
                         {dates.map(d => (
-                            <button key={d.dateStr} onClick={() => setSelectedDate(d.dateStr)} className={`flex-shrink-0 w-40 lg:w-full text-left p-6 rounded-[1.8rem] transition-all border-2 ${selectedDate === d.dateStr ? 'bg-white border-emerald-500 shadow-xl shadow-emerald-500/10' : 'bg-transparent border-transparent hover:bg-slate-50'}`}>
+                            <button key={d.dateStr} onClick={() => setSelectedDate(d.dateStr)} className={`flex-shrink-0 w-40 lg:w-full text-left p-6 rounded-[1.8rem] transition-all border-2 ${selectedDate === d.dateStr ? 'bg-white/80 border-emerald-500 shadow-xl shadow-emerald-500/10' : 'bg-transparent border-transparent hover:bg-white/40'}`}>
                                 <div className={`font-black text-lg tracking-tight ${selectedDate === d.dateStr ? 'text-slate-900' : 'text-slate-400'}`}>{d.display}</div>
-                                <div className={`text-[9px] font-black uppercase tracking-[0.3em] ${selectedDate === d.dateStr ? 'text-emerald-500' : 'text-slate-300'}`}>{d.label}</div>
+                                <div className={`text-[9px] font-black uppercase tracking-[0.3em] ${selectedDate === d.dateStr ? 'text-emerald-500' : 'text-slate-400'}`}>{d.label}</div>
                             </button>
                         ))}
                     </div>
 
-                    <div className="lg:col-span-9 bg-white rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden min-h-[600px]">
-                        <div className="bg-[#1e293b] p-12 flex justify-between items-center text-white">
+                    <div className="lg:col-span-9 glass-card rounded-[3rem] shadow-2xl border border-white/50 overflow-hidden min-h-[600px]">
+                        <div className="bg-slate-950 p-12 flex justify-between items-center text-white border-b border-white/5">
                             <div>
                                 <h2 className="text-2xl font-black uppercase tracking-widest text-emerald-400">Today's Slots</h2>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
@@ -272,13 +293,13 @@ const PublicHome = () => {
                             ) : slots.length === 0 ? (
                                 <div className="py-24 text-center font-black text-slate-300 uppercase tracking-widest">Zero Slots in Registry</div>
                             ) : slots.sort((a,b) => a.startTime.localeCompare(b.startTime)).map(slot => (
-                                <div key={slot._id} className={`p-6 rounded-[2rem] border-2 transition-all group ${slot.status === 'free' ? 'bg-white border-slate-100 hover:border-emerald-500 shadow-lg shadow-slate-100' : 'bg-slate-50 border-transparent opacity-60'}`}>
+                                <div key={slot._id} className={`p-6 rounded-[2rem] border-2 transition-all group ${slot.status === 'free' ? 'bg-white/60 border-white hover:border-emerald-500 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.05)]' : 'bg-slate-50/40 border-transparent opacity-60'}`}>
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
                                             <p className="text-2xl font-black text-slate-900 leading-none">{formatTime12h(slot.startTime)}</p>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sessions End {formatTime12h(slot.endTime)}</p>
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Sessions End {formatTime12h(slot.endTime)}</p>
                                         </div>
-                                        <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${slot.status === 'free' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-500 border-rose-100'}`}>
+                                        <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${slot.status === 'free' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'}`}>
                                             {slot.status === 'free' ? 'AVAILABLE' : 'RESERVED'}
                                         </div>
                                     </div>
@@ -294,17 +315,17 @@ const PublicHome = () => {
                             ))}
                         </div>
 
-                        <div className="hidden md:block overflow-x-auto">
+                        <div className="hidden md:block overflow-x-auto rounded-b-[3rem]">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-[#1e293b] text-white/40 text-[11px] font-black uppercase tracking-widest border-t border-white/5">
+                                    <tr className="bg-slate-900 text-white/40 text-[11px] font-black uppercase tracking-widest border-t border-white/5">
                                         <th className="px-12 py-7 text-emerald-400">Time Segment</th>
                                         <th className="px-12 py-7">Status</th>
                                         <th className="px-12 py-7">Price</th>
                                         <th className="px-12 py-7 text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50">
+                                <tbody className="divide-y divide-white/20 bg-white/40 backdrop-blur-md">
                                     {loading ? (
                                         <tr><td colSpan="4" className="py-24 text-center animate-pulse font-black text-slate-300 uppercase tracking-widest">Syncing Arena Data...</td></tr>
                                     ) : slots.length === 0 ? (
@@ -340,35 +361,41 @@ const PublicHome = () => {
 
             {/* ABOUT SECTION (Dynamic) */}
             <div id="about" className="max-w-7xl mx-auto w-full px-3 md:px-6 mb-32">
-                <div className="bg-white rounded-[3rem] p-8 md:p-20 shadow-2xl border border-slate-50 relative overflow-hidden group">
+                <div className="glass-card rounded-[3rem] p-8 md:p-20 shadow-2xl border border-white/40 border-t-white/80 relative overflow-hidden group hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all duration-700">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                        <div className="space-y-10">
+                        <div className="space-y-10 relative z-10">
                             <div>
-                                <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full mb-8 border border-emerald-100">
+                                <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full mb-8 border border-emerald-500/20 shadow-sm backdrop-blur-md">
                                     <Zap size={12} className="fill-emerald-600" /> Flagship Arena
                                 </div>
                                 <h2 className="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter uppercase leading-[0.9] mb-8">
                                     {pageConfig?.about?.title || 'The Turf Miyapur'}
                                 </h2>
-                                <p className="text-slate-500 text-sm md:text-lg leading-relaxed font-medium">
+                                <p className="text-slate-600 text-sm md:text-lg leading-relaxed font-medium">
                                     {pageConfig?.about?.description || 'Welcome to Hyderabad’s premier tech-enabled sports arena. Our facility merges a high-performance 90ft x 60ft arena with a fully digital match-day experience.'}
                                 </p>
+                                <div className="mt-6">
+                                    <Link to="/about" className="inline-flex items-center gap-2 border-2 border-slate-900 text-slate-900 px-6 py-3 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-slate-900 hover:text-white transition-all">
+                                        Explore the Smart Arena Experience <ArrowRight size={14} />
+                                    </Link>
+                                </div>
                             </div>
                             <div className="flex flex-wrap gap-4">
                                 {(pageConfig?.about?.tags || ['#TechTurfMiyapur', '#SmartArena', '#DigitalPlay']).map(tag => (
-                                    <span key={tag} className="text-[10px] font-black uppercase tracking-widest text-emerald-600/50">{tag}</span>
+                                    <span key={tag} className="text-[10px] font-black uppercase tracking-widest text-emerald-700/60 bg-white/40 px-3 py-1.5 rounded-xl border border-white/50">{tag}</span>
                                 ))}
                             </div>
                         </div>
-                        <div className="relative">
-                            <img src={pageConfig?.about?.image || "https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&q=80&w=1200"} alt="Arena" className="aspect-square w-full object-cover rounded-[3rem] grayscale hover:grayscale-0 transition-all duration-1000" />
+                        <div className="relative group-hover:scale-[1.02] transition-transform duration-1000">
+                            <div className="absolute inset-0 bg-emerald-500/20 blur-[100px] rounded-full scale-50 group-hover:scale-100 transition-all duration-1000"></div>
+                            <img src={pageConfig?.about?.image || "https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&q=80&w=1200"} alt="Arena" className="relative z-10 aspect-square w-full object-cover rounded-[3rem] grayscale hover:grayscale-0 transition-all duration-1000 shadow-[0_20px_40px_-5px_rgba(0,0,0,0.2)]" />
                         </div>
                     </div>
                 </div>
             </div>
 
             <div className="max-w-7xl mx-auto w-full px-3 md:px-6 mb-32">
-                <div className="bg-white border border-slate-100 rounded-[3rem] p-12 flex flex-col md:flex-row items-center gap-12 shadow-xl">
+                <div className="glass-card border border-white/50 rounded-[3rem] p-12 flex flex-col md:flex-row items-center gap-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)]">
                     <div className="bg-emerald-600 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-emerald-600/30">
                         <MapPin size={48} />
                     </div>

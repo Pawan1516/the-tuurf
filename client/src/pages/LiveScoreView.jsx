@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { Trophy, Users, Timer, Info, Share2, Activity, BarChart3, ChevronLeft, Volume2, Zap, Target, TrendingUp } from 'lucide-react';
+import { toast } from 'react-toastify';
 import io from 'socket.io-client';
 
 const SOCKET_URL = process.env.NODE_ENV === 'production' 
@@ -139,404 +140,360 @@ export default function LiveScoreView() {
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-28 selection:bg-emerald-500/30">
             {/* Minimal Header */}
-            <header className="sticky top-0 z-[100] bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-sm">
-                <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <button onClick={() => navigate(-1)} className="p-2 text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
-                        <ChevronLeft size={24} />
+            <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-100/50 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest border border-slate-100">
+                        <ChevronLeft size={18} /> Exit Arena
                     </button>
                     
                     <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">THE TURF ARENA</span>
-                        {!isMatchEnded ? (
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></div>
-                                <span className="text-[11px] font-black uppercase text-red-600 tracking-tight">🔴 Tracking Live</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1.5">
-                                <Trophy size={11} className="text-emerald-600" />
-                                <span className="text-[11px] font-black uppercase text-emerald-600 tracking-tight">Match Final</span>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-2 mb-1">
+                             <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                             <span className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-900 border-b-2 border-emerald-500/30 pb-0.5">Arena Broadcast</span>
+                        </div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest hidden md:block">Court ID: {id.slice(-8).toUpperCase()}</p>
                     </div>
 
-                    <button onClick={() => {
-                        navigator.clipboard.writeText(window.location.href);
-                        alert("Link Copied!");
-                    }} className="p-2 text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
-                        <Share2 size={20} />
-                    </button>
+                    <div className="flex items-center gap-3">
+                         <button onClick={() => {
+                            navigator.clipboard.writeText(window.location.href);
+                            toast.success("Broadcast Link Copied");
+                        }} className="hidden md:flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all">
+                            <Share2 size={16} /> Share Live
+                        </button>
+                        <button onClick={() => {
+                            navigator.clipboard.writeText(window.location.href);
+                        }} className="md:hidden p-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-colors border border-slate-100">
+                            <Share2 size={20} />
+                        </button>
+                    </div>
                 </div>
             </header>
 
-            <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-                
-                {/* PRO BROADCASTER SCOREBOARD */}
-                <div className={`relative overflow-hidden rounded-[2rem] bg-white border border-slate-200 p-8 shadow-xl shadow-slate-200/50 transition-all duration-700 ${
-                    newBallFlash ? 'border-emerald-500 scale-[1.01]' : ''
-                }`}>
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full"></div>
+            <main className="max-w-7xl mx-auto px-4 py-8 lg:py-16">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
                     
-                    {/* Header Strip */}
-                    <div className="flex justify-center mb-8">
-                        <div className="bg-slate-900 px-4 py-1 rounded-full">
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">
-                                {match.format || 'T20'} • {liveData?.inningsNum === 2 ? '2nd Innings' : '1st Innings'}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Score Display Area */}
-                    <div className="grid grid-cols-3 gap-4 items-center mb-8 text-center">
-                        {/* Team A */}
-                        <div className="flex flex-col items-center">
-                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-slate-50 mb-3 shadow-inner" style={{ backgroundColor: teamAColor + '10' }}>
-                                <Users size={24} style={{ color: teamAColor }} />
-                            </div>
-                            <h3 className="text-xs font-black uppercase text-slate-800 leading-tight mb-1">{teamAName}</h3>
-                            {/* Render score if Team A is batting currently */}
-                            {liveData?.battingTeam === 0 && (
-                                <p className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md mt-1">Batting</p>
-                            )}
-                            {/* Render 1st Innings score if Team A batted first */}
-                            {liveData?.inningsNum === 2 && liveData?.battingTeam === 1 && liveData?.inn1Score !== undefined && (
-                                <p className="text-xs font-bold text-slate-500 mt-1">{liveData.inn1Score}/{liveData.inn1Wickets} <span className="text-[9px]">({liveData.inn1Overs} ov)</span></p>
-                            )}
-                        </div>
-
-                        {/* Center Score */}
-                        <div className="flex flex-col items-center py-2 relative">
-                            {isMatchEnded ? (
-                                <div className="text-center">
-                                    <Trophy className="text-yellow-500 mx-auto mb-2" size={28} />
-                                    <h4 className="text-sm font-black text-slate-900 uppercase">Final</h4>
+                    {/* LEFT COLUMN: Main Scoreboard + Players */}
+                    <div className="lg:col-span-8 space-y-8">
+                        {/* PRO BROADCASTER SCOREBOARD */}
+                        <div className={`relative overflow-hidden rounded-[2.5rem] md:rounded-[4rem] bg-white border border-slate-200 p-8 md:p-16 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-700 ${
+                            newBallFlash ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-[1.01]' : ''
+                        }`}>
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full"></div>
+                            
+                            {/* Header Strip */}
+                            <div className="flex justify-center mb-10 md:mb-20">
+                                <div className="bg-slate-900 px-6 py-2 rounded-full shadow-2xl">
+                                    <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-white">
+                                        {match.format || 'T20'} Segment • {liveData?.inningsNum === 2 ? 'Run Chase Active' : 'First Innings'}
+                                    </span>
                                 </div>
-                            ) : (
-                                <>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-5xl font-black tracking-tighter text-slate-900">{currentScore.runs}</span>
-                                        <span className="text-2xl font-black text-emerald-600">/{currentScore.wickets}</span>
+                            </div>
+
+                            {/* Score Display Area */}
+                            <div className="grid grid-cols-3 gap-4 items-center mb-12 text-center relative z-10">
+                                {/* Team A */}
+                                <div className="flex flex-col items-center">
+                                    <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2.5rem] flex items-center justify-center border-2 border-slate-50 mb-4 md:mb-8 shadow-inner transition-transform group-hover:scale-105" style={{ backgroundColor: teamAColor + '15' }}>
+                                        <Users size={32} className="md:w-16 md:h-16" style={{ color: teamAColor }} />
                                     </div>
-                                    <div className="mt-2 px-3 py-1 bg-emerald-50 rounded-lg">
-                                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">{currentScore.overs} OVS</span>
+                                    <h3 className="text-sm md:text-2xl font-black uppercase text-slate-900 tracking-tight leading-none mb-2">{teamAName}</h3>
+                                    {liveData?.battingTeam === 0 && (
+                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full">
+                                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                                            <span className="text-[9px] font-black text-emerald-600 uppercase">Batting</span>
+                                        </div>
+                                    )}
+                                    {liveData?.inningsNum === 2 && liveData?.battingTeam === 1 && liveData?.inn1Score !== undefined && (
+                                        <p className="text-xs md:text-sm font-bold text-slate-400 mt-2">{liveData.inn1Score}/{liveData.inn1Wickets} <span className="text-[10px] opacity-50">({liveData.inn1Overs})</span></p>
+                                    )}
+                                </div>
+
+                                {/* Center Score */}
+                                <div className="flex flex-col items-center py-4 relative">
+                                    {isMatchEnded ? (
+                                        <div className="text-center animate-in zoom-in duration-500 mt-2">
+                                            <div className="inline-flex p-4 rounded-full bg-yellow-100 mb-4 relative">
+                                                <div className="absolute inset-0 bg-yellow-400 blur-xl opacity-40 rounded-full animate-pulse"></div>
+                                                <Trophy className="text-yellow-500 relative z-10" size={50} />
+                                            </div>
+                                            <h4 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none">{liveData?.result ? liveData.result.split(' won by ')[0] : (match?.result?.winner?.name || "Match Ended")}</h4>
+                                            {liveData?.result?.includes(' won by ') && (
+                                                <p className="text-[10px] md:text-xs uppercase font-black text-emerald-600 tracking-[0.2em] mt-3 bg-emerald-50 py-2 px-5 rounded-full inline-block border border-emerald-100 shadow-sm">
+                                                    Won by {liveData.result.split(' won by ')[1]}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div className="flex items-baseline justify-center gap-2">
+                                                <span className="text-6xl md:text-9xl font-black tracking-tighter text-slate-900 leading-none">{currentScore.runs}</span>
+                                                <span className="text-3xl md:text-5xl font-black text-emerald-500">/{currentScore.wickets}</span>
+                                            </div>
+                                            <div className="inline-flex px-5 py-2 bg-slate-900 rounded-2xl shadow-xl">
+                                                <span className="text-xs md:text-sm font-black text-white uppercase tracking-[0.2em]">{currentScore.overs} OVERS</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Team B */}
+                                <div className="flex flex-col items-center">
+                                    <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2.5rem] flex items-center justify-center border-2 border-slate-50 mb-4 md:mb-8 shadow-inner transition-transform group-hover:scale-105" style={{ backgroundColor: teamBColor + '15' }}>
+                                        <Users size={32} className="md:w-16 md:h-16" style={{ color: teamBColor }} />
                                     </div>
-                                </>
-                            )}
-                        </div>
+                                    <h3 className="text-sm md:text-2xl font-black uppercase text-slate-900 tracking-tight leading-none mb-2">{teamBName}</h3>
+                                    {liveData?.battingTeam === 1 && (
+                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full">
+                                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                                            <span className="text-[9px] font-black text-emerald-600 uppercase">Batting</span>
+                                        </div>
+                                    )}
+                                    {liveData?.inningsNum === 2 && liveData?.battingTeam === 0 && liveData?.inn1Score !== undefined && (
+                                        <p className="text-xs md:text-sm font-bold text-slate-400 mt-2">{liveData.inn1Score}/{liveData.inn1Wickets} <span className="text-[10px] opacity-50">({liveData.inn1Overs})</span></p>
+                                    )}
+                                </div>
+                            </div>
 
-                        {/* Team B */}
-                        <div className="flex flex-col items-center">
-                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-slate-50 mb-3 shadow-inner" style={{ backgroundColor: teamBColor + '10' }}>
-                                <Users size={24} style={{ color: teamBColor }} />
-                            </div>
-                            <h3 className="text-xs font-black uppercase text-slate-800 leading-tight mb-1">{teamBName}</h3>
-                            {/* Render score if Team B is batting currently */}
-                            {liveData?.battingTeam === 1 && (
-                                <p className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md mt-1">Batting</p>
-                            )}
-                            {/* Render 1st Innings score if Team B batted first */}
-                            {liveData?.inningsNum === 2 && liveData?.battingTeam === 0 && liveData?.inn1Score !== undefined && (
-                                <p className="text-xs font-bold text-slate-500 mt-1">{liveData.inn1Score}/{liveData.inn1Wickets} <span className="text-[9px]">({liveData.inn1Overs} ov)</span></p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Match Context Footer */}
-                    <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <TrendingUp size={14} className="text-emerald-500" />
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Run Rate: <span className="text-slate-900">{liveData?.run_rate || '0.00'}</span></span>
-                        </div>
-                        {isMatchEnded ? (
-                            <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider">{liveData?.result || 'Ended'}</span>
-                        ) : liveData?.target ? (
-                            <div className="flex items-center gap-2">
-                                <Target size={14} className="text-red-500" />
-                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Target: <span className="text-slate-900">{liveData.target}</span></span>
-                            </div>
-                        ) : (
-                             <span className="text-[10px] font-black uppercase text-slate-300 tracking-[0.2em]">{match.venue || 'The Turf Arena'}</span>
-                        )}
-                    </div>
-                </div>
-
-                 {/* TARGET TRACKER (If active) */}
-                 {liveData?.target && !isMatchEnded && (
-                    <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl">
-                        <div className="flex justify-between items-center mb-4">
-                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Required Target</span>
-                            <span className="text-xs font-black text-white/40 uppercase tracking-widest leading-none">RR: {liveData.required_run_rate}</span>
-                        </div>
-                        <div className="flex items-end gap-3 px-1">
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-black text-white">{liveData.runs_needed}</span>
-                                <span className="text-xs font-bold text-white/40 uppercase">Runs</span>
-                            </div>
-                            <div className="mb-1">
-                                <span className="text-[10px] font-bold text-white/20 uppercase mx-2 tracking-widest">IN</span>
-                            </div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-black text-white">{liveData.balls_remaining}</span>
-                                <span className="text-xs font-bold text-white/40 uppercase">Balls</span>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* ACTIVE BATTERS & BOWLER */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Batters */}
-                    <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm">
-                        <div className="flex items-center gap-2 mb-6">
-                            <div className="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
-                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Batting</h4>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                                <div>
-                                    <p className="text-xs font-black text-slate-900 mb-0.5">{liveData?.striker?.name || '—'}*</p>
-                                    <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">SR: {((liveData?.striker?.runs / (liveData?.striker?.balls || 1)) * 100).toFixed(1)}</p>
+                            {/* Match Context Footer */}
+                            <div className="pt-10 md:pt-16 border-t border-slate-100 flex items-center justify-between">
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                                            <TrendingUp size={18} className="text-emerald-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Current RR</p>
+                                            <p className="text-sm md:text-lg font-black text-slate-900">{liveData?.run_rate || '0.00'}</p>
+                                        </div>
+                                    </div>
+                                    {liveData?.target && (
+                                        <div className="hidden md:flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center">
+                                                <Target size={18} className="text-rose-500" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Target Score</p>
+                                                <p className="text-sm md:text-lg font-black text-slate-900">{liveData.target}</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-xl font-black text-slate-900 leading-none">{liveData?.striker?.runs || 0}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 mt-1">({liveData?.striker?.balls || 0})</p>
+                                     {isMatchEnded ? (
+                                        <div className="bg-gradient-to-r from-emerald-600 to-teal-500 px-6 py-3 rounded-xl text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-lg border border-emerald-400/50">
+                                            Game Set & Match
+                                        </div>
+                                     ) : (
+                                        <p className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-red-600 rounded-full animate-ping"></span> Live Link Sync
+                                        </p>
+                                     )}
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center px-4">
-                                <p className="text-xs font-bold text-slate-400">{liveData?.non_striker?.name || '—'}</p>
-                                <div className="text-right">
-                                    <p className="text-sm font-black text-slate-400 leading-none">{liveData?.non_striker?.runs || 0} <span className="text-[10px] font-bold ml-1">({liveData?.non_striker?.balls || 0})</span></p>
+                        </div>
+
+                        {/* DESKTOP CONTENT GRID */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Batters */}
+                            <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h4 className="text-xs font-black uppercase text-slate-400 tracking-[0.2em]">Live Batting</h4>
+                                    <div className="w-8 h-1 bg-emerald-500 rounded-full"></div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bowler */}
-                    <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm">
-                        <div className="flex items-center gap-2 mb-6">
-                            <div className="w-1.5 h-4 bg-red-500 rounded-full"></div>
-                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Current Bowler</h4>
-                        </div>
-                        <div className="text-center mb-6">
-                            <h4 className="text-sm font-black text-slate-900 mb-1">{liveData?.bowler?.name || 'Waiting...'}</h4>
-                            <div className="inline-flex px-3 py-1 bg-red-50 rounded-full">
-                                <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider">{liveData?.bowler?.w || 0} Wkts • ECO {liveData?.bowler?.eco || '0.0'}</span>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-px bg-slate-100 rounded-2xl p-px overflow-hidden">
-                            <div className="bg-white p-3 text-center">
-                                <span className="block text-xl font-black text-slate-900 leading-none mb-1">{liveData?.bowler?.r || 0}</span>
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Runs</span>
-                            </div>
-                            <div className="bg-white p-3 text-center">
-                                <span className="block text-xl font-black text-slate-900 leading-none mb-1">{liveData?.bowler?.w || 0}</span>
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Wkts</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* RECENT BALLS TIMELINE */}
-                <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Recent Deliveries</h4>
-                        <div className="flex items-center gap-1.5 text-[9px] font-black text-emerald-500 uppercase">
-                            <Activity size={12} />
-                            Live Hub
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                        {(liveData?.recent_balls || []).map((ball, i) => (
-                            <div 
-                                key={i} 
-                                className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition-all ${getBallColor(ball)} ${
-                                    i === liveData.recent_balls.length - 1 ? 'ring-2 ring-emerald-500 ring-offset-2 scale-110' : ''
-                                }`}
-                            >
-                                {ball}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* AI INSIGHTS (CLEANED UP) */}
-                {!isMatchEnded && prediction && (
-                    <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Zap size={14} className="text-emerald-500 fill-emerald-500" />
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Smart Match Insight</h4>
-                        </div>
-                        <div className="flex items-start justify-between gap-6">
-                            <div className="flex-1">
-                                <h4 className="text-lg font-black text-slate-900 mb-2 leading-tight">
-                                    <span className="text-emerald-700">{prediction.winner}</span> favored with {prediction.probability}
-                                </h4>
-                                <p className="text-xs text-slate-500 leading-relaxed font-medium italic">"{prediction.reason}"</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* CONTENT TABS */}
-                <div className="bg-white rounded-full p-1.5 border border-slate-200 flex shadow-sm">
-                    {[
-                        { key: 'commentary', label: 'Home', icon: Activity },
-                        { key: 'scorecard', label: 'Scorecard', icon: BarChart3 },
-                        { key: 'overs', label: 'Stats', icon: Timer }
-                    ].map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveTab(tab.key)}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                                activeTab === tab.key 
-                                ? 'bg-slate-900 text-white shadow-lg' 
-                                : 'text-slate-400 hover:text-slate-900'
-                            }`}
-                        >
-                            <tab.icon size={14} /> {tab.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* TAB CONTENT AREA */}
-                <div className="min-h-[400px]">
-                    {activeTab === 'commentary' && (
-                        <div className="space-y-3">
-                            {(liveData?.commentary_log || []).length === 0 ? (
-                                <div className="text-center py-20 text-slate-300">
-                                    <Volume2 size={40} className="mx-auto mb-4 opacity-20" />
-                                    <p className="text-xs font-bold uppercase tracking-widest">Waiting for first delivery...</p>
-                                </div>
-                            ) : (
-                                [...(liveData.commentary_log || [])].reverse().map((entry, i) => (
-                                    <div key={i} className={`bg-white rounded-2xl border border-slate-100 p-4 transition-all ${i === 0 ? 'bg-emerald-50/50 border-emerald-200 shadow-md ring-1 ring-emerald-500/20' : 'opacity-80'}`}>
-                                        <div className="flex items-start gap-4">
-                                            <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-black ${getBallColor(entry.ball)}`}>
-                                                {entry.ball}
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-center p-6 bg-emerald-50 rounded-3xl border border-emerald-100/50">
+                                        <div>
+                                            <p className="text-sm md:text-lg font-black text-slate-900 mb-1">{liveData?.striker?.name || '—'}*</p>
+                                            <div className="flex gap-4">
+                                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">SR: {((liveData?.striker?.runs / (liveData?.striker?.balls || 1)) * 100).toFixed(1)}</span>
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[13px] font-bold text-slate-800 leading-normal">{entry.text}</p>
-                                                <div className="flex items-center gap-3 mt-2">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{entry.overs} OVS</span>
-                                                    <div className="w-1 h-1 bg-slate-200 rounded-full"></div>
-                                                    <span className="text-[9px] font-black text-emerald-600 uppercase">{entry.runs}-{entry.wickets}</span>
-                                                </div>
-                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-3xl font-black text-slate-900 leading-none">{liveData?.striker?.runs || 0}</p>
+                                            <p className="text-xs font-bold text-slate-400 mt-2">({liveData?.striker?.balls || 0} balls)</p>
                                         </div>
                                     </div>
-                                ))
-                            )}
-                        </div>
-                    )}
-
-                    {activeTab === 'scorecard' && (
-                        <div className="space-y-6">
-                            {/* Batting */}
-                            <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
-                                <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                                    <h4 className="text-[10px] font-black uppercase text-slate-800 tracking-widest">Innings Summary</h4>
-                                    <span className="text-xs font-black text-emerald-600">{currentScore.runs}/{currentScore.wickets}</span>
-                                </div>
-                                <div className="p-1 overflow-x-auto no-scrollbar">
-                                    <table className="w-full text-center">
-                                        <thead>
-                                            <tr className="text-[9px] font-black text-slate-300 uppercase tracking-widest border-b border-slate-50">
-                                                <th className="text-left px-5 py-4">Batter</th>
-                                                <th className="px-2 py-4">R</th>
-                                                <th className="px-2 py-4">B</th>
-                                                <th className="px-2 py-4">4s/6s</th>
-                                                <th className="px-5 py-4 text-right">SR</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                            {(liveData?.scorecard?.batsmen || []).map((b, i) => (
-                                                <tr key={i} className={b.batting ? 'bg-emerald-50/30' : ''}>
-                                                    <td className="px-5 py-4 text-left">
-                                                        <span 
-                                                            onClick={() => b.user_id && navigate(`/player/${b.user_id}`)}
-                                                            className={`text-xs font-bold block ${b.out ? 'text-slate-300' : 'text-slate-800'} ${b.user_id ? 'cursor-pointer hover:text-emerald-600' : ''}`}
-                                                        >
-                                                            {b.name}{b.batting ? '*' : ''}
-                                                            {b.out && <span className="block text-[8px] font-medium text-red-400 mt-0.5 uppercase tracking-tighter">out</span>}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-2 py-4 text-xs font-black text-slate-800">{b.runs}</td>
-                                                    <td className="px-2 py-4 text-[10px] font-medium text-slate-400">{b.balls}</td>
-                                                    <td className="px-2 py-4 text-[10px] font-medium text-slate-500">{b.fours}/{b.sixes}</td>
-                                                    <td className="px-5 py-4 text-right text-[10px] font-black text-slate-400">{b.sr}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            {/* Bowling */}
-                            <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
-                                <div className="bg-slate-50 px-6 py-4 border-b border-slate-100">
-                                    <h4 className="text-[10px] font-black uppercase text-slate-800 tracking-widest">Bowling Performance</h4>
-                                </div>
-                                <div className="p-1 overflow-x-auto no-scrollbar">
-                                    <table className="w-full text-center">
-                                        <thead>
-                                            <tr className="text-[9px] font-black text-slate-300 uppercase tracking-widest border-b border-slate-50">
-                                                <th className="text-left px-5 py-4">Bowler</th>
-                                                <th className="px-2 py-4">O</th>
-                                                <th className="px-2 py-4">R</th>
-                                                <th className="px-2 py-4">W</th>
-                                                <th className="px-5 py-4 text-right">ECO</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                            {(liveData?.scorecard?.bowlers || []).map((bw, i) => (
-                                                <tr key={i}>
-                                                    <td className="px-5 py-4 text-left text-xs font-bold text-slate-800">{bw.name}</td>
-                                                    <td className="px-2 py-4 text-xs font-medium text-slate-400">{bw.overs}</td>
-                                                    <td className="px-2 py-4 text-xs font-black text-slate-800">{bw.runs}</td>
-                                                    <td className="px-2 py-4 text-xs font-black text-red-600">{bw.wickets}</td>
-                                                    <td className="px-5 py-4 text-right text-[10px] font-black text-slate-400">{bw.eco}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'overs' && (
-                        <div className="space-y-4">
-                           {(liveData?.over_summaries || []).length === 0 ? (
-                                <div className="text-center py-20 text-slate-200">
-                                    <p className="text-[10px] font-black uppercase tracking-widest">Waiting for over completion...</p>
-                                </div>
-                            ) : (
-                                [...(liveData.over_summaries || [])].reverse().map((over, i) => (
-                                    <div key={i} className="bg-white border border-slate-100 rounded-3xl p-5 flex flex-col gap-4 shadow-sm">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-[10px] font-black text-white">
-                                                    #{over.over_number}
-                                                </div>
-                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Over Summary</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-xl font-black text-slate-900 leading-none">{over.runs}</p>
-                                                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Scored</p>
-                                            </div>
+                                    <div className="flex justify-between items-center px-6">
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-400">{liveData?.non_striker?.name || '—'}</p>
+                                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Non-Striker</p>
                                         </div>
-                                        <div className="flex gap-2.5 flex-wrap pt-4 border-t border-slate-50">
-                                            {(over.balls || []).map((ball, j) => (
-                                                <div key={j} className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black ${getBallColor(ball)}`}>
-                                                    {ball}
-                                                </div>
-                                            ))}
+                                        <div className="text-right">
+                                            <p className="text-xl font-black text-slate-400 leading-none">{liveData?.non_striker?.runs || 0}</p>
+                                            <p className="text-xs font-bold text-slate-300 mt-1">({liveData?.non_striker?.balls || 0})</p>
                                         </div>
                                     </div>
-                                ))
+                                </div>
+                            </div>
+
+                            {/* Bowler */}
+                            <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h4 className="text-xs font-black uppercase text-slate-400 tracking-[0.2em]">Bowling End</h4>
+                                    <div className="w-8 h-1 bg-red-500 rounded-full"></div>
+                                </div>
+                                <div className="flex flex-col h-full justify-between">
+                                    <div className="text-center mb-8">
+                                        <h4 className="text-lg md:text-xl font-black text-slate-900 mb-2">{liveData?.bowler?.name || 'Waiting...'}</h4>
+                                        <div className="inline-flex px-4 py-1.5 bg-red-50 rounded-full">
+                                            <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">{liveData?.bowler?.w || 0} Wickets Session</span>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-px bg-slate-100 rounded-3xl overflow-hidden border border-slate-100 shadow-inner">
+                                        <div className="bg-white p-5 text-center">
+                                            <span className="block text-2xl font-black text-slate-900 mb-1">{liveData?.bowler?.ov || 0}</span>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Overs</span>
+                                        </div>
+                                        <div className="bg-white p-5 text-center">
+                                            <span className="block text-2xl font-black text-slate-900 mb-1">{liveData?.bowler?.r || 0}</span>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Runs</span>
+                                        </div>
+                                        <div className="bg-white p-5 text-center">
+                                            <span className="block text-2xl font-black text-red-600 mb-1">{liveData?.bowler?.w || 0}</span>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Wkts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: Commentary & Stats */}
+                    <div className="lg:col-span-4 space-y-8 lg:sticky lg:top-28">
+                        {/* TAB NAV FOR DESKTOP */}
+                        <div className="bg-white rounded-3xl p-2 border border-slate-100 flex shadow-xl">
+                            {[
+                                { key: 'commentary', label: 'Feed', icon: Activity },
+                                { key: 'scorecard', label: 'Card', icon: BarChart3 },
+                                { key: 'overs', label: 'Overs', icon: Timer }
+                            ].map(tab => (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => setActiveTab(tab.key)}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        activeTab === tab.key 
+                                        ? 'bg-slate-900 text-white shadow-xl scale-105' 
+                                        : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    <tab.icon size={16} /> {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* RECENT BALLS (Integrated into right rail) */}
+                        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full"></div>
+                            <h4 className="text-[9px] font-black uppercase text-white/30 tracking-[0.3em] mb-6">Recent Deliveries</h4>
+                            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
+                                {(liveData?.recent_balls || []).map((ball, i) => (
+                                    <div 
+                                        key={i} 
+                                        className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-xs font-black transition-all ${getBallColor(ball)} ${
+                                            i === liveData.recent_balls.length - 1 ? 'ring-2 ring-emerald-400 ring-offset-4 ring-offset-slate-900 scale-110 shadow-emerald-500/20 shadow-2xl' : ''
+                                        }`}
+                                    >
+                                        {ball}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* TAB CONTENT AREA */}
+                        <div className="max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                            {activeTab === 'commentary' && (
+                                <div className="space-y-4">
+                                    {(liveData?.commentary_log || []).length === 0 ? (
+                                        <div className="text-center py-20 text-slate-300 bg-white rounded-[2.5rem] border border-slate-50 shadow-sm">
+                                            <Volume2 size={40} className="mx-auto mb-4 opacity-20" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest">Awaiting First Ball...</p>
+                                        </div>
+                                    ) : (
+                                        [...(liveData.commentary_log || [])].reverse().map((entry, i) => (
+                                            <div key={i} className={`bg-white rounded-3xl border border-slate-100 p-6 transition-all duration-500 ${i === 0 ? 'bg-emerald-50/50 border-emerald-200 shadow-lg ring-1 ring-emerald-500/10' : 'opacity-80'}`}>
+                                                <div className="flex items-start gap-4">
+                                                    <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-xs font-black ${getBallColor(entry.ball)} shadow-sm`}>
+                                                        {entry.ball}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-bold text-slate-800 leading-relaxed font-outfit">{entry.text}</p>
+                                                        <div className="flex items-center gap-3 mt-3">
+                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{entry.overs} OVS</span>
+                                                            <div className="w-1 h-1 bg-slate-200 rounded-full"></div>
+                                                            <span className="text-[10px] font-black text-emerald-600 uppercase italic">{entry.runs}-{entry.wickets} Score</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'scorecard' && (
+                                <div className="space-y-6">
+                                    <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
+                                        <div className="p-1 overflow-x-auto no-scrollbar">
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="text-[9px] font-black text-slate-300 uppercase tracking-widest border-b border-slate-50">
+                                                        <th className="text-left px-6 py-5">Batter</th>
+                                                        <th className="px-5 py-5 text-center">Runs</th>
+                                                        <th className="px-5 py-5 text-right">SR</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {(liveData?.scorecard?.batsmen || []).map((b, i) => (
+                                                        <tr key={i} className={b.batting ? 'bg-emerald-50/30' : ''}>
+                                                            <td className="px-6 py-5 text-left">
+                                                                <span className={`text-xs font-bold block ${b.out ? 'text-slate-300 line-through decoration-red-400/30' : 'text-slate-800'}`}>
+                                                                    {b.name}{b.batting ? '*' : ''}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-5 py-5 text-center text-xs font-black text-slate-900">{b.runs} <span className="text-[10px] font-medium text-slate-400 ml-1">({b.balls})</span></td>
+                                                            <td className="px-5 py-5 text-right text-[10px] font-black text-slate-400">{b.sr}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'overs' && (
+                                <div className="space-y-4">
+                                   {(liveData?.over_summaries || []).length === 0 ? (
+                                        <div className="text-center py-24 text-slate-200 bg-white rounded-[2.5rem]">
+                                            <p className="text-[10px] font-black uppercase tracking-widest">No Over History</p>
+                                        </div>
+                                    ) : (
+                                        [...(liveData.over_summaries || [])].reverse().map((over, i) => (
+                                            <div key={i} className="bg-white border border-slate-100 rounded-[2rem] p-6 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-xs font-black text-white shadow-xl">
+                                                        #{over.over_number}
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-2xl font-black text-slate-900 leading-none">{over.runs}</p>
+                                                        <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1">Runs Scored</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 flex-wrap pt-4 border-t border-slate-50">
+                                                    {(over.balls || []).map((ball, j) => (
+                                                        <div key={j} className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black ${getBallColor(ball)} shadow-sm`}>
+                                                            {ball}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </main>
 

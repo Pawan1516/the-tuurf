@@ -204,14 +204,33 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div className="min-h-screen premium-gradient flex flex-col md:flex-row overflow-hidden font-sans">
       <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} className="lg:hidden" />
 
-      <div className="flex flex-1">
-        <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
+      <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto relative pb-24">
+      <main className="flex-1 overflow-y-auto relative pb-24 gpu-layer animate-fade-up">
+        
+        {/* Glassmorphic Command Header */}
+        <header className="hidden md:flex nav-glass px-12 h-28 items-center justify-between sticky top-0 z-40 mb-10">
+          <div className="flex flex-col">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">Command Hub</h2>
+            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mt-1 shrink-0 flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+                 Protocol Intelligence Monitor
+            </p>
+          </div>
+          <div className="flex items-center gap-8">
+            <div className="w-px h-10 bg-slate-100"></div>
+            <div className="flex flex-col items-end">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
+              <div className="flex items-center gap-2">
+                  <p className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums leading-none">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <span className="text-[10px] font-black text-slate-400 uppercase mt-1">{currentTime.toLocaleTimeString([], { second: '2-digit' })}</span>
+              </div>
+            </div>
+          </div>
+        </header>
 
 
         {/* NEW BOOKING ALARM TOAST */}
@@ -621,7 +640,6 @@ const AdminDashboard = () => {
           </div>
         </div>
       </main>
-      </div>
     </div>
   );
 };

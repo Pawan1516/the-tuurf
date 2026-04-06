@@ -116,54 +116,67 @@ export default function ScoringDashboard() {
     });
 
     const ScoreboardCard = memo(({ runs, wickets, overNum, ballInOver, overs, teamName, currentOverBalls, inn1Score, inn1Wickets, inningsNum, target, runRate, requiredRunRate }) => (
-        <div className="space-y-4">
-            {/* Top Stat Strip */}
-            <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex justify-between items-center">
-                    <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">CRR</span>
-                    <span className="text-sm font-black text-emerald-500">{runRate || '0.00'}</span>
+        <div className="space-y-6">
+            {/* Top Stat Strip - Desktop Friendly */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col items-center justify-center shadow-2xl">
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Current RR</span>
+                    <span className="text-xl font-black text-emerald-400">{runRate || '0.00'}</span>
                 </div>
                 {inningsNum === 2 && target && (
-                    <div className="bg-yellow-400/5 border border-yellow-400/20 rounded-2xl p-3 flex justify-between items-center">
-                        <span className="text-[9px] font-black text-yellow-400/60 uppercase tracking-widest">RRR</span>
-                        <span className="text-sm font-black text-yellow-400">{requiredRunRate || '0.00'}</span>
+                    <div className="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col items-center justify-center shadow-2xl">
+                        <span className="text-[9px] font-black text-yellow-400/60 uppercase tracking-widest leading-none mb-1">Required RR</span>
+                        <span className="text-xl font-black text-yellow-400">{requiredRunRate || '0.00'}</span>
                     </div>
                 )}
+                <div className="hidden md:flex bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex-col items-center justify-center shadow-2xl">
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Innings</span>
+                    <span className="text-xl font-black text-white">{inningsNum === 2 ? '2ND' : '1ST'}</span>
+                </div>
+                <div className="hidden md:flex bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex-col items-center justify-center shadow-2xl">
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Phase</span>
+                    <span className="text-xl font-black text-emerald-500">LIVE</span>
+                </div>
             </div>
 
-            <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-[2.5rem] p-8 text-center relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
-                <div className="flex justify-between items-center mb-6">
+            <div className="bg-white/5 border border-white/10 rounded-[3rem] p-10 md:p-14 text-center relative overflow-hidden group shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50"></div>
+                <div className="flex justify-between items-center mb-10">
                     <div className="flex flex-col items-start gap-1">
-                        <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{teamName}</p>
+                        <p className="text-[11px] font-black text-white/40 uppercase tracking-[0.3em]">{teamName}</p>
                         {inningsNum === 2 && (
-                            <p className="text-[9px] font-black text-white/15 uppercase tracking-widest">Target: {target}</p>
+                            <div className="inline-flex px-3 py-1 bg-white/5 rounded-full mt-2">
+                                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Chase: {target} Target</p>
+                            </div>
                         )}
                     </div>
                     {inningsNum === 2 && inn1Score !== undefined && (
-                        <div className="text-right">
-                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest leading-none mb-1">Innings 1</p>
-                             <p className="text-sm font-black text-white/40">{inn1Score}/{inn1Wickets}</p>
+                        <div className="text-right glass-card px-4 py-2 rounded-2xl border border-white/5">
+                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest leading-none mb-1">Innings 01</p>
+                             <p className="text-lg font-black text-white/40">{inn1Score}/{inn1Wickets}</p>
                         </div>
                     )}
                 </div>
-                <div className="flex items-end justify-center gap-1 mb-2">
-                    <span className="text-6xl font-black tracking-tighter">{runs}</span>
-                    <span className="text-4xl text-white/20 font-bold">/</span>
-                    <span className="text-4xl text-emerald-500 font-bold">{wickets}</span>
+                <div className="flex items-end justify-center gap-2 mb-4">
+                    <span className="text-8xl md:text-9xl font-black tracking-tighter text-white drop-shadow-2xl">{runs}</span>
+                    <span className="text-5xl text-white/10 font-black mb-4">/</span>
+                    <span className="text-5xl md:text-6xl text-emerald-500 font-black mb-2">{wickets}</span>
                 </div>
-                <p className="text-xs font-bold text-white/40 mb-6">Over {overNum}.{ballInOver} <span className="opacity-50 tracking-widest text-[10px] uppercase ml-1">of {overs}</span></p>
-                <div className="flex gap-2 justify-center">
+                <div className="inline-flex px-6 py-2.5 bg-white/5 rounded-2xl border border-white/10 mb-10 shadow-inner">
+                    <p className="text-sm font-black text-white/60 uppercase tracking-[0.2em]">{overNum}.{ballInOver} <span className="opacity-40 text-[10px] mx-1">/</span> {overs} OVERS</p>
+                </div>
+                
+                <div className="flex gap-3 justify-center">
                     {currentOverBalls.map((b, i) => (
-                        <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border ${
-                            b === 'W' ? 'bg-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 
-                            b === '4' ? 'bg-blue-600 border-blue-400' :
-                            b === '6' ? 'bg-orange-500 border-orange-400' :
-                            'bg-white/10 border-white/10 text-white/60'
+                        <div key={i} className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-black border-2 transition-all scale-up-center ${
+                            b === 'W' ? 'bg-red-500 border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.4)] rotate-12' : 
+                            b === '4' ? 'bg-blue-600 border-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.3)]' :
+                            b === '6' ? 'bg-orange-500 border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.3)] scale-110' :
+                            'bg-white/5 border-white/5 text-white/40'
                         }`}>{b === '·' ? '0' : b}</div>
                     ))}
                     {Array.from({ length: 6 - currentOverBalls.length }).map((_, i) => (
-                        <div key={i} className="w-8 h-8 rounded-full border border-white/5 opacity-20"></div>
+                        <div key={i} className="w-11 h-11 rounded-2xl border-2 border-white/5 opacity-10"></div>
                     ))}
                 </div>
             </div>
@@ -171,23 +184,35 @@ export default function ScoringDashboard() {
     ));
 
     const ScoringButtons = memo(({ onRecord, onWicket, onUndo, onSwap }) => (
-        <div className="bg-white/2 rounded-[2.5rem] p-4 space-y-3 border border-white/5">
-            <div className="grid grid-cols-4 gap-2">
+        <div className="bg-white/5 rounded-[3rem] p-6 md:p-10 space-y-4 border border-white/10 shadow-2xl">
+            <div className="grid grid-cols-4 gap-4">
                 {[0, 1, 2, 3].map(r => (
-                    <button key={r} onClick={() => onRecord(r)} className="h-16 bg-white/5 rounded-2xl border border-white/10 text-xl font-black hover:bg-white/10 transition-colors uppercase">{r}</button>
+                    <button 
+                        key={r} 
+                        onClick={() => onRecord(r)} 
+                        className="h-20 md:h-24 bg-white/5 rounded-[1.8rem] border border-white/10 text-2xl font-black text-white hover:bg-white/10 active:scale-95 active:bg-white/20 transition-all uppercase shadow-lg"
+                    >
+                        {r}
+                    </button>
                 ))}
             </div>
-            <div className="grid grid-cols-4 gap-2">
-                <button onClick={() => onRecord(4)} className="h-16 bg-blue-600/20 border-2 border-blue-500 text-blue-400 text-xl font-black rounded-2xl hover:bg-blue-600/30 transition-all uppercase">4</button>
-                <button onClick={() => onRecord(6)} className="h-16 bg-orange-600/20 border-2 border-orange-500 text-orange-400 text-xl font-black rounded-2xl hover:bg-orange-600/30 transition-all uppercase">6</button>
-                <button onClick={() => onRecord('wd')} className="h-16 bg-purple-600/10 border border-purple-500 text-purple-400 text-sm font-black rounded-2xl uppercase">Wd</button>
-                <button onClick={() => onRecord('nb')} className="h-16 bg-purple-600/10 border border-purple-500 text-purple-400 text-sm font-black rounded-2xl uppercase">Nb</button>
+            <div className="grid grid-cols-4 gap-4">
+                <button onClick={() => onRecord(4)} className="h-20 md:h-24 bg-blue-600 border-2 border-blue-400 text-white text-3xl font-black rounded-[1.8rem] hover:bg-blue-500 active:scale-90 transition-all shadow-xl shadow-blue-500/20 uppercase">4</button>
+                <button onClick={() => onRecord(6)} className="h-20 md:h-24 bg-orange-600 border-2 border-orange-400 text-white text-3xl font-black rounded-[1.8rem] hover:bg-orange-500 active:scale-90 transition-all shadow-xl shadow-orange-500/20 uppercase">6</button>
+                <button onClick={() => onRecord('wd')} className="h-20 md:h-24 bg-white/5 border border-white/10 text-purple-400 text-sm font-black rounded-[1.8rem] hover:bg-purple-500/10 active:scale-95 transition-all uppercase">Wd</button>
+                <button onClick={() => onRecord('nb')} className="h-20 md:h-24 bg-white/5 border border-white/10 text-purple-400 text-sm font-black rounded-[1.8rem] hover:bg-purple-500/10 active:scale-95 transition-all uppercase">Nb</button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-                <button onClick={onWicket} className="h-16 bg-red-600 border-2 border-red-400 text-white text-xl font-black rounded-2xl shadow-lg shadow-red-500/20 uppercase tracking-widest">Wicket</button>
-                <div className="grid grid-cols-2 gap-2">
-                    <button onClick={onUndo} className="h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/40 hover:text-white transition-colors"><Undo2 size={24} /></button>
-                    <button onClick={onSwap} className="h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/60 hover:text-white transition-colors text-xs font-black uppercase">⇄</button>
+            <div className="grid grid-cols-2 gap-4">
+                <button onClick={onWicket} className="h-20 md:h-24 bg-red-600 border-2 border-red-400 text-white text-2xl font-black rounded-[1.8rem] shadow-2xl shadow-red-500/30 active:scale-95 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-3">
+                    WICKET
+                </button>
+                <div className="grid grid-cols-2 gap-4">
+                    <button onClick={onUndo} className="h-20 md:h-24 bg-slate-900 border border-white/5 rounded-[1.8rem] flex items-center justify-center text-white/40 hover:text-white active:scale-95 transition-all shadow-inner border-t-white/10">
+                        <Undo2 size={32} />
+                    </button>
+                    <button onClick={onSwap} className="h-20 md:h-24 bg-slate-900 border border-white/5 rounded-[1.8rem] flex items-center justify-center text-emerald-500 font-black hover:text-emerald-400 active:scale-95 transition-all text-lg shadow-inner border-t-white/10">
+                        SWAP
+                    </button>
                 </div>
             </div>
         </div>
@@ -1236,51 +1261,90 @@ export default function ScoringDashboard() {
 
                 {/* Batting Phase (Main Scoreboard) */}
                 {state.phase === 'batting' && (
-                    <>
-                        <ScoreboardCard 
-                            runs={state.runs} 
-                            wickets={state.wickets} 
-                            overNum={state.overNum} 
-                            ballInOver={state.ballInOver} 
-                            overs={state.formatOvers} 
-                            teamName={TEAMS[state.battingTeam]?.name} 
-                            currentOverBalls={state.currentOverBalls} 
-                            inn1Score={state.inn1Score}
-                            inn1Wickets={state.inn1Wickets}
-                            inningsNum={state.inningsNum}
-                            target={state.target}
-                            runRate={(state.runs / (state.overNum + state.ballInOver/6 || 1)).toFixed(2)}
-                            requiredRunRate={state.inningsNum === 2 ? ((state.target - state.runs) / (((state.formatOvers * 6) - (state.overNum * 6 + state.ballInOver)) / 6 || 1)).toFixed(2) : '0.00'}
-                        />
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        {/* LEFT COLUMN: Main Controls */}
+                        <div className="lg:col-span-12 space-y-8">
+                            <div className="flex flex-col lg:flex-row gap-8">
+                                <div className="flex-1 space-y-8">
+                                    <ScoreboardCard 
+                                        runs={state.runs} 
+                                        wickets={state.wickets} 
+                                        overNum={state.overNum} 
+                                        ballInOver={state.ballInOver} 
+                                        overs={state.formatOvers} 
+                                        teamName={TEAMS[state.battingTeam]?.name} 
+                                        currentOverBalls={state.currentOverBalls} 
+                                        inn1Score={state.inn1Score}
+                                        inn1Wickets={state.inn1Wickets}
+                                        inningsNum={state.inningsNum}
+                                        target={state.target}
+                                        runRate={(state.runs / (state.overNum + state.ballInOver/6 || 1)).toFixed(2)}
+                                        requiredRunRate={state.inningsNum === 2 ? ((state.target - state.runs) / (((state.formatOvers * 6) - (state.overNum * 6 + state.ballInOver)) / 6 || 1)).toFixed(2) : '0.00'}
+                                    />
 
-                        {/* Crease & Bowler Details */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                                    <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">On Strike</p>
+                                    {/* Crease & Bowler Details */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-xl">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                                                <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Striker Action</p>
+                                            </div>
+                                            <p className="text-xl font-black text-white truncate mb-2">{state.batters[state.striker]?.name}</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-4xl font-black text-emerald-500">{state.batters[state.striker]?.r}</span>
+                                                <span className="text-sm font-bold text-white/20">({state.batters[state.striker]?.b})</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-xl opacity-60">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-2.5 h-2.5 bg-white/40 rounded-full"></div>
+                                                <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Non-Striker</p>
+                                            </div>
+                                            <p className="text-xl font-black text-white truncate mb-2">{state.batters[state.nonStriker]?.name}</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-3xl font-black text-white/40">{state.batters[state.nonStriker]?.r}</span>
+                                                <span className="text-sm font-bold text-white/10">({state.batters[state.nonStriker]?.b})</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-xl">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                                                <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Bowling End</p>
+                                            </div>
+                                            <p className="text-xl font-black text-white truncate mb-2">{TEAMS[state.bowlingTeam]?.players[state.currentBowlerIdx]?.name || 'Wait...'}</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-3xl font-black text-red-400">{state.bowlers[state.currentBowlerIdx]?.w || 0}</span>
+                                                <span className="text-sm font-bold text-white/20">Wkts / {state.bowlers[state.currentBowlerIdx]?.r || 0} R</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p className="text-sm font-black truncate mb-1">{state.batters[state.striker]?.name}</p>
-                                <p className="text-lg font-bold">{state.batters[state.striker]?.r}<span className="text-[10px] opacity-20 ml-1">({state.batters[state.striker]?.b})</span></p>
-                            </div>
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                                <div className="flex items-center gap-2 mb-3 opacity-40">
-                                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                                    <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Non-Striker</p>
+
+                                <div className="lg:w-[450px] space-y-8">
+                                    {/* Scoring Buttons */}
+                                    <ScoringButtons 
+                                        onRecord={recordBall}
+                                        onWicket={() => updateState({ phase: 'wicket_type' })}
+                                        onUndo={handleUndo}
+                                        onSwap={() => updateState({ striker: state.nonStriker, nonStriker: state.striker })}
+                                    />
+
+                                    {/* QUICK LOG (Desktop feature) */}
+                                    <div className="hidden lg:block bg-slate-900/50 rounded-[2.5rem] border border-white/5 p-8 max-h-[300px] overflow-y-auto no-scrollbar shadow-inner">
+                                        <h4 className="text-[10px] font-black uppercase text-white/20 tracking-widest mb-6">In-Arena Feed</h4>
+                                        <div className="space-y-4">
+                                            {[...state.log].reverse().slice(0, 10).map((l, i) => (
+                                                <div key={i} className="flex items-center gap-4 text-[11px] font-bold text-white/60">
+                                                    <span className="text-emerald-500/40 font-black">{l.overs}</span>
+                                                    <span className="flex-1 opacity-80">{l.text}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
-                                <p className="text-sm font-black truncate mb-1 opacity-60">{state.batters[state.nonStriker]?.name}</p>
-                                <p className="text-lg font-bold opacity-60">{state.batters[state.nonStriker]?.r}<span className="text-[10px] opacity-20 ml-1">({state.batters[state.nonStriker]?.b})</span></p>
                             </div>
                         </div>
-
-                        {/* Scoring Buttons */}
-                        <ScoringButtons 
-                            onRecord={recordBall}
-                            onWicket={() => updateState({ phase: 'wicket_type' })}
-                            onUndo={handleUndo}
-                            onSwap={() => updateState({ striker: state.nonStriker, nonStriker: state.striker })}
-                        />
-                    </>
+                    </div>
                 )}
 
                 {/* Bowler Select Phase */}

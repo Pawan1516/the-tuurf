@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { leaderboardAPI } from '../api/client';
-import { Trophy as TrophyIcon, ChevronLeft as BackIcon, Search as SearchIcon, Star as StarIcon, Zap as ZapIcon } from 'lucide-react';
+import { Trophy as TrophyIcon, ChevronLeft as BackIcon, Search as SearchIcon, Star as StarIcon, Zap as ZapIcon, ChevronRight } from 'lucide-react';
 
 const Leaderboard = () => {
     const [players, setPlayers] = useState([]);
@@ -48,9 +48,9 @@ const Leaderboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-x-hidden pb-10">
-            {/* Header */}
-            <header className="px-6 pt-12 pb-6 flex items-center justify-between relative bg-white border-b border-slate-100 min-h-[90px]">
+        <div className="min-h-screen premium-gradient text-slate-900 font-sans overflow-x-hidden pb-10">
+            {/* Header - Operations Style */}
+            <header className="px-8 pt-16 pb-8 flex items-center justify-between relative bg-white/70 backdrop-blur-xl border-b border-slate-100/50 sticky top-0 z-[60]">
                 <button 
                     onClick={() => {
                         if (isSearching) {
@@ -60,9 +60,9 @@ const Leaderboard = () => {
                             navigate('/');
                         }
                     }}
-                    className="p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors z-10 relative"
+                    className="p-3 bg-slate-900 text-white rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all z-10 relative"
                 >
-                    <BackIcon size={28} />
+                    <BackIcon size={20} />
                 </button>
                 
                 {isSearching ? (
@@ -88,9 +88,9 @@ const Leaderboard = () => {
                 )}
             </header>
 
-            {/* 3D Podium Section - Green & White Theme */}
+            {/* 3D Podium Section - Premium Hall of Fame */}
             {showPodium && (
-                <div className="relative px-6 flex justify-center items-end gap-3 pt-24 pb-12 min-h-[420px] bg-white border-b border-slate-100 shadow-sm animate-in fade-in zoom-in duration-500">
+                <div className="relative px-8 flex justify-center items-end gap-4 pt-32 pb-16 min-h-[480px] bg-transparent animate-in fade-in zoom-in duration-700">
                 {topThree.map((player) => {
                     const isRank1 = player.rank === 1;
                     const isRank2 = player.rank === 2;
@@ -101,56 +101,59 @@ const Leaderboard = () => {
                             key={player._id}
                             onClick={() => navigate(`/player/${player._id}`)}
                             className={`flex flex-col items-center cursor-pointer transition-all duration-500 hover:scale-105 ${
-                                isRank1 ? 'w-[36%] z-20' : 'w-[28%] z-10'
+                                isRank1 ? 'w-[40%] z-20' : 'w-[28%] z-10'
                             }`}
                         >
                             {/* Avatar & Info Floating Above Block */}
-                            <div className="flex flex-col items-center mb-6 w-full drop-shadow-lg">
+                            <div className="flex flex-col items-center mb-8 w-full drop-shadow-2xl">
                                 {isRank1 && (
-                                    <div className="mb-2 animate-bounce">
-                                        <TrophyIcon className="text-yellow-500 fill-yellow-500" size={32} />
+                                    <div className="mb-4 animate-bounce">
+                                        <TrophyIcon className="text-yellow-400 fill-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" size={48} />
                                     </div>
                                 )}
                                 
-                                <div className={`relative mb-3`}>
-                                    <div className={`rounded-full overflow-hidden border-4 bg-white shadow-xl ${
-                                        isRank1 ? 'w-24 h-24 md:w-28 md:h-28 border-emerald-500' : 'w-18 h-18 md:w-20 md:h-20 border-white'
+                                <div className={`relative mb-4 group`}>
+                                    <div className={`rounded-[2.5rem] overflow-hidden border-4 bg-white shadow-2xl transition-all group-hover:rotate-6 ${
+                                        isRank1 ? 'w-28 h-28 md:w-36 md:h-36 border-emerald-500' : 'w-20 h-20 md:w-24 md:h-24 border-white/50'
                                     }`}>
                                         {player.image ? (
                                             <img src={player.image} alt={player.name} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-50 to-emerald-100 font-black text-2xl text-emerald-700 uppercase italic">
+                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-400 to-emerald-600 font-black text-3xl text-white uppercase italic">
                                                 {player.name.charAt(0)}
                                             </div>
                                         )}
                                     </div>
+                                    {isRank1 && (
+                                        <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-slate-900 w-10 h-10 rounded-2xl flex items-center justify-center border-4 border-white shadow-lg">
+                                            <StarIcon size={16} className="fill-slate-900" />
+                                        </div>
+                                    )}
                                 </div>
                                 
-                                <span className={`text-center font-black tracking-tight mb-1 truncate w-full ${isRank1 ? 'text-[15px]' : 'text-[12px]'} text-slate-800`}>
+                                <span className={`text-center font-black tracking-tighter mb-2 truncate w-full uppercase ${isRank1 ? 'text-lg text-slate-900' : 'text-xs text-slate-500'}`}>
                                     {player.name}
                                 </span>
                                 
-                                <div className={`${isRank1 ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'} px-3 py-1 rounded-full flex items-center gap-1.5 shadow-md border border-slate-100`}>
-                                    <span className="text-[10px] md:text-[12px] font-black tabular-nums">
-                                        {player.careerScore} pts
+                                <div className={`${isRank1 ? 'bg-slate-900 text-white' : 'bg-white/50 text-slate-600'} px-4 py-1.5 rounded-2xl flex items-center gap-2 shadow-xl border border-white/20 backdrop-blur-md`}>
+                                    <span className={`font-black tabular-nums ${isRank1 ? 'text-xs' : 'text-[10px]'}`}>
+                                        {player.careerScore} <span className="opacity-40 uppercase tracking-widest ml-1 text-[8px]">XP</span>
                                     </span>
-                                    <ZapIcon size={12} className={isRank1 ? 'text-yellow-300 fill-yellow-300' : 'text-orange-500 fill-orange-500'} />
+                                    <ZapIcon size={12} className={isRank1 ? 'text-emerald-400 fill-emerald-400' : 'text-slate-400'} />
                                 </div>
                             </div>
 
-                            {/* 3D Block Stand - Green/Gray Gradients */}
-                            <div className="relative w-full perspective-[1000px]">
+                            {/* Stand - Operations Style Blocks */}
+                            <div className="relative w-full">
                                 <div 
-                                    className={`w-full rounded-t-2xl transition-all shadow-xl flex items-center justify-center font-black italic text-5xl md:text-6xl text-white/50 ${
-                                        isRank1 ? 'h-52 bg-gradient-to-b from-emerald-500 to-emerald-700 border-t border-emerald-400' : 
-                                        isRank2 ? 'h-40 bg-gradient-to-b from-slate-200 to-slate-300 border-t border-white' : 
-                                        'h-32 bg-gradient-to-b from-slate-200 to-slate-400 border-t border-white shadow-inner'
+                                    className={`w-full rounded-[2.5rem] transition-all shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] flex items-center justify-center font-black italic text-6xl md:text-8xl text-white/10 ${
+                                        isRank1 ? 'h-64 bg-slate-900 border-t-2 border-white/10' : 
+                                        'h-40 bg-white/40 backdrop-blur-xl border-t-2 border-white/60'
                                     }`}
                                 >
-                                    <span className={isRank1 ? 'text-white/20' : 'text-slate-400/30'}>{player.rank}</span>
+                                    <span>{player.rank}</span>
                                 </div>
-                                {/* Top Highlight */}
-                                <div className={`absolute top-0 left-0 right-0 h-1.5 overflow-hidden rounded-t-2xl ${isRank1 ? 'bg-white/20' : 'bg-white/50'}`} />
+                                {isRank1 && <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 to-transparent rounded-[2.5rem] pointer-events-none" />}
                             </div>
                         </div>
                     );
@@ -158,8 +161,9 @@ const Leaderboard = () => {
             </div>
             )}
 
-            {/* List View - Clean White Style */}
-            <div className={`px-5 py-10 space-y-4 max-w-lg mx-auto ${searchQuery ? 'min-h-[500px]' : ''}`}>
+            {/* List View - Hall of Fame Roster */}
+            <div className={`px-8 py-16 space-y-4 max-w-2xl mx-auto ${searchQuery ? 'min-h-[500px]' : ''}`}>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8 ml-2">Challengers Roster</h3>
                 {(searchQuery ? filteredPlayers : players.slice(3)).map((player, index) => {
                     const displayRank = searchQuery ? (players.findIndex(p => p._id === player._id) + 1) : index + 4;
                     const completion = Math.min(100, (player.careerScore / (players[0]?.careerScore || 1)) * 100);
@@ -168,31 +172,31 @@ const Leaderboard = () => {
                         <div 
                             key={player._id}
                             onClick={() => navigate(`/player/${player._id}`)}
-                            className="bg-white p-4 rounded-3xl flex items-center gap-5 cursor-pointer hover:bg-slate-50 transition-all border border-slate-100 shadow-sm hover:shadow-md group active:scale-[0.98]"
+                            className="glass-card p-6 rounded-[2rem] flex items-center gap-6 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
                         >
-                            <span className="text-[15px] font-black text-slate-300 italic w-5">{displayRank}.</span>
+                            <span className="text-[18px] font-black text-slate-200 italic w-8 tracking-tighter">#{displayRank}</span>
                             
-                            <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-50 border-2 border-slate-100 shadow-inner group-hover:border-emerald-200 transition-colors">
+                            <div className="w-16 h-16 rounded-[1.5rem] overflow-hidden bg-slate-100 border-2 border-white/50 shadow-inner group-hover:rotate-6 transition-all">
                                 {player.image ? (
                                     <img src={player.image} alt={player.name} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-emerald-600 font-black italic shadow-inner">
+                                    <div className="w-full h-full flex items-center justify-center bg-emerald-500/10 text-emerald-600 font-black text-xl italic">
                                         {player.name.charAt(0)}
                                     </div>
                                 )}
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-[17px] font-bold text-slate-800 tracking-tight truncate leading-tight mb-1">{player.name}</h4>
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-[12px] font-black text-emerald-600 uppercase tracking-widest">{player.careerScore} pts</span>
-                                    {completion > 70 && <span className="text-[12px] font-bold text-orange-500 animate-pulse">Hot 🔥</span>}
+                                <h4 className="text-xl font-black text-slate-900 tracking-tighter uppercase leading-tight mb-1">{player.name}</h4>
+                                <div className="flex items-center gap-2">
+                                    <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                                         <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${completion}%` }} />
+                                    </div>
+                                    <span className="text-[11px] font-black text-emerald-600 tabular-nums">{player.careerScore} <span className="opacity-40 uppercase tracking-widest text-[8px]">XP</span></span>
                                 </div>
                             </div>
 
-                            <div className="text-right">
-                                <p className="text-[16px] font-black text-emerald-600">#{displayRank}</p>
-                            </div>
+                            <ChevronRight size={18} className="text-slate-300 group-hover:translate-x-1 transition-transform" />
                         </div>
                     );
                 })}

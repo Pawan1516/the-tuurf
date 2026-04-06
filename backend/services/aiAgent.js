@@ -206,9 +206,9 @@ TONE: Enthusiastic, Concise, Professional. Use emojis ⚽🏏✅.`;
 // ─── Tier 1: Gemini ───────────────────────────────────────────────────────────
 const tryGemini = async (userInput, context, cfg, history = []) => {
   const models = [
-    'gemini-3.1-flash-live-preview-preview-12-2025',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash'
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-pro'
   ];
   let lastError = null;
   let model;
