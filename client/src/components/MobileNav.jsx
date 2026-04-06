@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, User, LogOut, Home, Menu, X, Activity, ScanLine, Briefcase, Settings, Bell, Trophy } from 'lucide-react';
+import { LayoutDashboard, Calendar, User, LogOut, Home, Menu, X, Activity, ScanLine, Briefcase, Settings, Bell, Trophy, Shield, Users, BarChart } from 'lucide-react';
 import { requestNotificationPermission } from '../utils/notifications';
 import { toast } from 'react-toastify';
 
-// ─── Bottom Tab Bar (mobile primary nav) ────────────
+// ─── Bottom Tab Bar & Full Mobile Drawer ────────────
 const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", className = "" }) => {
     const location = useLocation();
     const navigate = useNavigate();
+    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
     const handleLogout = () => {
         logout();
@@ -43,9 +44,31 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
     ];
 
     let displayTabs = defaultTabs;
-    if (isAdmin) displayTabs = adminTabs;
-    if (isWorker) displayTabs = workerTabs;
+    let allLinksToDisplay = defaultTabs;
     
+    if (isAdmin) {
+        displayTabs = adminTabs;
+        allLinksToDisplay = [
+            { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+            { to: '/admin/operations', label: 'Live Operations', icon: Activity },
+            { to: '/admin/scanner', label: 'QR Scanner', icon: ScanLine },
+            { to: '/admin/bookings', label: 'Bookings & Logs', icon: Calendar },
+            { to: '/admin/slots', label: 'Slot Manager', icon: Calendar },
+            { to: '/admin/users', label: 'User Directory', icon: Users },
+            { to: '/admin/workers', label: 'Staff Management', icon: Briefcase },
+            { to: '/admin/strategy', label: 'Strategy Hub', icon: Trophy },
+            { to: '/admin/report', label: 'Reports & Analytics', icon: BarChart },
+            { to: '/admin/settings', label: 'Terminal Settings', icon: Settings },
+        ];
+    } else if (isWorker) {
+        displayTabs = workerTabs;
+        allLinksToDisplay = workerTabs;
+    }
+    
+    // Close menu when route changes
+    React.useEffect(() => {
+        setIsMenuOpen(false);
+    }, [location.pathname]);
     return (
         <div className={`contents ${className}`}>
             {/* ── Top Header (Universal) ── */}
@@ -85,10 +108,10 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
                                 <Bell size={18} />
                             </button>
                             <button
-                                onClick={handleLogout}
-                                className="bg-slate-900 text-white p-2.5 rounded-xl shadow-lg active:scale-95 transition-all"
+                                onClick={() => setIsMenuOpen(true)}
+                                className="bg-slate-900 text-white p-2.5 rounded-xl shadow-lg active:scale-95 transition-all outline-none"
                             >
-                                <LogOut size={18} />
+                                <Menu size={18} />
                             </button>
                          </div>
                     ) : (
@@ -138,6 +161,62 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
                     scrollbar-width: none;  /* Firefox */
                 }
             `}</style>
+
+            {/* ── Full Screen Menu Overlay ── */}
+            {isMenuOpen && (
+                <div className="fixed inset-0 z-[100] bg-white md:hidden overflow-y-auto animate-in slide-in-from-right-full duration-300">
+                    <div className="px-5 h-16 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-xl border-b border-gray-100 z-10">
+                         <div className="flex items-center gap-3">
+                             <div className="relative">
+                                 <img 
+                                     src="/logo.png" 
+                                     alt="The Turf Mobile" 
+                                     className="h-10 w-auto object-contain bg-white rounded-xl border border-emerald-500/10 shadow-sm"
+                                     onError={(e) => {
+                                         e.target.onerror = null;
+                                         e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
+                                     }}
+                                 />
+                             </div>
+                             <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">All Modules</h2>
+                         </div>
+                         <button onClick={() => setIsMenuOpen(false)} className="p-2.5 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 active:scale-95 transition-all">
+                             <X size={20} />
+                         </button>
+                    </div>
+                    
+                    <div className="px-5 py-8 pb-32 space-y-3">
+                         {allLinksToDisplay.map((link, idx) => {
+                             const Icon = link.icon;
+                             const isActive = location.pathname === link.to;
+                             return (
+                                 <Link
+                                     key={idx}
+                                     to={link.to}
+                                     className={`flex items-center gap-4 p-4 rounded-[1.5rem] font-bold uppercase text-xs tracking-widest transition-all ${
+                                         isActive ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'bg-gray-50 text-slate-600 border border-gray-100 hover:bg-gray-100'
+                                     }`}
+                                 >
+                                     <div className={`p-2.5 rounded-xl ${isActive ? 'bg-white/20' : 'bg-white shadow-sm'}`}>
+                                         <Icon size={18} />
+                                     </div>
+                                     {link.label}
+                                 </Link>
+                             )
+                         })}
+                         
+                         {user && (
+                             <button
+                                 onClick={handleLogout}
+                                 className="w-full flex justify-between items-center p-5 mt-8 bg-rose-50 text-rose-600 rounded-[1.5rem] font-black uppercase text-xs tracking-widest border border-rose-100 transition-all active:scale-95"
+                             >
+                                 Secure Logout
+                                 <LogOut size={18} />
+                             </button>
+                         )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
