@@ -81,11 +81,16 @@ export default function LiveScoreView() {
         };
     }, [id, match?.status]);
 
+    // User requested to stop auto-scrolling. 
+    // By reversing the commentary log (newest at the top), 
+    // we no longer need to auto-scroll to the bottom.
+    /*
     useEffect(() => {
         if (activeTab === 'commentary' && commentaryEndRef.current) {
             commentaryEndRef.current.scrollIntoView({ behavior: 'auto' });
         }
     }, [liveData?.commentary_log, activeTab]);
+    */
 
     if (loading) return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
@@ -403,7 +408,7 @@ export default function LiveScoreView() {
                                     <p className="text-xs font-bold uppercase tracking-widest">Waiting for first delivery...</p>
                                 </div>
                             ) : (
-                                liveData.commentary_log.map((entry, i) => (
+                                [...(liveData.commentary_log || [])].reverse().map((entry, i) => (
                                     <div key={i} className={`bg-white rounded-2xl border border-slate-100 p-4 transition-all ${i === 0 ? 'bg-emerald-50/50 border-emerald-200 shadow-md ring-1 ring-emerald-500/20' : 'opacity-80'}`}>
                                         <div className="flex items-start gap-4">
                                             <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-black ${getBallColor(entry.ball)}`}>
@@ -421,7 +426,6 @@ export default function LiveScoreView() {
                                     </div>
                                 ))
                             )}
-                            <div ref={commentaryEndRef} />
                         </div>
                     )}
 
