@@ -4,6 +4,7 @@ dotenv.config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { checkAvailability, bookSlot, getFreeSlots, getBookedSlots, cancelBooking, rescheduleBooking, initiateHandoff, getPricingInfo, lockSlot } = require('./bookingTools');
 const AIService = require('./aiService');
+const natural = require('natural');
 const Match = require('../models/Match');
 const Setting = require('../models/Setting');
 
@@ -492,8 +493,34 @@ const tryRuleBased = async (userInput, context, cfg) => {
 // ─── Main Entry Point ────────────────────────────────────────────────────────
 const aiSessions = {};
 
+/**
+ * Intelligent NLP Analysis helper
+ */
+const analyzeInputNLP = (text) => {
+  const tokenizer = new natural.WordTokenizer();
+  const tokens = tokenizer.tokenize(text.toLowerCase());
+  
+  const analyzer = new natural.SentimentAnalyzer('English', natural.PorterStemmer, 'afinn');
+  const score = analyzer.getSentiment(tokens);
+  
+  // Tagging keywords related to frustration
+  const negativeKeywords = ['angry', 'bad', 'worst', 'stupid', 'hate', 'terrible', 'useless', 'waiting'];
+  const isFrustrated = tokens.some(t => negativeKeywords.includes(t)) || score < -1.5;
+
+  return { 
+    sentiment: score, 
+    isFrustrated, 
+    keywords: tokens.filter(t => t.length > 5) 
+  };
+};
+
 const processCricBotCommand = async (userInput, context = {}, userId = 'default') => {
   const cfg = await getLatestSettings();
+  
+  // NLP Diagnostic Layer
+  const nlp = analyzeInputNLP(userInput);
+  console.log(`🧠 NLP Diagnostic [${userId}]: Sentiment: ${nlp.sentiment}, Frustrated: ${nlp.isFrustrated}`);
+
   if (!aiSessions[userId]) aiSessions[userId] = [];
   const history = aiSessions[userId];
   if (history.length > 10) history.shift();
@@ -515,7 +542,19 @@ const processCricBotCommand = async (userInput, context = {}, userId = 'default'
     } catch (e) { console.error('Gemini Error:', e); }
   }
 
-  return tryRuleBased(userInput, { ...context, userId }, cfg);
+  const result = await tryRuleBased(userInput, { ...context, userId }, cfg);
+  
+  // Attach NLP metadata to response
+  result.nlp = nlp;
+  
+  // Section 5: Auto-Handoff logic based on NLP Sentiment
+  if (nlp.isFrustrated) {
+    console.log("🧨 High Frustration detected. Auto-initiating handoff...");
+    await initiateHandoff(userId, `NLP Sentiment Trigger: ${nlp.sentiment.toFixed(2)}`);
+    result.reply = `🏟️ I sense you're frustrated. I've alerted a human manager to step in and help you directly! ${result.reply}`;
+  }
+
+  return result;
 };
 
 module.exports = {

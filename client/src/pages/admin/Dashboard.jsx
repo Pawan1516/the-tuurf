@@ -622,6 +622,14 @@ const AdminDashboard = () => {
                     <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Verify Matches</p>
                   </div>
                 </Link>
+
+                <Link to="/cricket-analytics" className="w-full bg-white/5 hover:bg-emerald-600 p-6 rounded-[2rem] border border-white/5 flex items-center gap-5 transition-all group">
+                  <div className="bg-white/10 p-4 rounded-2xl group-hover:bg-black/20 transition-colors"><Activity size={20} /></div>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest">Analytics</p>
+                    <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Cricket Intelligence</p>
+                  </div>
+                </Link>
               </div>
 
               <div className="bg-emerald-400 text-black p-8 rounded-[2rem] shadow-2xl shadow-emerald-400/20 flex flex-col gap-4">

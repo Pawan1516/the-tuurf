@@ -139,6 +139,9 @@ io.on('connection', (socket) => {
 // Export io for use in routes
 app.set('socketio', io);
 
+// Live Scoring events are now handled in separate route controllers (e.g. routes/matches.js)
+// which emit 'match:update' and 'match:ball' for real-time engagement.
+
 app.use(cors());
 app.use((req, res, next) => {
   console.log(`[REQUEST] ${req.method} ${req.url}`);
@@ -168,6 +171,7 @@ app.use('/api/formats', formatRoutes);
 app.use('/api/turfs', turfRoutes);
 app.use('/api/matchmaking', matchmakingRoutes);
 app.use('/api/receipts', receiptRoutes);
+app.use('/api/analytics', require('./routes/analytics'));
 
 // ─── Autonomous Booking Optimizer Endpoint ────────────────────────────────────
 app.post('/api/optimizer/run', async (req, res) => {

@@ -17,7 +17,8 @@ import {
     Phone,
     Edit3,
     Save,
-    X
+    X,
+    BarChart
 } from 'lucide-react';
 import io from 'socket.io-client';
 import AuthContext from '../context/AuthContext';
@@ -279,6 +280,18 @@ const UserDashboard = () => {
                         </div>
                         <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                     </button>
+
+                    <button onClick={() => navigate('/player-analytics')} className={`w-full flex items-center justify-between px-8 py-5 rounded-[2rem] transition-all group ${window.location.pathname === '/player-analytics'
+                        ? 'bg-emerald-600 text-white shadow-[0_20px_40px_-5px_rgba(16,185,129,0.3)]'
+                        : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
+                        }`}>
+                        <div className="flex items-center gap-4">
+                             <BarChart size={20} className={window.location.pathname === '/player-analytics' ? 'text-white' : 'text-slate-300 group-hover:text-emerald-500 transition-colors'} />
+                             <span className="text-xs font-black uppercase tracking-widest">Player Intel</span>
+                        </div>
+                        <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    </button>
+
                 </div>
 
                 <div className="p-8 mt-auto">

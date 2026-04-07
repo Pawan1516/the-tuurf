@@ -22,6 +22,7 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
 
     const defaultTabs = user ? [
         { to: '/dashboard', label: 'Home', icon: Home },
+        { to: '/player-analytics', label: 'Intel', icon: BarChart },
         { to: '/', label: 'Book', icon: Calendar },
         { to: '/dashboard?tab=profile', label: 'Profile', icon: User },
     ] : [

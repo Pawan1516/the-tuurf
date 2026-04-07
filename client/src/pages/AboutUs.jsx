@@ -5,6 +5,7 @@ import {
     Smartphone, AlertTriangle, CheckCircle2, ChevronRight, 
     ArrowRight, BarChart3, Users, Network, TrendingUp
 } from 'lucide-react';
+import { configAPI } from '../api/client';
 
 const FadeInSection = ({ children, delay = 0 }) => {
     const [isVisible, setVisible] = useState(false);
@@ -39,9 +40,33 @@ const FadeInSection = ({ children, delay = 0 }) => {
 };
 
 export default function AboutUs() {
+    const [config, setConfig] = useState(null);
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
         window.scrollTo(0, 0);
+        const fetchConfig = async () => {
+            try {
+                const { data } = await configAPI.get('about');
+                if (data.success) {
+                    setConfig(data.config);
+                }
+            } catch (err) {
+                console.error('About config fetch failed:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchConfig();
     }, []);
+
+    if (loading) return (
+        <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+        </div>
+    );
+
+    const { hero, features, stats } = config || {};
 
     return (
         <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-emerald-500/30 selection:text-white">
@@ -54,15 +79,15 @@ export default function AboutUs() {
                 <div className="max-w-7xl mx-auto relative z-10 text-center">
                     <FadeInSection>
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest mb-8">
-                            <Zap size={14} className="animate-pulse" /> Welcome to the Future of Sports
+                            <Zap size={14} className="animate-pulse" /> {hero?.welcome || 'Welcome to the Future of Sports'}
                         </div>
                         <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter mb-6 leading-[1.1]">
-                            Play Smart. <br className="md:hidden" />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500">Book Instantly.</span> <br />
-                            Compete Better.
+                            {hero?.title?.split('.')[0] || 'Play Smart'}. <br className="md:hidden" />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500">{hero?.title?.split('.')[1] || 'Book Instantly.'}</span> <br />
+                            {hero?.subtitle || 'Compete Better.'}
                         </h1>
                         <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 font-medium tracking-wide">
-                            The Turf is an AI-powered sports arena ecosystem. We eliminate booking friction and elevate your match-day experience with real-time stats and automation.
+                            {hero?.description || 'The Turf is an AI-powered sports arena ecosystem. We eliminate booking friction and elevate your match-day experience with real-time stats and automation.'}
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link to="/#booking" className="w-full sm:w-auto px-8 py-4 bg-emerald-500 text-[#020617] rounded-full font-black uppercase tracking-widest text-sm hover:bg-emerald-400 active:scale-95 transition-all shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)]">
@@ -137,18 +162,18 @@ export default function AboutUs() {
                         </div>
                         
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {[
-                                { title: "Instant Booking", icon: <Zap size={32} />, desc: "Find open slots in real-time and secure them securely in seconds." },
-                                { title: "AI CricBot", icon: <Bot size={32} />, desc: "Our 24/7 intelligent agent helps you book, check stats, and resolve issues." },
-                                { title: "Live Match Scoring", icon: <Activity size={32} />, desc: "Pro-grade broadcast scoring interface tracking every ball and run." },
-                                { title: "Leaderboards", icon: <Trophy size={32} />, desc: "Compete with local athletes. Your stats define your rank." },
+                            {(features || [
+                                { title: "Instant Booking", desc: "Find open slots in real-time and secure them securely in seconds." },
+                                { title: "AI CricBot", desc: "Our 24/7 intelligent agent helps you book, check stats, and resolve issues." },
+                                { title: "Live Match Scoring", desc: "Pro-grade broadcast scoring interface tracking every ball and run." },
+                                { title: "Leaderboards", desc: "Compete with local athletes. Your stats define your rank." },
                                 { title: "QR Access", icon: <QrCode size={32} />, desc: "Contactless, cryptographically secure field entry on match day." },
                                 { title: "Secure Payments", icon: <CreditCard size={32} />, desc: "Frictionless embedded checkouts handling splits and refunds." }
-                            ].map((feat, i) => (
+                            ]).map((feat, i) => (
                                 <FadeInSection key={i} delay={i * 100}>
                                     <div className="h-full bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-3xl p-8 hover:bg-slate-800 hover:border-emerald-500/30 transition-all group">
                                         <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-emerald-400 mb-6 group-hover:scale-110 group-hover:bg-emerald-500/10 transition-transform">
-                                            {feat.icon}
+                                            {feat.icon || <Zap size={32} />}
                                         </div>
                                         <h3 className="text-xl font-black text-white uppercase tracking-tight mb-3">{feat.title}</h3>
                                         <p className="text-slate-400 leading-relaxed text-sm">{feat.desc}</p>
@@ -275,12 +300,12 @@ export default function AboutUs() {
                 <div className="max-w-7xl mx-auto">
                     <FadeInSection>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-slate-800">
-                            {[
+                            {(stats || [
                                 { stat: "90%+", label: "Successful Matches" },
                                 { stat: "<200ms", label: "Real-time Sync" },
                                 { stat: "24/7", label: "AI Support" },
                                 { stat: "100%", label: "Secure Venues" }
-                            ].map((item, i) => (
+                            ]).map((item, i) => (
                                 <div key={i} className={`text-center pl-8 ${i === 0 ? 'pl-0 border-none' : ''}`}>
                                     <p className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tighter">{item.stat}</p>
                                     <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold">{item.label}</p>

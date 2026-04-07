@@ -8,29 +8,29 @@ import { PlayerDB } from '../utils/playerDb';
 
 const PRESET_TEAMS = [
     {
-        id:'mumbai', name:'Mumbai Strikers', short:'MBS', emoji:'🔵',
-        color:'#1565C0', bg:'#E3F2FD',
-        players:['Rohit Sharma','Ishan Kishan','Suryakumar Yadav','Tilak Varma','Hardik Pandya','Tim David','Kieron Pollard','Krunal Pandya','Jasprit Bumrah','Trent Boult','Piyush Chawla']
+        id: 'mumbai', name: 'Mumbai Strikers', short: 'MBS', emoji: '🔵',
+        color: '#1565C0', bg: '#E3F2FD',
+        players: ['Rohit Sharma', 'Ishan Kishan', 'Suryakumar Yadav', 'Tilak Varma', 'Hardik Pandya', 'Tim David', 'Kieron Pollard', 'Krunal Pandya', 'Jasprit Bumrah', 'Trent Boult', 'Piyush Chawla']
     },
     {
-        id:'chennai', name:'Chennai Super Kings', short:'CSK', emoji:'🟡',
-        color:'#F9A825', bg:'#FFFDE7',
-        players:['Ruturaj Gaikwad','Devon Conway','Ajinkya Rahane','Shivam Dube','Moeen Ali','MS Dhoni','Ravindra Jadeja','Deepak Chahar','Mitchell Santner','Simarjeet Singh','Matheesha Pathirana']
+        id: 'chennai', name: 'Chennai Super Kings', short: 'CSK', emoji: '🟡',
+        color: '#F9A825', bg: '#FFFDE7',
+        players: ['Ruturaj Gaikwad', 'Devon Conway', 'Ajinkya Rahane', 'Shivam Dube', 'Moeen Ali', 'MS Dhoni', 'Ravindra Jadeja', 'Deepak Chahar', 'Mitchell Santner', 'Simarjeet Singh', 'Matheesha Pathirana']
     },
     {
-        id:'rcb', name:'Royal Challengers', short:'RCB', emoji:'🔴',
-        color:'#C62828', bg:'#FFEBEE',
-        players:['Virat Kohli','Faf du Plessis','Glenn Maxwell','Rajat Patidar','Dinesh Karthik','Anuj Rawat','Cameron Green','Wanindu Hasaranga','Mohammed Siraj','Josh Hazlewood','Akash Deep']
+        id: 'rcb', name: 'Royal Challengers', short: 'RCB', emoji: '🔴',
+        color: '#C62828', bg: '#FFEBEE',
+        players: ['Virat Kohli', 'Faf du Plessis', 'Glenn Maxwell', 'Rajat Patidar', 'Dinesh Karthik', 'Anuj Rawat', 'Cameron Green', 'Wanindu Hasaranga', 'Mohammed Siraj', 'Josh Hazlewood', 'Akash Deep']
     },
     {
-        id:'kolkata', name:'Kolkata Knight Riders', short:'KKR', emoji:'🟣',
-        color:'#6A1B9A', bg:'#F3E5F5',
-        players:['Shreyas Iyer','Venkatesh Iyer','Phil Salt','Rinku Singh','Andre Russell','Sunil Narine','Rahmanullah Gurbaz','Nitish Rana','Varun Chakravarthy','Mitchell Starc','Harshit Rana']
+        id: 'kolkata', name: 'Kolkata Knight Riders', short: 'KKR', emoji: '🟣',
+        color: '#6A1B9A', bg: '#F3E5F5',
+        players: ['Shreyas Iyer', 'Venkatesh Iyer', 'Phil Salt', 'Rinku Singh', 'Andre Russell', 'Sunil Narine', 'Rahmanullah Gurbaz', 'Nitish Rana', 'Varun Chakravarthy', 'Mitchell Starc', 'Harshit Rana']
     },
     {
-        id:'sunrisers', name:'Sunrisers Hyderabad', short:'SRH', emoji:'🟠',
-        color:'#E65100', bg:'#FFF3E0',
-        players:['Travis Head','Abhishek Sharma','Aiden Markram','Heinrich Klaasen','Abdul Samad','Pat Cummins','Shahbaz Ahmed','Bhuvneshwar Kumar','Mayank Agarwal','T Natarajan','Umran Malik']
+        id: 'sunrisers', name: 'Sunrisers Hyderabad', short: 'SRH', emoji: '🟠',
+        color: '#E65100', bg: '#FFF3E0',
+        players: ['Travis Head', 'Abhishek Sharma', 'Aiden Markram', 'Heinrich Klaasen', 'Abdul Samad', 'Pat Cummins', 'Shahbaz Ahmed', 'Bhuvneshwar Kumar', 'Mayank Agarwal', 'T Natarajan', 'Umran Malik']
     }
 ];
 
@@ -68,7 +68,7 @@ const getPOTM = (state, teams) => {
     state.bowlers.forEach(bw => processPlayer(bw, false, true));
     if (state.inn1Batters) state.inn1Batters.forEach(b => processPlayer(b, true, false));
     if (state.inn1Bowlers) state.inn1Bowlers.forEach(bw => processPlayer(bw, false, true));
-    return Object.values(scored).sort((a,b) => b.pts - a.pts).slice(0, 3);
+    return Object.values(scored).sort((a, b) => b.pts - a.pts).slice(0, 3);
 };
 
 export default function ScoringDashboard() {
@@ -78,16 +78,16 @@ export default function ScoringDashboard() {
     const [isDbLoading, setIsDbLoading] = useState(true);
     const [presetTeams, setPresetTeams] = useState(JSON.parse(JSON.stringify(PRESET_TEAMS)));
     const [TEAMS, setTeams] = useState([
-        { name: 'Team A', short: 'TMA', players: Array(11).fill("").map((_, i) => ({ name: `Player ${i+1}`, user_id: null })) },
-        { name: 'Team B', short: 'TMB', players: Array(11).fill("").map((_, i) => ({ name: `Player ${i+1}`, user_id: null })) }
+        { name: 'Team A', short: 'TMA', players: Array(11).fill("").map((_, i) => ({ name: `Player ${i + 1}`, user_id: null })) },
+        { name: 'Team B', short: 'TMB', players: Array(11).fill("").map((_, i) => ({ name: `Player ${i + 1}`, user_id: null })) }
     ]);
     const [viewingPlayer, setViewingPlayer] = useState(null);
 
     const [setupState, setSetupState] = useState({
         step: 0, title: '', venue: '', overs: 20,
         teams: [
-            { name: '', players: Array(11).fill("").map((_, i) => `Player ${i+1}`).join('\n') },
-            { name: '', players: Array(11).fill("").map((_, i) => `Player ${i+1}`).join('\n') }
+            { name: '', players: Array(11).fill("").map((_, i) => `Player ${i + 1}`).join('\n') },
+            { name: '', players: Array(11).fill("").map((_, i) => `Player ${i + 1}`).join('\n') }
         ]
     });
 
@@ -109,74 +109,83 @@ export default function ScoringDashboard() {
         formatOvers: 20, history: [],
         pendingMilestone: null, milestoneLog: [], lastOverSummary: null,
         partnership: { runs: 0, balls: 0 },
-        inningsNum: 1, target: null, 
+        inningsNum: 1, target: null,
         pendingWicket: null,
         aiLoading: false,
         aiRecommendation: null
     });
 
     const ScoreboardCard = memo(({ runs, wickets, overNum, ballInOver, overs, teamName, currentOverBalls, inn1Score, inn1Wickets, inningsNum, target, runRate, requiredRunRate }) => (
-        <div className="space-y-6">
-            {/* Top Stat Strip - Desktop Friendly */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col items-center justify-center shadow-2xl">
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Current RR</span>
-                    <span className="text-xl font-black text-emerald-400">{runRate || '0.00'}</span>
+        <div className="space-y-4 md:space-y-6">
+            {/* Top Stat Strip - Desktop Friendly, Hidden labels on Mobile for space */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl md:rounded-[1.5rem] p-3 md:p-4 flex flex-col items-center justify-center shadow-lg">
+                    <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">CRR</span>
+                    <span className="text-lg md:text-xl font-black text-emerald-400">{runRate || '0.00'}</span>
                 </div>
                 {inningsNum === 2 && target && (
-                    <div className="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col items-center justify-center shadow-2xl">
-                        <span className="text-[9px] font-black text-yellow-400/60 uppercase tracking-widest leading-none mb-1">Required RR</span>
-                        <span className="text-xl font-black text-yellow-400">{requiredRunRate || '0.00'}</span>
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl md:rounded-[1.5rem] p-3 md:p-4 flex flex-col items-center justify-center shadow-lg">
+                        <span className="text-[8px] md:text-[9px] font-black text-yellow-400/60 uppercase tracking-widest leading-none mb-1">RRR</span>
+                        <span className="text-lg md:text-xl font-black text-yellow-400">{requiredRunRate || '0.00'}</span>
                     </div>
                 )}
-                <div className="hidden md:flex bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex-col items-center justify-center shadow-2xl">
+                <div className="hidden md:flex bg-slate-900 border border-slate-800 rounded-2xl md:rounded-[1.5rem] p-3 md:p-4 flex-col items-center justify-center shadow-lg">
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Innings</span>
                     <span className="text-xl font-black text-white">{inningsNum === 2 ? '2ND' : '1ST'}</span>
                 </div>
-                <div className="hidden md:flex bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex-col items-center justify-center shadow-2xl">
+                {!target && inningsNum === 1 && (
+                     <div className="flex md:hidden bg-slate-900 border border-slate-800 rounded-2xl p-3 flex-col items-center justify-center shadow-lg">
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">INN</span>
+                        <span className="text-lg font-black text-white">1ST</span>
+                    </div>
+                )}
+                <div className="hidden md:flex bg-slate-900 border border-slate-800 rounded-2xl md:rounded-[1.5rem] p-3 md:p-4 flex-col items-center justify-center shadow-lg">
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Phase</span>
                     <span className="text-xl font-black text-emerald-500">LIVE</span>
                 </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-[3rem] p-10 md:p-14 text-center relative overflow-hidden group shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50"></div>
-                <div className="flex justify-between items-center mb-10">
+            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-14 text-center relative overflow-hidden group shadow-[0_24px_48px_-12px_rgba(0,0,0,0.5)]">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-40"></div>
+                
+                <div className="flex justify-between items-center mb-6 md:mb-10">
                     <div className="flex flex-col items-start gap-1">
-                        <p className="text-[11px] font-black text-white/40 uppercase tracking-[0.3em]">{teamName}</p>
+                        <p className="text-[10px] md:text-[11px] font-black text-white/40 uppercase tracking-[0.3em] truncate max-w-[120px] md:max-w-none">{teamName}</p>
                         {inningsNum === 2 && (
-                            <div className="inline-flex px-3 py-1 bg-white/5 rounded-full mt-2">
-                                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Chase: {target} Target</p>
+                            <div className="inline-flex px-2 py-0.5 md:px-3 md:py-1 bg-white/5 rounded-full mt-1">
+                                <p className="text-[8px] md:text-[9px] font-black text-emerald-500 uppercase tracking-widest">Target: {target}</p>
                             </div>
                         )}
                     </div>
                     {inningsNum === 2 && inn1Score !== undefined && (
-                        <div className="text-right glass-card px-4 py-2 rounded-2xl border border-white/5">
-                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest leading-none mb-1">Innings 01</p>
-                             <p className="text-lg font-black text-white/40">{inn1Score}/{inn1Wickets}</p>
+                        <div className="text-right bg-white/5 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl border border-white/5">
+                             <p className="text-[8px] font-black text-white/20 uppercase tracking-widest leading-none mb-1">INN 01</p>
+                             <p className="text-sm md:text-lg font-black text-white/40">{inn1Score}/{inn1Wickets}</p>
                         </div>
                     )}
                 </div>
-                <div className="flex items-end justify-center gap-2 mb-4">
-                    <span className="text-8xl md:text-9xl font-black tracking-tighter text-white drop-shadow-2xl">{runs}</span>
-                    <span className="text-5xl text-white/10 font-black mb-4">/</span>
-                    <span className="text-5xl md:text-6xl text-emerald-500 font-black mb-2">{wickets}</span>
+
+                <div className="flex items-end justify-center gap-1.5 md:gap-2 mb-3 md:mb-4">
+                    <span className="text-7xl md:text-9xl font-black tracking-tighter text-white drop-shadow-2xl">{runs}</span>
+                    <span className="text-3xl md:text-5xl text-white/10 font-black mb-2 md:mb-4">/</span>
+                    <span className="text-4xl md:text-6xl text-emerald-500 font-black mb-1 md:mb-2">{wickets}</span>
                 </div>
-                <div className="inline-flex px-6 py-2.5 bg-white/5 rounded-2xl border border-white/10 mb-10 shadow-inner">
-                    <p className="text-sm font-black text-white/60 uppercase tracking-[0.2em]">{overNum}.{ballInOver} <span className="opacity-40 text-[10px] mx-1">/</span> {overs} OVERS</p>
+
+                <div className="inline-flex px-4 py-1.5 md:px-6 md:py-2.5 bg-white/5 rounded-xl md:rounded-2xl border border-white/10 mb-6 md:mb-10 shadow-inner">
+                    <p className="text-xs md:text-sm font-black text-white/60 uppercase tracking-[0.2em]">{overNum}.{ballInOver} <span className="opacity-40 text-[10px] mx-1">/</span> {overs} O</p>
                 </div>
                 
-                <div className="flex gap-3 justify-center">
+                <div className="flex gap-2.5 md:gap-3 justify-center">
                     {currentOverBalls.map((b, i) => (
-                        <div key={i} className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-black border-2 transition-all scale-up-center ${
-                            b === 'W' ? 'bg-red-500 border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.4)] rotate-12' : 
-                            b === '4' ? 'bg-blue-600 border-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.3)]' :
-                            b === '6' ? 'bg-orange-500 border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.3)] scale-110' :
+                        <div key={i} className={`w-9 h-9 md:w-11 md:h-11 rounded-xl md:rounded-2xl flex items-center justify-center text-[10px] md:text-xs font-black border-2 transition-all scale-up-center ${
+                            b === 'W' ? 'bg-red-500 border-red-400 shadow-[0_0_20px_rgba(239,68,68,0.3)] rotate-6' : 
+                            b === '4' ? 'bg-blue-600 border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.2)]' :
+                            b === '6' ? 'bg-orange-500 border-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.2)] scale-105' :
                             'bg-white/5 border-white/5 text-white/40'
                         }`}>{b === '·' ? '0' : b}</div>
                     ))}
                     {Array.from({ length: 6 - currentOverBalls.length }).map((_, i) => (
-                        <div key={i} className="w-11 h-11 rounded-2xl border-2 border-white/5 opacity-10"></div>
+                        <div key={i} className="w-9 h-9 md:w-11 md:h-11 rounded-xl md:rounded-2xl border-2 border-white/5 opacity-5"></div>
                     ))}
                 </div>
             </div>
@@ -184,33 +193,40 @@ export default function ScoringDashboard() {
     ));
 
     const ScoringButtons = memo(({ onRecord, onWicket, onUndo, onSwap }) => (
-        <div className="bg-white/5 rounded-[3rem] p-6 md:p-10 space-y-4 border border-white/10 shadow-2xl">
-            <div className="grid grid-cols-4 gap-4">
+        <div className="bg-slate-900/40 rounded-[2.5rem] md:rounded-[3rem] p-5 md:p-10 space-y-3 md:space-y-4 border border-white/5 shadow-2xl backdrop-blur-xl">
+            <div className="grid grid-cols-4 gap-3 md:gap-4">
                 {[0, 1, 2, 3].map(r => (
                     <button 
                         key={r} 
                         onClick={() => onRecord(r)} 
-                        className="h-20 md:h-24 bg-white/5 rounded-[1.8rem] border border-white/10 text-2xl font-black text-white hover:bg-white/10 active:scale-95 active:bg-white/20 transition-all uppercase shadow-lg"
+                        className="h-16 md:h-24 bg-white/5 rounded-2xl md:rounded-[1.8rem] border border-white/5 text-xl md:text-2xl font-black text-white hover:bg-white/10 active:scale-95 active:bg-white/20 transition-all uppercase shadow-lg shadow-black/20"
                     >
                         {r}
                     </button>
                 ))}
             </div>
-            <div className="grid grid-cols-4 gap-4">
-                <button onClick={() => onRecord(4)} className="h-20 md:h-24 bg-blue-600 border-2 border-blue-400 text-white text-3xl font-black rounded-[1.8rem] hover:bg-blue-500 active:scale-90 transition-all shadow-xl shadow-blue-500/20 uppercase">4</button>
-                <button onClick={() => onRecord(6)} className="h-20 md:h-24 bg-orange-600 border-2 border-orange-400 text-white text-3xl font-black rounded-[1.8rem] hover:bg-orange-500 active:scale-90 transition-all shadow-xl shadow-orange-500/20 uppercase">6</button>
-                <button onClick={() => onRecord('wd')} className="h-20 md:h-24 bg-white/5 border border-white/10 text-purple-400 text-sm font-black rounded-[1.8rem] hover:bg-purple-500/10 active:scale-95 transition-all uppercase">Wd</button>
-                <button onClick={() => onRecord('nb')} className="h-20 md:h-24 bg-white/5 border border-white/10 text-purple-400 text-sm font-black rounded-[1.8rem] hover:bg-purple-500/10 active:scale-95 transition-all uppercase">Nb</button>
+            <div className="grid grid-cols-4 gap-3 md:gap-4">
+                <button onClick={() => onRecord(4)} className="h-16 md:h-24 bg-blue-600 border-2 border-blue-400 text-white text-2xl md:text-3xl font-black rounded-2xl md:rounded-[1.8rem] hover:bg-blue-500 active:scale-90 transition-all shadow-xl shadow-blue-500/20 uppercase">4</button>
+                <button onClick={() => onRecord(6)} className="h-16 md:h-24 bg-orange-600 border-2 border-orange-400 text-white text-2xl md:text-3xl font-black rounded-2xl md:rounded-[1.8rem] hover:bg-orange-500 active:scale-90 transition-all shadow-xl shadow-orange-500/20 uppercase">6</button>
+                <button onClick={() => onRecord('wd')} className="h-16 md:h-24 bg-white/5 border border-white/5 text-purple-400 text-xs md:text-sm font-black rounded-2xl md:rounded-[1.8rem] hover:bg-purple-500/10 active:scale-95 transition-all uppercase leading-none flex flex-col items-center justify-center gap-1">
+                    <span>WD</span>
+                    <span className="text-[7px] opacity-40">+1</span>
+                </button>
+                <button onClick={() => onRecord('nb')} className="h-16 md:h-24 bg-white/5 border border-white/5 text-purple-400 text-xs md:text-sm font-black rounded-2xl md:rounded-[1.8rem] hover:bg-purple-500/10 active:scale-95 transition-all uppercase leading-none flex flex-col items-center justify-center gap-1">
+                    <span>NB</span>
+                    <span className="text-[7px] opacity-40">+1</span>
+                </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-                <button onClick={onWicket} className="h-20 md:h-24 bg-red-600 border-2 border-red-400 text-white text-2xl font-black rounded-[1.8rem] shadow-2xl shadow-red-500/30 active:scale-95 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-3">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <button onClick={onWicket} className="h-16 md:h-24 bg-red-600 border-2 border-red-400 text-white text-lg md:text-2xl font-black rounded-2xl md:rounded-[1.8rem] shadow-2xl shadow-red-500/30 active:scale-95 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-2 md:gap-3">
                     WICKET
                 </button>
-                <div className="grid grid-cols-2 gap-4">
-                    <button onClick={onUndo} className="h-20 md:h-24 bg-slate-900 border border-white/5 rounded-[1.8rem] flex items-center justify-center text-white/40 hover:text-white active:scale-95 transition-all shadow-inner border-t-white/10">
-                        <Undo2 size={32} />
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                    <button onClick={onUndo} className="h-16 md:h-24 bg-slate-950 border border-white/5 rounded-2xl md:rounded-[1.8rem] flex items-center justify-center text-white/20 hover:text-white active:scale-95 transition-all shadow-inner">
+                        <Undo2 size={24} className="md:w-8 md:h-8" />
                     </button>
-                    <button onClick={onSwap} className="h-20 md:h-24 bg-slate-900 border border-white/5 rounded-[1.8rem] flex items-center justify-center text-emerald-500 font-black hover:text-emerald-400 active:scale-95 transition-all text-lg shadow-inner border-t-white/10">
+                    <button onClick={onSwap} className="h-16 md:h-24 bg-slate-950 border border-white/5 rounded-2xl md:rounded-[1.8rem] flex flex-col items-center justify-center text-emerald-500 font-black hover:text-emerald-400 active:scale-95 transition-all text-[9px] md:text-lg shadow-inner">
+                        <RefreshCw size={18} className="mb-1 md:hidden" />
                         SWAP
                     </button>
                 </div>
@@ -223,7 +239,7 @@ export default function ScoringDashboard() {
     useEffect(() => {
         PlayerDB.initializePresets(PRESET_TEAMS);
         const fetchMatch = async () => {
-             try {
+            try {
                 const res = await apiClient.get(`/matches/${id}`);
                 const matchData = res.data.match || res.data;
                 setMatch(matchData);
@@ -250,7 +266,7 @@ export default function ScoringDashboard() {
                 if (matchData.format && matchData.format.startsWith('T')) {
                     setState(s => ({ ...s, formatOvers: parseInt(matchData.format.replace('T', '')) || 20 }));
                 }
-                
+
                 if (matchData.live_data && Object.keys(matchData.live_data).length > 2) {
                     setState(s => ({ ...s, ...matchData.live_data }));
                 } else if (matchData.status === 'Completed') {
@@ -313,7 +329,7 @@ export default function ScoringDashboard() {
                         <h2 className="text-2xl font-black uppercase tracking-tighter">{stats.name}</h2>
                         <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mt-1">{stats.role}</p>
                     </div>
-                    
+
                     <div className="p-8 pt-0 space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center">
@@ -336,7 +352,7 @@ export default function ScoringDashboard() {
                                 <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest mt-1">Sixes</p>
                             </div>
                         </div>
-                        
+
                         <div className="space-y-3">
                             <div className="flex justify-between items-center text-xs border-b border-white/5 pb-2">
                                 <span className="opacity-40 font-bold uppercase tracking-widest text-[9px]">High Score</span>
@@ -373,12 +389,12 @@ export default function ScoringDashboard() {
         const ta = presetTeams.find(t => t.id === taId);
         const tb = presetTeams.find(t => t.id === tbId);
         if (!ta || !tb) return;
-        
+
         setTeams([
             { name: ta.name, short: ta.short, players: ta.players.map(p => ({ name: p, user_id: null })) },
             { name: tb.name, short: tb.short, players: tb.players.map(p => ({ name: p, user_id: null })) }
         ]);
-        
+
         setState(prev => ({
             ...prev,
             phase: 'toss',
@@ -391,12 +407,12 @@ export default function ScoringDashboard() {
     const startCustomMatch = () => {
         const t1Players = setupState.teams[0].players.split('\n').filter(p => p.trim()).map(p => ({ name: p.trim(), user_id: null }));
         const t2Players = setupState.teams[1].players.split('\n').filter(p => p.trim()).map(p => ({ name: p.trim(), user_id: null }));
-        
+
         setTeams([
-            { name: setupState.teams[0].name || 'Team A', short: (setupState.teams[0].name || 'TMA').slice(0,3).toUpperCase(), players: t1Players },
-            { name: setupState.teams[1].name || 'Team B', short: (setupState.teams[1].name || 'TMB').slice(0,3).toUpperCase(), players: t2Players }
+            { name: setupState.teams[0].name || 'Team A', short: (setupState.teams[0].name || 'TMA').slice(0, 3).toUpperCase(), players: t1Players },
+            { name: setupState.teams[1].name || 'Team B', short: (setupState.teams[1].name || 'TMB').slice(0, 3).toUpperCase(), players: t2Players }
         ]);
-        
+
         setState(prev => ({
             ...prev,
             phase: 'toss',
@@ -420,16 +436,16 @@ export default function ScoringDashboard() {
 
         setState(prev => ({
             ...prev,
-            batters: bt.players.map((p, i) => ({ 
-                name: p.name, 
+            batters: bt.players.map((p, i) => ({
+                name: p.name,
                 user_id: p.user_id,
-                r: 0, b: 0, fours: 0, sixes: 0, sr: 0, out: false, batting: false, milestones: [] 
+                r: 0, b: 0, fours: 0, sixes: 0, sr: 0, out: false, batting: false, milestones: []
             })),
-            bowlers: bwt.players.map((p, i) => ({ 
-                name: p.name, 
+            bowlers: bwt.players.map((p, i) => ({
+                name: p.name,
                 user_id: p.user_id,
-                style: BOWLING_STYLES[i % BOWLING_STYLES.length], 
-                overs: 0, r: 0, w: 0, balls: 0 
+                style: BOWLING_STYLES[i % BOWLING_STYLES.length],
+                overs: 0, r: 0, w: 0, balls: 0
             })),
             striker: null, nonStriker: null, currentBowlerIdx: null, prevBowlerIdx: null
         }));
@@ -447,6 +463,9 @@ export default function ScoringDashboard() {
         if (!state.history.length) return;
         const last = JSON.parse(state.history.pop());
         setState({ ...last, history: state.history });
+        
+        // Notify backend to remove the last recorded ball to avoid duplication in graph
+        apiClient.post(`/matches/${id}/undo-ball`).catch(e => console.error("Undo sync fail", e));
     };
 
     const syncWithBackend = useCallback(async () => {
@@ -488,7 +507,7 @@ export default function ScoringDashboard() {
 
     useEffect(() => {
         if (state.phase !== 'toss' && state.phase !== 'bb_choice') {
-            const timer = setTimeout(syncWithBackend, 200); 
+            const timer = setTimeout(syncWithBackend, 200);
             return () => clearTimeout(timer);
         }
     }, [state.runs, state.wickets, state.totalBalls, state.phase, syncWithBackend]);
@@ -496,10 +515,10 @@ export default function ScoringDashboard() {
     const recordBall = useCallback((type) => {
         if (state.phase !== 'batting') return;
         saveCheckpoint();
-        
+
         setState(prev => {
-            const next = { 
-                ...prev, 
+            const next = {
+                ...prev,
                 extras: { ...prev.extras },
                 currentOverBalls: [...prev.currentOverBalls],
                 overHistory: [...prev.overHistory],
@@ -509,11 +528,11 @@ export default function ScoringDashboard() {
             const isWide = type === 'wd', isNB = type === 'nb', isBye = type === 'bye';
             const bwIdx = prev.currentBowlerIdx;
             const bw = { ...prev.bowlers[bwIdx] };
-            const striker = { 
-                ...prev.batters[prev.striker], 
-                milestones: [...(prev.batters[prev.striker]?.milestones || [])] 
+            const striker = {
+                ...prev.batters[prev.striker],
+                milestones: [...(prev.batters[prev.striker]?.milestones || [])]
             };
-            
+
             if (isWide) {
                 next.runs++; next.extras.wides++; bw.r++;
                 next.currentOverBalls.push('Wd'); next.freeHit = false;
@@ -525,17 +544,18 @@ export default function ScoringDashboard() {
                 next.currentOverBalls.push('B'); next.freeHit = false;
                 const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t;
             } else {
-                const runs = type;
+                const runs = Number(type);
                 next.runs += runs; striker.r += runs; striker.b++;
-                if (runs === 4) striker.fours++; if (runs === 6) striker.sixes++;
+                if (runs === 4) { striker.fours = (striker.fours || 0) + 1; }
+                if (runs === 6) { striker.sixes = (striker.sixes || 0) + 1; }
                 bw.r += runs; bw.balls++; next.ballInOver++; next.totalBalls++;
                 next.currentOverBalls.push(runs === 0 ? '·' : String(runs)); next.freeHit = false;
                 if (runs % 2 !== 0) { const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t; }
             }
-            
+
             next.batters[prev.striker] = striker;
             next.bowlers[bwIdx] = bw;
-            
+
             if (striker.r >= 100 && !striker.milestones.includes(100)) {
                 striker.milestones.push(100);
                 next.pendingMilestone = { name: striker.name, typ: 'CENTURY', val: 100 };
@@ -545,11 +565,11 @@ export default function ScoringDashboard() {
             }
 
             if (next.ballInOver >= 6 && next.phase === 'batting') {
-                 next.overHistory.push([...next.currentOverBalls]);
-                 next.currentOverBalls = []; next.overNum++; next.ballInOver = 0;
-                 next.prevBowlerIdx = next.currentBowlerIdx; next.currentBowlerIdx = null;
-                 const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t;
-                 next.phase = next.overNum >= next.formatOvers ? 'innings_over' : 'select_bowler';
+                next.overHistory.push([...next.currentOverBalls]);
+                next.currentOverBalls = []; next.overNum++; next.ballInOver = 0;
+                next.prevBowlerIdx = next.currentBowlerIdx; next.currentBowlerIdx = null;
+                const t = next.striker; next.striker = next.nonStriker; next.nonStriker = t;
+                next.phase = next.overNum >= next.formatOvers ? 'innings_over' : 'select_bowler';
             }
 
             if (next.inningsNum === 2 && next.target) {
@@ -576,7 +596,7 @@ export default function ScoringDashboard() {
                 fours: striker.fours || 0, sixes: striker.sixes || 0,
                 extra_type: isWide ? 'wide' : isNB ? 'noball' : isBye ? 'bye' : null, is_wicket: false
             };
-            apiClient.post(`/matches/${id}/ball`, resPayload).catch(e => {});
+            apiClient.post(`/matches/${id}/ball`, resPayload).catch(e => { });
 
             return next;
         });
@@ -585,7 +605,7 @@ export default function ScoringDashboard() {
     const finalizeWicket = (nextBatterIdx = null) => {
         saveCheckpoint();
         setState(prev => {
-            const next = { 
+            const next = {
                 ...prev,
                 batters: [...prev.batters],
                 bowlers: [...prev.bowlers],
@@ -598,9 +618,9 @@ export default function ScoringDashboard() {
 
             next.batters[outIdx] = { ...next.batters[outIdx], out: true, batting: false };
             next.wickets++;
-            next.totalBalls++; 
+            next.totalBalls++;
             next.currentOverBalls.push('W');
-            
+
             if (dt?.creditsBowler) {
                 next.bowlers[prev.currentBowlerIdx] = { ...next.bowlers[prev.currentBowlerIdx], w: next.bowlers[prev.currentBowlerIdx].w + 1 };
             }
@@ -623,7 +643,7 @@ export default function ScoringDashboard() {
                 next.striker = null;
                 next.phase = 'innings_over';
             }
-            
+
             if (next.ballInOver >= 6 && next.phase === 'batting') {
                 next.overHistory.push([...next.currentOverBalls]);
                 next.currentOverBalls = []; next.overNum++; next.ballInOver = 0;
@@ -681,22 +701,24 @@ export default function ScoringDashboard() {
 
         if (state.inningsNum === 2) {
             if (state.runs >= state.target) {
-                winner = state.battingTeam === 'A' ? match.team_a.team_id : match.team_b.team_id;
+                winner = state.battingTeam === 'A' ? (match.team_a.team_id?._id || match.team_a.team_id) : (match.team_b.team_id?._id || match.team_b.team_id);
                 won_by = 'Wickets';
-                margin = (match.format_overs * 6 || 60) - state.wickets; // Simplified: usually wickets left
-                // Actually, let's use wickets left from state
-                const totalWickets = 10; // Assuming 11 players
-                margin = totalWickets - state.wickets;
-            } else if (state.overNum >= state.formatOvers || state.wickets >= 10) {
+                margin = 10 - state.wickets;
+            } else {
+                // If match is ended prematurely or overs finished
                 const target = state.target;
                 if (state.runs < target - 1) {
-                    winner = state.battingTeam === 'A' ? match.team_b.team_id : match.team_a.team_id;
+                    winner = state.battingTeam === 'A' ? (match.team_b.team_id?._id || match.team_b.team_id) : (match.team_a.team_id?._id || match.team_a.team_id);
                     won_by = 'Runs';
                     margin = (target - 1) - state.runs;
                 } else if (state.runs === target - 1) {
                     won_by = 'Tie';
+                    winner = null;
                 }
             }
+        } else {
+            // First innings ended manually - technically no winner yet
+            won_by = 'Innings Break';
         }
 
         try {
@@ -736,7 +758,7 @@ export default function ScoringDashboard() {
     if (isDbLoading) return (
         <div className="min-h-screen bg-[#0D1B0F] flex flex-col items-center justify-center text-white">
             <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Loading Scorer v6...</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Loading Scorer ...</p>
         </div>
     );
 
@@ -767,7 +789,7 @@ export default function ScoringDashboard() {
                 .b-w { background: #C62828; color: #fff; }
                 .b-wd, .b-nb { background: #7B1FA2; color: #fff; }
             `}</style>
-            
+
             {/* Top Bar */}
             <div className="p-4 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#0D1B0F]/90 backdrop-blur-xl z-50">
                 <div className="flex items-center gap-3">
@@ -791,7 +813,7 @@ export default function ScoringDashboard() {
                             <h2 className="text-3xl font-black uppercase tracking-tighter">The Turf Scorer</h2>
                             <p className="text-white/40 text-sm font-medium mt-1">Set up your live match</p>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-4">
                             <button onClick={() => updateState({ phase: 'quick_match' })} className="p-8 bg-gradient-to-br from-orange-500/20 to-orange-600/20 border border-orange-500/30 rounded-[2.5rem] flex flex-col items-center gap-4 group hover:scale-[1.02] transition-all">
                                 <span className="text-4xl">⚡</span>
@@ -810,20 +832,20 @@ export default function ScoringDashboard() {
                         </div>
 
                         {lastMatch && (
-                            <button 
+                            <button
                                 onClick={() => {
                                     const ta = lastMatch.quick_teams?.team_a || { name: lastMatch.team_a?.team_id?.name, players: lastMatch.live_data?.inn1Batters || [] };
                                     const tb = lastMatch.quick_teams?.team_b || { name: lastMatch.team_b?.team_id?.name, players: lastMatch.live_data?.inn2Batters || [] };
-                                    
+
                                     setTeams([
-                                        { name: ta.name, short: (ta.name.slice(0,3)).toUpperCase(), players: (ta.players || []).map(p => ({ name: typeof p === 'string' ? p : p.display_name || p.name, user_id: p.user_id || null })) },
-                                        { name: tb.name, short: (tb.name.slice(0,3)).toUpperCase(), players: (tb.players || []).map(p => ({ name: typeof p === 'string' ? p : p.display_name || p.name, user_id: p.user_id || null })) }
+                                        { name: ta.name, short: (ta.name.slice(0, 3)).toUpperCase(), players: (ta.players || []).map(p => ({ name: typeof p === 'string' ? p : p.display_name || p.name, user_id: p.user_id || null })) },
+                                        { name: tb.name, short: (tb.name.slice(0, 3)).toUpperCase(), players: (tb.players || []).map(p => ({ name: typeof p === 'string' ? p : p.display_name || p.name, user_id: p.user_id || null })) }
                                     ]);
-                                    
+
                                     setState(prev => ({
                                         ...prev,
                                         phase: 'toss',
-                                        formatOvers: lastMatch.format?.replace('T','') || 20,
+                                        formatOvers: lastMatch.format?.replace('T', '') || 20,
                                         batters: [],
                                         bowlers: []
                                     }));
@@ -907,15 +929,15 @@ export default function ScoringDashboard() {
                         </div>
                         <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 space-y-2">
                             {presetTeams.find(t => t.id === editSquadId)?.players.map((p, i) => (
-                                    <div key={i} className="flex gap-2 items-center group/edit">
-                                        <span className="w-8 h-10 flex items-center justify-center text-[10px] font-black text-white/20">{i+1}</span>
-                                        <input value={p} onChange={e => {
-                                            const np = [...presetTeams.find(t => t.id === editSquadId).players];
-                                            np[i] = e.target.value;
-                                            setPresetTeams(prev => prev.map(t => t.id === editSquadId ? { ...t, players: np } : t));
-                                        }} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold" />
-                                        <button onClick={() => handleEditPlayerProfile(p)} className="p-2.5 bg-white/5 border border-white/10 rounded-xl text-white/20 hover:text-emerald-400 transition-colors">📊</button>
-                                    </div>
+                                <div key={i} className="flex gap-2 items-center group/edit">
+                                    <span className="w-8 h-10 flex items-center justify-center text-[10px] font-black text-white/20">{i + 1}</span>
+                                    <input value={p} onChange={e => {
+                                        const np = [...presetTeams.find(t => t.id === editSquadId).players];
+                                        np[i] = e.target.value;
+                                        setPresetTeams(prev => prev.map(t => t.id === editSquadId ? { ...t, players: np } : t));
+                                    }} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold" />
+                                    <button onClick={() => handleEditPlayerProfile(p)} className="p-2.5 bg-white/5 border border-white/10 rounded-xl text-white/20 hover:text-emerald-400 transition-colors">📊</button>
+                                </div>
                             ))}
                         </div>
                         <button onClick={() => updateState({ phase: 'quick_match' })} className="w-full bg-emerald-600 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-500/20">Save Changes</button>
@@ -953,7 +975,7 @@ export default function ScoringDashboard() {
                                         </div>
                                     ))}
                                 </div>
-                                
+
                                 {recentTeams.length > 0 && (
                                     <div className="space-y-3 mt-6">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-white/20">🏆 Recent Teams</p>
@@ -1086,7 +1108,7 @@ export default function ScoringDashboard() {
                             <h2 className="text-xl font-black uppercase tracking-widest mb-1 text-amber-500">{TEAMS[state.tossWinner]?.name} Won!</h2>
                             <p className="text-xs font-medium text-amber-500/60 uppercase tracking-widest">Select their decision</p>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-4">
                             <button onClick={() => updateState({ bbChoice: 'bat' })} className={`p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-4 transition-all ${state.bbChoice === 'bat' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-white/5 border-white/10 opacity-40'}`}>
                                 <Trophy size={32} />
@@ -1136,8 +1158,8 @@ export default function ScoringDashboard() {
                         </div>
                         <button disabled={typeof state.openerStrikerIdx !== 'number' || typeof state.openerNSIdx !== 'number'} onClick={() => {
                             const nb = [...state.batters];
-                            if(nb[state.openerStrikerIdx]) nb[state.openerStrikerIdx].batting = true;
-                            if(nb[state.openerNSIdx]) nb[state.openerNSIdx].batting = true;
+                            if (nb[state.openerStrikerIdx]) nb[state.openerStrikerIdx].batting = true;
+                            if (nb[state.openerNSIdx]) nb[state.openerNSIdx].batting = true;
                             updateState({ batters: nb, striker: state.openerStrikerIdx, nonStriker: state.openerNSIdx, phase: 'select_bowler' });
                         }} className="w-full bg-emerald-600 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-emerald-500/20 disabled:opacity-20 disabled:grayscale transition-all">Confirm Openers →</button>
                     </div>
@@ -1266,55 +1288,63 @@ export default function ScoringDashboard() {
                         <div className="lg:col-span-12 space-y-8">
                             <div className="flex flex-col lg:flex-row gap-8">
                                 <div className="flex-1 space-y-8">
-                                    <ScoreboardCard 
-                                        runs={state.runs} 
-                                        wickets={state.wickets} 
-                                        overNum={state.overNum} 
-                                        ballInOver={state.ballInOver} 
-                                        overs={state.formatOvers} 
-                                        teamName={TEAMS[state.battingTeam]?.name} 
-                                        currentOverBalls={state.currentOverBalls} 
+                                    <ScoreboardCard
+                                        runs={state.runs}
+                                        wickets={state.wickets}
+                                        overNum={state.overNum}
+                                        ballInOver={state.ballInOver}
+                                        overs={state.formatOvers}
+                                        teamName={TEAMS[state.battingTeam]?.name}
+                                        currentOverBalls={state.currentOverBalls}
                                         inn1Score={state.inn1Score}
                                         inn1Wickets={state.inn1Wickets}
                                         inningsNum={state.inningsNum}
                                         target={state.target}
-                                        runRate={(state.runs / (state.overNum + state.ballInOver/6 || 1)).toFixed(2)}
+                                        runRate={(state.runs / (state.overNum + state.ballInOver / 6 || 1)).toFixed(2)}
                                         requiredRunRate={state.inningsNum === 2 ? ((state.target - state.runs) / (((state.formatOvers * 6) - (state.overNum * 6 + state.ballInOver)) / 6 || 1)).toFixed(2) : '0.00'}
                                     />
 
-                                    {/* Crease & Bowler Details */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-xl">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
-                                                <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Striker Action</p>
+                                    {/* Crease & Bowler Details - Scroll on Mobile */}
+                                    <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto no-scrollbar pb-2 md:pb-0 snap-x snap-mandatory">
+                                        <div className="bg-slate-900/50 border border-white/5 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-xl min-w-[180px] md:min-w-0 snap-center">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full border border-white shadow-lg animate-pulse"></div>
+                                                <p className="text-[8px] md:text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Striker</p>
                                             </div>
-                                            <p className="text-xl font-black text-white truncate mb-2">{state.batters[state.striker]?.name}</p>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-4xl font-black text-emerald-500">{state.batters[state.striker]?.r}</span>
-                                                <span className="text-sm font-bold text-white/20">({state.batters[state.striker]?.b})</span>
+                                            <p className="text-sm md:text-xl font-black text-white truncate mb-1">{state.batters[state.striker]?.name}</p>
+                                            <div className="flex items-baseline gap-1.5">
+                                                <span className="text-2xl md:text-4xl font-black text-emerald-500">{state.batters[state.striker]?.r}</span>
+                                                <span className="text-[10px] md:text-sm font-bold text-white/20">({state.batters[state.striker]?.b})</span>
                                             </div>
-                                        </div>
-                                        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-xl opacity-60">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-2.5 h-2.5 bg-white/40 rounded-full"></div>
-                                                <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Non-Striker</p>
-                                            </div>
-                                            <p className="text-xl font-black text-white truncate mb-2">{state.batters[state.nonStriker]?.name}</p>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-3xl font-black text-white/40">{state.batters[state.nonStriker]?.r}</span>
-                                                <span className="text-sm font-bold text-white/10">({state.batters[state.nonStriker]?.b})</span>
+                                            <div className="flex items-center gap-3 mt-2">
+                                                <span className="text-[9px] font-bold text-blue-400">4s: {state.batters[state.striker]?.fours || 0}</span>
+                                                <span className="text-[9px] font-bold text-orange-400">6s: {state.batters[state.striker]?.sixes || 0}</span>
                                             </div>
                                         </div>
-                                        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 shadow-xl">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
-                                                <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Bowling End</p>
+                                        <div className="bg-slate-900/40 border border-white/5 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-xl min-w-[180px] md:min-w-0 opacity-80 md:opacity-60 snap-center">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-1.5 h-1.5 bg-white/20 rounded-full"></div>
+                                                <p className="text-[8px] md:text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Non-Striker</p>
                                             </div>
-                                            <p className="text-xl font-black text-white truncate mb-2">{TEAMS[state.bowlingTeam]?.players[state.currentBowlerIdx]?.name || 'Wait...'}</p>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-3xl font-black text-red-400">{state.bowlers[state.currentBowlerIdx]?.w || 0}</span>
-                                                <span className="text-sm font-bold text-white/20">Wkts / {state.bowlers[state.currentBowlerIdx]?.r || 0} R</span>
+                                            <p className="text-sm md:text-xl font-black text-white truncate mb-1">{state.batters[state.nonStriker]?.name}</p>
+                                            <div className="flex items-baseline gap-1.5">
+                                                <span className="text-2xl md:text-3xl font-black text-white/40">{state.batters[state.nonStriker]?.r}</span>
+                                                <span className="text-[10px] md:text-sm font-bold text-white/10">({state.batters[state.nonStriker]?.b})</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-2">
+                                                <span className="text-[9px] font-bold text-blue-400/60">4s: {state.batters[state.nonStriker]?.fours || 0}</span>
+                                                <span className="text-[9px] font-bold text-orange-400/60">6s: {state.batters[state.nonStriker]?.sixes || 0}</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-slate-950/80 border border-white/10 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-xl min-w-[180px] md:min-w-0 snap-center bg-gradient-to-br from-slate-900 to-black">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                                                <p className="text-[8px] md:text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Bowler</p>
+                                            </div>
+                                            <p className="text-sm md:text-xl font-black text-white truncate mb-1">{TEAMS[state.bowlingTeam]?.players[state.currentBowlerIdx]?.name || 'Wait...'}</p>
+                                            <div className="flex items-baseline gap-1.5">
+                                                <span className="text-2xl md:text-3xl font-black text-red-500">{state.bowlers[state.currentBowlerIdx]?.w || 0}</span>
+                                                <span className="text-[10px] md:text-sm font-bold text-white/20">W / {state.bowlers[state.currentBowlerIdx]?.r || 0} R</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1322,7 +1352,7 @@ export default function ScoringDashboard() {
 
                                 <div className="lg:w-[450px] space-y-8">
                                     {/* Scoring Buttons */}
-                                    <ScoringButtons 
+                                    <ScoringButtons
                                         onRecord={recordBall}
                                         onWicket={() => updateState({ phase: 'wicket_type' })}
                                         onUndo={handleUndo}
@@ -1393,7 +1423,7 @@ export default function ScoringDashboard() {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-white/30">Run Rate</p>
-                                    <p className="text-2xl font-black">{(state.runs / (state.overNum + state.ballInOver/6 || 1)).toFixed(2)}</p>
+                                    <p className="text-2xl font-black">{(state.runs / (state.overNum + state.ballInOver / 6 || 1)).toFixed(2)}</p>
                                 </div>
                             </div>
                         </div>
@@ -1418,8 +1448,8 @@ export default function ScoringDashboard() {
                                     runs: 0, wickets: 0, overNum: 0, ballInOver: 0, totalBalls: 0,
                                     currentOverBalls: [], overHistory: [],
                                     striker: null, nonStriker: null, currentBowlerIdx: null,
-                                    batters: TEAMS[nextBattingTeam].players.map(p => ({ ...p, r:0, b:0, fours:0, sixes:0, sr:0, out:false, batting:false, milestones: [] })),
-                                    bowlers: TEAMS[nextBowlingTeam].players.map(p => ({ ...p, o:0, r:0, w:0, eco:0, balls:0 }))
+                                    batters: TEAMS[nextBattingTeam].players.map(p => ({ ...p, r: 0, b: 0, fours: 0, sixes: 0, sr: 0, out: false, batting: false, milestones: [] })),
+                                    bowlers: TEAMS[nextBowlingTeam].players.map(p => ({ ...p, o: 0, r: 0, w: 0, eco: 0, balls: 0 }))
                                 };
                             });
                         }} className="w-full py-6 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-3xl shadow-[0_20px_40px_-10px_rgba(16,185,129,0.3)]">
@@ -1455,9 +1485,9 @@ export default function ScoringDashboard() {
 
                         <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 space-y-4">
                             <p className="text-[10px] font-black uppercase tracking-widest text-white/30 text-center">Post-Match Action</p>
-                            
+
                             {/* Option 1: Instant Rematch (Same Players) */}
-                            <button 
+                            <button
                                 onClick={() => {
                                     // Reset to TOSS but keep TEAMS as is
                                     setState(prev => ({
@@ -1471,7 +1501,7 @@ export default function ScoringDashboard() {
                                         tossWinner: null, battingTeam: null, bowlingTeam: null, bbChoice: null
                                     }));
                                     toast.success("Preparing Rematch... Time for a New Toss!");
-                                }} 
+                                }}
                                 className="w-full p-6 bg-emerald-600 rounded-3xl flex items-center justify-between group shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
                             >
                                 <div className="flex items-center gap-4 text-left">
@@ -1488,7 +1518,7 @@ export default function ScoringDashboard() {
 
                             {/* Option 3: AI Selection (The Modern Choice) */}
                             {!state.aiRecommendation ? (
-                                <button 
+                                <button
                                     onClick={() => handleAiMatchmake('different')}
                                     disabled={state.aiLoading}
                                     className="w-full p-6 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl flex items-center justify-between group shadow-xl shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50"
@@ -1517,12 +1547,12 @@ export default function ScoringDashboard() {
                                         </div>
                                         <button onClick={() => updateState({ aiRecommendation: null })} className="text-[9px] font-black uppercase text-white/30 hover:text-white">Clear</button>
                                     </div>
-                                    
+
                                     <div className="space-y-2 mb-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                                         {(state.aiRecommendation.suggestedTeam || []).map((p, i) => (
                                             <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-6 h-6 bg-emerald-500/10 rounded-full flex items-center justify-center text-[9px] font-black text-emerald-500">{i+1}</div>
+                                                    <div className="w-6 h-6 bg-emerald-500/10 rounded-full flex items-center justify-center text-[9px] font-black text-emerald-500">{i + 1}</div>
                                                     <div>
                                                         <p className="text-[11px] font-black uppercase">{p.name}</p>
                                                         <p className="text-[8px] font-bold text-white/30 uppercase tracking-widest">{p.role} · {p.skillLevel}</p>
@@ -1535,8 +1565,8 @@ export default function ScoringDashboard() {
                                             </div>
                                         ))}
                                     </div>
-                                    
-                                    <button 
+
+                                    <button
                                         onClick={() => {
                                             const recTeam = state.aiRecommendation.suggestedTeam.map(p => ({ name: p.name, user_id: p.id }));
                                             setTeams(prev => [
@@ -1561,9 +1591,9 @@ export default function ScoringDashboard() {
                                     </button>
                                 </div>
                             )}
-                            
+
                             {/* Option 2: Same Teams, but different members */}
-                            <button 
+                            <button
                                 onClick={() => {
                                     updateState({ phase: 'match_setup' });
                                     setSetupState(s => ({ ...s, step: 1 })); // Jump to custom squad setup
@@ -1579,7 +1609,7 @@ export default function ScoringDashboard() {
                                     </div>
                                 </div>
                             </button>
-                            
+
                             <div className="grid grid-cols-2 gap-4">
                                 <button onClick={() => updateState({ phase: 'summary' })} className="py-5 bg-white/5 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px]">Scorecard</button>
                                 <button onClick={() => { updateCareerStats(); navigate('/admin/operations'); }} className="py-5 bg-white/10 border border-white/20 rounded-2xl font-black uppercase tracking-widest text-[10px]">All Done</button>
@@ -1606,9 +1636,13 @@ export default function ScoringDashboard() {
                                 <div className="p-2 space-y-1">
                                     {state.batters.filter(b => b.r > 0 || b.out || b.batting).map((b, i) => (
                                         <div key={i} onClick={() => setViewingPlayer(b)} className="flex justify-between items-center px-4 py-3 rounded-xl hover:bg-white/10 cursor-pointer transition-colors active:scale-95">
-                                            <div>
+                                            <div className="flex-1">
                                                 <p className="text-sm font-black uppercase tracking-tight">{b.name}</p>
-                                                <p className="text-[10px] font-bold text-white/30 truncate max-w-[150px]">{b.out ? 'Out' : (b.batting ? 'Not Out*' : 'DNB')}</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <p className="text-[10px] font-bold text-white/30 truncate">{b.out ? 'Out' : (b.batting ? 'Not Out*' : 'DNB')}</p>
+                                                    <span className="text-[9px] font-bold text-blue-400">4s: {b.fours || 0}</span>
+                                                    <span className="text-[9px] font-bold text-orange-400">6s: {b.sixes || 0}</span>
+                                                </div>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm font-black">{b.r} <span className="text-[10px] opacity-40">({b.b})</span></p>
@@ -1632,7 +1666,7 @@ export default function ScoringDashboard() {
                                                 <p className="text-[10px] font-bold text-white/30">Eco: {bw.eco}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm font-black">{Math.floor(bw.balls/6)}.{bw.balls%6}-{bw.r}-{bw.w}</p>
+                                                <p className="text-sm font-black">{Math.floor(bw.balls / 6)}.{bw.balls % 6}-{bw.r}-{bw.w}</p>
                                             </div>
                                         </div>
                                     ))}

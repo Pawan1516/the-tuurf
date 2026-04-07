@@ -39,6 +39,33 @@ router.get('/:pageName', async (req, res) => {
                 }
             };
         }
+
+        // About Page Logic
+        if (!config && req.params.pageName === 'about') {
+            config = {
+                pageName: 'about',
+                hero: {
+                    welcome: 'Welcome to the Future of Sports',
+                    title: 'Play Smart. Book Instantly.',
+                    subtitle: 'Compete Better.',
+                    description: 'The Turf is an AI-powered sports arena ecosystem. We eliminate booking friction and elevate your match-day experience with real-time stats and automation.'
+                },
+                features: [
+                    { title: "Instant Booking", desc: "Find open slots in real-time and secure them securely in seconds." },
+                    { title: "AI CricBot", desc: "Our 24/7 intelligent agent helps you book, check stats, and resolve issues." },
+                    { title: "Live Match Scoring", desc: "Pro-grade broadcast scoring interface tracking every ball and run." },
+                    { title: "Leaderboards", desc: "Compete with local athletes. Your stats define your rank." },
+                    { title: "QR Access", desc: "Contactless, cryptographically secure field entry on match day." },
+                    { title: "Secure Payments", desc: "Frictionless embedded checkouts handling splits and refunds." }
+                ],
+                stats: [
+                    { stat: "90%+", label: "Successful Matches" },
+                    { stat: "<200ms", label: "Real-time Sync" },
+                    { stat: "24/7", label: "AI Support" },
+                    { stat: "100%", label: "Secure Venues" }
+                ]
+            };
+        }
         
         res.json({ success: true, config });
     } catch (err) {

@@ -15,17 +15,16 @@ const pageConfigSchema = new mongoose.Schema({
         title: { type: String, default: 'Feel Free Play Better' },
         highlight: { type: String, default: 'Play Better' },
         subtext: { type: String, default: 'Select your squad. Lock your slot' },
+        welcome: { type: String },
+        subtitle: { type: String },
+        description: { type: String },
         images: [{ type: String }],
         buttonText: { type: String, default: 'Book Now' }
     },
 
-    stats: [{
-        label: { type: String },
-        value: { type: String },
-        icon: { type: String }
-    }],
+    stats: [{ type: mongoose.Schema.Types.Mixed }],
 
-    features: [sectionSchema],
+    features: [{ type: mongoose.Schema.Types.Mixed }],
 
     about: {
         title: { type: String, default: 'The Turf Miyapur' },

@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Calendar,
-  Activity,
-  Briefcase,
-  PieChart,
-  TrendingUp,
-  Zap,
-  Users,
-  ShieldCheck,
-  BarChart3,
-  Cpu,
-  Target,
-  LineChart,
-  School,
-  Code,
-  ExternalLink
+    LayoutDashboard,
+    Calendar,
+    Activity,
+    Briefcase,
+    PieChart,
+    TrendingUp,
+    Zap,
+    Users,
+    ShieldCheck,
+    BarChart3,
+    Cpu,
+    Target,
+    LineChart,
+    School,
+    Code,
+    ExternalLink
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
@@ -30,6 +30,7 @@ const StrategyHub = () => {
     const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
     const [hubReport, setHubReport] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const navItems = [
         { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -57,10 +58,14 @@ const StrategyHub = () => {
                 }
 
                 if (hubRes.data?.success) {
+                    console.log('DEBUG: Expert Hub Report Received:', hubRes.data.report);
                     setHubReport(hubRes.data.report);
+                } else {
+                    setError('The AI Strategy engine is currently recalibrating. Please try again in a few moments.');
                 }
             } catch (err) {
                 console.error('Expert Hub fetch error:', err);
+                setError(err.response?.data?.message || 'Connection to the AI Intelligence Node was interrupted.');
             } finally {
                 setLoading(false);
             }
@@ -78,8 +83,22 @@ const StrategyHub = () => {
     const renderExpertPanel = (id, reportData) => {
         const expert = experts.find(e => e.id === id);
         if (!reportData) return (
-            <div className="p-20 text-center animate-pulse">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synthesizing {expert.label} Report...</p>
+            <div className="p-20 text-center">
+                {error ? (
+                    <div className="space-y-6">
+                        <p className="text-red-400 text-xs font-black uppercase tracking-widest">{error}</p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="bg-emerald-600 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-all"
+                        >
+                            Retry Synthesis
+                        </button>
+                    </div>
+                ) : (
+                    <div className="animate-pulse">
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synthesizing {expert.label} Report...</p>
+                    </div>
+                )}
             </div>
         );
 
@@ -98,7 +117,7 @@ const StrategyHub = () => {
                             <h3 className="text-3xl font-black text-white tracking-tighter uppercase">{reportData.status || 'Live Intel'}</h3>
                         </div>
                     </div>
-                    
+
                     <div className="relative z-10 max-w-4xl">
                         <div className="p-8 md:p-12 bg-white/5 border border-white/10 rounded-[2rem] backdrop-blur-md">
                             <p className="text-lg md:text-xl font-medium text-slate-200 leading-relaxed italic font-serif">
@@ -117,27 +136,27 @@ const StrategyHub = () => {
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6 mt-8">
-                     <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-slate-200/40">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Strategic Impact</p>
-                         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                             <div className="w-[85%] h-full bg-emerald-500 rounded-full transition-all duration-1000"></div>
-                         </div>
-                         <p className="text-xs font-black text-slate-900 mt-4 uppercase">85% Optimization Yield</p>
-                     </div>
-                     <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-slate-200/40">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Data Confidence</p>
-                         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                             <div className="w-[92%] h-full bg-purple-500 rounded-full transition-all duration-1000"></div>
-                         </div>
-                         <p className="text-xs font-black text-slate-900 mt-4 uppercase">92.4% Precision Index</p>
-                     </div>
-                     <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-slate-200/40">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Implementation Risk</p>
-                         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                             <div className="w-[15%] h-full bg-blue-500 rounded-full transition-all duration-1000"></div>
-                         </div>
-                         <p className="text-xs font-black text-slate-900 mt-4 uppercase">Low Entropy Factor</p>
-                     </div>
+                    <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-slate-200/40">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Strategic Impact</p>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="w-[85%] h-full bg-emerald-500 rounded-full transition-all duration-1000"></div>
+                        </div>
+                        <p className="text-xs font-black text-slate-900 mt-4 uppercase">85% Optimization Yield</p>
+                    </div>
+                    <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-slate-200/40">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Data Confidence</p>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="w-[92%] h-full bg-purple-500 rounded-full transition-all duration-1000"></div>
+                        </div>
+                        <p className="text-xs font-black text-slate-900 mt-4 uppercase">92.4% Precision Index</p>
+                    </div>
+                    <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-slate-200/40">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Implementation Risk</p>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="w-[15%] h-full bg-blue-500 rounded-full transition-all duration-1000"></div>
+                        </div>
+                        <p className="text-xs font-black text-slate-900 mt-4 uppercase">Low Entropy Factor</p>
+                    </div>
                 </div>
             </div>
         );
@@ -157,11 +176,11 @@ const StrategyHub = () => {
                         <div className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-lg">
                             <Code size={12} className="text-emerald-400" />
                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Devs:</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest">G.Manideep & K.Pavan Kumar</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest"> K.Pavan Kumar</span>
                         </div>
                         <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg text-slate-500">
                             <Calendar size={12} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Submission: March 2026</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest"></span>
                         </div>
                     </div>
                 </div>
@@ -170,9 +189,6 @@ const StrategyHub = () => {
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">System Model</p>
                         <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Gemini 2.0 Flash Active</p>
                     </div>
-                    <a href="https://the-turf-cczo.vercel.app/" target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-500/20 active:scale-95">
-                        <ExternalLink size={14} /> Open Live Site
-                    </a>
                 </div>
             </div>
         </div>
@@ -194,7 +210,7 @@ const StrategyHub = () => {
                         <div className="flex items-center gap-4">
                             <div className="px-5 py-2.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Global Strategy Loop Active</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Turf Strategy Active</span>
                             </div>
                         </div>
                     </header>
@@ -208,8 +224,8 @@ const StrategyHub = () => {
                                 <button
                                     key={expert.id}
                                     onClick={() => setActiveExpert(expert.id)}
-                                    className={`p-8 rounded-[2.5rem] border-2 transition-all group relative overflow-hidden flex flex-col gap-6 ${activeExpert === expert.id 
-                                        ? `bg-slate-950 border-slate-950 shadow-2xl shadow-slate-900/20 scale-[1.02]` 
+                                    className={`p-8 rounded-[2.5rem] border-2 transition-all group relative overflow-hidden flex flex-col gap-6 ${activeExpert === expert.id
+                                        ? `bg-slate-950 border-slate-950 shadow-2xl shadow-slate-900/20 scale-[1.02]`
                                         : `bg-white border-transparent hover:border-${expert.color.split('-')[1]}-200 shadow-xl shadow-slate-200/40`}`}
                                 >
                                     <div className={`${expert.bg} ${expert.color} w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg`}>
@@ -237,9 +253,9 @@ const StrategyHub = () => {
                                 </div>
                             ) : (
                                 renderExpertPanel(activeExpert, hubReport ? hubReport[(() => {
-                                    if(activeExpert === 'ai_specialist') return 'aiSpecialist';
-                                    if(activeExpert === 'ai_analyst') return 'aiAnalyst';
-                                    if(activeExpert === 'ai_prediction') return 'aiPrediction';
+                                    if (activeExpert === 'ai_specialist') return 'aiSpecialist';
+                                    if (activeExpert === 'ai_analyst') return 'aiAnalyst';
+                                    if (activeExpert === 'ai_prediction') return 'aiPrediction';
                                     return 'businessAnalyst';
                                 })()] : null)
                             )}

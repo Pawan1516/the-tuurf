@@ -79,16 +79,27 @@ const PublicHome = () => {
 
     useEffect(() => {
         const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+        
+        // Join rooms for all currently visible live matches
+        liveMatches.forEach(m => {
+            socket.emit('join_match', m._id);
+        });
+
         socket.on('match:update', (data) => {
             setLiveMatches(prev => prev.map(m => {
-                if (String(m._id) === String(data.matchId)) {
-                    return { ...m, ...data };
+                if (String(m._id) === String(data.matchId || data._id)) {
+                    const updatedMatch = { ...m, ...data };
+                    // Ensure core fields are mapped if backend uses payload aliases
+                    if (data.score) {
+                        updatedMatch.team_a.score = data.score.runs; // This logic might be too simplistic if it doesn't know who is batting
+                    }
+                    return updatedMatch;
                 }
                 return m;
             }));
         });
         return () => socket.disconnect();
-    }, [liveMatches.length]);
+    }, [liveMatches.map(m => m._id).join(',')]);
 
     const formatTime12h = (time24) => {
         if (!time24) return '';

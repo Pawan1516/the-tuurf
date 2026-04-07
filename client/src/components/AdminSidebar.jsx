@@ -16,7 +16,8 @@ import {
     MessageSquare,
     Zap,
     Trophy,
-    Shield
+    Shield,
+    Globe
 } from 'lucide-react';
 
 const AdminSidebar = ({ user, logout, turfName = "The Turf" }) => {
@@ -32,6 +33,7 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf" }) => {
         { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
         { to: '/admin/users', label: 'User Control', icon: Users },
         { to: '/admin/report', label: 'Intelligence', icon: FileText },
+        { to: '/admin/strategy', label: 'Strategy HUB', icon: Zap },
         { to: '/admin/settings', label: 'Settings', icon: Settings },
         { to: '/admin/scanner', label: 'QR Scanner', icon: Zap },
     ];

@@ -6,6 +6,38 @@ const QRService = require('../services/qrService');
 const verifyToken = require('../middleware/verifyToken');
 const roleGuard = require('../middleware/roleGuard');
 
+// @route   GET /api/players/search-player
+// @desc    Search players by username or mobile number
+// @access  Private
+router.get('/search-player', verifyToken, async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q) return res.status(400).json({ success: false, message: 'Search query required' });
+
+        let query = {};
+        if (/^\d+$/.test(q)) {
+            // Search by mobile number if query is numeric
+            query = { phone: { $regex: q } };
+        } else {
+            // Search by name or username
+            query = {
+                $or: [
+                    { name: { $regex: q, $options: 'i' } },
+                    { username: { $regex: q, $options: 'i' } }
+                ]
+            };
+        }
+
+        const players = await User.find(query)
+            .select('name username phone player_qr.qr_image_url stats cricket_profile')
+            .limit(10);
+
+        res.json({ success: true, players });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // @route   GET /api/players/:id/qr
 // @desc    Fetch player's QR code PNG and payload
 // @access  Private
@@ -371,6 +403,43 @@ router.get('/:id', async (req, res) => {
         };
 
         res.json(transformed);
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
+ * @route   GET /api/players/:id/last5
+ * @desc    Fetch last 5 matches for player trends
+ * @access  Public
+ */
+router.get('/:id/last5', async (req, res) => {
+    try {
+        const player = await User.findById(req.params.id).select('name stats');
+        if (!player) return res.status(404).json({ success: false, message: 'Registry criteria not met.' });
+
+        // Search for matches where this player appeared
+        const matches = await Match.find({
+            $or: [
+                { "innings.batsmen.user_id": player._id },
+                { "innings.bowlers.user_id": player._id }
+            ]
+        })
+        .sort({ start_time: -1 })
+        .limit(5);
+
+        const trendData = matches.map(m => {
+            let stats = { r: 0, b: 0, w: 0, eco: 0, match: m.title || 'Match' };
+            m.innings.forEach(inn => {
+                const b = (inn.batsmen || []).find(bt => bt.user_id?.toString() === player._id.toString());
+                const bw = (inn.bowlers || []).find(bl => bl.user_id?.toString() === player._id.toString());
+                if (b) { stats.r += b.runs; stats.b += b.balls; }
+                if (bw) { stats.w += bw.wickets; stats.eco = bw.economy; }
+            });
+            return { date: m.start_time, ...stats };
+        });
+
+        res.json({ success: true, trendData });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

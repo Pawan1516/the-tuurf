@@ -54,15 +54,26 @@ router.get('/post-match/:matchId/:uid', verifyToken, async (req, res) => {
         
         if (!match || !player) return res.status(404).json({ success: false, message: 'Entity not found.' });
 
-        // Extract player specific stats for this match (Placeholder logic)
-        const playerMatchData = {
-            runs: 34,
-            balls: 21,
-            wickets: 2,
-            moment: 'Stumped at over 15'
-        };
+        // Extract real player specific stats for this match
+        let pMatchData = { runs: 0, balls: 0, wickets: 0, economy: 0, result: match.result?.won_by || 'Played' };
+        
+        match.innings.forEach(inn => {
+            const bat = inn.batsmen.find(b => b.user_id?.toString() === req.params.uid);
+            if (bat) {
+                pMatchData.runs = bat.runs;
+                pMatchData.balls = bat.balls;
+                pMatchData.fours = bat.fours;
+                pMatchData.sixes = bat.sixes;
+            }
+            const bowl = inn.bowlers.find(b => b.user_id?.toString() === req.params.uid);
+            if (bowl) {
+                pMatchData.wickets = bowl.wickets;
+                pMatchData.runsConceded = bowl.runs;
+                pMatchData.overs = bowl.overs;
+            }
+        });
 
-        const report = await AIService.generatePostMatchReport(match, playerMatchData);
+        const report = await AIService.generatePostMatchReport(match, pMatchData);
         res.json({ success: true, report });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });

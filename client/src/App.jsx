@@ -30,6 +30,7 @@ import AdminSettings from './pages/admin/Settings';
 import AdminUsers from './pages/admin/Users';
 import AdminScanner from './pages/admin/Scanner';
 import StrategyHub from './pages/admin/StrategyHub';
+import CMSHub from './pages/admin/CMSHub';
 import UserDashboard from './pages/UserDashboard';
 import ScoringDashboard from './pages/ScoringDashboard';
 import LiveScoreView from './pages/LiveScoreView';
@@ -41,6 +42,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import MobileNav from './components/MobileNav';
 import CricBotWidget from './components/CricBotWidget';
 import FirebaseAuthTest from './pages/FirebaseAuthTest';
+import CricketAnalyticsDashboard from './pages/CricketAnalyticsDashboard';
+import PlayerAnalytics from './pages/PlayerAnalytics';
+import PlayerComparison from './pages/PlayerComparison';
 import { slotsAPI } from './api/client';
 
 import { Zap } from 'lucide-react';
@@ -49,38 +53,19 @@ const NavLinks = () => {
     const { user, logout } = React.useContext(AuthContext);
     const location = useLocation();
 
-    if (user) {
-        return (
-            <div className="flex items-center gap-3 md:gap-6">
-                <Link 
-                    to="/dashboard" 
-                    className={`text-[10px] md:text-sm font-black uppercase tracking-widest transition-all ${location.pathname === '/dashboard' ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    Dashboard
-                </Link>
-                <button 
-                  onClick={logout} 
-                  className="bg-slate-900 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:bg-black active:scale-95 transition-all"
-                >
-                  Sign Out
-                </button>
-            </div>
-        );
-    }
-
     return (
         <div className="flex items-center gap-3 md:gap-6">
             <Link 
                 to="/login" 
                 className="bg-emerald-600 text-white hover:bg-emerald-500 px-6 md:px-10 py-3 md:py-4 rounded-2xl md:rounded-3xl transition-all shadow-2xl shadow-emerald-600/20 active:scale-95 text-xs md:text-sm font-black uppercase tracking-[0.1em] leading-none border border-emerald-400/20"
             >
-                Enter Arena
+                Login
             </Link>
         </div>
     );
 };
 
-const Layout = ({ children, turfName = "The Turf" }) => (
+const Layout = ({ children, turfName = "The Turf", settings = {} }) => (
     <div className="min-h-screen premium-gradient font-sans selection:bg-emerald-500 selection:text-white pb-safe">
         <nav className="nav-glass md:h-28 flex items-center hidden md:flex animate-fade-up">
             <div className="max-w-7xl mx-auto px-8 w-full flex items-center justify-between h-full gap-4">
@@ -117,7 +102,7 @@ const Layout = ({ children, turfName = "The Turf" }) => (
                     <div className="space-y-4">
                         <h3 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter">🏟️ {turfName}</h3>
                         <p className="text-slate-400 text-sm md:text-base max-w-lg mx-auto leading-relaxed">
-                            Miyapur's flagship smart arena. Experience 90ft x 60ft of professional high-performance turf with digital match-day intelligence.
+                            {turfName}'s flagship smart arena in {settings.TURF_LOCATION?.split(',')[0] || 'Miyapur'}. Experience professional high-performance turf with digital match-day intelligence.
                         </p>
                     </div>
                 </div>
@@ -169,7 +154,7 @@ function App() {
   const WrapLayout = ({ children }) => {
     const { user, logout } = React.useContext(AuthContext);
     return (
-      <Layout turfName={settings.TURF_NAME}>
+      <Layout turfName={settings.TURF_NAME} settings={settings}>
         <MobileNav user={user} logout={logout} dashboardTitle={settings.TURF_NAME} className="md:hidden" />
         {children}
       </Layout>
@@ -195,6 +180,9 @@ function App() {
           <Route path="/stats-dashboard" element={<PlayerStatsDashboard />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/turfs/:id" element={<WrapLayout><TurfDetailPage /></WrapLayout>} />
+          <Route path="/cricket-analytics" element={<ProtectedRoute allowedRoles={['admin']}><CricketAnalyticsDashboard /></ProtectedRoute>} />
+          <Route path="/player-analytics" element={<ProtectedRoute allowedRoles={['user', 'player']}><PlayerAnalytics /></ProtectedRoute>} />
+          <Route path="/player/compare/:id" element={<PlayerComparison />} />
 
           <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['user', 'player']}><UserDashboard /></ProtectedRoute>} />
           <Route path="/scoring/:id" element={<ProtectedRoute allowedRoles={['user', 'player', 'admin']}><ScoringDashboard /></ProtectedRoute>} />
@@ -215,6 +203,7 @@ function App() {
           <Route path="/admin/scanner" element={<ProtectedRoute allowedRoles={['admin']}><AdminScanner /></ProtectedRoute>} />
           <Route path="/admin/operations" element={<ProtectedRoute allowedRoles={['admin']}><OperationsDashboard /></ProtectedRoute>} />
           <Route path="/admin/strategy" element={<ProtectedRoute allowedRoles={['admin']}><StrategyHub /></ProtectedRoute>} />
+          <Route path="/admin/cms" element={<ProtectedRoute allowedRoles={['admin']}><CMSHub /></ProtectedRoute>} />
           
           <Route path="*" element={<WrapLayout><PublicHome /></WrapLayout>} />
       </Routes>

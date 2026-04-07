@@ -676,6 +676,25 @@ const TurfDetailPage = () => {
 
         </div>
       </div>
+      
+      {/* Mobile Sticky Booking Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden p-4 bg-white/80 backdrop-blur-2xl border-t border-slate-100 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] pb-safe mb-mobile-nav">
+        <div className="max-w-[400px] mx-auto flex items-center justify-between gap-4">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Starts From</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-slate-900 leading-none">₹{turf?.pricing?.weekdayDay || 1000}</span>
+              <span className="text-[10px] font-bold text-slate-400">/hr</span>
+            </div>
+          </div>
+          <Link
+            to="/book/custom"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-[1.2rem] font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 active:scale-95 transition-all outline-none"
+          >
+            Initiate Sequence <ChevronRight size={14} />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };
