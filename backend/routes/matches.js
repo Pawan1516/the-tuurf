@@ -559,7 +559,7 @@ router.post('/:id/live-update', async (req, res) => {
         if (req.body.wickets !== undefined) match.live_data.wickets = req.body.wickets;
 
         // Ensure precise boundary counting by analyzing the balls array if available
-        const currentInning = match.innings[match.current_innings_index];
+        currentInning = match.innings[match.current_innings_index];
         const resolveBoundaries = (player, type) => {
             if (type === '4s' && (player.fours || player.f)) return player.fours || player.f;
             if (type === '6s' && (player.sixes || player.s)) return player.sixes || player.s;
