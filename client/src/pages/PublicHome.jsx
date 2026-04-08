@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { configAPI, slotsAPI, matchesAPI } from '../api/client';
-import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer, Activity, ArrowRight } from 'lucide-react';
+import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer, Activity, ArrowRight, BarChart } from 'lucide-react';
 import io from 'socket.io-client';
 
 const PublicHome = () => {
