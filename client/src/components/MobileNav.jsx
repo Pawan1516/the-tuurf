@@ -15,8 +15,8 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
         navigate('/');
     };
 
-    const isWorker = location.pathname.includes('/worker');
-    const isAdmin = location.pathname.includes('/admin');
+    const isWorker = user?.role === 'worker' || location.pathname.includes('/worker');
+    const isAdmin = user?.role === 'admin' || location.pathname.includes('/admin');
     const isPublic = !isWorker && !isAdmin;
     const portalType = isAdmin ? 'Admin Portal' : isWorker ? 'Worker Portal' : user ? 'Player Portal' : 'Public Arena';
 
@@ -208,7 +208,7 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
                              );
                          })}
 
-                         {user && (
+                         {user && !isAdmin && (
                             <Link
                                 to="/intel-premium"
                                 className="flex items-center gap-4 p-4 rounded-[1.5rem] font-bold uppercase text-xs tracking-widest transition-all bg-emerald-50/50 text-emerald-700 border border-emerald-100/50"

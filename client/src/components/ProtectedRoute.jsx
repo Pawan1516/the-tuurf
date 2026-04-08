@@ -37,9 +37,13 @@ const ProtectedRoute = ({ children, allowedRoles, requiresPremium }) => {
     }
 
     if (requiresPremium) {
-        const isPremium = user.subscription?.isPremium;
-        if (!isPremium) {
-            return <Navigate to="/intel-premium" state={{ from: location }} replace />;
+        // Admins bypass premium check automatically
+        const isAdmin = user.role?.toLowerCase() === 'admin';
+        if (!isAdmin) {
+            const isPremium = user.subscription?.isPremium || user.isPremium;
+            if (!isPremium) {
+                return <Navigate to="/intel-premium" state={{ from: location }} replace />;
+            }
         }
     }
 

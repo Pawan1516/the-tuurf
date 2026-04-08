@@ -187,8 +187,8 @@ function App() {
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/turfs/:id" element={<WrapLayout><TurfDetailPage /></WrapLayout>} />
               <Route path="/cricket-analytics" element={<ProtectedRoute allowedRoles={['admin']}><CricketAnalyticsDashboard /></ProtectedRoute>} />
-              <Route path="/player-analytics" element={<ProtectedRoute allowedRoles={['user', 'player']} requiresPremium={true}><PlayerAnalytics /></ProtectedRoute>} />
-              <Route path="/player/compare/:id" element={<ProtectedRoute allowedRoles={['user', 'player']} requiresPremium={true}><PlayerComparison /></ProtectedRoute>} />
+              <Route path="/player-analytics" element={<ProtectedRoute allowedRoles={['user', 'player', 'admin']} requiresPremium={true}><PlayerAnalytics /></ProtectedRoute>} />
+              <Route path="/player/compare/:id" element={<ProtectedRoute allowedRoles={['user', 'player', 'admin']} requiresPremium={true}><PlayerComparison /></ProtectedRoute>} />
               <Route path="/intel-premium" element={<WrapLayout><PremiumSubscription /></WrapLayout>} />
 
               <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['user', 'player']}><UserDashboard /></ProtectedRoute>} />
