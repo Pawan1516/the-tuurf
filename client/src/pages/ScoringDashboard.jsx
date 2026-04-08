@@ -1542,7 +1542,7 @@ export default function ScoringDashboard() {
                         </div>
 
                         <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-4 max-h-72 overflow-y-auto space-y-2 custom-scrollbar">
-                            {TEAMS[state.battingTeam]?.players?.map((p, i) => (
+                            {state.batters?.map((p, i) => (
                                 <button 
                                     key={i} 
                                     disabled={state.openerStrikerIdx === i || state.openerNSIdx === i} 
@@ -1831,16 +1831,16 @@ export default function ScoringDashboard() {
                             <p className="text-xl font-black">Select Bowler</p>
                         </div>
                         <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 max-h-[60vh] overflow-y-auto space-y-2">
-                            {TEAMS[state.bowlingTeam]?.players?.map((p, i) => {
-                                const dis = i === state.prevBowlerIdx || state.bowlers[i]?.overs >= (state.formatOvers / 5);
+                            {state.bowlers?.map((p, i) => {
+                                const dis = i === state.prevBowlerIdx || p?.overs >= (state.formatOvers / 5);
                                 return (
                                     <button key={i} disabled={dis} onClick={() => updateState({ currentBowlerIdx: i, phase: 'batting' })} className="w-full p-6 rounded-2xl border border-white/5 bg-white/5 text-left flex items-center justify-between hover:bg-emerald-500/10 transition-colors disabled:opacity-20">
                                         <div>
-                                            <p className="text-sm font-black uppercase tracking-tight mb-1">{p?.name}</p>
-                                            <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-none">{state.bowlers[i]?.style || "Bowler"}</p>
+                                            <p className="text-sm font-black uppercase tracking-tight mb-1">{p?.name || `Bowler ${i+1}`}</p>
+                                            <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-none">{p?.style || "Bowler"}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-bold text-emerald-400">{state.bowlers[i]?.overs || 0}.{state.bowlers[i]?.balls % 6 || 0}</p>
+                                            <p className="text-sm font-bold text-emerald-400">{p?.overs || 0}.{p?.balls % 6 || 0}</p>
                                             <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Overs</p>
                                         </div>
                                     </button>
