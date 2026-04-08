@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, User, LogOut, Home, Menu, X, Activity, ScanLine, Briefcase, Settings, Bell, Trophy, Shield, Users, BarChart, Zap, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Calendar, User, LogOut, Home, Menu, X, Activity, ScanLine, Briefcase, Settings, Bell, Trophy, Shield, Users, BarChart2, Zap, ChevronRight } from 'lucide-react';
 import { requestNotificationPermission } from '../utils/notifications';
 import { toast } from 'react-toastify';
 
@@ -22,7 +22,7 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
 
     const defaultTabs = user ? [
         { to: '/dashboard', label: 'Home', icon: Home },
-        { to: '/player-analytics', label: 'Intel', icon: BarChart },
+        { to: '/player-analytics', label: 'Intel', icon: BarChart2 },
         { to: '/', label: 'Book', icon: Calendar },
         { to: '/dashboard?tab=profile', label: 'Profile', icon: User },
     ] : [
@@ -58,7 +58,7 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
             { to: '/admin/users', label: 'User Directory', icon: Users },
             { to: '/admin/workers', label: 'Staff Management', icon: Briefcase },
             { to: '/admin/strategy', label: 'Strategy Hub', icon: Trophy },
-            { to: '/admin/report', label: 'Reports & Analytics', icon: BarChart },
+            { to: '/admin/report', label: 'Reports & Analytics', icon: BarChart2 },
             { to: '/admin/settings', label: 'Terminal Settings', icon: Settings },
         ];
     } else if (isWorker) {
