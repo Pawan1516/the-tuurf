@@ -208,33 +208,9 @@ const PublicHome = () => {
                 </div>
             </section>
 
-            <div className="max-w-7xl mx-auto w-full px-4 md:px-6 relative z-20 mb-8 mt-4">
-                {/* 
-                    "Stories" Style Quick Links 
-                    Adds a native app feel common in premium platforms like CricHeroes
-                */}
-                <div className="flex gap-6 overflow-x-auto pb-6 no-scrollbar -mx-4 px-4 mask-fade-right">
-                    {[
-                        { label: 'Live', icon: Activity, color: 'bg-rose-500', to: displayMatches[0] ? `/live/${displayMatches[0]._id}` : '/leaderboard' },
-                        { label: 'Elite', icon: Trophy, color: 'bg-amber-500', to: '/leaderboard' },
-                        { label: 'Book', icon: Zap, color: 'bg-emerald-500', to: '/' },
-                        { label: 'Stats', icon: Users, color: 'bg-blue-500', to: '/stats-dashboard' },
-                        { label: 'Intel', icon: BarChart2, color: 'bg-purple-500', to: '/player-analytics' },
-                        { label: 'Arena', icon: MapPin, color: 'bg-emerald-600', to: '/about' }
-                    ].map((item, idx) => (
-                        <Link key={idx} to={item.to} className="flex flex-col items-center gap-3 shrink-0 group">
-                            <div className="w-[68px] h-[68px] rounded-full p-[3px] border-2 border-emerald-500/20 group-hover:border-emerald-500 ring-4 ring-transparent group-hover:ring-emerald-500/10 transition-all duration-500">
-                                <div className={`w-full h-full rounded-full ${item.color} flex items-center justify-center text-white shadow-xl shadow-black/20 transform group-hover:scale-95 transition-transform`}>
-                                    <item.icon size={24} strokeWidth={2.5} />
-                                </div>
-                            </div>
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 group-hover:text-emerald-400 transition-colors">{item.label}</span>
-                        </Link>
-                    ))}
-                </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-4 relative z-20 mb-8 md:mb-32">
+            <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-10 md:-mt-32 relative z-20 mb-8 md:mb-32">
+                {/* SPACER */}
+                <div className="h-6 md:h-12"></div>
                 {/* LIVE & RECENT MATCHES */}
                 <div className="space-y-16 mb-16">
                     {/* LIVE ARENA SECTION */}
