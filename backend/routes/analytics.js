@@ -3,6 +3,8 @@ const router = express.Router();
 const Match = require('../models/Match');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const verifyToken = require('../middleware/verifyToken');
+const checkPremium = require('../middleware/checkPremium');
 
 // Helper to get last 5 matches for a player with EXACT ball-by-ball analytics
 async function getPlayerMatchHistory(userId, limit = 5) {
@@ -139,7 +141,7 @@ async function getPlayerMatchHistory(userId, limit = 5) {
 }
 
 // GET /api/analytics/compare
-router.get('/compare', async (req, res) => {
+router.get('/compare', verifyToken, checkPremium, async (req, res) => {
     try {
         const { player1: id1, player2: id2 } = req.query;
         if (!id1 || !id2) return res.status(400).json({ success: false, message: 'Two player IDs required' });
@@ -199,7 +201,7 @@ router.get('/compare', async (req, res) => {
 });
 
 // GET /api/analytics/player/:id/stats
-router.get('/player/:id/stats', async (req, res) => {
+router.get('/player/:id/stats', verifyToken, checkPremium, async (req, res) => {
     try {
         const userId = req.params.id;
         const user = await User.findById(userId);
@@ -371,6 +373,59 @@ router.get('/matches/distribution', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// POST /api/analytics/sync-user-stats/:id
+router.post('/sync-user-stats/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        // 1. Reset user stats to zero
+        await User.updateOne({ _id: userId }, {
+            $set: {
+                'stats.batting': { matches: 0, innings: 0, runs: 0, balls_faced: 0, fours: 0, sixes: 0, fifties: 0, hundreds: 0, high_score: 0, not_outs: 0, average: 0, strike_rate: 0 },
+                'stats.bowling': { matches: 0, wickets: 0, overs: 0, balls_bowled: 0, runs_conceded: 0, economy: 0, five_wicket_hauls: 0, three_wicket_hauls: 0, best_bowling: { wickets: 0, runs: 0 } },
+                'stats.fielding': { catches: 0, run_outs: 0, stumpings: 0 }
+            }
+        });
+
+        // 2. Find all verified matches for this user
+        const matches = await Match.find({
+            $or: [
+                { 'team_a.squad': userId },
+                { 'team_b.squad': userId },
+                { 'quick_teams.team_a.players.user_id': userId },
+                { 'quick_teams.team_b.players.user_id': userId },
+                { 'innings.batsmen.user_id': userId },
+                { 'innings.bowlers.user_id': userId }
+            ],
+            $or: [
+                { 'verification.status': 'VERIFIED' },
+                { is_offline_match: true }
+            ],
+            status: 'Completed'
+        });
+
+        // 3. Mark these matches as 'unprocessed' temporarily so StatsService can re-calculate for this user
+        // Actually, StatsService increments. If we reset user to 0, we can just run a loop.
+        const statsService = require('../services/statsService');
+        
+        // We'll manually re-run the processor logic for these matches but only for this user
+        // Since updatePlayerStats is built for bulk, we'll just temporarily unset 'stats_updated' for these matches
+        // and let it re-run.
+        for (const m of matches) {
+            await Match.updateOne({ _id: m._id }, { $set: { stats_updated: false } });
+            await statsService.updatePlayerStats(m._id);
+        }
+
+        const updatedUser = await User.findById(userId).select('-password');
+        res.json({ success: true, message: `Real stats synced from ${matches.length} matches!`, user: updatedUser });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 

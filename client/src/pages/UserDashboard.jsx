@@ -18,11 +18,13 @@ import {
     Edit3,
     Save,
     X,
-    BarChart
+    BarChart,
+    RefreshCw,
+    CheckCircle2
 } from 'lucide-react';
 import io from 'socket.io-client';
 import AuthContext from '../context/AuthContext';
-import { bookingsAPI, slotsAPI, matchesAPI, authAPI } from '../api/client';
+import apiClient, { bookingsAPI, slotsAPI, matchesAPI, authAPI, analyticsAPI } from '../api/client';
 import MobileNav from '../components/MobileNav';
 import MatchCreationModal from '../components/MatchCreationModal';
 
@@ -33,7 +35,6 @@ const UserDashboard = () => {
     const [myMatches, setMyMatches] = useState([]);
     const [todaySlots, setTodaySlots] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('bookings'); // 'bookings', 'profile'
     const [settings, setSettings] = useState({ TURF_NAME: 'The Turf', TURF_LOCATION: 'The Turf Stadium' });
     const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
@@ -69,21 +70,32 @@ const UserDashboard = () => {
         return () => socket.disconnect();
     }, [user?._id]);
 
+    const [dbConnected, setDbConnected] = useState(true);
+    const [fetchError, setFetchError] = useState(null);
+
     const fetchInitialData = async () => {
         try {
             setLoading(true);
+            setFetchError(null);
             const today = new Intl.DateTimeFormat('en-CA', {
                 timeZone: 'Asia/Kolkata',
                 year: 'numeric', month: '2-digit', day: '2-digit'
             }).format(new Date());
 
-            const [bookingRes, slotRes, settingsRes, matchRes, profileRes] = await Promise.allSettled([
+            const [bookingRes, slotRes, settingsRes, matchRes, profileRes, healthRes] = await Promise.allSettled([
                 bookingsAPI.getMyBookings(),
                 slotsAPI.getAll(today),
                 slotsAPI.getSettings(),
                 matchesAPI.getMyHistory(),
-                authAPI.getProfile()
+                authAPI.getProfile(),
+                apiClient.get('/health')
             ]);
+
+            if (healthRes.status === 'fulfilled') {
+                setDbConnected(healthRes.value.data?.database === 'connected');
+            } else {
+                setDbConnected(false);
+            }
 
             if (slotRes.status === 'fulfilled') {
                 const slotData = slotRes.value.data;
@@ -149,6 +161,25 @@ const UserDashboard = () => {
         navigate(`/scoring/${match._id}`);
     };
 
+    const formatTime12h = (time24) => {
+        if (!time24) return 'N/A';
+        const [hours, minutes] = time24.split(':');
+        const h = parseInt(hours);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${minutes} ${ampm}`;
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'confirmed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+            case 'rejected': return 'bg-red-100 text-red-700 border-red-200';
+            case 'pending': return 'bg-blue-100 text-blue-700 border-blue-200';
+            case 'hold': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+            default: return 'bg-gray-100 text-gray-700 border-gray-200';
+        }
+    };
+
     const startEditProfile = () => {
         setEditForm({
             name: profile?.name || '',
@@ -160,6 +191,26 @@ const UserDashboard = () => {
         setEditError('');
         setEditSuccess('');
         setIsEditingProfile(true);
+    };
+
+    const handleSyncStats = async () => {
+        if (!profile?._id) return;
+        setEditLoading(true);
+        setEditError('');
+        setEditSuccess('');
+        try {
+            const res = await analyticsAPI.syncUserStats(profile._id);
+            if (res.data.success) {
+                setProfile(res.data.user);
+                setEditSuccess('Stats synced successfully from match history!');
+                setTimeout(() => setEditSuccess(''), 3000);
+            }
+        } catch (err) {
+            setEditError(err.response?.data?.message || 'Sync failed');
+            setTimeout(() => setEditError(''), 3000);
+        } finally {
+            setEditLoading(false);
+        }
     };
 
     const cancelEdit = () => {
@@ -308,16 +359,9 @@ const UserDashboard = () => {
             <main className="flex-1 overflow-y-auto gpu-layer">
                 <header className="hidden md:flex nav-glass px-12 h-28 items-center justify-between sticky top-0 z-40">
                     <div className="flex gap-12 h-full items-center">
-                        <button 
-                            onClick={() => setActiveTab('bookings')}
-                            className={`text-2xl font-black tracking-tighter uppercase h-full border-b-[6px] transition-all pt-2 ${activeTab === 'bookings' ? 'text-slate-900 border-emerald-600' : 'text-slate-300 border-transparent hover:text-slate-500'}`}>
-                            Activity Feed
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('profile')}
-                            className={`text-2xl font-black tracking-tighter uppercase h-full border-b-[6px] transition-all pt-2 ${activeTab === 'profile' ? 'text-slate-900 border-emerald-600' : 'text-slate-300 border-transparent hover:text-slate-500'}`}>
-                            Broadcast Profile
-                        </button>
+                        <span className="text-2xl font-black tracking-tighter uppercase h-full border-b-[6px] border-emerald-600 transition-all pt-2 text-slate-900 flex items-center">
+                            User Profile
+                        </span>
                     </div>
                     <div className="flex items-center gap-6">
                         <div className="w-px h-8 bg-slate-100"></div>
@@ -333,21 +377,7 @@ const UserDashboard = () => {
 
                 <div className="p-4 md:p-10 space-y-6 md:space-y-12 mb-nav md:mb-0">
                 
-                <div className="md:hidden flex gap-4 overflow-x-auto pb-4 scrollbar-hide border-b border-gray-200">
-                    <button 
-                        onClick={() => setActiveTab('bookings')}
-                        className={`text-sm font-black whitespace-nowrap uppercase pb-2 border-b-4 ${activeTab === 'bookings' ? 'text-gray-900 border-emerald-600' : 'text-gray-400 border-transparent'}`}>
-                        Activity Log
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('profile')}
-                        className={`text-sm font-black whitespace-nowrap uppercase pb-2 border-b-4 ${activeTab === 'profile' ? 'text-gray-900 border-emerald-600' : 'text-gray-400 border-transparent'}`}>
-                        Profile & Stats
-                    </button>
-                </div>
-
-                {activeTab === 'profile' && (
-                    <div className="space-y-10">
+                <div className="space-y-10">
                         <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
                             {!isEditingProfile ? (
                                 <div className="flex flex-col md:flex-row items-center gap-10">
@@ -377,15 +407,51 @@ const UserDashboard = () => {
                                             <div className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.primary_role || 'All-Rounder'}</div>
                                             <div className="bg-emerald-100 text-emerald-800 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.batting_style || 'Right Hand'}</div>
                                             <div className="bg-emerald-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200">CAREER SCORE: {profile?.score || 0}</div>
+                                            {profile?.subscription?.isPremium && (
+                                                <div className="bg-gradient-to-r from-amber-400 to-amber-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 flex items-center gap-2 animate-bounce-subtle">
+                                                    <Zap size={14} className="fill-white" />
+                                                    Intel Pass Active
+                                                </div>
+                                            )}
+                                            {/* NEW PREMIUM LOGIC */}
+                                            {profile?.isPremium && profile?.trialEndDate && new Date(profile.trialEndDate) > new Date() && !profile.premiumExpiry && (
+                                                <div className="bg-emerald-100 text-emerald-800 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-200">
+                                                    🎉 7-Day Free Trial Activated (Ends in {Math.ceil((new Date(profile.trialEndDate) - new Date()) / (1000 * 60 * 60 * 24))} days)
+                                                </div>
+                                            )}
+                                            {profile?.isPremium && profile?.premiumExpiry && new Date(profile.premiumExpiry) > new Date() && (
+                                                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200">
+                                                    ✅ Premium Active (Until {new Date(profile.premiumExpiry).toLocaleDateString()})
+                                                </div>
+                                            )}
+                                            {(!profile?.isPremium || (profile?.trialEndDate && new Date(profile.trialEndDate) < new Date() && !profile.premiumExpiry)) && (
+                                                <div className="bg-rose-50 text-rose-600 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-rose-100">
+                                                    🔒 Your trial expired. Unlock Premium for ₹49/year
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="pt-2">
+                                        <div className="pt-2 flex flex-wrap gap-4">
                                             <button
                                                 onClick={startEditProfile}
                                                 className="inline-flex items-center gap-2 bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-200 text-gray-600 hover:text-emerald-700 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
                                             >
                                                 <Edit3 size={14} /> Edit Profile
                                             </button>
+                                            <button
+                                                onClick={handleSyncStats}
+                                                disabled={editLoading}
+                                                className="inline-flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 text-emerald-700 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                                            >
+                                                <RefreshCw size={14} className={editLoading ? 'animate-spin' : ''} />
+                                                {editLoading ? 'Syncing...' : 'Sync Match Stats'}
+                                            </button>
                                         </div>
+                                        {editSuccess && (
+                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest animate-pulse">{editSuccess}</p>
+                                        )}
+                                        {editError && (
+                                            <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">{editError}</p>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -687,40 +753,63 @@ const UserDashboard = () => {
                             )}
                         </div>
                     </div>
-                )}
 
-                {activeTab === 'bookings' && (
-                    <>
                     <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
                         <div className="flex justify-between items-center mb-6 md:mb-8">
                             <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                <Zap size={16} className="text-emerald-500" /> Today's Rapid Booking
+                                <Zap size={16} className="text-emerald-500" /> TODAY'S RAPID BOOKING
+                                {!dbConnected && (
+                                    <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[8px] animate-pulse">DB OFFLINE</span>
+                                )}
+                                {dbConnected && todaySlots.length > 0 && (
+                                    <span className="bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full text-[8px]">LIVE SYNC</span>
+                                )}
                             </h3>
-                            <button onClick={() => navigate('/')} className="text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:underline">View All</button>
+                            <button onClick={() => navigate('/')} className="text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:underline">VIEW ALL</button>
                         </div>
 
-                        <div className="flex overflow-x-auto gap-3 pb-4 scrollbar-hide">
+                        <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide -mx-2 px-2">
                             {todaySlots.length === 0 ? (
-                                <p className="text-xs font-bold text-gray-400 uppercase italic">No slots available for today yet.</p>
+                                <div className="flex flex-col items-start gap-2 py-4 px-4 bg-gray-50 rounded-3xl border border-dashed border-gray-200 w-full animate-pulse">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                                        {loading ? 'Initializing Connection...' : 'Status Report: 0 Segments Loaded'}
+                                    </p>
+                                    <p className="text-xs font-bold text-gray-500 uppercase italic">
+                                        {loading ? 'Fetching live telemetry from The Turf...' : 'Initialization pending. No active slots for the selected segment.'}
+                                    </p>
+                                </div>
                             ) : (
-                                todaySlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((slot) => {
-                                    const isBooked = slot.status === 'booked';
-                                    return (
-                                        <div
-                                            key={slot._id}
-                                            onClick={() => slot.status === 'free' && navigate(`/book/${slot._id}`)}
-                                            className={`flex-shrink-0 w-24 md:w-32 p-4 md:p-6 rounded-[1.5rem] border-2 transition-all ${slot.status === 'free'
-                                                ? 'border-emerald-100 bg-emerald-50 active:scale-95 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-200 cursor-pointer'
-                                                : isBooked ? 'border-red-50 bg-red-50/50 opacity-40 cursor-not-allowed' : 'border-yellow-50 bg-yellow-50 opacity-40 cursor-not-allowed'
+                                todaySlots
+                                    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                                    .map((slot) => {
+                                        const isFree = slot.status === 'free';
+                                        return (
+                                            <div
+                                                key={slot._id}
+                                                onClick={() => isFree && navigate(`/book/${slot._id}`)}
+                                                className={`flex-shrink-0 w-32 md:w-40 p-5 md:p-6 rounded-[2rem] border-2 transition-all group ${
+                                                    isFree 
+                                                        ? 'border-emerald-100 bg-white cursor-pointer hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-100 active:scale-95' 
+                                                        : 'border-red-50 bg-red-50/30 cursor-not-allowed opacity-60'
                                                 }`}
-                                        >
-                                            <p className="text-[10px] md:text-xs font-black text-gray-900 mb-1">{slot.startTime}</p>
-                                            <p className={`text-[8px] md:text-[8px] font-black uppercase tracking-widest ${slot.status === 'free' ? 'text-emerald-600' : isBooked ? 'text-red-500' : 'text-yellow-600'}`}>
-                                                {slot.status === 'free' ? 'FREE' : isBooked ? 'ALREADY BOOKED' : slot.status.toUpperCase()}
-                                            </p>
-                                        </div>
-                                    );
-                                })
+                                            >
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <Zap size={14} className={isFree ? "text-emerald-500" : "text-red-300"} />
+                                                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase ${
+                                                        isFree ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-100'
+                                                    }`}>
+                                                        {isFree ? 'FREE' : 'BOOKED'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm md:text-base font-black text-gray-900 mb-1">{formatTime12h(slot.startTime)}</p>
+                                                <p className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-colors ${
+                                                    isFree ? 'text-emerald-500 group-hover:text-emerald-600' : 'text-red-400'
+                                                }`}>
+                                                    {isFree ? 'BOOK NOW' : 'ALREADY BOOKED'}
+                                                </p>
+                                            </div>
+                                        );
+                                    })
                             )}
                         </div>
                     </div>
@@ -730,58 +819,88 @@ const UserDashboard = () => {
                         {bookings.length === 0 ? (
                             <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-12 md:p-20 text-center border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
                                 <div className="bg-emerald-50 w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600">
-                                    <Calendar size={32} />
+                                    <Database size={32} />
                                 </div>
-                                <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-2 uppercase">No Bookings Found</h3>
-                                <p className="text-sm text-gray-400 font-bold mb-8 uppercase tracking-tighter">You haven't reserved any slots yet.</p>
-                                <button onClick={() => navigate('/')} className="w-full md:w-auto bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200">
-                                    Start Reservation
+                                <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-2 uppercase">No Active Registries</h3>
+                                <p className="text-sm text-gray-400 font-bold mb-8 uppercase tracking-tighter max-w-xs mx-auto">Your booked slots and match identifiers will appear here after confirmation.</p>
+                                <button onClick={() => navigate('/')} className="w-full md:w-auto bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-3 mx-auto group">
+                                    <Calendar size={18} className="group-hover:rotate-12 transition-transform" />
+                                    Reserve Your First Slot
                                 </button>
                             </div>
                         ) : (
-                            <div className="grid gap-4 md:gap-6">
+                            <div className="grid gap-6">
                                 {bookings.map((booking) => {
                                     const status = getStatusInfo(booking.bookingStatus);
                                     return (
-                                        <div key={booking._id} className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex flex-col md:flex-row items-center gap-6 md:gap-8 group hover:border-emerald-200 transition-all">
-                                            <div className="bg-emerald-50 w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-3xl flex flex-col items-center justify-center text-emerald-600 shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                                                <p className="text-[8px] md:text-[10px] font-black uppercase leading-none mb-1">
-                                                    {booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-US', { month: 'short' }) : 'N/A'}
+                                        <div key={booking._id} className="bg-white rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-xl shadow-emerald-900/[0.04] flex flex-col items-center group hover:border-emerald-200 transition-all gap-8">
+                                            {/* Date Circle */}
+                                            <div className="w-20 h-20 rounded-full bg-emerald-50 border-4 border-white shadow-lg flex flex-col items-center justify-center -mt-[5rem] bg-white group-hover:bg-emerald-600 group-hover:text-white transition-all transform group-hover:scale-110">
+                                                <p className="text-[10px] font-black uppercase leading-none mb-1">
+                                                    {booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-US', { month: 'short' }) : (booking.createdAt ? new Date(booking.createdAt).toLocaleDateString('en-US', { month: 'short' }) : 'N/A')}
                                                 </p>
-                                                <p className="text-xl md:text-2xl font-black leading-none">
-                                                    {booking.slot?.date ? new Date(booking.slot.date).getDate() : '??'}
+                                                <p className="text-2xl font-black leading-none uppercase">
+                                                    {booking.slot?.date ? new Date(booking.slot.date).getDate() : (booking.createdAt ? new Date(booking.createdAt).getDate() : '??')}
                                                 </p>
                                             </div>
 
-                                            <div className="flex-1 space-y-3 md:space-y-4 text-center md:text-left w-full">
-                                                <div className="flex flex-col md:flex-row items-center md:justify-start gap-3 md:gap-4">
-                                                    <h4 className="text-lg md:text-xl font-black text-gray-900 tracking-tight uppercase">#{booking._id.slice(-6)}</h4>
-                                                    <div className={`px-4 py-1.5 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border ${status.bg} ${status.color} border-current`}>
-                                                        {status.icon}
+                                            <div className="w-full text-center space-y-6">
+                                                <h4 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter uppercase">#{booking._id.slice(-6).toUpperCase()}</h4>
+                                                
+                                                <div className="flex justify-center">
+                                                    <div className={`px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border-2 ${status.bg} ${status.color} border-current shadow-lg shadow-emerald-900/5`}>
+                                                        <CheckCircle2 size={14} className="stroke-[3]" />
                                                         {status.label}
                                                     </div>
                                                 </div>
 
-                                                <div className="flex flex-col md:flex-row items-center md:justify-start gap-y-2 md:gap-x-8 opacity-60">
-                                                    <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-black text-gray-500 uppercase tracking-tight">
-                                                        <Clock size={14} className="text-emerald-500" />
-                                                        {booking.slot?.startTime || '??:??'} – {booking.slot?.endTime || '??:??'}
+                                                <div className="flex flex-col items-center gap-4 py-4">
+                                                    <div className="flex items-center gap-3 text-sm md:text-lg font-black text-gray-900 uppercase tracking-tight">
+                                                        <Clock size={20} className="text-emerald-500 stroke-[3]" />
+                                                        {booking.slot ? `${formatTime12h(booking.slot.startTime)} – ${formatTime12h(booking.slot.endTime)}` : 'No Time Assigned'}
                                                     </div>
-                                                    <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-black text-gray-500 uppercase tracking-tight">
+                                                    <div className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.1em]">
                                                         <MapPin size={14} className="text-emerald-500" />
-                                                        {booking.turfLocation || settings.TURF_LOCATION}
+                                                        {booking.turfLocation}
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex-1 flex flex-col gap-4">
-                                                {(booking.matches || []).length > 0 && (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                                            {/* Financial & Action Bar */}
+                                            <div className="w-full border-t border-gray-100 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                                                <div className="flex flex-col items-center md:items-start">
+                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Fee Registry</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <p className="text-2xl font-black text-gray-900 tracking-tighter">₹{booking.totalAmount?.toLocaleString() || booking.amount?.toLocaleString()}</p>
+                                                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${booking.paymentStatus === 'verified' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                            {booking.paymentStatus === 'verified' ? 'PAYMENT VERIFIED' : (booking.paymentStatus || 'SUBMITTED')}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="w-full md:w-auto">
+                                                    {booking.bookingStatus === 'confirmed' && (
+                                                        <button 
+                                                            onClick={() => handleCreateMatchClick(booking)}
+                                                            className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-10 py-5 rounded-[1.8rem] shadow-xl shadow-emerald-200 transition-all flex items-center justify-center gap-3 active:scale-95">
+                                                            🏏 Create Match
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {(booking.matches || []).length > 0 && (
+                                                <div className="w-full border-t border-gray-100 pt-8 mt-4">
+                                                    <div className="flex items-center gap-2 mb-6">
+                                                        <Activity size={16} className="text-emerald-500" />
+                                                        <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Live Arena Instances</h5>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         {(booking.matches || []).map((m, mi) => (
-                                                            <div key={mi} className={`relative overflow-hidden rounded-[2rem] p-5 border transition-all duration-500 ${
-                                                                m.status === 'Completed' ? 'bg-gradient-to-br from-[#064E3B] to-[#022C22] border-emerald-400/30' : 'bg-gray-900 border-gray-700'
+                                                            <div key={mi} className={`relative overflow-hidden rounded-[2.5rem] p-6 border transition-all duration-500 ${
+                                                                m.status === 'Completed' ? 'bg-gradient-to-br from-[#064E3B] to-[#022C22] border-emerald-400/30' : 'bg-gray-950 border-gray-800'
                                                             }`}>
-                                                                <div className="flex justify-between items-center mb-3">
+                                                                <div className="flex justify-between items-center mb-4">
                                                                     <div className="bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
                                                                         <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">{m.status === 'Completed' ? 'FINAL' : 'LIVE'}</p>
                                                                     </div>
@@ -798,24 +917,23 @@ const UserDashboard = () => {
                                                             </div>
                                                         ))}
                                                     </div>
-                                                )}
-
-                                                <div className="w-full pt-4 border-t border-gray-100 flex flex-row items-center justify-between gap-3 shrink-0">
-                                                    <div className="text-left md:text-right">
-                                                        <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest leading-none mb-1">Fee Registry</p>
-                                                        <p className="text-2xl font-black text-emerald-600 tracking-tighter leading-none">₹{booking.amount}</p>
-                                                        <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${booking.paymentStatus === 'verified' ? 'text-emerald-400' : 'text-yellow-500'}`}>
-                                                            {booking.paymentStatus}
-                                                        </p>
-                                                    </div>
-                                                    {booking.bookingStatus === 'confirmed' && (booking.matches || []).length < 5 && (
-                                                        <button 
-                                                            onClick={() => handleCreateMatchClick(booking)}
-                                                            className="bg-emerald-600 active:bg-emerald-700 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl shadow-md shadow-emerald-200 transition-all flex items-center gap-2">
-                                                            🏏 Create {(booking.matches || []).length > 0 ? 'Next' : ''} Match
-                                                        </button>
-                                                    )}
                                                 </div>
+                                            )}
+
+                                            <div className="w-full pt-4 border-t border-gray-100 flex flex-row items-center justify-between gap-3 shrink-0">
+                                                <div className="text-left">
+                                                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest leading-none mb-1">Status Report</p>
+                                                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${status.color}`}>
+                                                        {status.label}
+                                                    </p>
+                                                </div>
+                                                {booking.bookingStatus === 'confirmed' && (booking.matches || []).length < 5 && (
+                                                    <button 
+                                                        onClick={() => handleCreateMatchClick(booking)}
+                                                        className="bg-emerald-600 active:bg-emerald-700 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl shadow-md shadow-emerald-200 transition-all flex items-center gap-2">
+                                                        🏏 Create {(booking.matches || []).length > 0 ? 'Next' : ''} Match
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -823,8 +941,6 @@ const UserDashboard = () => {
                             </div>
                         )}
                     </div>
-                    </>
-                )}
                 </div>
             </main>
 

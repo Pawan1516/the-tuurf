@@ -39,7 +39,6 @@ const PublicHome = () => {
         const init = async () => {
             setLoading(true);
             try {
-                // Fetch CMS Config
                 const configRes = await configAPI.get('home');
                 if (configRes.data.success) {
                     setPageConfig(configRes.data.config);
@@ -47,7 +46,6 @@ const PublicHome = () => {
             } catch (err) { console.error('Config fetch error:', err); }
 
             try {
-                // Fetch Slots
                 const res = await slotsAPI.getAll(selectedDate);
                 if (Array.isArray(res.data)) {
                     setSlots(res.data);
@@ -55,7 +53,6 @@ const PublicHome = () => {
             } catch (err) { console.error('Error fetching slots:', err); }
 
             try {
-                // Fetch Global Settings
                 const res = await slotsAPI.getSettings();
                 if (res.data.success) {
                     setSettings(prev => ({ ...prev, ...res.data.settings }));
@@ -66,40 +63,81 @@ const PublicHome = () => {
             setLoading(false);
         };
         init();
+
+        // Auto-refresh live matches every 30 seconds
+        const refreshTimer = setInterval(fetchLiveMatches, 30000);
+        return () => clearInterval(refreshTimer);
     }, [selectedDate]);
 
     const fetchLiveMatches = async () => {
         try {
-            const res = await matchesAPI.getLive();
+            // Add timestamp for cache busting
+            const res = await matchesAPI.getLive(`?t=${new Date().getTime()}`);
             if (res.data.success) {
                 setLiveMatches(res.data.matches || []);
             }
         } catch (err) { console.error('Error fetching live matches:', err); }
     };
 
+    const displayMatches = React.useMemo(() => {
+        const live = liveMatches.find(m => m.status === 'In Progress');
+        const completed = liveMatches.find(m => m.status === 'Completed');
+        const list = [];
+        if (live) list.push(live);
+        if (completed) list.push(completed);
+        return list;
+    }, [liveMatches]);
+
+    const joinedRoomsRef = React.useRef(new Set());
+    const socketRef = React.useRef(null);
+
     useEffect(() => {
         const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+        socketRef.current = socket;
         
-        // Join rooms for all currently visible live matches
-        liveMatches.forEach(m => {
-            socket.emit('join_match', m._id);
-        });
-
         socket.on('match:update', (data) => {
+            console.log('🏠 Home Hub Sync:', data);
             setLiveMatches(prev => prev.map(m => {
-                if (String(m._id) === String(data.matchId || data._id)) {
-                    const updatedMatch = { ...m, ...data };
-                    // Ensure core fields are mapped if backend uses payload aliases
-                    if (data.score) {
-                        updatedMatch.team_a.score = data.score.runs; // This logic might be too simplistic if it doesn't know who is batting
-                    }
-                    return updatedMatch;
+                const mid = data.matchId || data._id || data.match_id;
+                if (String(m._id) === String(mid)) {
+                    // Smart Merge: Identify which score to update
+                    const battingTeam = data.batting_team || data.live_data?.batting_team || 'A';
+                    const targetTeam = battingTeam === 'B' ? 'team_b' : 'team_a';
+                    
+                    return {
+                        ...m,
+                        ...data,
+                        [targetTeam]: {
+                            ...m[targetTeam],
+                            score: data.runs ?? data.live_data?.runs ?? m[targetTeam]?.score,
+                            wickets: data.wickets ?? data.live_data?.wickets ?? m[targetTeam]?.wickets
+                        },
+                        live_data: {
+                            ...(m.live_data || {}),
+                            ...(data.live_data || {}),
+                            ...data
+                        }
+                    };
                 }
                 return m;
             }));
         });
+
         return () => socket.disconnect();
-    }, [liveMatches.map(m => m._id).join(',')]);
+    }, []);
+
+    // Effect to join rooms for new matches
+    useEffect(() => {
+        if (!socketRef.current) return;
+        liveMatches.forEach(m => {
+            const mid = String(m._id);
+            if (!joinedRoomsRef.current.has(mid)) {
+                socketRef.current.emit('join_match', mid);
+                joinedRoomsRef.current.add(mid);
+                console.log('📡 Subscribed to match:', mid);
+            }
+        });
+    }, [liveMatches]);
 
     const formatTime12h = (time24) => {
         if (!time24) return '';
@@ -155,14 +193,7 @@ const PublicHome = () => {
                         {pageConfig?.hero?.subtext || 'Select your squad. Lock your slot'}
                     </p>
 
-                    <div className="flex flex-wrap justify-center gap-4 mb-4">
-                        <Link
-                            to="/leaderboard"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 md:px-12 py-4 md:py-6 rounded-2xl md:rounded-3xl text-[10px] md:text-xs font-black uppercase tracking-widest shadow-2xl transition-all flex items-center gap-4 active:scale-95"
-                        >
-                            <Trophy size={20} className="text-yellow-400" /> View Arena Ranking
-                        </Link>
-                    </div>
+                    <div className="h-4"></div>
 
                     <div className="flex justify-center gap-3">
                         {heroImages.map((_, idx) => (
@@ -177,104 +208,181 @@ const PublicHome = () => {
                 </div>
             </section>
 
-            <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-10 md:-mt-32 relative z-20 mb-8 md:mb-32">
-                {liveMatches.length > 0 && (
-                    <div className="bg-[#050805] rounded-[2rem] md:rounded-[4rem] p-6 md:p-16 mb-16 shadow-2xl border border-white/10 overflow-hidden relative group">
-                         {/* Abstract background detail */}
-                         <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full group-hover:bg-emerald-500/20 transition-all duration-1000"></div>
-                         
-                         <div className="relative z-10 flex items-center justify-between mb-10 md:mb-16">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                                    <Zap size={24} className="text-emerald-500 fill-emerald-500 animate-pulse" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg md:text-2xl font-black uppercase tracking-[0.4em] text-emerald-400 leading-none">Live Arena</h3>
-                                    <p className="text-[10px] md:text-[11px] font-bold text-white/30 uppercase tracking-[0.2em] mt-2 hidden md:block">Real-time match analytics and broadcast</p>
+            <div className="max-w-7xl mx-auto w-full px-4 md:px-6 relative z-20 mb-8 mt-4">
+                {/* 
+                    "Stories" Style Quick Links 
+                    Adds a native app feel common in premium platforms like CricHeroes
+                */}
+                <div className="flex gap-6 overflow-x-auto pb-6 no-scrollbar -mx-4 px-4 mask-fade-right">
+                    {[
+                        { label: 'Live', icon: Activity, color: 'bg-rose-500', to: displayMatches[0] ? `/live/${displayMatches[0]._id}` : '/leaderboard' },
+                        { label: 'Elite', icon: Trophy, color: 'bg-amber-500', to: '/leaderboard' },
+                        { label: 'Book', icon: Zap, color: 'bg-emerald-500', to: '/' },
+                        { label: 'Stats', icon: Users, color: 'bg-blue-500', to: '/stats-dashboard' },
+                        { label: 'Intel', icon: BarChart, color: 'bg-purple-500', to: '/player-analytics' },
+                        { label: 'Arena', icon: MapPin, color: 'bg-emerald-600', to: '/about' }
+                    ].map((item, idx) => (
+                        <Link key={idx} to={item.to} className="flex flex-col items-center gap-3 shrink-0 group">
+                            <div className="w-[68px] h-[68px] rounded-full p-[3px] border-2 border-emerald-500/20 group-hover:border-emerald-500 ring-4 ring-transparent group-hover:ring-emerald-500/10 transition-all duration-500">
+                                <div className={`w-full h-full rounded-full ${item.color} flex items-center justify-center text-white shadow-xl shadow-black/20 transform group-hover:scale-95 transition-transform`}>
+                                    <item.icon size={24} strokeWidth={2.5} />
                                 </div>
                             </div>
-                            <Link to="/leaderboard" className="hidden md:flex items-center gap-3 px-8 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-full text-xs font-black uppercase tracking-widest shadow-[0_20px_40px_-5px_rgba(16,185,129,0.3)] transition-all active:scale-95">
-                                <Trophy size={16} /> Global Ranking
-                            </Link>
-                        </div>
-                        <div className="relative z-10 flex gap-4 md:gap-10 overflow-x-auto no-scrollbar pb-10 -mx-2 px-2 gpu-layer">
-                            {liveMatches.map((match, idx) => (
-                                <Link 
-                                    key={match._id} 
-                                    to={`/live/${match._id}`} 
-                                    className={`flex-shrink-0 w-[85vw] md:w-[480px] bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 hover:bg-white/10 transition-all group overflow-hidden relative animate-fade-up`}
-                                    style={{ animationDelay: `${idx * 100}ms` }}
-                                >
-                                    <div className="flex justify-between items-start mb-8 md:mb-12">
-                                        <div className="space-y-1">
-                                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">{match.format || 'T20'} Segment</span>
-                                            <p className="text-white font-black uppercase text-sm md:text-lg tracking-tight">{match.venue || 'Miyapur Arena'}</p>
-                                        </div>
-                                        <div className={`px-5 py-2 rounded-full border text-[9px] font-black uppercase tracking-widest ${
-                                            match.status === 'Completed' 
-                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
-                                            : match.status === 'Scheduled'
-                                            ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
-                                            : 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse'
-                                        }`}>
-                                            {match.status === 'Completed' ? 'FINALIZED' : match.status === 'Scheduled' ? 'WAITING' : 'IN PLAY'}
-                                        </div>
-                                    </div>
-                                     <div className="space-y-8 mb-12">
-                                         {[
-                                            { team: match.team_a, quick: match.quick_teams?.team_a, defaultName: 'Team A' },
-                                            { team: match.team_b, quick: match.quick_teams?.team_b, defaultName: 'Team B' }
-                                         ].map((item, idx) => (
-                                             <div key={idx} className="flex items-center justify-between">
-                                                 <span className="text-white/60 text-xs md:text-sm font-black uppercase tracking-widest">
-                                                     {item.team?.team_id?.name || item.quick?.name || item.defaultName}
-                                                 </span>
-                                                 <div className="flex items-baseline gap-2">
-                                                     <span className="text-2xl md:text-4xl font-black text-white tracking-tighter">{item.team?.score || 0}</span>
-                                                     <span className="text-sm md:text-lg font-black text-white/30">/{item.team?.wickets || 0}</span>
-                                                 </div>
-                                             </div>
-                                         ))}
-                                     </div>
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 group-hover:text-emerald-400 transition-colors">{item.label}</span>
+                        </Link>
+                    ))}
+                </div>
+            </div>
 
-                                     {/* MATCH FOOTER CTA */}
-                                     <div className="pt-8 border-t border-white/5 flex items-center justify-between">
-                                          <div className="flex-1 min-w-0 pr-4">
-                                              {match.status === 'Completed' ? (
-                                                  <div className="flex items-center gap-2">
-                                                      <Trophy size={14} className="text-yellow-400 shrink-0" />
-                                                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 truncate">
-                                                          {match.live_data?.result ? match.live_data.result : (typeof match.result === 'string' ? match.result : `${match.result?.winner?.name || 'Winner'} won ${match.result?.won_by || 'match'}`)}
-                                                      </span>
-                                                  </div>
-                                              ) : match.status === 'Scheduled' ? (
-                                                  <div className="flex items-center gap-2">
-                                                      <Timer size={14} className="text-blue-400 shrink-0" />
-                                                      <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Match Setup Ready</span>
-                                                  </div>
-                                              ) : (
-                                                  <div className="flex items-center gap-2">
-                                                      <Activity size={14} className="text-rose-400 animate-pulse shrink-0" />
-                                                      <p className="text-[10px] font-black uppercase tracking-widest text-rose-400 truncate">Tracking Real-time</p>
-                                                  </div>
-                                              )}
-                                          </div>
-                                          
-                                          <div className={`px-6 py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all shadow-xl ${
-                                              match.status === 'Completed' 
-                                              ? 'bg-emerald-600 text-white group-hover:bg-emerald-500' 
-                                              : match.status === 'Scheduled'
-                                              ? 'bg-blue-600 text-white group-hover:bg-blue-500'
-                                              : 'bg-white text-black group-hover:bg-emerald-400'
-                                          }`}>
-                                              {match.status === 'Completed' ? 'View Details' : match.status === 'Scheduled' ? 'Join' : 'Live Arena'}
-                                          </div>
-                                     </div>
-                                </Link>
-                            ))}
+            <div className="max-w-7xl mx-auto w-full px-3 md:px-6 -mt-4 relative z-20 mb-8 md:mb-32">
+                {/* LIVE & RECENT MATCHES */}
+                <div className="space-y-16 mb-16">
+                    {/* LIVE ARENA SECTION */}
+                    <div className="bg-[#020C06] rounded-[2.5rem] md:rounded-[4rem] p-8 md:p-16 shadow-2xl border border-emerald-500/10 overflow-hidden relative group">
+                        <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full"></div>
+                        
+                        <div className="relative z-10 flex items-center justify-between mb-12">
+                            <div className="flex items-center gap-6">
+                                <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                    <Zap size={28} className="text-emerald-500 fill-emerald-500 animate-pulse" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl md:text-4xl font-black uppercase tracking-[0.2em] text-white leading-none italic">Live Arena</h3>
+                                    <p className="text-[10px] md:text-[12px] font-bold text-emerald-500/60 uppercase tracking-[0.4em] mt-3">Elite Tier Match Broadcast</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 lg:gap-12">
+                            {displayMatches.length > 0 ? (
+                                displayMatches.map((match, idx) => (
+                            <Link 
+                            key={match._id} 
+                            to={`/live/${match._id}`} 
+                            className="block bg-[#0A0F0A] border border-white/5 rounded-[2.5rem] p-8 md:p-10 hover:border-emerald-500/40 transition-all group relative overflow-hidden"
+                        >
+                            <div className="flex justify-between items-start mb-10">
+                                <div className="space-y-1.5">
+                                    <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{match.format || 'T20'} Segment</span>
+                                    <h5 className="text-white font-black uppercase text-lg md:text-xl tracking-tighter">{match.venue || 'Miyapur Arena'}</h5>
+                                </div>
+                                <div className={`px-5 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                                    match.status === 'Completed'
+                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                                    : match.status === 'Scheduled'
+                                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                                    : 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse'
+                                }`}>
+                                    {match.status === 'Completed' ? 'FINALIZED' : match.status === 'Scheduled' ? 'WAITING' : 'IN PLAY'}
+                                </div>
+                            </div>
+
+                            {/* Score display — reads live_data for active matches */}
+                            <div className="space-y-5 mb-10">
+                                {[
+                                    { 
+                                        team: match.team_a, 
+                                        quick: match.quick_teams?.team_a, 
+                                        defaultName: 'Team A', 
+                                        isBatting: match.live_active_team === 'A' || match.live_data?.battingTeam === 0 || match.live_data?.batting_team === 'A' 
+                                    },
+                                    { 
+                                        team: match.team_b, 
+                                        quick: match.quick_teams?.team_b, 
+                                        defaultName: 'Team B', 
+                                        isBatting: match.live_active_team === 'B' || match.live_data?.battingTeam === 1 || match.live_data?.batting_team === 'B' 
+                                    }
+                                ].map((item, i) => {
+                                    const isLive = match.status === 'In Progress';
+                                    const displayScore = isLive && item.isBatting
+                                        ? (match.live_data?.runs ?? item.team?.score ?? 0)
+                                        : (item.team?.score ?? 0);
+                                    const displayWickets = isLive && item.isBatting
+                                        ? (match.live_data?.wickets ?? item.team?.wickets ?? 0)
+                                        : (item.team?.wickets ?? 0);
+                                    const overs = isLive && item.isBatting
+                                        ? `${match.live_data?.overNum ?? 0}.${match.live_data?.ballInOver ?? 0}`
+                                        : (item.team?.overs_played ? formatOvers(item.team.overs_played) : null);
+
+                                    return (
+                                        <div key={i} className={`flex items-center justify-between rounded-2xl px-4 py-3 transition-all ${item.isBatting && isLive ? 'bg-emerald-500/5 border border-emerald-500/10' : ''}`}>
+                                            <div className="flex items-center gap-2">
+                                                {item.isBatting && isLive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+                                                <span className="text-white/60 text-sm md:text-base font-black uppercase tracking-[0.1em]">
+                                                    {item.team?.team_id?.name || item.quick?.name || item.defaultName}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className={`text-3xl md:text-4xl font-black tracking-tighter ${item.isBatting && isLive ? 'text-white' : 'text-white/50'}`}>
+                                                    {displayScore}
+                                                </span>
+                                                <span className="text-sm md:text-base font-black text-white/20">/{displayWickets}</span>
+                                                {overs && <span className="text-[10px] font-bold text-white/20 ml-1">({overs})</span>}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Current over balls if live */}
+                            {match.status === 'In Progress' && match.live_data?.recent_balls?.length > 0 && (
+                                <div className="flex gap-1.5 mb-8">
+                                    {match.live_data.recent_balls.slice(-6).map((b, i) => (
+                                        <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black ${
+                                            b === 'W' ? 'bg-red-500 text-white' :
+                                            b === '4' ? 'bg-blue-600 text-white' :
+                                            b === '6' ? 'bg-orange-500 text-white' :
+                                            'bg-white/8 text-white/40'
+                                        }`}>{b === '·' ? '0' : b}</div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="pt-8 border-t border-white/5 flex items-center justify-between mt-auto">
+                                <div className="flex items-center gap-3">
+                                    {match.status === 'Completed' ? (
+                                        <>
+                                            <Trophy size={16} className="text-emerald-500" />
+                                            <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-emerald-500/80">
+                                                {match.live_data?.result || 'Match Finalized'}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Activity size={16} className="text-rose-500 animate-pulse" />
+                                            <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-rose-500/80">
+                                                {match.status === 'Scheduled' ? 'Match Ready' : 'Broadcasting Live'}
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                                <div className="bg-emerald-600 text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-900/20">
+                                    View Details
+                                </div>
+                            </div>
+                        </Link>
+
+                                ))
+                            ) : (
+                                <div className="col-span-full py-20 text-center bg-white/5 rounded-[2rem] border border-white/5">
+                                    <Activity size={48} className="text-white/10 mx-auto mb-6" />
+                                    <h4 className="text-white/40 font-black uppercase tracking-widest">No Active Battles in Arena</h4>
+                                </div>
+                            )}
                         </div>
                     </div>
-                )}
+
+                    {/* EMPTY STATE - NO DATA */}
+                    {liveMatches.length === 0 && !loading && (
+                        <div className="bg-white/5 backdrop-blur-md rounded-[3rem] p-20 text-center border border-white/10">
+                            <Activity size={48} className="text-white/10 mx-auto mb-6" />
+                            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-2">No Matches Active</h3>
+                            <p className="text-xs text-white/40 uppercase tracking-[0.2em] mb-8">The Arena is currently cooling down</p>
+                            <Link to="/dashboard" className="inline-flex bg-emerald-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-500 transition-all">Start New Match</Link>
+                        </div>
+                    )}
+                </div>
+
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <div className="lg:col-span-3 glass-card rounded-[2.5rem] p-6 shadow-xl flex lg:flex-col overflow-x-auto lg:overflow-x-visible gap-4 no-scrollbar">

@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 
 const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
     const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState('REGISTERED'); // 'REGISTERED' or 'QUICK'
+    const [mode, setMode] = useState('QUICK'); // Default to QUICK for instant CricHeroes flow
     const [formats, setFormats] = useState([]);
     const [formData, setFormData] = useState({
         title: '',
@@ -13,6 +13,7 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
         team_b: '',
         format: 'T10',
         overs: 10,
+        teamSize: 10,
         team_a_name: '',
         team_b_name: '',
         team_a_players: [{ name: '', mobile: '', role: 'Batsman', is_captain: true, is_wk: false, is_linked: false, profile: null }],
@@ -21,6 +22,7 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
 
     useEffect(() => {
         if (isOpen) {
+            setMode('QUICK'); // Always open on Quick Match tab
             fetchInitialData();
         }
     }, [isOpen]);
@@ -171,7 +173,14 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
                         </div>
                         <div>
                             <h2 className="text-white text-lg font-black uppercase tracking-tight leading-none">CricHeroes Deployment</h2>
-                            <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mt-1.5 px-2 py-0.5 bg-emerald-400/10 rounded-full inline-block">The Turf v2.6 Registry</p>
+                            <div className="flex items-center gap-2 mt-1.5">
+                                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest px-3 py-1 bg-white/10 rounded-full">THE TURF V2.6 REGISTRY</p>
+                                {booking?._id && (
+                                    <p className="text-[9px] font-black text-white/70 uppercase tracking-widest">
+                                        #{(booking.receiptId || booking._id?.slice(-6))?.toUpperCase()}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <button onClick={onClose} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-all">
@@ -179,32 +188,26 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
                     </button>
                 </div>
 
-                {/* Mode Selector */}
+                {/* Mode Selector — QUICK MATCH first */}
                 <div className="flex bg-gray-100 p-2 shrink-0">
-                    <button onClick={() => setMode('REGISTERED')} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'REGISTERED' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400'}`}>Registered Teams</button>
                     <button onClick={() => setMode('QUICK')} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'QUICK' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400'}`}>Quick Match</button>
+                    <button onClick={() => setMode('REGISTERED')} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'REGISTERED' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400'}`}>Registered Teams</button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 custom-scrollbar bg-gray-50/50">
-                    {/* Format / Overs Grid */}
-                    <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 block">Select Over Format</label>
-                        <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
-                            {formats.length > 0 ? formats.map(f => (
+                    <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 block text-center">Squad Configuration / Players Per Side</label>
+                        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                            {[3, 5, 6, 10, 15, 20].map(o => (
                                 <button
-                                    key={f.id}
+                                    key={o}
                                     type="button"
-                                    onClick={() => setFormData({...formData, overs: f.overs, format: f.id})}
-                                    className={`py-3 rounded-xl border-2 transition-all flex flex-col items-center justify-center ${formData.format === f.id ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-white border-gray-50 text-gray-400 hover:border-emerald-100'}`}
+                                    onClick={() => setFormData({...formData, teamSize: o})}
+                                    className={`py-6 rounded-2xl border-2 font-black text-base transition-all ${formData.teamSize === o ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100' : 'bg-white border-gray-50 text-gray-300 hover:border-emerald-100'}`}
                                 >
-                                    <span className="text-sm font-black tracking-tighter">{f.overs}</span>
-                                    <span className="text-[7px] font-bold uppercase tracking-widest">{f.name.split(' ')[0]}</span>
+                                    {o}
                                 </button>
-                            )) : (
-                                [3, 5, 6, 10, 15, 20].map(o => (
-                                    <button key={o} type="button" onClick={() => setFormData({...formData, overs: o, format: `T${o}`})} className={`py-4 rounded-xl border-2 font-black ${formData.overs === o ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white text-gray-400'}`}>{o}</button>
-                                ))
-                            )}
+                            ))}
                         </div>
                     </div>
 
@@ -219,13 +222,23 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
                                 </div>
                                 <div className="space-y-3">
                                     {formData.team_a_players.map((p, i) => (
-                                        <div key={i} className="flex flex-col gap-2 p-4 bg-gray-50 rounded-2xl border border-gray-100 group transition-all hover:bg-white hover:border-blue-200">
-                                            <div className="flex items-center gap-3">
+                                        <div key={i} className="flex flex-col gap-2 p-5 bg-gray-50 rounded-3xl border border-gray-100 group transition-all hover:bg-white hover:border-blue-200">
+                                            <div className="flex items-center gap-4">
                                                 <div className="text-[9px] font-black text-gray-300 w-4">{i + 1}</div>
-                                                <input placeholder="Mobile No." value={p.mobile} onChange={(e) => updatePlayer('a', i, 'mobile', e.target.value)} className="w-28 bg-transparent text-xs font-black outline-none border-b border-gray-200 focus:border-blue-500" maxLength={10} />
-                                                <input placeholder="Player Name" value={p.name} onChange={(e) => updatePlayer('a', i, 'name', e.target.value)} className="flex-1 bg-transparent text-xs font-bold outline-none border-b border-gray-200 focus:border-blue-500" />
-                                                <button type="button" onClick={() => updatePlayer('a', i, 'is_captain', !p.is_captain)} className={`p-2 rounded-lg ${p.is_captain ? 'bg-orange-100 text-orange-600' : 'text-gray-300'}`}><Star size={14} fill={p.is_captain ? 'currentColor' : 'none'} /></button>
-                                                <button type="button" onClick={() => updatePlayer('a', i, 'is_wk', !p.is_wk)} className={`p-2 rounded-lg ${p.is_wk ? 'bg-sky-100 text-sky-600' : 'text-gray-300'}`}><Shield size={14} /></button>
+                                                <div className="flex-1 grid grid-cols-2 gap-4">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Mobile No.</label>
+                                                        <input placeholder="88888 88888" value={p.mobile} onChange={(e) => updatePlayer('a', i, 'mobile', e.target.value)} className="w-full bg-transparent text-xs font-black outline-none border-b border-gray-200 focus:border-blue-500 pb-1" maxLength={10} />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Player Name</label>
+                                                        <input placeholder="Enter Name" value={p.name} onChange={(e) => updatePlayer('a', i, 'name', e.target.value)} className="w-full bg-transparent text-xs font-bold outline-none border-b border-gray-200 focus:border-blue-500 pb-1" />
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <button type="button" onClick={() => updatePlayer('a', i, 'is_captain', !p.is_captain)} className={`p-2 rounded-xl transition-all ${p.is_captain ? 'bg-orange-100 text-orange-600' : 'bg-white text-gray-300 hover:text-orange-400'}`} title="Captain"><Star size={14} fill={p.is_captain ? 'currentColor' : 'none'} /></button>
+                                                    <button type="button" onClick={() => updatePlayer('a', i, 'is_wk', !p.is_wk)} className={`p-2 rounded-xl transition-all ${p.is_wk ? 'bg-sky-100 text-sky-600' : 'bg-white text-gray-300 hover:text-sky-400'}`} title="Wicketkeeper"><Shield size={14} /></button>
+                                                </div>
                                             </div>
                                             {p.is_linked && p.profile && (
                                                 <div className="flex items-center justify-between pl-7 pr-2">
@@ -258,13 +271,23 @@ const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
                                 </div>
                                 <div className="space-y-3">
                                     {formData.team_b_players.map((p, i) => (
-                                        <div key={i} className="flex flex-col gap-2 p-4 bg-gray-50 rounded-2xl border border-gray-100 group transition-all hover:bg-white hover:border-red-200">
-                                            <div className="flex items-center gap-3">
+                                        <div key={i} className="flex flex-col gap-2 p-5 bg-gray-50 rounded-3xl border border-gray-100 group transition-all hover:bg-white hover:border-red-200">
+                                            <div className="flex items-center gap-4">
                                                 <div className="text-[9px] font-black text-gray-300 w-4">{i + 1}</div>
-                                                <input placeholder="Mobile No." value={p.mobile} onChange={(e) => updatePlayer('b', i, 'mobile', e.target.value)} className="w-28 bg-transparent text-xs font-black outline-none border-b border-gray-200 focus:border-red-500" maxLength={10} />
-                                                <input placeholder="Player Name" value={p.name} onChange={(e) => updatePlayer('b', i, 'name', e.target.value)} className="flex-1 bg-transparent text-xs font-bold outline-none border-b border-gray-200 focus:border-red-500" />
-                                                <button type="button" onClick={() => updatePlayer('b', i, 'is_captain', !p.is_captain)} className={`p-2 rounded-lg ${p.is_captain ? 'bg-orange-100 text-orange-600' : 'text-gray-300'}`}><Star size={14} fill={p.is_captain ? 'currentColor' : 'none'} /></button>
-                                                <button type="button" onClick={() => updatePlayer('b', i, 'is_wk', !p.is_wk)} className={`p-2 rounded-lg ${p.is_wk ? 'bg-sky-100 text-sky-600' : 'text-gray-300'}`}><Shield size={14} /></button>
+                                                <div className="flex-1 grid grid-cols-2 gap-4">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Mobile No.</label>
+                                                        <input placeholder="88888 88888" value={p.mobile} onChange={(e) => updatePlayer('b', i, 'mobile', e.target.value)} className="w-full bg-transparent text-xs font-black outline-none border-b border-gray-200 focus:border-red-500 pb-1" maxLength={10} />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Player Name</label>
+                                                        <input placeholder="Enter Name" value={p.name} onChange={(e) => updatePlayer('b', i, 'name', e.target.value)} className="w-full bg-transparent text-xs font-bold outline-none border-b border-gray-200 focus:border-red-500 pb-1" />
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <button type="button" onClick={() => updatePlayer('b', i, 'is_captain', !p.is_captain)} className={`p-2 rounded-xl transition-all ${p.is_captain ? 'bg-orange-100 text-orange-600' : 'bg-white text-gray-300 hover:text-orange-400'}`} title="Captain"><Star size={14} fill={p.is_captain ? 'currentColor' : 'none'} /></button>
+                                                    <button type="button" onClick={() => updatePlayer('b', i, 'is_wk', !p.is_wk)} className={`p-2 rounded-xl transition-all ${p.is_wk ? 'bg-sky-100 text-sky-600' : 'bg-white text-gray-300 hover:text-sky-400'}`} title="Wicketkeeper"><Shield size={14} /></button>
+                                                </div>
                                             </div>
                                             {p.is_linked && p.profile && (
                                                 <div className="flex items-center justify-between pl-7 pr-2">

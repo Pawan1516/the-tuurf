@@ -5,14 +5,29 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide user name']
   },
-  userPhone: {
+  name: { // Alias for userName to match request
+    type: String
+  },
+  userPhone: { // Kept for backwards compatibility
+    type: String
+  },
+  mobileNumber: {
     type: String,
-    required: [true, 'Please provide user phone'],
-    match: [/^\d{10}$/, 'Please provide valid 10-digit phone number']
+    required: [true, 'Please provide mobile number'],
   },
   turfLocation: {
     type: String,
     required: [true, 'Please provide turf location']
+  },
+  turfId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Turf'
+  },
+  date: {
+    type: Date
+  },
+  timeSlot: {
+    type: String // e.g., "07:00 AM - 08:00 AM"
   },
   slot: {
     type: mongoose.Schema.Types.ObjectId,
@@ -20,6 +35,10 @@ const bookingSchema = new mongoose.Schema({
     required: [true, 'Please provide slot']
   },
   user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
@@ -50,6 +69,9 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'confirmed', 'rejected', 'hold', 'no-show', 'cancelled'],
     default: 'pending'
+  },
+  status: { // Alias for bookingStatus to match request
+    type: String
   },
   whatsappNotified: {
     type: Boolean,

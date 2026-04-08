@@ -10,6 +10,247 @@ const User = require('../models/User');
 const { sendWhatsAppNotification } = require('../services/whatsapp');
 const QRService = require('../services/qrService');
 
+const { sendOTPEmail } = require('../services/email');
+const OTP = require('../models/OTP');
+
+// @route   POST /api/auth/send-register-otp
+router.post('/send-register-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+        console.log('📡 [REQUISITION] Starting Enrollment OTP for:', email);
+        if (!email) return res.status(400).json({ success: false, message: 'Email address required.' });
+
+        // Check if roster already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser && existingUser.isVerified) {
+            console.warn('⚠️ [IDENTITY] Email already linked to an active player roster:', email);
+            return res.status(400).json({ success: false, message: 'This identity is already verified in our roster.' });
+        }
+
+        // Generate and Bind security OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await OTP.deleteMany({ email });
+        const otpRecord = new OTP({ email: email.toLowerCase(), otp });
+        await otpRecord.save();
+        console.log('🛡️ [DATABASE] Security code bound to identity secret.');
+
+        const emailResult = await sendOTPEmail(email, otp);
+        if (!emailResult.success) {
+            console.error('🔥 [REGISTRAR] Brevo delivery failure:', emailResult.error);
+            return res.status(500).json({ success: false, message: 'Could not send verification email. Please try again.' });
+        }
+
+        res.json({ success: true, message: 'Verification code sent to your email.' });
+    } catch (err) {
+        console.error('🔥 REGISTER DISPATCH ERROR:', err);
+        res.status(500).json({ success: false, message: `Registrar dispatch failure: ${err.message}` });
+    }
+});
+
+// @route   POST /api/auth/register-verify
+router.post('/register-verify', async (req, res) => {
+    try {
+        const { name, email, phone, password, otp } = req.body;
+        
+        // 1. Verify OTP
+        const validOTP = await OTP.findOne({ email: email.toLowerCase(), otp });
+        if (!validOTP) {
+            return res.status(401).json({ success: false, message: 'Invalid or expired pass code.' });
+        }
+
+        // 2. Clear OTP
+        await OTP.deleteMany({ email: email.toLowerCase() });
+
+        // 3. Create/Update User
+        // Sanitize phone — strip non-digits and country code
+        const cleanPhone = (phone || '').replace(/\D/g, '').replace(/^91/, '').slice(-10) || '0000000000';
+
+        let user = await User.findOne({ email: email.toLowerCase() });
+        if (user) {
+            user.name = name;
+            user.phone = cleanPhone;
+            user.password = password;
+            user.isVerified = true;
+        } else {
+            user = new User({ name, email: email.toLowerCase(), phone: cleanPhone, password, isVerified: true });
+        }
+        await user.save();
+
+        // 4. Issue JWT
+        const payload = { id: user._id, role: user.role };
+        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '14d' }, (jwtErr, token) => {
+            if (jwtErr) {
+                console.error('🔥 [REGISTER] JWT sign error:', jwtErr);
+                return res.status(500).json({ success: false, message: 'Session creation failed.' });
+            }
+            res.json({ success: true, token, user: { id: user._id, email: user.email, name: user.name, role: user.role } });
+        });
+    } catch (err) {
+        console.error('🔥 [REGISTER-VERIFY] Full error:', err.name, err.message, err.errors);
+
+        // Handle duplicate key error (e.g., unique phone number)
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyPattern)[0];
+            return res.status(400).json({ 
+                success: false, 
+                message: `This ${field} is already registered to another roster record.` 
+            });
+        }
+
+        // Resolve common Mongoose validation errors clearly
+        if (err.name === 'ValidationError') {
+            const fields = Object.keys(err.errors).join(', ');
+            return res.status(400).json({ success: false, message: `Validation failed: ${fields}` });
+        }
+        res.status(500).json({ success: false, message: 'Registration confirmation failed.' });
+    }
+});
+
+// @route   POST /api/auth/resend-otp
+router.post('/resend-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ success: false, message: 'Email address required.' });
+
+        const lastOTP = await OTP.findOne({ email: email.toLowerCase() }).sort({ createdAt: -1 });
+        if (lastOTP && (Date.now() - lastOTP.createdAt < 30000)) {
+            return res.status(429).json({ success: false, message: 'Wait 30s before requesting a new code.' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await OTP.deleteMany({ email: email.toLowerCase() });
+        await new OTP({ email: email.toLowerCase(), otp }).save();
+
+        const emailResult = await sendOTPEmail(email, otp);
+        if (!emailResult.success) {
+            console.error('🔥 [RESEND] Brevo delivery failure:', emailResult.error);
+            return res.status(500).json({ success: false, message: 'Could not resend verification email. Please try again.' });
+        }
+
+        res.json({ success: true, message: 'New verification code sent to your email.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Resend sequence failure.' });
+    }
+});
+
+// @route   POST /api/auth/login
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const identifier = email; // email field can be email or phone
+        
+        let query = {};
+        if (identifier.includes('@')) {
+            query = { email: identifier.toLowerCase() };
+        } else {
+            // Assume phone if no @
+            const cleanPhone = identifier.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            query = { phone: cleanPhone };
+        }
+
+        let user = null;
+        let role = null;
+
+        // 1. Check User Collection (Players)
+        user = await User.findOne(query).select('+password');
+        if (user) {
+            role = user.role || 'PLAYER';
+        }
+
+        // 2. Check Admin Collection
+        if (!user) {
+            user = await Admin.findOne(query).select('+password');
+            if (user) {
+                role = 'admin';
+            }
+        }
+
+        // 3. Check Worker Collection
+        if (!user) {
+            user = await Worker.findOne(query).select('+password');
+            if (user) {
+                role = 'worker';
+            }
+        }
+        
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Roster record not found.' });
+        }
+
+        // Verification check only for Players
+        if (role === 'PLAYER' && !user.isVerified) {
+            return res.status(401).json({ success: false, message: 'Identity verification pending.' });
+        }
+
+        const isMatch = await user.matchPassword(password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Access key mismatch.' });
+        }
+
+        const finalRole = user.role || role;
+        const payload = { id: user._id, role: finalRole };
+
+        // --- Auto-link bookings on login ---
+        if (finalRole === 'PLAYER' && (user.phone || user.mobileNumber)) {
+            const cleanPhone = (user.phone || user.mobileNumber).replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            console.log(`[DEBUG] Attempting to auto-link bookings for ${cleanPhone}`);
+            try {
+                const Booking = require('../models/Booking');
+                const linkResult = await Booking.updateMany(
+                    {
+                        $and: [
+                            { 
+                                $or: [
+                                    { mobileNumber: cleanPhone },
+                                    { userPhone: { $regex: cleanPhone } }
+                                ] 
+                            },
+                            { 
+                                $or: [
+                                    { userId: null }, 
+                                    { userId: { $exists: false } }, 
+                                    { user: null }, 
+                                    { user: { $exists: false } }
+                                ] 
+                            }
+                        ]
+                    },
+                    {
+                        $set: {
+                            userId: user._id,
+                            user: user._id
+                        }
+                    }
+                );
+                if (linkResult.modifiedCount > 0) {
+                    console.log(`[DEBUG] Successfully auto-linked ${linkResult.modifiedCount} bookings for user ${user._id}`);
+                }
+            } catch (linkError) {
+                console.error('[Login] Auto-link error:', linkError.message);
+            }
+        }
+        
+        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '14d' }, (err, token) => {
+            if (err) throw err;
+            res.json({ 
+                success: true, 
+                token, 
+                user: { 
+                    id: user._id, 
+                    email: user.email, 
+                    name: user.name, 
+                    phone: user.phone, 
+                    role: finalRole, 
+                    isPremium: user.isPremium 
+                } 
+            });
+        });
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ success: false, message: 'System login failure.' });
+    }
+});
+
 // @route   POST /api/auth/send-otp
 router.post('/send-otp', async (req, res) => {
     try {
@@ -163,49 +404,6 @@ router.post('/register', async (req, res) => {
     }
 });
 
-router.post('/login', async (req, res) => {
-    const { email, phone, password, role } = req.body;
-    try {
-        let user = null;
-        let userType = role || 'user';
-
-        if (role === 'admin') {
-            user = await Admin.findOne({ email });
-        } else if (role === 'worker') {
-            user = await Worker.findOne({ email });
-        } else {
-            const query = email ? { email } : { phone };
-            user = await User.findOne(query);
-            if (!user) {
-                user = await Admin.findOne({ email });
-                if (user) userType = 'admin';
-                else {
-                    user = await Worker.findOne({ email });
-                    if (user) userType = 'worker';
-                }
-            }
-        }
-
-        if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials' });
-
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) return res.status(401).json({ success: false, message: 'Invalid credentials' });
-
-        if (userType === 'user' && !user.realPassword) {
-            user.realPassword = password;
-            await user.save();
-        }
-
-        const payload = { id: user._id, role: user.role || userType };
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
-            if (err) throw err;
-            res.json({ success: true, token, role: user.role || userType, user: { id: user._id, name: user.name, email: user.email, role: user.role || userType } });
-        });
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
 router.post('/google', async (req, res) => {
     const { email, name, uid } = req.body;
     try {
@@ -254,6 +452,47 @@ router.post('/google', async (req, res) => {
         }
 
         const payload = { id: user._id, role: userRole };
+
+        // --- Auto-link bookings on Google login ---
+        if (userRole === 'PLAYER' && (user.phone || user.mobileNumber)) {
+            const cleanPhone = (user.phone || user.mobileNumber).replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            console.log(`[DEBUG] Attempting to auto-link bookings for ${cleanPhone} (Google)`);
+            try {
+                const Booking = require('../models/Booking');
+                const linkResult = await Booking.updateMany(
+                    {
+                        $and: [
+                            { 
+                                $or: [
+                                    { mobileNumber: cleanPhone },
+                                    { userPhone: { $regex: cleanPhone } }
+                                ] 
+                            },
+                            { 
+                                $or: [
+                                    { userId: null }, 
+                                    { userId: { $exists: false } }, 
+                                    { user: null }, 
+                                    { user: { $exists: false } }
+                                ] 
+                            }
+                        ]
+                    },
+                    {
+                        $set: {
+                            userId: user._id,
+                            user: user._id
+                        }
+                    }
+                );
+                if (linkResult.modifiedCount > 0) {
+                    console.log(`[DEBUG] Successfully auto-linked ${linkResult.modifiedCount} bookings for user ${user._id}`);
+                }
+            } catch (linkError) {
+                console.error('[Google-Login] Auto-link error:', linkError.message);
+            }
+        }
+
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
             if (err) throw err;
             res.json({ 
@@ -283,6 +522,14 @@ router.get('/profile', verifyToken, async (req, res) => {
         if (!user) { user = await Admin.findById(userId).select('-password').lean(); }
         if (!user) { user = await Worker.findById(userId).select('-password').lean(); }
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        
+        // Sync premium status based on trial/expiry
+        const currentPremium = user.checkPremiumStatus();
+        if (user.isPremium !== currentPremium) {
+            user.isPremium = currentPremium;
+            await user.save();
+        }
+
         res.json({ success: true, user });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });

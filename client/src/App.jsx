@@ -45,7 +45,9 @@ import FirebaseAuthTest from './pages/FirebaseAuthTest';
 import CricketAnalyticsDashboard from './pages/CricketAnalyticsDashboard';
 import PlayerAnalytics from './pages/PlayerAnalytics';
 import PlayerComparison from './pages/PlayerComparison';
+import PremiumSubscription from './pages/PremiumSubscription';
 import { slotsAPI } from './api/client';
+import SplashScreen from './components/SplashScreen';
 
 import { Zap } from 'lucide-react';
 
@@ -124,6 +126,7 @@ const Layout = ({ children, turfName = "The Turf", settings = {} }) => (
 
 function App() {
   const [settings, setSettings] = React.useState({ TURF_NAME: 'The Turf' });
+  const [showSplash, setShowSplash] = React.useState(true);
 
   React.useEffect(() => {
     const fetchSettings = async () => {
@@ -162,54 +165,60 @@ function App() {
   };
 
   return (
-    <Router>
-      <Routes>
-          <Route path="/" element={<WrapLayout><PublicHome /></WrapLayout>} />
-          <Route path="/home" element={<WrapLayout><PublicHome /></WrapLayout>} />
-          <Route path="/about" element={<WrapLayout><AboutUs /></WrapLayout>} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/worker/login" element={<WorkerLogin />} />
-          <Route path="/firebase-test" element={<FirebaseAuthTest />} />
-          <Route path="/book/:slotId" element={<WrapLayout><BookingPage /></WrapLayout>} />
-          <Route path="/payment/:bookingId" element={<WrapLayout><PaymentPage /></WrapLayout>} />
-          <Route path="/booking-success" element={<SuccessPage />} />
-          <Route path="/live/:id" element={<LiveScoreView />} />
-          <Route path="/player/:id" element={<PlayerProfile />} />
-          <Route path="/stats-dashboard" element={<PlayerStatsDashboard />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/turfs/:id" element={<WrapLayout><TurfDetailPage /></WrapLayout>} />
-          <Route path="/cricket-analytics" element={<ProtectedRoute allowedRoles={['admin']}><CricketAnalyticsDashboard /></ProtectedRoute>} />
-          <Route path="/player-analytics" element={<ProtectedRoute allowedRoles={['user', 'player']}><PlayerAnalytics /></ProtectedRoute>} />
-          <Route path="/player/compare/:id" element={<PlayerComparison />} />
+    <>
+      <SplashScreen onComplete={() => setShowSplash(false)} />
+      {!showSplash && (
+        <Router>
+          <Routes>
+              <Route path="/" element={<WrapLayout><PublicHome /></WrapLayout>} />
+              <Route path="/home" element={<WrapLayout><PublicHome /></WrapLayout>} />
+              <Route path="/about" element={<WrapLayout><AboutUs /></WrapLayout>} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/worker/login" element={<WorkerLogin />} />
+              <Route path="/firebase-test" element={<FirebaseAuthTest />} />
+              <Route path="/book/:slotId" element={<WrapLayout><BookingPage /></WrapLayout>} />
+              <Route path="/payment/:bookingId" element={<WrapLayout><PaymentPage /></WrapLayout>} />
+              <Route path="/booking-success" element={<SuccessPage />} />
+              <Route path="/live/:id" element={<LiveScoreView />} />
+              <Route path="/player/:id" element={<PlayerProfile />} />
+              <Route path="/stats-dashboard" element={<PlayerStatsDashboard />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/turfs/:id" element={<WrapLayout><TurfDetailPage /></WrapLayout>} />
+              <Route path="/cricket-analytics" element={<ProtectedRoute allowedRoles={['admin']}><CricketAnalyticsDashboard /></ProtectedRoute>} />
+              <Route path="/player-analytics" element={<ProtectedRoute allowedRoles={['user', 'player']} requiresPremium={true}><PlayerAnalytics /></ProtectedRoute>} />
+              <Route path="/player/compare/:id" element={<ProtectedRoute allowedRoles={['user', 'player']} requiresPremium={true}><PlayerComparison /></ProtectedRoute>} />
+              <Route path="/intel-premium" element={<WrapLayout><PremiumSubscription /></WrapLayout>} />
 
-          <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['user', 'player']}><UserDashboard /></ProtectedRoute>} />
-          <Route path="/scoring/:id" element={<ProtectedRoute allowedRoles={['user', 'player', 'admin']}><ScoringDashboard /></ProtectedRoute>} />
-          <Route path="/worker/dashboard" element={<ProtectedRoute allowedRoles={['worker']}><WorkerDashboard /></ProtectedRoute>} />
-          <Route path="/worker/booked-slots" element={<ProtectedRoute allowedRoles={['worker']}><WorkerBookedSlots /></ProtectedRoute>} />
-          <Route path="/worker/assigned-slots" element={<ProtectedRoute allowedRoles={['worker']}><WorkerAssignedSlots /></ProtectedRoute>} />
-          <Route path="/worker/booking/:id" element={<ProtectedRoute allowedRoles={['worker']}><WorkerBookingDetail /></ProtectedRoute>} />
-          <Route path="/worker/report" element={<ProtectedRoute allowedRoles={['worker']}><WorkerReport /></ProtectedRoute>} />
-          <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminSlots /></ProtectedRoute>} />
-          <Route path="/admin/booked-slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookedSlots /></ProtectedRoute>} />
-          <Route path="/admin/bookings" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookings /></ProtectedRoute>} />
-          <Route path="/admin/workers" element={<ProtectedRoute allowedRoles={['admin']}><AdminWorkers /></ProtectedRoute>} />
-          <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
-          <Route path="/admin/report" element={<ProtectedRoute allowedRoles={['admin']}><AdminReport /></ProtectedRoute>} />
-          <Route path="/admin/bookings/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookingDetail /></ProtectedRoute>} />
-          <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
-          <Route path="/admin/scanner" element={<ProtectedRoute allowedRoles={['admin']}><AdminScanner /></ProtectedRoute>} />
-          <Route path="/admin/operations" element={<ProtectedRoute allowedRoles={['admin']}><OperationsDashboard /></ProtectedRoute>} />
-          <Route path="/admin/strategy" element={<ProtectedRoute allowedRoles={['admin']}><StrategyHub /></ProtectedRoute>} />
-          <Route path="/admin/cms" element={<ProtectedRoute allowedRoles={['admin']}><CMSHub /></ProtectedRoute>} />
-          
-          <Route path="*" element={<WrapLayout><PublicHome /></WrapLayout>} />
-      </Routes>
-      <CricBotWidget />
-      <ToastContainer position="bottom-right" theme="dark" />
-    </Router>
+              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['user', 'player']}><UserDashboard /></ProtectedRoute>} />
+              <Route path="/scoring/:id" element={<ProtectedRoute allowedRoles={['user', 'player', 'admin']}><ScoringDashboard /></ProtectedRoute>} />
+              <Route path="/worker/dashboard" element={<ProtectedRoute allowedRoles={['worker']}><WorkerDashboard /></ProtectedRoute>} />
+              <Route path="/worker/booked-slots" element={<ProtectedRoute allowedRoles={['worker']}><WorkerBookedSlots /></ProtectedRoute>} />
+              <Route path="/worker/assigned-slots" element={<ProtectedRoute allowedRoles={['worker']}><WorkerAssignedSlots /></ProtectedRoute>} />
+              <Route path="/worker/booking/:id" element={<ProtectedRoute allowedRoles={['worker']}><WorkerBookingDetail /></ProtectedRoute>} />
+              <Route path="/worker/report" element={<ProtectedRoute allowedRoles={['worker']}><WorkerReport /></ProtectedRoute>} />
+              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminSlots /></ProtectedRoute>} />
+              <Route path="/admin/booked-slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookedSlots /></ProtectedRoute>} />
+              <Route path="/admin/bookings" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookings /></ProtectedRoute>} />
+              <Route path="/admin/workers" element={<ProtectedRoute allowedRoles={['admin']}><AdminWorkers /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
+              <Route path="/admin/report" element={<ProtectedRoute allowedRoles={['admin']}><AdminReport /></ProtectedRoute>} />
+              <Route path="/admin/bookings/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookingDetail /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
+              <Route path="/admin/scanner" element={<ProtectedRoute allowedRoles={['admin']}><AdminScanner /></ProtectedRoute>} />
+              <Route path="/admin/operations" element={<ProtectedRoute allowedRoles={['admin']}><OperationsDashboard /></ProtectedRoute>} />
+              <Route path="/admin/strategy" element={<ProtectedRoute allowedRoles={['admin']}><StrategyHub /></ProtectedRoute>} />
+              <Route path="/admin/cms" element={<ProtectedRoute allowedRoles={['admin']}><CMSHub /></ProtectedRoute>} />
+              
+              <Route path="*" element={<WrapLayout><PublicHome /></WrapLayout>} />
+          </Routes>
+          <CricBotWidget />
+          <ToastContainer position="bottom-right" theme="dark" />
+        </Router>
+      )}
+    </>
   );
 }
 

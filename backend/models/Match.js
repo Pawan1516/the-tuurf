@@ -177,11 +177,29 @@ const matchSchema = new mongoose.Schema({
             over: Number,
             ball: Number,
             runs: Number,
-            is_wicket: Boolean,
-            extra: String,
-            batsman_id: mongoose.Schema.Types.ObjectId,
-            bowler_id: mongoose.Schema.Types.ObjectId,
+            is_wicket: { type: Boolean, default: false },
+            extra: String, // 'wd', 'nb', 'lb', 'b'
+            batsman_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            bowler_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            dismissal_type: { type: String },
+            fielder_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            score_at_ball: Number,
+            wickets_at_ball: Number,
             timestamp: { type: Date, default: Date.now }
+        }],
+        fall_of_wickets: [{
+            player_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            score: Number,
+            wickets: Number,
+            over: Number,
+            ball: Number
+        }],
+        partnership_log: [{
+            batsman1_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            batsman2_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            runs: { type: Number, default: 0 },
+            balls: { type: Number, default: 0 },
+            is_active: { type: Boolean, default: true }
         }]
     }],
     current_innings_index: { type: Number, default: 0 },

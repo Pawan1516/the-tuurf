@@ -95,15 +95,43 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
     const slotPrice = amount || (slot ? slot.price : 1000);
     const confirmationAmount = (paymentType === 'full') ? slotPrice : Math.ceil(slotPrice * 0.4);
 
+    // [MODIFIED] Populate new fields for robust user dashboard matching
+    const cleanMobile = userPhone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+    
+    // Find turfId if possible (matching location)
+    let turfId = null;
+    let userId = null;
+    try {
+        const Turf = require('../models/Turf');
+        const User = require('../models/User');
+        const loc = process.env.TURF_LOCATION || 'The Turf Stadium';
+        const [turf, matchedUser] = await Promise.all([
+            Turf.findOne({ location: { $regex: loc, $options: 'i' } }),
+            User.findOne({ phone: cleanMobile })
+        ]);
+        if (turf) turfId = turf._id;
+        if (matchedUser) userId = matchedUser._id;
+    } catch (e) {
+        console.error('Lookup error during manual booking:', e);
+    }
+
     const booking = new Booking({
         userName,
+        name: userName, // Added for schema consistency
         userPhone,
+        mobileNumber: cleanMobile, // Added for dashboard search
+        userId, // Link to detected user
+        user: userId, // Backwards compatibility
         turfLocation: process.env.TURF_LOCATION || 'The Turf Stadium',
+        turfId: turfId, // Added for analytics
         slot: slot._id,
+        date: slot.date, // Added for direct query
+        timeSlot: `${slot.startTime} – ${slot.endTime}`, // Added for display
         amount: confirmationAmount,
         totalAmount: slotPrice,
         paymentType: platform === 'admin' ? (paymentType || 'full') : paymentType,
         bookingStatus: platform === 'admin' ? 'confirmed' : 'pending',
+        status: platform === 'admin' ? 'confirmed' : 'pending', // Keep in sync
         paymentStatus: platform === 'admin' ? 'verified' : 'pending',
         confirmedAt: platform === 'admin' ? Date.now() : null,
         whatsappNotified: false

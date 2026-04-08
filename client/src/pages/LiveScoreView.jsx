@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import AuthContext from '../context/AuthContext';
 import apiClient from '../api/client';
 import { 
     Trophy, Users, Timer, Info, Share2, Activity, BarChart3, ChevronLeft, 
@@ -20,6 +21,7 @@ const SOCKET_URL = process.env.NODE_ENV === 'production'
 export default function LiveScoreView() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
     const [match, setMatch] = useState(null);
     const [liveData, setLiveData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -32,89 +34,129 @@ export default function LiveScoreView() {
     const [overAnalytics, setOverAnalytics] = useState([]);
     const [matchAnalytics, setMatchAnalytics] = useState({ boundaries: [], dotRatios: [] });
     const [isPremium, setIsPremium] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const scriptLoaded = useRef(false);
     const socketRef = useRef(null);
 
     useEffect(() => {
-        const fetchMatch = async () => {
+        // Pre-load Razorpay Script to avoid pop-up blockers
+        if (!scriptLoaded.current) {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.async = true;
+            script.onload = () => { scriptLoaded.current = true; };
+            script.onerror = () => { toast.error("Razorpay SDK failed to load."); };
+            document.body.appendChild(script);
+        }
+        const checkPremiumStatus = async () => {
             try {
-                const res = await apiClient.get(`/matches/${id}?t=${new Date().getTime()}`);
-                const matchData = res.data.match || res.data; 
-                setMatch(matchData);
-                setLiveData(matchData.live_data || {});
-                
-                const pointsMap = new Map();
-                // Initialize start
-                pointsMap.set(0, { ballIndex: 0, over: 0, runs_inn1: 0, runs_inn2: 0, momentumA: 50, momentumB: 50 });
+                const token = localStorage.getItem('token');
+                if (!token) return;
 
-                if (matchData.innings) {
-                    matchData.innings.forEach((inn, idx) => {
-                        const runKey = idx === 0 ? 'runs_inn1' : 'runs_inn2';
-                        const wicketKey = idx === 0 ? 'wicket_inn1' : 'wicket_inn2';
-                        const momKey = idx === 0 ? 'momentumA' : 'momentumB';
-                        let cumulativeRuns = 0;
-                        
-                        const totalBalls = inn.balls ? inn.balls.length : 0;
-                        
-                        (inn.balls || []).forEach((ball, bIdx) => {
-                             const ballTotal = (ball.runs_off_bat || 0) + (ball.extra_runs || 0);
-                             cumulativeRuns += ballTotal;
-                             
-                             const ballIndex = bIdx + 1;
-                             const existing = pointsMap.get(ballIndex) || { ballIndex, over: parseFloat(ball.over + '.' + ball.ball) || (ballIndex/6).toFixed(1) };
-                             
-                             const ballMom = ballTotal >= 4 ? 80 : (ballTotal === 0 ? 30 : 50);
-
-                             pointsMap.set(ballIndex, { 
-                                 ...existing, 
-                                 [runKey]: cumulativeRuns, 
-                                 [wicketKey]: ball.is_wicket,
-                                 [momKey]: ballMom
-                             });
-                        });
-                    });
-                }
-
-                const sorted = Array.from(pointsMap.values()).sort((a,b) => a.ballIndex - b.ballIndex);
-                setChartData(sorted);
-
-                // Aggregating for Momentum Chart (Over by Over)
-                const overSummaries = [];
-                for (let i = 0; i <= (matchData.overs || 10); i++) {
-                    const ballsInOver1 = (matchData.innings?.[0]?.balls || []).filter(b => b.over_number === i);
-                    const ballsInOver2 = (matchData.innings?.[1]?.balls || []).filter(b => b.over_number === i);
-                    
-                    const runs1 = ballsInOver1.reduce((s, b) => s + (b.runs_off_bat || 0) + (b.extra_runs || 0), 0);
-                    const runs2 = ballsInOver2.reduce((s, b) => s + (b.runs_off_bat || 0) + (b.extra_runs || 0), 0);
-                    
-                    if (ballsInOver1.length > 0 || ballsInOver2.length > 0) {
-                        overSummaries.push({
-                            over: i + 1,
-                            [teamAName]: runs1,
-                            [teamBName]: runs2,
-                            diff: runs1 - runs2
-                        });
+                const profileRes = await apiClient.get('/auth/profile');
+                if (profileRes.data.success) {
+                    const u = profileRes.data.user;
+                    if (u.isPremium || u.subscription?.isPremium) {
+                        setIsPremium(true);
                     }
                 }
-                setOverAnalytics(overSummaries);
+            } catch (err) {
+                console.error('Premium check error:', err);
+            }
+        };
 
-                // Aggregating for Live Match Batting Analytics
-                const allBalls = [...(matchData.innings?.[0]?.balls || []), ...(matchData.innings?.[1]?.balls || [])];
-                const dots = allBalls.filter(b => (b.runs_off_bat === 0 && !b.extra_runs)).length;
-                const fours = allBalls.filter(b => b.runs_off_bat === 4).length;
-                const sixes = allBalls.filter(b => b.runs_off_bat === 6).length;
-                const others = allBalls.length - dots - fours - sixes;
+        checkPremiumStatus();
 
-                setMatchAnalytics({
-                    boundaries: [
-                        { name: '4s', value: fours, fill: '#10b981' },
-                        { name: '6s', value: sixes, fill: '#3b82f6' },
-                        { name: 'Others', value: others, fill: '#94a3b8' }
-                    ],
-                    dotRatios: [
-                        { name: 'Dots', value: dots, fill: '#ef4444' },
-                        { name: 'Scored', value: allBalls.length - dots, fill: '#10b981' }
-                    ]
-                });
+        const fetchMatch = async () => {
+            try {
+                const response = await apiClient.get(`/matches/${id}?t=${new Date().getTime()}`);
+                if (response.data.success) {
+                    const matchData = response.data.match;
+                    setMatch(matchData);
+                    if (matchData.live_data) {
+                        setLiveData(prev => ({
+                            ...prev,
+                            ...matchData.live_data,
+                            // CRITICAL FIX: Prioritize real-time state over initial DB values during polling
+                            runs: matchData.live_data.runs ?? prev?.runs ?? matchData.team_a?.score ?? matchData.team_b?.score ?? 0,
+                            wickets: matchData.live_data.wickets ?? prev?.wickets ?? matchData.team_a?.wickets ?? matchData.team_b?.wickets ?? 0
+                        }));
+                    }
+
+                    const pointsMap = new Map();
+                    // Initialize start
+                    pointsMap.set(0, { ballIndex: 0, over: 0, runs_inn1: 0, runs_inn2: 0, momentumA: 50, momentumB: 50 });
+
+                    if (matchData.innings) {
+                        matchData.innings.forEach((inn, idx) => {
+                            const runKey = idx === 0 ? 'runs_inn1' : 'runs_inn2';
+                            const wicketKey = idx === 0 ? 'wicket_inn1' : 'wicket_inn2';
+                            const momKey = idx === 0 ? 'momentumA' : 'momentumB';
+                            let cumulativeRuns = 0;
+                            
+                            const totalBalls = inn.balls ? inn.balls.length : 0;
+                            
+                            (inn.balls || []).forEach((ball, bIdx) => {
+                                 const ballTotal = (ball.runs_off_bat || 0) + (ball.extra_runs || 0);
+                                 cumulativeRuns += ballTotal;
+                                 
+                                 const ballIndex = bIdx + 1;
+                                 const existing = pointsMap.get(ballIndex) || { ballIndex, over: parseFloat(ball.over + '.' + ball.ball) || (ballIndex/6).toFixed(1) };
+                                 
+                                 const ballMom = ballTotal >= 4 ? 80 : (ballTotal === 0 ? 30 : 50);
+
+                                 pointsMap.set(ballIndex, { 
+                                     ...existing, 
+                                     [runKey]: cumulativeRuns, 
+                                     [wicketKey]: ball.is_wicket,
+                                     [momKey]: ballMom
+                                 });
+                            });
+                        });
+                    }
+
+                    const sorted = Array.from(pointsMap.values()).sort((a,b) => a.ballIndex - b.ballIndex);
+                    setChartData(sorted);
+
+                    // Aggregating for Momentum Chart (Over by Over)
+                    const overSummaries = [];
+                    for (let i = 0; i <= (matchData.overs || 10); i++) {
+                        const ballsInOver1 = (matchData.innings?.[0]?.balls || []).filter(b => b.over_number === i);
+                        const ballsInOver2 = (matchData.innings?.[1]?.balls || []).filter(b => b.over_number === i);
+                        
+                        const runs1 = ballsInOver1.reduce((s, b) => s + (b.runs_off_bat || 0) + (b.extra_runs || 0), 0);
+                        const runs2 = ballsInOver2.reduce((s, b) => s + (b.runs_off_bat || 0) + (b.extra_runs || 0), 0);
+                        
+                        if (ballsInOver1.length > 0 || ballsInOver2.length > 0) {
+                            overSummaries.push({
+                                over: i + 1,
+                                [teamAName]: runs1,
+                                [teamBName]: runs2,
+                                diff: runs1 - runs2
+                            });
+                        }
+                    }
+                    setOverAnalytics(overSummaries);
+
+                    // Aggregating for Live Match Batting Analytics
+                    const allBalls = [...(matchData.innings?.[0]?.balls || []), ...(matchData.innings?.[1]?.balls || [])];
+                    const dots = allBalls.filter(b => (b.runs_off_bat === 0 && !b.extra_runs)).length;
+                    const fours = allBalls.filter(b => b.runs_off_bat === 4).length;
+                    const sixes = allBalls.filter(b => b.runs_off_bat === 6).length;
+                    const others = allBalls.length - dots - fours - sixes;
+
+                    setMatchAnalytics({
+                        boundaries: [
+                            { name: '4s', value: fours, fill: '#10b981' },
+                            { name: '6s', value: sixes, fill: '#3b82f6' },
+                            { name: 'Others', value: others, fill: '#94a3b8' }
+                        ],
+                        dotRatios: [
+                            { name: 'Dots', value: dots, fill: '#ef4444' },
+                            { name: 'Scored', value: allBalls.length - dots, fill: '#10b981' }
+                        ]
+                    });
+                }
             } catch (err) {
                 setError("Match information unavailable.");
             } finally {
@@ -141,17 +183,34 @@ export default function LiveScoreView() {
         socketRef.current = socket;
 
         socket.on('connect', () => {
-            socket.emit('join_match', id);
+            const mid = String(id);
+            socket.emit('join_match', mid);
+            console.log('📡 Connected to Live Stream:', mid);
         });
 
-        socket.on('match:update', (data) => {
-            setLiveData(prev => ({ ...prev, ...data }));
+        socket.on('match:update', (data) => handleLiveContent(data));
+        socket.on('scoreUpdate', (data) => handleLiveContent(data));
+        socket.on('playerUpdate', (data) => handleLiveContent(data));
+
+        function handleLiveContent(data) {
+            console.log('📡 Live Broadcast Sync:', data);
+            setLiveData(prev => {
+                const newData = {
+                    ...prev,
+                    ...data,
+                    runs: data.runs ?? data.score?.runs ?? prev?.runs,
+                    wickets: data.wickets ?? data.score?.wickets ?? prev?.wickets,
+                    last_balls: data.recent_balls || data.last_balls || prev?.last_balls || [],
+                    overs: data.overs ?? prev?.overs,
+                    inningsNum: data.inningsNum ?? prev?.inningsNum,
+                    batting_team: data.batting_team ?? prev?.batting_team
+                };
+                return newData;
+            });
             setNewBallFlash(true);
             setTimeout(() => setNewBallFlash(false), 800);
-            
-            const overNum = parseFloat(data.overs) || 0;
-            const currentInnings = data.inningsNum || 1;
 
+            // Update Chart Data in Real-time
             if (data.graphPoint) {
                 setChartData(prev => {
                     const inningIdx = data.graphPoint.inning || 1;
@@ -161,7 +220,6 @@ export default function LiveScoreView() {
                     const exists = prev.find(p => p.over === data.graphPoint.over);
 
                     if (exists) {
-                        // REPLACE: Single Source of Truth from Backend
                         return prev.map(p =>
                             p.over === data.graphPoint.over 
                                 ? { ...p, [runKey]: data.graphPoint.runs, [wicketKey]: data.graphPoint.wickets > 0 } 
@@ -169,7 +227,6 @@ export default function LiveScoreView() {
                         );
                     }
 
-                    // ADD: Prevent duplicate and sort
                     const newPoint = {
                         over: data.graphPoint.over,
                         inning: inningIdx,
@@ -181,28 +238,29 @@ export default function LiveScoreView() {
                     
                     return [...prev, newPoint].sort((a,b) => a.over - b.over);
                 });
-            } else {
+            } else if (data.runs !== undefined) {
                 setChartData(prev => {
-                    const overNum = data.score?.overs || data.overs || 0;
-                    const runs = data.score?.runs || data.runs || 0;
-                    const exists = prev.find(p => p.over === parseFloat(overNum));
+                    const oNum = data.overs || 0;
+                    const r = data.runs || 0;
+                    const inn = data.inningsNum || 1;
+                    const exists = prev.find(p => p.over === parseFloat(oNum));
 
                     if (exists) {
                         return prev.map(p =>
-                            p.over === parseFloat(overNum) 
+                            p.over === parseFloat(oNum) 
                                 ? { 
                                     ...p, 
-                                    [currentInnings === 1 ? 'runs_inn1' : 'runs_inn2']: runs,
-                                    [currentInnings === 1 ? 'wicket_inn1' : 'wicket_inn2']: (data.score?.wickets || data.wickets) > 0
+                                    [inn === 1 ? 'runs_inn1' : 'runs_inn2']: r,
+                                    [inn === 1 ? 'wicket_inn1' : 'wicket_inn2']: (data.wickets || 0) > 0
                                 } 
                                 : p
                         );
                     } else {
                         const newPoint = {
                             ballIndex: prev.length + 1,
-                            over: parseFloat(overNum),
-                            [currentInnings === 1 ? 'runs_inn1' : 'runs_inn2']: runs,
-                            [currentInnings === 1 ? 'wicket_inn1' : 'wicket_inn2']: (data.score?.wickets || data.wickets) > 0,
+                            over: parseFloat(oNum),
+                            [inn === 1 ? 'runs_inn1' : 'runs_inn2']: r,
+                            [inn === 1 ? 'wicket_inn1' : 'wicket_inn2']: (data.wickets || 0) > 0,
                             momentumA: 50,
                             momentumB: 50
                         };
@@ -212,9 +270,10 @@ export default function LiveScoreView() {
             }
 
             if (Math.random() > 0.8) fetchPrediction();
-        });
+        }
 
-        const pollTimer = setInterval(fetchMatch, 10000);
+        // Poll every 5s so the score always stays fresh even if socket drops
+        const pollTimer = setInterval(fetchMatch, 5000);
         return () => {
             if (socketRef.current) socketRef.current.disconnect();
             clearInterval(pollTimer);
@@ -222,56 +281,64 @@ export default function LiveScoreView() {
     }, [id, match?.status]);
 
     const handleSubscribe = async () => {
+        if (!user) {
+            setShowLoginModal(true);
+            return;
+        }
+
         try {
-            // Load Razorpay Script
-            const script = document.createElement('script');
-            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-            script.async = true;
-            document.body.appendChild(script);
+            toast.info("Preparing secure checkout...");
+            const orderRes = await apiClient.post('/payments/create-order', { 
+                amount: 49, 
+                bookingId: `sub_${(id || 'match').slice(-8)}_${Date.now().toString().slice(-10)}`
+            });
 
-            script.onload = async () => {
-                // In a real app, this amount would be fetched from backend or constants
-                // For match analytics pass: 49 INR
-                const res = await apiClient.post('/payments/create-order', { 
-                    amount: 49, 
-                    bookingId: `sub_${id.slice(-8)}_${Date.now().toString().slice(-10)}` // Shortened for Razorpay limit
-                });
+            if (orderRes.data.success) {
+                const options = {
+                    key: orderRes.data.keyId,
+                    amount: orderRes.data.order.amount,
+                    currency: orderRes.data.order.currency,
+                    name: "The Turf Premium",
+                    description: "Annual Analytics Subscription",
+                    order_id: orderRes.data.order.id,
+                    handler: async function (response) {
+                        try {
+                            toast.info("Verifying subscription...");
+                            const verifyRes = await apiClient.post('/payments/verify-subscription', {
+                                razorpayOrderId: response.razorpay_order_id,
+                                razorpayPaymentId: response.razorpay_payment_id,
+                                razorpaySignature: response.razorpay_signature
+                            });
 
-                if (res.data.success) {
-                    // Check if it's a mock order (useful for development without keys)
-                    if (res.data.order.id.startsWith('order_mock_')) {
-                        console.log('🎭 Mock payment detected - Auto-capturing...');
-                        setTimeout(() => {
-                            setIsPremium(true);
-                            toast.success("Welcome to Premium! Analytics Unlocked (Dev Mode).");
-                        }, 500);
-                        return;
+                            if (verifyRes.data.success) {
+                                setIsPremium(true);
+                                toast.success("Welcome to Premium! Analytics Unlocked.");
+                            } else {
+                                toast.error(verifyRes.data.message || "Verification failed");
+                            }
+                        } catch (vErr) {
+                            toast.error("Failed to verify payment with server");
+                        }
+                    },
+                    prefill: {
+                        name: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : "Player",
+                        email: "user@example.com",
+                        contact: "9999999999"
+                    },
+                    theme: { color: "#10b981" },
+                    modal: {
+                        ondismiss: function() {
+                            toast.warning("Payment cancelled");
+                        }
                     }
-
-                    const options = {
-                        key: res.data.keyId,
-                        amount: res.data.order.amount,
-                        currency: res.data.order.currency,
-                        name: "The Turf Premium",
-                        description: "Annual Analytics Subscription",
-                        order_id: res.data.order.id,
-                        handler: function (response) {
-                            setIsPremium(true);
-                            toast.success("Welcome to Premium! Analytics Unlocked.");
-                        },
-                        prefill: {
-                            name: "User",
-                            email: "user@example.com",
-                            contact: "9999999999"
-                        },
-                        theme: { color: "#10b981" }
-                    };
-                    const rzp = new window.Razorpay(options);
-                    rzp.open();
-                }
-            };
+                };
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+            } else {
+                toast.error(orderRes.data.message || "Subscription failed to initialize");
+            }
         } catch (err) {
-            toast.error("Failed to initialize payment");
+            toast.error(err.response?.data?.message || "Payment server unavailable");
         }
     };
 
@@ -294,18 +361,31 @@ export default function LiveScoreView() {
     );
 
     const isCompleted = match.status === 'Completed';
+    const isInningStarted = match.status !== 'Scheduled';
     const activeInningData = match.innings?.length ? match.innings[match.innings.length - 1] : null;
     const finalScoreSource = match.live_active_team === 'B' ? match.team_b : match.team_a; 
 
+    // Determine which team is currently batting (Handle all variations: 'A'/'B', 0/1, battingTeam/batting_team)
+    const rawBatting = liveData?.batting_team || liveData?.battingTeam || (liveData?.batting_team_idx === 1 ? 'B' : 'A');
+    const battingTeamDoc = (rawBatting === 'B' || liveData?.batting_team_idx === 1) ? match.team_b : match.team_a;
+
     const currentScore = {
-        runs: liveData?.runs ?? liveData?.scorecard?.total?.runs ?? (isCompleted ? finalScoreSource?.score : activeInningData?.score) ?? 0,
-        wickets: liveData?.wickets ?? liveData?.scorecard?.total?.wickets ?? (isCompleted ? finalScoreSource?.wickets : activeInningData?.wickets) ?? 0,
+        runs: liveData?.runs 
+            ?? liveData?.scorecard?.total?.runs 
+            ?? (isInningStarted ? (battingTeamDoc?.score || 0) : 0),
+        wickets: liveData?.wickets 
+            ?? liveData?.scorecard?.total?.wickets 
+            ?? (isInningStarted ? (battingTeamDoc?.wickets || 0) : 0),
         overs: liveData?.overNum !== undefined && liveData?.ballInOver !== undefined
             ? `${liveData.overNum}.${liveData.ballInOver}`
-            : (typeof liveData?.overs === 'number' 
-                ? Math.floor(liveData.overs) + '.' + Math.round((liveData.overs % 1) * 6) 
-                : (liveData?.overs ?? liveData?.scorecard?.total?.overs ?? activeInningData?.overs_completed ?? '0.0'))
+            : (liveData?.overs ?? liveData?.scorecard?.total?.overs ?? activeInningData?.overs_completed ?? '0.0')
     };
+
+    // Ensure we don't show 0/0 if we know it should be something else (Multi-path fallback)
+    if (currentScore.runs === 0 && !isCompleted) {
+        if (match.team_a?.score > 0) currentScore.runs = match.team_a.score;
+        else if (match.team_b?.score > 0) currentScore.runs = match.team_b.score;
+    }
 
     // Helper for Ball-by-ball dots
     const getBallColor = (val) => {
@@ -316,7 +396,8 @@ export default function LiveScoreView() {
         return 'bg-emerald-50 text-emerald-700';
     };
 
-    const lastBalls = (liveData?.last_balls || []).slice(-12);
+    // Backend stores as recent_balls; last_balls is normalized in the socket handler above
+    const lastBalls = (liveData?.last_balls || liveData?.recent_balls || liveData?.currentOverBalls || []).slice(-12);
 
     const parseTitleA = match.title?.includes('vs') ? match.title.split('vs')[0].trim() : null;
     const parseTitleB = match.title?.includes('vs') ? match.title.split('vs')[1].replace('— Quick Match', '').replace('- Quick Match', '').trim() : null;
@@ -364,19 +445,20 @@ export default function LiveScoreView() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-emerald-100 rounded-full blur-[100px]"></div>
             </div>
 
-            <header className="sticky top-0 z-[100] bg-white/90 backdrop-blur-2xl border-b border-emerald-100 shadow-lg">
+            {/* Premium Live Header */}
+            <header className="sticky top-0 z-[100] bg-white/90 backdrop-blur-2xl border-b border-emerald-100 shadow-xl">
                 <div className="max-w-6xl mx-auto px-4 h-18 flex items-center justify-between py-3">
                     <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-emerald-700 hover:text-emerald-900 transition-colors bg-emerald-50 rounded-xl">
                         <ChevronLeft size={20} />
                     </button>
                     <div className="flex flex-col items-center">
                         <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${error ? 'bg-slate-400' : 'bg-rose-500 animate-pulse'}`}></span>
-                            <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${error ? 'text-slate-500' : 'text-emerald-600'}`}>
-                                {error ? 'Broadcast Offline' : 'Live Broadcast'}
-                            </span>
+                             <span className={`w-2 h-2 rounded-full ${!liveData?.runs && !match.status ? 'bg-slate-400' : 'bg-rose-500 animate-pulse'}`}></span>
+                             <span className={`text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600`}>
+                                 Live Broadcast
+                             </span>
                         </div>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase mt-1 tracking-widest">{error ? "Showing Cached Intel" : (match.venue?.name || "The Turf Arena")}</p>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase mt-1 tracking-widest">{match.venue || 'The Turf Arena'}</p>
                     </div>
                     <button className="p-2 bg-emerald-50 rounded-xl text-emerald-700 hover:text-emerald-900">
                         <Share2 size={18} />
@@ -911,6 +993,58 @@ export default function LiveScoreView() {
                     <button className="flex-1 text-[10px] font-black text-slate-500 hover:text-emerald-700 uppercase transition-colors">Invite</button>
                 </div>
             </div>
+
+        {/* Login Required Modal */}
+        {showLoginModal && (
+            <div className="fixed inset-0 z-[500] flex items-end sm:items-center justify-center p-4" onClick={() => setShowLoginModal(false)}>
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+                <div
+                    className="relative w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl border border-emerald-100 animate-in slide-in-from-bottom-8 duration-500"
+                    onClick={e => e.stopPropagation()}
+                >
+                    {/* Close */}
+                    <button
+                        onClick={() => setShowLoginModal(false)}
+                        className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors text-sm font-black"
+                    >
+                        ✕
+                    </button>
+
+                    {/* Icon */}
+                    <div className="w-16 h-16 bg-emerald-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-emerald-100">
+                        <Zap size={28} className="text-emerald-500 fill-emerald-500/20" />
+                    </div>
+
+                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter text-center mb-2">Unlock Premium Intel</h2>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center mb-8 leading-relaxed">
+                        Login or create a free account to access<br />advanced match analytics &amp; predictions
+                    </p>
+
+                    <div className="space-y-3">
+                        <button
+                            onClick={() => navigate('/login')}
+                            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 rounded-2xl text-[11px] uppercase tracking-[0.2em] transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                        >
+                            Login to My Account
+                        </button>
+                        <button
+                            onClick={() => navigate('/register')}
+                            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl text-[11px] uppercase tracking-[0.2em] transition-all shadow-lg active:scale-95"
+                        >
+                            Create Free Account
+                        </button>
+                        <button
+                            onClick={() => setShowLoginModal(false)}
+                            className="w-full text-slate-400 font-black py-3 rounded-2xl text-[10px] uppercase tracking-widest hover:text-slate-600 transition-colors"
+                        >
+                            Continue Watching
+                        </button>
+                    </div>
+
+                    <p className="text-center text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-6">Premium pass · ₹49/year · All matches included</p>
+                </div>
+            </div>
+        )}
         </div>
     );
 }

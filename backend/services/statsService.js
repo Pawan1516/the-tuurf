@@ -6,7 +6,16 @@ class StatsService {
         try {
             // Atomically claim this update task to prevent double-processing
             const match = await Match.findOneAndUpdate(
-                { _id: matchId, stats_updated: { $ne: true }, $or: [{ 'verification.status': 'VERIFIED' }, { is_offline_match: true }] },
+                { 
+                    _id: matchId, 
+                    stats_updated: { $ne: true }, 
+                    $or: [
+                        { 'verification.status': 'VERIFIED' }, 
+                        { is_offline_match: true },
+                        { match_mode: 'QUICK' },
+                        { 'start_control.start_method': { $in: ['QR_SCAN', 'ADMIN_OVERRIDE'] } }
+                    ] 
+                },
                 { $set: { stats_updated: true } },
                 { new: true }
             );
@@ -61,48 +70,70 @@ class StatsService {
             for (const innings of match.innings) {
                 const outPlayers = new Set();
                 
-                for (const ball of innings.balls || []) {
-                    if (ball.batter_id) {
-                        const ps = getPlayerStat(ball.batter_id);
-                        const runs = Number(ball.runs_off_bat) || 0;
-                        ps.batting.runs += runs;
-                        if (ball.extra_type !== 'wide') ps.batting.balls_faced += 1;
-                        if (ball.is_four || runs === 4) ps.batting.fours += 1;
-                        if (ball.is_six || runs === 6) ps.batting.sixes += 1;
-                        if (ball.is_wicket && String(ball.wicket?.player_out_id) === String(ball.batter_id)) {
-                           outPlayers.add(String(ball.batter_id));
+                if (innings.balls && innings.balls.length > 0) {
+                    for (const ball of innings.balls) {
+                        if (ball.batter_id) {
+                            const ps = getPlayerStat(ball.batter_id);
+                            const runs = Number(ball.runs_off_bat) || 0;
+                            ps.batting.runs += runs;
+                            if (ball.extra_type !== 'wide') ps.batting.balls_faced += 1;
+                            if (ball.is_four || runs === 4) ps.batting.fours += 1;
+                            if (ball.is_six || runs === 6) ps.batting.sixes += 1;
+                            if (ball.is_wicket && String(ball.wicket?.player_out_id) === String(ball.batter_id)) {
+                                outPlayers.add(String(ball.batter_id));
+                            }
+                        }
+
+                        if (ball.bowler_id) {
+                            const ps = getPlayerStat(ball.bowler_id);
+                            const runsThisBall = (Number(ball.runs_off_bat) || 0) + (Number(ball.extra_runs) || 0);
+                            if (ball.extra_type !== 'bye' && ball.extra_type !== 'legbye') {
+                                ps.bowling.runs_conceded += runsThisBall;
+                            }
+                            if (ball.extra_type !== 'wide' && ball.extra_type !== 'noball') {
+                                ps.bowling.balls_bowled += 1;
+                            }
+                            if (ball.is_wicket && ball.wicket?.is_bowler_wicket) {
+                                ps.bowling.wickets += 1;
+                            }
+                        }
+
+                        if (ball.is_wicket && ball.wicket?.fielder_id) {
+                            const ps = getPlayerStat(ball.wicket.fielder_id);
+                            const dType = ball.wicket.dismissal_type;
+                            if (dType === 'caught') ps.fielding.catches += 1;
+                            else if (dType === 'runout') ps.fielding.run_outs += 1;
+                            else if (dType === 'stumped') ps.fielding.stumpings += 1;
                         }
                     }
 
-                    if (ball.bowler_id) {
-                        const ps = getPlayerStat(ball.bowler_id);
-                        const runsThisBall = (Number(ball.runs_off_bat) || 0) + (Number(ball.extra_runs) || 0);
-                        if (ball.extra_type !== 'bye' && ball.extra_type !== 'legbye') {
-                            ps.bowling.runs_conceded += runsThisBall;
+                    const batteredThisInnings = new Set(innings.balls.map(b => String(b.batter_id)));
+                    batteredThisInnings.forEach(pid => {
+                        if (!outPlayers.has(pid)) {
+                            getPlayerStat(pid).batting.not_outs += 1;
                         }
-                        if (ball.extra_type !== 'wide' && ball.extra_type !== 'noball') {
-                            ps.bowling.balls_bowled += 1;
+                    });
+                } else {
+                    // Fallback to grouped scorecard data if balls are missing
+                    (innings.batsmen || []).forEach(bat => {
+                        if (bat.user_id) {
+                            const ps = getPlayerStat(bat.user_id);
+                            ps.batting.runs += (bat.runs || 0);
+                            ps.batting.balls_faced += (bat.balls || 0);
+                            ps.batting.fours += (bat.fours || 0);
+                            ps.batting.sixes += (bat.sixes || 0);
+                            if (bat.out_type === 'Not Out') ps.batting.not_outs += 1;
                         }
-                        if (ball.is_wicket && ball.wicket?.is_bowler_wicket) {
-                            ps.bowling.wickets += 1;
+                    });
+                    (innings.bowlers || []).forEach(bowl => {
+                        if (bowl.user_id) {
+                            const ps = getPlayerStat(bowl.user_id);
+                            ps.bowling.wickets += (bowl.wickets || 0);
+                            ps.bowling.runs_conceded += (bowl.runs || 0);
+                            ps.bowling.balls_bowled += (bowl.balls || 0);
                         }
-                    }
-
-                    if (ball.is_wicket && ball.wicket?.fielder_id) {
-                        const ps = getPlayerStat(ball.wicket.fielder_id);
-                        const dType = ball.wicket.dismissal_type;
-                        if (dType === 'caught') ps.fielding.catches += 1;
-                        else if (dType === 'runout') ps.fielding.run_outs += 1;
-                        else if (dType === 'stumped') ps.fielding.stumpings += 1;
-                    }
+                    });
                 }
-
-                const batteredThisInnings = new Set((innings.balls || []).map(b => String(b.batter_id)));
-                batteredThisInnings.forEach(pid => {
-                    if (!outPlayers.has(pid)) {
-                        getPlayerStat(pid).batting.not_outs += 1;
-                    }
-                });
             }
 
             const playerIds = Object.keys(playerStats);

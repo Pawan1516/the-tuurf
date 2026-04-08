@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     let query = { status: { $ne: 'expired' } }; // Never show expired slots to public
 
     if (date) {
-      console.log('Slots Query Date Parameter:', date);
+      console.log(`[Slots] Querying for date string: "${date}"`);
       let startOfDay;
       if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
         startOfDay = new Date(`${date}T00:00:00.000Z`);
@@ -25,6 +25,7 @@ router.get('/', async (req, res) => {
       const endOfDay = new Date(startOfDay);
       endOfDay.setUTCHours(23, 59, 59, 999);
 
+      console.log(`[Slots] UTC Range: ${startOfDay.toISOString()} - ${endOfDay.toISOString()}`);
       query.date = { $gte: startOfDay, $lte: endOfDay };
     }
 
@@ -32,6 +33,9 @@ router.get('/', async (req, res) => {
       .populate('assignedWorker', 'name email')
       .sort({ startTime: 1 })
       .maxTimeMS(2000);
+
+    console.log(`[Slots] Database returned ${slots.length} documents for query:`, JSON.stringify(query));
+
 
     res.json(slots);
   } catch (error) {

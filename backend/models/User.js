@@ -14,7 +14,14 @@ const userSchema = new mongoose.Schema({
     phone: {
         type: String,
         required: [true, 'Please provide phone'],
+        unique: true,
         match: [/^[0-9]{10}$/, 'Please provide a valid 10-digit phone number']
+    },
+    mobileNumber: {
+        type: String,
+        unique: true,
+        sparse: true,
+        match: [/^[0-9]{10}$/, 'Please provide a valid 10-digit mobile number']
     },
     password: {
         type: String,
@@ -26,16 +33,31 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         default: 'PLAYER',
-        enum: ['PLAYER', 'CAPTAIN', 'SCORER', 'ADMIN', 'WORKER', 'USER'],
+        enum: ['PLAYER', 'CAPTAIN', 'SCORER', 'ADMIN', 'WORKER', 'USER', 'player', 'captain', 'scorer', 'admin', 'worker', 'user'],
     },
     admin_permissions: {
         can_scan_qr: { type: Boolean, default: false },
         can_override_matches: { type: Boolean, default: false },
         can_manage_users: { type: Boolean, default: false }
     },
-    isPhoneVerified: {
+    isPremium: {
         type: Boolean,
-        default: false
+        default: true // Default to true for the initial trial
+    },
+    hasUsedTrial: {
+        type: Boolean,
+        default: true
+    },
+    trialStartDate: {
+        type: Date,
+        default: Date.now
+    },
+    trialEndDate: {
+        type: Date,
+        default: () => new Date(+new Date() + 7*24*60*60*1000)
+    },
+    premiumExpiry: {
+        type: Date
     },
     otpCode: {
         type: String,
@@ -44,6 +66,10 @@ const userSchema = new mongoose.Schema({
     otpExpires: {
         type: Date,
         select: false
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
     },
     cricket_profile: {
         batting_style: { type: String, enum: ['Right-hand bat', 'Left-hand bat'], default: 'Right-hand bat' },
@@ -111,7 +137,20 @@ const userSchema = new mongoose.Schema({
     fcmToken: {
         type: String,
         default: null
-    }
+    },
+    subscription: {
+        isPremium: { type: Boolean, default: false },
+        type: { type: String, enum: ['NONE', 'MONTHLY_PASS', 'YEAR_PASS'], default: 'NONE' },
+        startDate: { type: Date },
+        expiryDate: { type: Date }
+    },
+    paymentHistory: [{
+        orderId: String,
+        paymentId: String,
+        amount: Number,
+        status: String,
+        date: { type: Date, default: Date.now }
+    }]
 }, { 
     timestamps: true,
     toJSON: { virtuals: true },
@@ -126,6 +165,48 @@ userSchema.virtual('score').get(function() {
     const runOuts = this.stats?.fielding?.run_outs || 0;
     
     return (batRuns * 1) + (wickets * 20) + (catches * 10) + (runOuts * 15);
+});
+
+// Check if premium is active (Trial or Paid)
+userSchema.methods.checkPremiumStatus = function() {
+    const now = new Date();
+    
+    // 1. Check Paid Subscription
+    if (this.premiumExpiry && this.premiumExpiry > now) {
+        return true;
+    }
+    
+    // 2. Check Trial
+    if (this.trialEndDate && this.trialEndDate > now && this.isPremium) {
+        return true;
+    }
+
+    return false;
+};
+
+// Normalize role to uppercase and sync mobileNumber before saving
+userSchema.pre('save', function (next) {
+    if (this.phone) {
+        // Clean phone to 10 digits
+        this.phone = this.phone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+        
+        // Sync mobileNumber
+        if (!this.mobileNumber) {
+            this.mobileNumber = this.phone;
+        } else {
+            this.mobileNumber = this.mobileNumber.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+        }
+    }
+
+    if (this.role) {
+        const roleMap = {
+            'player': 'PLAYER', 'user': 'PLAYER',
+            'captain': 'CAPTAIN', 'scorer': 'SCORER',
+            'admin': 'ADMIN', 'worker': 'WORKER'
+        };
+        this.role = roleMap[this.role.toLowerCase()] || this.role.toUpperCase();
+    }
+    next();
 });
 
 // Hash password before saving

@@ -117,8 +117,16 @@ io.on('connection', (socket) => {
     console.log('🔌 New Client Connected:', socket.id);
     
     socket.on('join_match', (matchId) => {
-        socket.join(`match_${matchId}`);
-        console.log(`📡 Socket ${socket.id} joined match_${matchId}`);
+        const id = String(matchId);
+        socket.join(`match_${id}`);
+        console.log(`📡 Socket ${socket.id} joined match_${id}`);
+    });
+
+    // Alias for join_match to support colon version
+    socket.on('join:match', (matchId) => {
+        const id = String(matchId);
+        socket.join(`match_${id}`);
+        console.log(`📡 Socket ${socket.id} joined match_${id} (via alias)`);
     });
 
     socket.on('join_profile', (userId) => {

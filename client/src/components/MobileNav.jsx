@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, User, LogOut, Home, Menu, X, Activity, ScanLine, Briefcase, Settings, Bell, Trophy, Shield, Users, BarChart } from 'lucide-react';
+import { LayoutDashboard, Calendar, User, LogOut, Home, Menu, X, Activity, ScanLine, Briefcase, Settings, Bell, Trophy, Shield, Users, BarChart, Zap, ChevronRight } from 'lucide-react';
 import { requestNotificationPermission } from '../utils/notifications';
 import { toast } from 'react-toastify';
 
@@ -127,8 +127,8 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
             </header>
 
             {/* ── Bottom Tab Bar (Universal) ── */}
-            <nav className="fixed bottom-0 left-0 right-0 z-[60] pb-safe md:hidden px-4 mb-4">
-                <div className="bg-white/90 backdrop-blur-2xl border border-gray-100/50 rounded-[2.5rem] shadow-[0_8px_32px_rgba(0,0,0,0.12)] flex items-stretch justify-center h-20 px-4 max-w-lg mx-auto">
+            <nav className="fixed bottom-0 left-0 right-0 z-[60] pb-safe md:hidden px-6 mb-6">
+                <div className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-stretch justify-center h-20 px-4 max-w-lg mx-auto">
                     {displayTabs.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = location.pathname === tab.to || 
@@ -137,17 +137,19 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
                             <Link
                                 key={tab.to}
                                 to={tab.to}
-                                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all relative ${
-                                    isActive ? 'text-emerald-600' : 'text-slate-400 opacity-60'
-                                }`}
+                                className="flex-1 flex flex-col items-center justify-center gap-1 transition-all relative group"
                             >
-                                <div className={`p-2 rounded-2xl transition-all duration-300 ${isActive ? 'bg-emerald-50 scale-110' : 'hover:bg-slate-50'}`}>
-                                    <Icon size={20} className={isActive ? 'text-emerald-600' : 'text-slate-400'} strokeWidth={isActive ? 2.5 : 2} />
+                                <div className={`p-3 rounded-2xl transition-all duration-500 relative ${
+                                    isActive ? 'bg-emerald-500 text-slate-900 scale-110 shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-white'
+                                }`}>
+                                    <Icon size={20} className="relative z-10" strokeWidth={isActive ? 2.5 : 2} />
+                                    {isActive && (
+                                        <div className="absolute inset-0 bg-emerald-400 blur-md opacity-20 animate-pulse rounded-2xl"></div>
+                                    )}
                                 </div>
-                                <span className={`text-[8px] font-black uppercase tracking-[0.1em] transition-all ${isActive ? 'opacity-100' : 'opacity-0 scale-90 translate-y-1'}`}>
+                                <span className={`text-[8px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive ? 'text-emerald-400 opacity-100 translate-y-0' : 'text-slate-500 opacity-0 translate-y-2'}`}>
                                     {tab.label}
                                 </span>
-                                {isActive && <div className="absolute -bottom-1 w-1 h-1 bg-emerald-500 rounded-full"></div>}
                             </Link>
                         );
                     })}
@@ -203,8 +205,23 @@ const MobileNav = ({ user, logout, navItems, dashboardTitle = "The Turf", classN
                                      </div>
                                      {link.label}
                                  </Link>
-                             )
+                             );
                          })}
+
+                         {user && (
+                            <Link
+                                to="/intel-premium"
+                                className="flex items-center gap-4 p-4 rounded-[1.5rem] font-bold uppercase text-xs tracking-widest transition-all bg-emerald-50/50 text-emerald-700 border border-emerald-100/50"
+                            >
+                                <div className="p-2.5 rounded-xl bg-white shadow-sm ring-1 ring-emerald-500/10">
+                                    <Zap size={18} className="text-amber-500 fill-amber-500" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black tracking-widest">Premium Analytics</span>
+                                    <span className="text-[8px] opacity-60">Unlock Intel Pass</span>
+                                </div>
+                            </Link>
+                         )}
                          
                          {user && (
                              <button

@@ -16,6 +16,11 @@
       "sourceType": "github",
       "computedHash": "4aa754f4f7fc54ac3e7f6e2fb55c0e2fb14b7d70da077b41a86bd1889ff9094c"
     },
+    "business-analyst": {
+      "source": "aj-geddes/claude-code-bmad-skills",
+      "sourceType": "github",
+      "computedHash": "d9520001b077121b9817bb9e0b273ea6d4a5a1b0c4a557b3b2f875cf2ac0b08f"
+    },
     "canvas-design": {
       "source": "composiohq/awesome-claude-skills",
       "sourceType": "github",
@@ -45,6 +50,11 @@
       "source": "composiohq/awesome-claude-skills",
       "sourceType": "github",
       "computedHash": "de7e9085e875a651f209c826d1a5e7dd5f2436fb38fe565ef76b54492c1a0c22"
+    },
+    "data-analyst": {
+      "source": "ailabs-393/ai-labs-claude-skills",
+      "sourceType": "github",
+      "computedHash": "7c438d04536efefdf05d75287835b8b8649bce678ee01e12317065bd9e98752e"
     },
     "developer-growth-analysis": {
       "source": "composiohq/awesome-claude-skills",
@@ -86,6 +96,11 @@
       "sourceType": "github",
       "computedHash": "08cf5477dfdcbefa0758fad431c226efb9f09e108c8c6477b4a14db2d6810889"
     },
+    "livestream-engineer": {
+      "source": "daffy0208/ai-dev-standards",
+      "sourceType": "github",
+      "computedHash": "b4c9b7df83d84e344e8649fbad417b9aa6bce1a81586976e510b519ba6cbb04f"
+    },
     "mcp-builder": {
       "source": "composiohq/awesome-claude-skills",
       "sourceType": "github",
@@ -96,10 +111,20 @@
       "sourceType": "github",
       "computedHash": "73d94649632b9b146bb9a745a31efcbc315a8916f14619a327f009b54d1be656"
     },
+    "performance-expert": {
+      "source": "personamanagmentlayer/pcl",
+      "sourceType": "github",
+      "computedHash": "974a2c8841dce3f8bd0106d82753be78254467a1a4fe88399a0d8fbc5662aa0f"
+    },
     "raffle-winner-picker": {
       "source": "composiohq/awesome-claude-skills",
       "sourceType": "github",
       "computedHash": "cd97da2fa280d9545b6f60dfc07335663af4932acb58d83d6801a1bb3b8a8aae"
+    },
+    "render-deploy": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "computedHash": "3d5d532563bea44a0bd852b9d890fea848e1549035638e3ca119f0016bfb4632"
     },
     "skill-creator": {
       "source": "composiohq/awesome-claude-skills",
@@ -115,6 +140,11 @@
       "source": "composiohq/awesome-claude-skills",
       "sourceType": "github",
       "computedHash": "6139cf556d1dd78b69c1dd84af43c132db391b6f31e67de38d1edb4551ba93e0"
+    },
+    "socket-io": {
+      "source": "claude-dev-suite/claude-dev-suite",
+      "sourceType": "github",
+      "computedHash": "db530d917a8ad12522e3eaf040db5101bf7ac6cef066814577b8fb909a5b429b"
     },
     "tailored-resume-generator": {
       "source": "composiohq/awesome-claude-skills",
@@ -145,6 +175,21 @@
       "source": "composiohq/awesome-claude-skills",
       "sourceType": "github",
       "computedHash": "cf8e5916d474886bd67b09691247f43f331523008b7d366064bc607ab42d6302"
+    },
+    "websocket-development": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "computedHash": "4587db6d2e7a80f52620ef4ecc8c44d5e4a6a392ff5110b48e6bbe84732cfac0"
+    },
+    "websocket-engineer": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "computedHash": "a498a3fb8345b1edff9634de603ccc33aa58f98374870d8504b672384a28513d"
+    },
+    "websocket-realtime-builder": {
+      "source": "patricio0312rev/skills",
+      "sourceType": "github",
+      "computedHash": "b86b5af780712fe94d063208ad9f5bc95589458813b14365eb1786e01ef0728a"
     },
     "youtube-downloader": {
       "source": "composiohq/awesome-claude-skills",

@@ -41,17 +41,18 @@ const autoGenerateSlots = async (daysAhead = 30) => {
             console.log(`🧹 Cleaned up ${deleted.deletedCount} past slots.`);
         }
 
-        // 2. Generation Loop (ensure full coverage)
+        // 2. Generation Loop (ensure full coverage starting from LOCAL TODAY)
+        const now = new Date();
+        const kolkataDateStr = new Intl.DateTimeFormat('en-CA', { 
+            timeZone: 'Asia/Kolkata', 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit' 
+        }).format(now);
+        
+        console.log(`[Generator] Targeting start date: ${kolkataDateStr} (Kolkata)`);
+
         for (let i = 0; i < daysAhead; i++) {
-            // Use Asia/Kolkata to determine the start of the relative day
-            const now = new Date();
-            const kolkataDateStr = new Intl.DateTimeFormat('en-CA', { 
-                timeZone: 'Asia/Kolkata', 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit' 
-            }).format(now);
-            
             const date = new Date(`${kolkataDateStr}T00:00:00.000Z`);
             date.setDate(date.getDate() + i);
             

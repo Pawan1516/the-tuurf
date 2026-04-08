@@ -30,12 +30,16 @@ const formatTime12h = (t) => {
 router.post('/', async (req, res) => {
   console.log('--- DEBUG: Create Booking Request Received ---', req.body);
   try {
-    let { userName, userPhone, turfLocation, slotId, amount, userId, date, startTime, endTime, paymentType = 'advance' } = req.body;
+    let { userName, userPhone, mobileNumber, turfLocation, slotId, amount, userId, user, date, startTime, endTime, paymentType = 'advance' } = req.body;
 
-    if (!userName || !userPhone || !amount) {
+    // Fallbacks for frontend compatibility
+    const finalMobile = mobileNumber || userPhone;
+    const finalUserId = userId || user;
+
+    if (!userName || !finalMobile || !amount) {
       return res.status(400).json({
         success: false,
-        message: `Missing Registry Parameters: ${!userName ? 'Name ' : ''}${!userPhone ? 'Phone ' : ''}${!amount ? 'Fee' : ''}`.trim()
+        message: `Missing Registry Parameters: ${!userName ? 'Name ' : ''}${!finalMobile ? 'Mobile ' : ''}${!amount ? 'Fee' : ''}`.trim()
       });
     }
 
@@ -183,21 +187,55 @@ router.post('/', async (req, res) => {
     const confirmationAmount = paymentType === 'full' ? slotPrice : Math.ceil(slotPrice * 0.4);
 
     // Create booking object
+    const finalMobileClean = finalMobile.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+
+    // Try to find Turf object for turfId linkage
+    let turfId = null;
+    try {
+      const Turf = require('../models/Turf');
+      const turf = await Turf.findOne({ location: new RegExp(turfLocation || 'The Turf Stadium', 'i') });
+      if (turf) turfId = turf._id;
+    } catch (turfErr) {
+      console.warn('[Booking] Could not link turfId:', turfErr.message);
+    }
+
     const bookingData = {
       userName,
-      userPhone,
+      name: userName, // Requested field
+      mobileNumber: finalMobileClean,
+      userPhone: finalMobileClean, // Backwards compatibility
       turfLocation: turfLocation || process.env.TURF_LOCATION || 'The Turf Stadium',
+      turfId, // Linked Turf ID
+      date: normalizedDate,
+      timeSlot: `${formatTime12h(startTimeClean)} - ${formatTime12h(endTimeClean)}`,
       slot: slotId,
       amount: confirmationAmount,
       totalAmount: slotPrice,
       paymentType,
       bookingStatus: 'pending',
+      status: 'pending', // Requested field
       paymentStatus: 'pending',
       createdAt: new Date(),
       updatedAt: new Date()
     };
 
-    if (userId) bookingData.user = userId;
+    if (finalUserId) {
+      bookingData.userId = finalUserId;
+      bookingData.user = finalUserId; // Backwards compatibility
+    }
+
+    // Always fetch auth user if applicable via a secure token.
+    // If not provided in body, we might not have it if it's public.
+    // Ensure Auto-link logic if userId isn't provided.
+    if (!bookingData.userId) {
+      const User = require('../models/User');
+      const matchedUser = await User.findOne({ phone: finalMobileClean });
+      if (matchedUser) {
+        console.log(`🔗 Auto-Linking booking to user: ${matchedUser.name} (${finalMobileClean})`);
+        bookingData.userId = matchedUser._id;
+        bookingData.user = matchedUser._id;
+      }
+    }
 
     let savedBooking;
     try {
@@ -302,16 +340,81 @@ router.get('/', verifyToken, roleGuard(['admin']), async (req, res) => {
 // Get bookings for current user
 router.get('/my-bookings', verifyToken, async (req, res) => {
   try {
+    const authUserId = req.user.id || req.user._id;
+    console.log(`[DEBUG] Fetching bookings for UserID: ${authUserId}`);
+
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ success: false, message: 'Database offline' });
     }
 
-    const bookings = await Booking.find({ user: req.user.id })
+    const User = require('../models/User');
+    const user = await User.findById(authUserId);
+    
+    if (!user) {
+      console.warn(`[DEBUG] User not found for ID: ${authUserId}`);
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Use both identifiers: userId and mobileNumber
+    const userMobile = user.mobileNumber || user.phone;
+    const cleanMobile = userMobile ? userMobile.replace(/\D/g, '').replace(/^91/, '').slice(-10) : null;
+    
+    console.log(`[DEBUG] User Identifiers - ID: ${authUserId}, Mobile: ${cleanMobile}`);
+
+    // Query for bookings using requested OR condition
+    const findQuery = { 
+      $or: [
+        { userId: authUserId },
+        { user: authUserId } // Legacy support
+      ]
+    };
+
+    if (cleanMobile) {
+      // Use regex to match the last 10 digits even with prefixes or spaces
+      const mobileRegex = new RegExp(`${cleanMobile}$`);
+      findQuery.$or.push({ mobileNumber: mobileRegex });
+      findQuery.$or.push({ userPhone: mobileRegex });
+      findQuery.$or.push({ mobileNumber: cleanMobile }); // Exact match fallback
+    }
+
+    console.log(`[DEBUG] Booking Query: ${JSON.stringify(findQuery)}`);
+
+    // Proactive Linking: Before fetching, ensure all bookings with this mobile are linked to this userId
+    if (cleanMobile && authUserId) {
+      try {
+        const mobileRegexLink = new RegExp(`${cleanMobile}`);
+        const updateResult = await Booking.updateMany(
+          { 
+            $or: [
+              { mobileNumber: cleanMobile },
+              { mobileNumber: mobileRegexLink },
+              { userPhone: cleanMobile },
+              { userPhone: mobileRegexLink }
+            ],
+            $and: [
+              { $or: [{ userId: { $exists: false } }, { userId: null }, { userId: { $ne: authUserId } }] }
+            ]
+          },
+          { 
+            $set: { userId: authUserId, user: authUserId, mobileNumber: cleanMobile }
+          }
+        );
+        if (updateResult.modifiedCount > 0) {
+          console.log(`[Auto-Link] Recovered ${updateResult.modifiedCount} historical bookings for User: ${authUserId}`);
+        }
+      } catch (linkErr) {
+        console.error(`[Auto-Link] Failed to link historical data: ${linkErr.message}`);
+      }
+    }
+
+    const bookings = await Booking.find(findQuery)
       .populate('slot')
       .sort({ createdAt: -1 })
-      .maxTimeMS(2000);
+      .maxTimeMS(5000);
+    
+    console.log(`[DEBUG] Found ${bookings.length} bookings for user`);
 
-    // Fetch associated matches
+    // Fetch associated matches to enrich the response
     const Match = require('../models/Match');
     const bookingIds = bookings.map(b => b._id);
     const matches = await Match.find({ 
@@ -321,17 +424,26 @@ router.get('/my-bookings', verifyToken, async (req, res) => {
       ]
     }).populate('team_a.team_id team_b.team_id');
 
-    // Attach matches to bookings
+    // Attach matches and ensure 'status' field exists for all
     const bookingsWithMatches = bookings.map(b => {
+      const bObj = b.toObject();
+      // Ensure 'status' is populated from 'bookingStatus' if missing
+      bObj.status = bObj.status || bObj.bookingStatus;
+      
       const associatedMatches = matches.filter(m => 
         (m.booking_id && m.booking_id.toString() === b._id.toString()) || 
         (m.match_creation?.linked_booking_id && m.match_creation.linked_booking_id.toString() === b._id.toString())
       );
-      return { ...b.toObject(), matches: associatedMatches };
+      return { ...bObj, matches: associatedMatches };
     });
 
-    res.json({ success: true, bookings: bookingsWithMatches });
+    res.json({ 
+      success: true, 
+      count: bookingsWithMatches.length,
+      bookings: bookingsWithMatches 
+    });
   } catch (error) {
+    console.error(`[DEBUG] Error in /my-bookings: ${error.message}`);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -415,7 +527,24 @@ router.put('/:id/status', verifyToken, roleGuard(['admin', 'worker']), async (re
     }
 
     booking.bookingStatus = status;
+    booking.status = status; // Keep in sync
     booking.updatedAt = Date.now();
+
+    // Auto-link if needed
+    if (!booking.userId || !booking.user) {
+        try {
+            const User = require('../models/User');
+            const cleanPhone = booking.userPhone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            const matchedUser = await User.findOne({ phone: cleanPhone });
+            if (matchedUser) {
+                booking.userId = matchedUser._id;
+                booking.user = matchedUser._id;
+            }
+        } catch (linkError) {
+            console.warn('[Auto-Link] Failed during status update:', linkError.message);
+        }
+    }
+
     if (status === 'confirmed' && !booking.confirmedAt) {
       booking.confirmedAt = Date.now();
       
@@ -545,25 +674,46 @@ router.put('/:id/payment', verifyToken, roleGuard(['worker', 'admin']), async (r
       return res.status(400).json({ success: false, message: 'Invalid payment status' });
     }
 
+    const bookingRec = await Booking.findById(req.params.id);
+    if (!bookingRec) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
     const updateData = { paymentStatus, updatedAt: Date.now() };
     if (paymentId) updateData.paymentId = paymentId;
     if (transactionId) updateData.transactionId = transactionId;
 
     let newSlotStatus = null;
 
-    // If verifiying payment, automatically confirm the booking
+    // If verifying payment, automatically confirm the booking
     if (paymentStatus === 'verified') {
       updateData.bookingStatus = 'confirmed';
+      updateData.status = 'confirmed'; // Keep in sync
       updateData.confirmedAt = Date.now();
       newSlotStatus = 'booked';
 
+      // Auto-link if needed
+      if (!bookingRec.userId || !bookingRec.user) {
+        try {
+            const User = require('../models/User');
+            const cleanPhone = bookingRec.userPhone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            const matchedUser = await User.findOne({ phone: cleanPhone });
+            if (matchedUser) {
+                updateData.userId = matchedUser._id;
+                updateData.user = matchedUser._id;
+            }
+        } catch (linkError) {
+            console.warn('[Auto-Link] Failed during payment verify:', linkError.message);
+        }
+      }
+
       // Generate Receipt Data
       const year = new Date().getFullYear();
-      updateData.receiptId = `TRF-${year}-${booking._id.toString().slice(-4).toUpperCase()}`;
+      updateData.receiptId = `TRF-${year}-${bookingRec._id.toString().slice(-4).toUpperCase()}`;
       
       const jwt = require('jsonwebtoken');
       updateData.qrToken = jwt.sign(
-        { bookingId: booking._id, receiptId: updateData.receiptId, timestamp: Date.now() },
+        { bookingId: bookingRec._id, receiptId: updateData.receiptId, timestamp: Date.now() },
         process.env.JWT_SECRET || 'the-turf-secret-key',
         { expiresIn: '24h' }
       );
@@ -575,6 +725,7 @@ router.put('/:id/payment', verifyToken, roleGuard(['worker', 'admin']), async (r
       };
     } else if (paymentStatus === 'failed') {
       updateData.bookingStatus = 'rejected';
+      updateData.status = 'rejected'; // Keep in sync
       newSlotStatus = 'free';
     }
 

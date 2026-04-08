@@ -49,12 +49,10 @@ apiClient.interceptors.response.use(
 
 // Authentication APIs
 export const authAPI = {
-  login: (email, password, role, phone) => apiClient.post('/auth/login', { email, password, role, phone }),
-  register: (name, email, phone, password) => apiClient.post('/auth/register', { name, email, phone, password }),
-  googleLogin: (email, name, uid) => apiClient.post('/auth/google', { email, name, uid }),
+  login: (email, password) => apiClient.post('/auth/login', { email, password }),
+  sendRegisterOTP: (email) => apiClient.post('/auth/send-register-otp', { email }),
+  verifyRegistration: (data) => apiClient.post('/auth/register-verify', data),
   getProfile: () => apiClient.get('/auth/profile'),
-  sendOTP: (phone) => apiClient.post('/auth/send-otp', { phone }),
-  verifyOTP: (phone, code) => apiClient.post('/auth/verify-otp', { phone, code }),
   updateProfile: (data) => apiClient.put('/auth/profile', data),
   updateFCMToken: (data) => apiClient.post('/auth/update-fcm-token', data),
 };
@@ -193,8 +191,14 @@ export const matchmakingAPI = {
 
 // Receipts APIs
 export const receiptsAPI = {
-  getById: (id) => apiClient.get(`/receipts/${id}`),
-  download: (id) => apiClient.get(`/receipts/download/${id}`, { responseType: 'blob' }),
+    getById: (id) => apiClient.get(`/receipts/${id}`),
+    download: (id) => apiClient.get(`/receipts/download/${id}`, { responseType: 'blob' }),
+};
+
+// Analytics APIs
+export const analyticsAPI = {
+    getPlayerStats: (id) => apiClient.get(`/analytics/player/${id}/stats`),
+    syncUserStats: (id) => apiClient.post(`/analytics/sync-user-stats/${id}`)
 };
 
 export default apiClient;

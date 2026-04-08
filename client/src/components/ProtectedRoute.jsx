@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
+const ProtectedRoute = ({ children, allowedRoles, requiresPremium }) => {
     const { user, loading } = useContext(AuthContext);
     const location = useLocation();
 
@@ -33,6 +33,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         if (!hasAccess) {
             // Role not authorized - redirect to home or unauthorized page
             return <Navigate to="/" replace />;
+        }
+    }
+
+    if (requiresPremium) {
+        const isPremium = user.subscription?.isPremium;
+        if (!isPremium) {
+            return <Navigate to="/intel-premium" state={{ from: location }} replace />;
         }
     }
 
