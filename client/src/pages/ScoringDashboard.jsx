@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, memo, useMemo, useRef } from '
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import apiClient from '../api/client';
-import { ShieldAlert, Trophy, Coins, Users, User, ArrowLeft, RefreshCw, Undo2, LogOut, Zap, CheckCircle } from 'lucide-react';
+import { ShieldAlert, Trophy, Coins, Users, User, ArrowLeft, RefreshCw, Undo2, LogOut, Zap, CheckCircle, Swords } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import io from 'socket.io-client';
