@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { configAPI, slotsAPI, matchesAPI } from '../api/client';
-import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer, Activity, ArrowRight, BarChart } from 'lucide-react';
+import { ChevronRight, Zap, MapPin, Plus, Trophy, Users, Timer, Activity, ArrowRight, BarChart2 } from 'lucide-react';
 import io from 'socket.io-client';
 
 const PublicHome = () => {
@@ -219,7 +219,7 @@ const PublicHome = () => {
                         { label: 'Elite', icon: Trophy, color: 'bg-amber-500', to: '/leaderboard' },
                         { label: 'Book', icon: Zap, color: 'bg-emerald-500', to: '/' },
                         { label: 'Stats', icon: Users, color: 'bg-blue-500', to: '/stats-dashboard' },
-                        { label: 'Intel', icon: BarChart, color: 'bg-purple-500', to: '/player-analytics' },
+                        { label: 'Intel', icon: BarChart2, color: 'bg-purple-500', to: '/player-analytics' },
                         { label: 'Arena', icon: MapPin, color: 'bg-emerald-600', to: '/about' }
                     ].map((item, idx) => (
                         <Link key={idx} to={item.to} className="flex flex-col items-center gap-3 shrink-0 group">
