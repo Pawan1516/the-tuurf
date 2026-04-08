@@ -1116,12 +1116,20 @@ export default function ScoringDashboard() {
         <div className="min-h-screen bg-[#0D1B0F] text-white font-sans selection:bg-emerald-500/30">
             {viewingPlayer && <PlayerProfileModal player={viewingPlayer} onClose={() => setViewingPlayer(null)} />}
             <style>{`
-                .b-dot { background: rgba(255,255,255,0.1); color: #rgba(255,255,255,0.4); }
-                .b-1 { background: rgba(255,255,255,0.2); }
-                .b-4 { background: #1565C0; color: #fff; }
-                .b-6 { background: #E65100; color: #fff; }
-                .b-w { background: #C62828; color: #fff; }
-                .b-wd, .b-nb { background: #7B1FA2; color: #fff; }
+                .b-dot { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+                .b-dot:hover { transform: scale(1.1); background: rgba(255,255,255,0.1); }
+                .b-1 { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.2); }
+                .b-4 { background: #1565C0 !important; color: #fff !important; border-color: #1e88e5 !important; box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3); }
+                .b-6 { background: #E65100 !important; color: #fff !important; border-color: #f57c00 !important; box-shadow: 0 4px 12px rgba(230, 81, 0, 0.3); }
+                .b-w { background: #C62828 !important; color: #fff !important; border-color: #e53935 !important; box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3); }
+                .b-wd, .b-nb { background: #7B1FA2 !important; color: #fff !important; border-color: #9c27b0; }
+                
+                .step-header { font-size: 10px; font-weight: 900; color: rgba(16, 185, 129, 0.6); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+                .ball-btn { width: 66px; height: 66px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+                .ball-btn:active { transform: scale(0.9); }
+                .ball-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+                .ball-btn span:first-child { font-size: 20px; font-weight: 900; line-height: 1; }
+                .ball-btn span:last-child { font-size: 8px; font-weight: 700; opacity: 0.5; text-transform: uppercase; margin-top: 2px; }
             `}</style>
 
             {/* Top Bar */}
