@@ -123,6 +123,7 @@ export default function ScoringDashboard() {
         partnership: { runs: 0, balls: 0 },
         inningsNum: 1, target: null,
         pendingWicket: null,
+        openerStrikerIdx: null, openerNSIdx: null, openerBowlerIdx: null,
         aiLoading: false,
         aiRecommendation: null
     });
@@ -1495,40 +1496,121 @@ export default function ScoringDashboard() {
                     </div>
                 )}
 
-                {/* Openers Phase */}
+                {/* Openers & Initial Bowler Phase (Startup) */}
                 {state.phase === 'select_openers' && (
-                    <div className="space-y-4">
-                        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 mb-1">Innings {state.inningsNum}</h2>
-                            <p className="text-xl font-black">{TEAMS[state.battingTeam]?.name || '...'} Batting</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className={`p-4 rounded-2xl border-2 ${typeof state.openerStrikerIdx === 'number' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-white/5 border-dashed border-white/10 text-white/20'}`}>
-                                <p className="text-[9px] font-bold uppercase tracking-widest mb-1 opacity-60">Striker</p>
-                                <p className="text-xs font-black truncate">{typeof state.openerStrikerIdx === 'number' ? state.batters[state.openerStrikerIdx]?.name : "Select Below"}</p>
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                        {/* Status Banner */}
+                        <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-[2.5rem] p-8 text-center relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12"><Trophy size={80} /></div>
+                            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-500 mb-2">
+                                {state.inningsNum === 1 ? 'Toss Decided' : 'Target Set'}
+                            </h2>
+                            <p className="text-xl font-black text-white leading-tight">
+                                {state.inningsNum === 1 ? (
+                                    <>
+                                        {TEAMS[state.tossWinner]?.name} won the toss — <span className="text-emerald-400">elected to {state.bbChoice === 'bat' ? 'bat' : 'bowl'} first</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        Target: <span className="text-emerald-400">{state.target} Runs</span> <br/>
+                                        <span className="text-xs opacity-40 font-bold uppercase tracking-widest">Required RR: {(state.target / (state.formatOvers || 1)).toFixed(2)}</span>
+                                    </>
+                                )}
+                            </p>
+                            <div className="mt-4 flex items-center justify-center gap-3">
+                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{TEAMS[state.battingTeam]?.name} Batting</span>
+                                <div className="w-1.5 h-1.5 rounded-full bg-white/20"></div>
+                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{TEAMS[state.bowlingTeam]?.name} Bowling</span>
                             </div>
-                            <div className={`p-4 rounded-2xl border-2 ${typeof state.openerNSIdx === 'number' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-white/5 border-dashed border-white/10 text-white/20'}`}>
-                                <p className="text-[9px] font-bold uppercase tracking-widest mb-1 opacity-60">Non-Striker</p>
-                                <p className="text-xs font-black truncate">{typeof state.openerNSIdx === 'number' ? state.batters[state.openerNSIdx]?.name : "Select Below"}</p>
+                        </div>
+
+                        {/* Select Batters Section */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 px-2">
+                                <div className="w-8 h-8 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                                    <Swords size={16} className="text-emerald-500" />
+                                </div>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">Select Opening Batters</h3>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className={`p-5 rounded-3xl border-2 transition-all ${typeof state.openerStrikerIdx === 'number' ? 'bg-emerald-600/10 border-emerald-500 shadow-[0_10px_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-dashed border-white/10 text-white/20'}`}>
+                                    <p className="text-[9px] font-black uppercase tracking-widest mb-1.5 text-emerald-500">Striker</p>
+                                    <p className="text-[13px] font-black truncate">{typeof state.openerStrikerIdx === 'number' ? state.batters[state.openerStrikerIdx]?.name : "Pick Batter"}</p>
+                                </div>
+                                <div className={`p-5 rounded-3xl border-2 transition-all ${typeof state.openerNSIdx === 'number' ? 'bg-emerald-600/10 border-emerald-500 shadow-[0_10px_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-dashed border-white/10 text-white/20 text-right'}`}>
+                                    <p className="text-[9px] font-black uppercase tracking-widest mb-1.5 text-emerald-500">Non-Striker</p>
+                                    <p className="text-[13px] font-black truncate">{typeof state.openerNSIdx === 'number' ? state.batters[state.openerNSIdx]?.name : "Pick Batter"}</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-4 max-h-48 overflow-y-auto space-y-2 custom-scrollbar">
+                                {TEAMS[state.battingTeam]?.players?.map((p, i) => (
+                                    <button 
+                                        key={i} 
+                                        disabled={state.openerStrikerIdx === i || state.openerNSIdx === i} 
+                                        onClick={() => {
+                                            if (typeof state.openerStrikerIdx !== 'number') updateState({ openerStrikerIdx: i });
+                                            else updateState({ openerNSIdx: i });
+                                        }} 
+                                        className="w-full p-4 rounded-2xl border border-white/5 bg-white/5 text-left flex items-center justify-between hover:bg-emerald-500/10 transition-all disabled:opacity-30"
+                                    >
+                                        <span className="text-xs font-black uppercase tracking-tight">{p.name}</span>
+                                        { (state.openerStrikerIdx === i || state.openerNSIdx === i) ? <CheckCircle size={14} className="text-emerald-500" /> : <User size={14} className="opacity-20" /> }
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 max-h-72 overflow-y-auto space-y-2">
-                            {TEAMS[state.battingTeam]?.players?.map((p, i) => (
-                                <button key={i} disabled={state.openerStrikerIdx === i || state.openerNSIdx === i} onClick={() => {
-                                    if (typeof state.openerStrikerIdx !== 'number') updateState({ openerStrikerIdx: i });
-                                    else updateState({ openerNSIdx: i });
-                                }} className="w-full p-4 rounded-xl border border-white/5 bg-white/5 text-left flex items-center justify-between hover:bg-emerald-500/10 transition-colors disabled:opacity-30">
-                                    <span className="text-xs font-black uppercase tracking-tight">{p.name}</span>
-                                    <User size={14} className="opacity-20" />
-                                </button>
-                            ))}
+
+                        {/* Select Bowler Section */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 px-2">
+                                <div className="w-8 h-8 bg-red-500/10 rounded-xl flex items-center justify-center">
+                                    <Zap size={16} className="text-red-500" />
+                                </div>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">Select Opening Bowler</h3>
+                            </div>
+
+                            <div className={`p-5 rounded-3xl border-2 transition-all ${typeof state.openerBowlerIdx === 'number' ? 'bg-emerald-600/10 border-emerald-500 shadow-[0_10px_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-dashed border-white/10 text-white/20'}`}>
+                                <p className="text-[9px] font-black uppercase tracking-widest mb-1.5 text-red-400">Bowler</p>
+                                <p className="text-[13px] font-black truncate">{typeof state.openerBowlerIdx === 'number' ? TEAMS[state.bowlingTeam]?.players[state.openerBowlerIdx]?.name : "Pick Bowler"}</p>
+                            </div>
+
+                            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-4 max-h-48 overflow-y-auto space-y-2 custom-scrollbar">
+                                {TEAMS[state.bowlingTeam]?.players?.map((p, i) => (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => updateState({ openerBowlerIdx: i })} 
+                                        className={`w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between ${state.openerBowlerIdx === i ? 'bg-emerald-500/20 border-emerald-500' : 'bg-white/5 border-white/5 hover:bg-red-500/10'}`}
+                                    >
+                                        <span className="text-xs font-black uppercase tracking-tight">{p.name}</span>
+                                        { state.openerBowlerIdx === i ? <CheckCircle size={14} className="text-emerald-500" /> : <Zap size={14} className="opacity-20" /> }
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <button disabled={typeof state.openerStrikerIdx !== 'number' || typeof state.openerNSIdx !== 'number'} onClick={() => {
-                            const nb = [...state.batters];
-                            if (nb[state.openerStrikerIdx]) nb[state.openerStrikerIdx].batting = true;
-                            if (nb[state.openerNSIdx]) nb[state.openerNSIdx].batting = true;
-                            updateState({ batters: nb, striker: state.openerStrikerIdx, nonStriker: state.openerNSIdx, phase: 'select_bowler' });
-                        }} className="w-full bg-emerald-600 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-emerald-500/20 disabled:opacity-20 disabled:grayscale transition-all">Confirm Openers →</button>
+
+                        {/* FINAL START BUTTON */}
+                        <button 
+                            disabled={typeof state.openerStrikerIdx !== 'number' || typeof state.openerNSIdx !== 'number' || typeof state.openerBowlerIdx !== 'number'} 
+                            onClick={() => {
+                                const nb = [...state.batters];
+                                if (nb[state.openerStrikerIdx]) nb[state.openerStrikerIdx].batting = true;
+                                if (nb[state.openerNSIdx]) nb[state.openerNSIdx].batting = true;
+                                updateState({ 
+                                    batters: nb, 
+                                    striker: state.openerStrikerIdx, 
+                                    nonStriker: state.openerNSIdx, 
+                                    currentBowlerIdx: state.openerBowlerIdx,
+                                    phase: 'batting' 
+                                });
+                            }} 
+                            className="w-full bg-emerald-600 py-6 rounded-[2rem] font-black uppercase text-sm tracking-[0.25em] shadow-[0_20px_40px_rgba(16,185,129,0.25)] flex items-center justify-center gap-3 disabled:opacity-20 disabled:grayscale transition-all active:scale-95 group"
+                        >
+                            Start Match <span className="text-xl group-hover:translate-x-2 transition-transform">↗</span>
+                        </button>
+
+                        <button onClick={() => updateState({ openerStrikerIdx: null, openerNSIdx: null, openerBowlerIdx: null, phase: 'toss' })} className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white/40 transition-colors"> Reset Selections</button>
                     </div>
                 )}
 
