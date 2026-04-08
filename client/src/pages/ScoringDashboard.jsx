@@ -128,10 +128,19 @@ export default function ScoringDashboard() {
         aiRecommendation: null
     });
 
-    // Auto-scroll to top on every phase change for smooth "Direct Open" experience
+    // Sync to DB and Cloud on every state change + Local Flash Recovery
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'auto' });
-    }, [state.phase]);
+        
+        // Auto-save to LocalStorage for offline resilience
+        const localKey = `live_match_${id}`;
+        localStorage.setItem(localKey, JSON.stringify({ ...state, _ts: Date.now(), history: [] }));
+
+        // Sync with Server if it's a scoring action
+        if (state.lastBallData && state.phase === 'batting') {
+            syncBallWithServer(state);
+        }
+    }, [state.phase, state.runs, state.wickets, state.totalBalls, id]);
 
     const ScoreboardCard = memo(({ runs, wickets, overNum, ballInOver, overs, teamName, currentOverBalls, inn1Score, inn1Wickets, inningsNum, target, runRate, requiredRunRate }) => {
         const progressPct = Math.min(((overNum + ballInOver / 6) / (overs || 1)) * 100, 100);
@@ -327,6 +336,43 @@ export default function ScoringDashboard() {
 
 
     const updateState = useCallback((updates) => setState(prev => ({ ...prev, ...updates })), []);
+
+    const syncBallWithServer = async (stateData) => {
+        try {
+            const lastBall = stateData.lastBallData;
+            if (!lastBall) return;
+
+            // 1. Push to Granular Ball Trace
+            await apiClient.post(`/matches/${id}/ball`, {
+                inning: stateData.inningsNum,
+                over: stateData.overNum,
+                ball: stateData.ballInOver,
+                batter_id: lastBall.batsmanId,
+                bowler_id: lastBall.bowlerId,
+                runs: lastBall.runs || 0,
+                is_four: lastBall.runs === 4,
+                is_six: lastBall.runs === 6,
+                extra_type: lastBall.extra,
+                is_wicket: !!lastBall.isWicket,
+                wicket: lastBall.wicket || null
+            });
+
+            // 2. Push to Legacy Scorecard Sync (Live Dashboard Cards)
+            await apiClient.post(`/matches/${id}/live-update`, {
+                runs: stateData.runs,
+                wickets: stateData.wickets,
+                overNum: stateData.overNum,
+                ballInOver: stateData.ballInOver,
+                batters: stateData.batters,
+                bowlers: stateData.bowlers,
+                inningsNum: stateData.inningsNum,
+                target: stateData.target,
+                recent_balls: stateData.currentOverBalls
+            });
+        } catch (err) {
+            console.error("Cloud Sync Failed:", err);
+        }
+    };
 
     useEffect(() => {
         PlayerDB.initializePresets(PRESET_TEAMS);
@@ -1834,7 +1880,12 @@ export default function ScoringDashboard() {
                             {state.bowlers?.map((p, i) => {
                                 const dis = i === state.prevBowlerIdx || p?.overs >= (state.formatOvers / 5);
                                 return (
-                                    <button key={i} disabled={dis} onClick={() => updateState({ currentBowlerIdx: i, phase: 'batting' })} className="w-full p-6 rounded-2xl border border-white/5 bg-white/5 text-left flex items-center justify-between hover:bg-emerald-500/10 transition-colors disabled:opacity-20">
+                                    <button key={i} disabled={dis} onClick={() => {
+                                        updateState({ currentBowlerIdx: i, phase: 'batting' });
+                                        if (state.totalBalls === 0) {
+                                            toast.success("Match Started! First ball ready.", { icon: "🏏" });
+                                        }
+                                    }} className="w-full p-6 rounded-2xl border border-white/5 bg-white/5 text-left flex items-center justify-between hover:bg-emerald-500/10 transition-colors disabled:opacity-20">
                                         <div>
                                             <p className="text-sm font-black uppercase tracking-tight mb-1">{p?.name || `Bowler ${i+1}`}</p>
                                             <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-none">{p?.style || "Bowler"}</p>
