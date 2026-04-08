@@ -1448,21 +1448,28 @@ export default function ScoringDashboard() {
                 )}
                 {/* Toss Phase */}
                 {state.phase === 'toss' && (
-                    <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 text-center space-y-8">
-                        <div>
-                            <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">The Toss</h2>
-                            <p className="text-xs font-bold text-white/30 uppercase tracking-widest">Select match initiator</p>
+                    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                        <div className="text-center">
+                            <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">The Toss</h2>
+                            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Who is calling at the pitch?</p>
                         </div>
-                        <div className="flex justify-center py-4">
-                            <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full flex items-center justify-center text-4xl shadow-[0_0_30px_rgba(245,158,11,0.3)] border-4 border-orange-400">🪙</div>
+
+                        <div className="relative h-48 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-emerald-500/5 blur-[100px] rounded-full"></div>
+                            <div className="w-32 h-32 bg-gradient-to-br from-yellow-400 via-orange-500 to-yellow-600 rounded-full flex items-center justify-center text-5xl shadow-[0_0_50px_rgba(245,158,11,0.4)] border-8 border-white/10 ring-4 ring-orange-500/20 animate-bounce">🪙</div>
                         </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             {TEAMS.map((t, i) => (
-                                <button key={i} onClick={() => updateState({ tossWinner: i, phase: 'bb_choice' })} className="p-8 bg-white/5 border border-white/10 rounded-[2.5rem] flex flex-col items-center gap-4 hover:border-amber-500/50 hover:bg-amber-500/5 group transition-all">
-                                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <Users className="text-emerald-400" size={32} />
+                                <button key={i} onClick={() => updateState({ tossWinner: i, phase: 'bb_choice' })} className="relative overflow-hidden p-8 bg-white/5 border border-white/10 rounded-[2.5rem] flex flex-col items-center gap-4 hover:border-emerald-500/50 hover:bg-emerald-500/5 group transition-all">
+                                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Users size={80} /></div>
+                                    <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                                        <span className="text-2xl font-black text-emerald-400">{t.name.charAt(0).toUpperCase()}</span>
                                     </div>
-                                    <span className="text-xs font-black uppercase tracking-widest">{t.name}</span>
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Pick Winner</p>
+                                        <span className="text-xs font-black uppercase tracking-widest text-white group-hover:text-emerald-400">{t.name}</span>
+                                    </div>
                                 </button>
                             ))}
                         </div>
@@ -1471,146 +1478,104 @@ export default function ScoringDashboard() {
 
                 {/* Bat/Ball Choice Phase */}
                 {state.phase === 'bb_choice' && (
-                    <div className="space-y-8 animate-in fade-in duration-500">
-                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-[2.5rem] p-8 text-center">
-                            <h2 className="text-xl font-black uppercase tracking-widest mb-1 text-amber-500">{TEAMS[state.tossWinner]?.name || '...'} Won!</h2>
-                            <p className="text-xs font-medium text-amber-500/60 uppercase tracking-widest">Select their decision</p>
+                    <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
+                        <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-[3rem] p-10 text-center relative overflow-hidden">
+                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
+                            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-500 mb-3">Toss Result</h2>
+                            <p className="text-2xl font-black text-white mb-2">{TEAMS[state.tossWinner]?.name}</p>
+                            <p className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest">has won the toss</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => updateState({ bbChoice: 'bat' })} className={`p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-4 transition-all ${state.bbChoice === 'bat' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-white/5 border-white/10 opacity-40'}`}>
-                                <Trophy size={32} />
-                                <span className="text-xs font-black uppercase tracking-widest">Bat First</span>
+                            <button onClick={() => updateState({ bbChoice: 'bat' })} className={`p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-6 transition-all duration-300 ${state.bbChoice === 'bat' ? 'bg-emerald-600/20 border-emerald-500 shadow-2xl shadow-emerald-500/20' : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'}`}>
+                                <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center text-4xl">🏏</div>
+                                <div className="text-center">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Decision</span>
+                                    <p className="text-sm font-black uppercase tracking-widest text-white mt-1">Bat First</p>
+                                </div>
                             </button>
-                            <button onClick={() => updateState({ bbChoice: 'ball' })} className={`p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-4 transition-all ${state.bbChoice === 'ball' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-white/5 border-white/10 opacity-40'}`}>
-                                <Users size={32} />
-                                <span className="text-xs font-black uppercase tracking-widest">Bowl First</span>
+                            <button onClick={() => updateState({ bbChoice: 'ball' })} className={`p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-6 transition-all duration-300 ${state.bbChoice === 'ball' ? 'bg-emerald-600/20 border-emerald-500 shadow-2xl shadow-emerald-500/20' : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'}`}>
+                                <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center text-4xl">⚾</div>
+                                <div className="text-center">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Decision</span>
+                                    <p className="text-sm font-black uppercase tracking-widest text-white mt-1">Bowl First</p>
+                                </div>
                             </button>
                         </div>
-                        <button disabled={!state.bbChoice} onClick={() => {
-                            const batTeam = state.bbChoice === 'bat' ? state.tossWinner : (state.tossWinner === 0 ? 1 : 0);
-                            const bowlTeam = state.bbChoice === 'bat' ? (state.tossWinner === 0 ? 1 : 0) : state.tossWinner;
-                            updateState({ battingTeam: batTeam, bowlingTeam: bowlTeam, phase: 'select_openers' });
-                            initTeams(batTeam, bowlTeam);
-                        }} className="w-full bg-white text-[#0D1B0F] py-6 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-white/10 disabled:opacity-20">Start Match →</button>
+
+                        <button 
+                            disabled={!state.bbChoice} 
+                            onClick={() => {
+                                const batTeam = state.bbChoice === 'bat' ? state.tossWinner : (state.tossWinner === 0 ? 1 : 0);
+                                const bowlTeam = state.bbChoice === 'bat' ? (state.tossWinner === 0 ? 1 : 0) : state.tossWinner;
+                                updateState({ battingTeam: batTeam, bowlingTeam: bowlTeam, phase: 'select_openers' });
+                                initTeams(batTeam, bowlTeam);
+                            }} 
+                            className="w-full bg-white text-[#0D1B0F] py-6 rounded-[2.5rem] font-black uppercase text-xs tracking-[0.3em] shadow-[0_20px_40px_rgba(255,255,255,0.1)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-20"
+                        >
+                            Select Openers <ArrowLeft className="rotate-180" size={16} />
+                        </button>
                     </div>
                 )}
 
-                {/* Openers & Initial Bowler Phase (Startup) */}
+                {/* Openers Selection Phase */}
                 {state.phase === 'select_openers' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        {/* Status Banner */}
-                        <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-[2.5rem] p-8 text-center relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12"><Trophy size={80} /></div>
-                            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-500 mb-2">
-                                {state.inningsNum === 1 ? 'Toss Decided' : 'Target Set'}
-                            </h2>
-                            <p className="text-xl font-black text-white leading-tight">
-                                {state.inningsNum === 1 ? (
-                                    <>
-                                        {TEAMS[state.tossWinner]?.name} won the toss — <span className="text-emerald-400">elected to {state.bbChoice === 'bat' ? 'bat' : 'bowl'} first</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        Target: <span className="text-emerald-400">{state.target} Runs</span> <br/>
-                                        <span className="text-xs opacity-40 font-bold uppercase tracking-widest">Required RR: {(state.target / (state.formatOvers || 1)).toFixed(2)}</span>
-                                    </>
-                                )}
-                            </p>
-                            <div className="mt-4 flex items-center justify-center gap-3">
-                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{TEAMS[state.battingTeam]?.name} Batting</span>
-                                <div className="w-1.5 h-1.5 rounded-full bg-white/20"></div>
-                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{TEAMS[state.bowlingTeam]?.name} Bowling</span>
+                    <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-600">
+                        <div className="bg-[#0a1a0c] border border-emerald-500/20 rounded-[3rem] p-8 text-center relative overflow-hidden">
+                            <div className="absolute top-0 left-0 p-4 opacity-10"><Swords size={60} /></div>
+                            <h2 className="text-xs font-black uppercase tracking-[0.4em] text-emerald-500 mb-3">Batting Unit</h2>
+                            <p className="text-xl font-black text-white">{TEAMS[state.battingTeam]?.name}</p>
+                            <div className="mt-4 flex items-center justify-center gap-2">
+                                <span className="px-3 py-1 bg-emerald-500/10 rounded-full text-[9px] font-black text-emerald-500 uppercase tracking-widest">Opening Partnership</span>
                             </div>
                         </div>
 
-                        {/* Select Batters Section */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 px-2">
-                                <div className="w-8 h-8 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-                                    <Swords size={16} className="text-emerald-500" />
-                                </div>
-                                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">Select Opening Batters</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className={`p-6 rounded-[2.5rem] border-2 transition-all duration-300 ${typeof state.openerStrikerIdx === 'number' ? 'bg-emerald-600/10 border-emerald-500 shadow-xl shadow-emerald-500/10' : 'bg-white/5 border-dashed border-white/10'}`}>
+                                <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest mb-1.5">Striker</p>
+                                <p className="text-sm font-black text-white truncate">{typeof state.openerStrikerIdx === 'number' ? state.batters[state.openerStrikerIdx]?.name : "—"}</p>
                             </div>
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className={`p-5 rounded-3xl border-2 transition-all ${typeof state.openerStrikerIdx === 'number' ? 'bg-emerald-600/10 border-emerald-500 shadow-[0_10px_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-dashed border-white/10 text-white/20'}`}>
-                                    <p className="text-[9px] font-black uppercase tracking-widest mb-1.5 text-emerald-500">Striker</p>
-                                    <p className="text-[13px] font-black truncate">{typeof state.openerStrikerIdx === 'number' ? state.batters[state.openerStrikerIdx]?.name : "Pick Batter"}</p>
-                                </div>
-                                <div className={`p-5 rounded-3xl border-2 transition-all ${typeof state.openerNSIdx === 'number' ? 'bg-emerald-600/10 border-emerald-500 shadow-[0_10px_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-dashed border-white/10 text-white/20 text-right'}`}>
-                                    <p className="text-[9px] font-black uppercase tracking-widest mb-1.5 text-emerald-500">Non-Striker</p>
-                                    <p className="text-[13px] font-black truncate">{typeof state.openerNSIdx === 'number' ? state.batters[state.openerNSIdx]?.name : "Pick Batter"}</p>
-                                </div>
-                            </div>
-
-                            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-4 max-h-48 overflow-y-auto space-y-2 custom-scrollbar">
-                                {TEAMS[state.battingTeam]?.players?.map((p, i) => (
-                                    <button 
-                                        key={i} 
-                                        disabled={state.openerStrikerIdx === i || state.openerNSIdx === i} 
-                                        onClick={() => {
-                                            if (typeof state.openerStrikerIdx !== 'number') updateState({ openerStrikerIdx: i });
-                                            else updateState({ openerNSIdx: i });
-                                        }} 
-                                        className="w-full p-4 rounded-2xl border border-white/5 bg-white/5 text-left flex items-center justify-between hover:bg-emerald-500/10 transition-all disabled:opacity-30"
-                                    >
-                                        <span className="text-xs font-black uppercase tracking-tight">{p.name}</span>
-                                        { (state.openerStrikerIdx === i || state.openerNSIdx === i) ? <CheckCircle size={14} className="text-emerald-500" /> : <User size={14} className="opacity-20" /> }
-                                    </button>
-                                ))}
+                            <div className={`p-6 rounded-[2.5rem] border-2 transition-all duration-300 ${typeof state.openerNSIdx === 'number' ? 'bg-emerald-600/10 border-emerald-500 shadow-xl shadow-emerald-500/10' : 'bg-white/5 border-dashed border-white/10'}`}>
+                                <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest mb-1.5 text-right">Non-Striker</p>
+                                <p className="text-sm font-black text-white truncate text-right">{typeof state.openerNSIdx === 'number' ? state.batters[state.openerNSIdx]?.name : "—"}</p>
                             </div>
                         </div>
 
-                        {/* Select Bowler Section */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 px-2">
-                                <div className="w-8 h-8 bg-red-500/10 rounded-xl flex items-center justify-center">
-                                    <Zap size={16} className="text-red-500" />
-                                </div>
-                                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">Select Opening Bowler</h3>
-                            </div>
-
-                            <div className={`p-5 rounded-3xl border-2 transition-all ${typeof state.openerBowlerIdx === 'number' ? 'bg-emerald-600/10 border-emerald-500 shadow-[0_10px_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-dashed border-white/10 text-white/20'}`}>
-                                <p className="text-[9px] font-black uppercase tracking-widest mb-1.5 text-red-400">Bowler</p>
-                                <p className="text-[13px] font-black truncate">{typeof state.openerBowlerIdx === 'number' ? TEAMS[state.bowlingTeam]?.players[state.openerBowlerIdx]?.name : "Pick Bowler"}</p>
-                            </div>
-
-                            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-4 max-h-48 overflow-y-auto space-y-2 custom-scrollbar">
-                                {TEAMS[state.bowlingTeam]?.players?.map((p, i) => (
-                                    <button 
-                                        key={i} 
-                                        onClick={() => updateState({ openerBowlerIdx: i })} 
-                                        className={`w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between ${state.openerBowlerIdx === i ? 'bg-emerald-500/20 border-emerald-500' : 'bg-white/5 border-white/5 hover:bg-red-500/10'}`}
-                                    >
-                                        <span className="text-xs font-black uppercase tracking-tight">{p.name}</span>
-                                        { state.openerBowlerIdx === i ? <CheckCircle size={14} className="text-emerald-500" /> : <Zap size={14} className="opacity-20" /> }
-                                    </button>
-                                ))}
-                            </div>
+                        <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-4 max-h-72 overflow-y-auto space-y-2 custom-scrollbar">
+                            {TEAMS[state.battingTeam]?.players?.map((p, i) => (
+                                <button 
+                                    key={i} 
+                                    disabled={state.openerStrikerIdx === i || state.openerNSIdx === i} 
+                                    onClick={() => {
+                                        if (typeof state.openerStrikerIdx !== 'number') updateState({ openerStrikerIdx: i });
+                                        else updateState({ openerNSIdx: i });
+                                    }} 
+                                    className="w-full p-5 rounded-2xl border border-white/5 bg-white/5 text-left flex items-center justify-between hover:bg-emerald-500/10 transition-all disabled:opacity-20"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-9 h-9 bg-white/5 rounded-xl flex items-center justify-center font-black text-[10px] text-white/40">{i+1}</div>
+                                        <span className="text-xs font-black uppercase tracking-tight text-white/80">{p.name}</span>
+                                    </div>
+                                    { (state.openerStrikerIdx === i || state.openerNSIdx === i) ? <CheckCircle size={16} className="text-emerald-500" /> : <User size={16} className="text-white/10" /> }
+                                </button>
+                            ))}
                         </div>
 
-                        {/* FINAL START BUTTON */}
-                        <button 
-                            disabled={typeof state.openerStrikerIdx !== 'number' || typeof state.openerNSIdx !== 'number' || typeof state.openerBowlerIdx !== 'number'} 
-                            onClick={() => {
-                                const nb = [...state.batters];
-                                if (nb[state.openerStrikerIdx]) nb[state.openerStrikerIdx].batting = true;
-                                if (nb[state.openerNSIdx]) nb[state.openerNSIdx].batting = true;
-                                updateState({ 
-                                    batters: nb, 
-                                    striker: state.openerStrikerIdx, 
-                                    nonStriker: state.openerNSIdx, 
-                                    currentBowlerIdx: state.openerBowlerIdx,
-                                    phase: 'batting' 
-                                });
-                            }} 
-                            className="w-full bg-emerald-600 py-6 rounded-[2rem] font-black uppercase text-sm tracking-[0.25em] shadow-[0_20px_40px_rgba(16,185,129,0.25)] flex items-center justify-center gap-3 disabled:opacity-20 disabled:grayscale transition-all active:scale-95 group"
-                        >
-                            Start Match <span className="text-xl group-hover:translate-x-2 transition-transform">↗</span>
-                        </button>
-
-                        <button onClick={() => updateState({ openerStrikerIdx: null, openerNSIdx: null, openerBowlerIdx: null, phase: 'toss' })} className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white/40 transition-colors"> Reset Selections</button>
+                        <div className="grid grid-cols-2 gap-3">
+                                <button onClick={() => updateState({ openerStrikerIdx: null, openerNSIdx: null, phase: 'bb_choice' })} className="py-5 border border-white/10 rounded-2xl font-black uppercase text-[10px] tracking-widest text-white/30">Back</button>
+                                <button 
+                                    disabled={typeof state.openerStrikerIdx !== 'number' || typeof state.openerNSIdx !== 'number'} 
+                                    onClick={() => {
+                                        const nb = [...state.batters];
+                                        if (nb[state.openerStrikerIdx]) nb[state.openerStrikerIdx].batting = true;
+                                        if (nb[state.openerNSIdx]) nb[state.openerNSIdx].batting = true;
+                                        updateState({ batters: nb, striker: state.openerStrikerIdx, nonStriker: state.openerNSIdx, phase: 'select_bowler' });
+                                    }} 
+                                    className="py-5 bg-emerald-600 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-emerald-500/20 disabled:opacity-20"
+                                >
+                                    Next: Bowler →
+                                </button>
+                        </div>
                     </div>
                 )}
 
