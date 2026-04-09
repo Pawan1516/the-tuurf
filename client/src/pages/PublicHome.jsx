@@ -270,15 +270,22 @@ const PublicHome = () => {
                                     }
                                 ].map((item, i) => {
                                     const isLive = match.status === 'In Progress';
-                                    const displayScore = isLive && item.isBatting
-                                        ? (match.live_data?.runs ?? item.team?.score ?? 0)
-                                        : (item.team?.score ?? 0);
-                                    const displayWickets = isLive && item.isBatting
-                                        ? (match.live_data?.wickets ?? item.team?.wickets ?? 0)
-                                        : (item.team?.wickets ?? 0);
-                                    const overs = isLive && item.isBatting
-                                        ? `${match.live_data?.overNum ?? 0}.${match.live_data?.ballInOver ?? 0}`
-                                        : (item.team?.overs_played ? formatOvers(item.team.overs_played) : null);
+                                    
+                                    let displayScore = item.team?.score ?? 0;
+                                    let displayWickets = item.team?.wickets ?? 0;
+                                    let overs = item.team?.overs_played ? formatOvers(item.team.overs_played) : null;
+
+                                    if (isLive) {
+                                        if (item.isBatting) {
+                                            displayScore = match.live_data?.runs ?? displayScore;
+                                            displayWickets = match.live_data?.wickets ?? displayWickets;
+                                            overs = match.live_data?.overNum !== undefined ? `${match.live_data.overNum}.${match.live_data.ballInOver}` : overs;
+                                        } else if (match.live_data?.inn1_scorecard) {
+                                            displayScore = match.live_data.inn1_scorecard.score ?? displayScore;
+                                            displayWickets = match.live_data.inn1_scorecard.wickets ?? displayWickets;
+                                            overs = match.live_data.inn1_scorecard.overs ?? overs;
+                                        }
+                                    }
 
                                     return (
                                         <div key={i} className={`flex items-center justify-between rounded-2xl px-4 py-3 transition-all ${item.isBatting && isLive ? 'bg-emerald-500/5 border border-emerald-500/10' : ''}`}>

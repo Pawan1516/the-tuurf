@@ -536,33 +536,9 @@ router.post('/:id/live-update', async (req, res) => {
             momentum_score: momentum,
             last_updated: new Date()
         };
-        const activeTeamKey = match.live_active_team === 'A' ? 'team_a' : 'team_b';
-        if (req.body.runs !== undefined) match[activeTeamKey].score = req.body.runs;
-        if (req.body.wickets !== undefined) match[activeTeamKey].wickets = req.body.wickets;
-        if (req.body.overs !== undefined) match[activeTeamKey].overs_played = req.body.overs;
-        match.markModified(activeTeamKey);
-
         const innIdx = (req.body.inningsNum ? req.body.inningsNum - 1 : 0);
         match.current_innings_index = innIdx;
-        
-        // Ensure the current innings array slot exists
-        if (match.innings && match.innings.length <= innIdx) {
-            const nextInnNum = match.innings.length + 1;
-            const batTKey = match.live_active_team === 'B' ? 'team_b' : 'team_a';
-            const bowlTKey = match.live_active_team === 'B' ? 'team_a' : 'team_b';
-            
-            match.innings.push({ 
-                number: nextInnNum, 
-                score: 0, 
-                wickets: 0, 
-                overs_completed: 0, 
-                batting_team: (match[batTKey]?.team_id || null),
-                bowling_team: (match[bowlTKey]?.team_id || null),
-                batsmen: [], 
-                bowlers: [] 
-            });
-        }
-        
+
         // Determine which overall team is batting — TRUST THE CLIENT BATTING TEAM IF PROVIDED
         let activeTeam = 'A';
         if (req.body.batting_team === 'B' || req.body.battingTeam === 1 || (req.body.battingTeam === '1')) {
@@ -585,6 +561,9 @@ router.post('/:id/live-update', async (req, res) => {
         if (req.body.overs !== undefined) match[battingTeamKey].overs_played = req.body.overs;
         match.markModified(battingTeamKey);
 
+        const mongoose = require('mongoose');
+        const getValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : undefined;
+
         // Ensure the current innings array slot exists
         while (match.innings.length <= innIdx) {
             const nextInnNum = match.innings.length + 1;
@@ -593,17 +572,15 @@ router.post('/:id/live-update', async (req, res) => {
                 score: 0, 
                 wickets: 0, 
                 overs_completed: 0, 
-                batting_team: match[battingTeamKey].team_id,
-                bowling_team: match[bowlingTeamKey].team_id,
+                batting_team: getValidObjectId(match[battingTeamKey]?.team_id),
+                bowling_team: getValidObjectId(match[bowlingTeamKey]?.team_id),
                 batsmen: [], 
                 bowlers: [] 
             });
         }
+        
         const currentInning = match.innings[innIdx];
 
-        if (req.body.runs !== undefined) match[battingTeamKey].score = req.body.runs;
-        if (req.body.wickets !== undefined) match[battingTeamKey].wickets = req.body.wickets;
-        if (req.body.overs !== undefined) match[battingTeamKey].overs_played = req.body.overs;
         if (req.body.status) match.status = req.body.status;
 
         // CRITICAL: Update individual player stats and INNINGS scores for Home Page
@@ -615,7 +592,8 @@ router.post('/:id/live-update', async (req, res) => {
 
             if (req.body.batters) {
                 currentInning.batsmen = req.body.batters.map(b => ({
-                    user_id: b.user_id,
+                    user_id: getValidObjectId(b.user_id || b.id),
+                    name: b.name, // Ensure tracking text names for walk-ins
                     runs: b.r || 0,
                     balls: b.b || 0,
                     fours: b.fours || b.f || 0,
@@ -627,11 +605,13 @@ router.post('/:id/live-update', async (req, res) => {
 
             if (req.body.bowlers) {
                 currentInning.bowlers = req.body.bowlers.map(bw => ({
-                    user_id: bw.user_id,
+                    user_id: getValidObjectId(bw.user_id || bw.id),
+                    name: bw.name, // Ensure tracking name for walk-ins
                     overs: bw.balls ? parseFloat(`${Math.floor(bw.balls / 6)}.${bw.balls % 6}`) : (bw.overs || 0),
                     runs: bw.r || 0,
                     wickets: bw.w || 0,
-                    balls: bw.balls || 0
+                    balls: bw.balls || 0,
+                    maidens: bw.maidens || 0
                 }));
             }
         }

@@ -158,6 +158,7 @@ const matchSchema = new mongoose.Schema({
         }],
         batsmen: [{
             user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            name: { type: String },
             runs: { type: Number, default: 0 },
             balls: { type: Number, default: 0 },
             fours: { type: Number, default: 0 },
@@ -167,6 +168,7 @@ const matchSchema = new mongoose.Schema({
         }],
         bowlers: [{
             user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            name: { type: String },
             overs: { type: Number, default: 0 },
             balls: { type: Number, default: 0 },
             runs: { type: Number, default: 0 },

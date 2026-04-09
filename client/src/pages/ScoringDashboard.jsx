@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, memo, useMemo, useRef } from '
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import apiClient from '../api/client';
-import { ShieldAlert, Trophy, Coins, Users, User, ArrowLeft, RefreshCw, Undo2, LogOut, Zap, CheckCircle, Swords } from 'lucide-react';
+import { ShieldAlert, Trophy, Coins, Users, User, ArrowLeft, RefreshCw, Undo2, LogOut, Zap, CheckCircle, Swords, RotateCcw, ArrowLeftRight } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import io from 'socket.io-client';
@@ -367,7 +367,8 @@ export default function ScoringDashboard() {
                 bowlers: stateData.bowlers,
                 inningsNum: stateData.inningsNum,
                 target: stateData.target,
-                recent_balls: stateData.currentOverBalls
+                recent_balls: stateData.currentOverBalls,
+                status: 'In Progress'
             });
         } catch (err) {
             console.error("Cloud Sync Failed:", err);
@@ -397,22 +398,27 @@ export default function ScoringDashboard() {
                 
                 // Initialize Teams from DB
                 if (matchData.team_a && matchData.team_b) {
+                    const ensurePlayers = (squadArr) => {
+                        let base = (squadArr || []).map(p => ({
+                            name: p?.name || p?.display_name || 'Unknown',
+                            user_id: p?._id || p?.user_id || null
+                        }));
+                        while (base.length < 11) {
+                            base.push({ name: `Player ${base.length + 1}`, user_id: null });
+                        }
+                        return base;
+                    };
+
                     setTeams([
                         {
                             name: matchData.team_a?.team_id?.name || matchData.quick_teams?.team_a?.name || 'Team A',
                             short: matchData.team_a?.team_id?.short_name || 'TMA',
-                            players: (matchData.team_a.squad?.length ? matchData.team_a.squad : matchData.quick_teams?.team_a?.players)?.map(p => ({
-                                name: p.name || p.display_name,
-                                user_id: p._id || p.user_id || null
-                            })) || []
+                            players: ensurePlayers(matchData.team_a.squad?.length ? matchData.team_a.squad : matchData.quick_teams?.team_a?.players)
                         },
                         {
                             name: matchData.team_b?.team_id?.name || matchData.quick_teams?.team_b?.name || 'Team B',
                             short: matchData.team_b?.team_id?.short_name || 'TMB',
-                            players: (matchData.team_b.squad?.length ? matchData.team_b.squad : matchData.quick_teams?.team_b?.players)?.map(p => ({
-                                name: p.name || p.display_name,
-                                user_id: p._id || p.user_id || null
-                            })) || []
+                            players: ensurePlayers(matchData.team_b.squad?.length ? matchData.team_b.squad : matchData.quick_teams?.team_b?.players)
                         }
                     ]);
                 }
@@ -1116,20 +1122,34 @@ export default function ScoringDashboard() {
         <div className="min-h-screen bg-[#0D1B0F] text-white font-sans selection:bg-emerald-500/30">
             {viewingPlayer && <PlayerProfileModal player={viewingPlayer} onClose={() => setViewingPlayer(null)} />}
             <style>{`
-                .b-dot { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-                .b-dot:hover { transform: scale(1.1); background: rgba(255,255,255,0.1); }
-                .b-1 { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.2); }
-                .b-4 { background: #1565C0 !important; color: #fff !important; border-color: #1e88e5 !important; box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3); }
-                .b-6 { background: #E65100 !important; color: #fff !important; border-color: #f57c00 !important; box-shadow: 0 4px 12px rgba(230, 81, 0, 0.3); }
-                .b-w { background: #C62828 !important; color: #fff !important; border-color: #e53935 !important; box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3); }
-                .b-wd, .b-nb { background: #7B1FA2 !important; color: #fff !important; border-color: #9c27b0; }
+                :root {
+                  --teal: #1D9E75; --teal-light: #E1F5EE; --teal-dark: #085041;
+                  --amber: #BA7517; --amber-light: #FAEEDA; --amber-dark: #633806;
+                  --red: #E24B4A; --red-light: #FCEBEB;
+                  --green: #639922; --green-light: #EAF3DE; --green-dark: #27500A;
+                  --blue: #185FA5; --blue-light: #E6F1FB; --blue-dark: #0C447C;
+                  --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+                }
+                .b-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: 0.5px solid rgba(255,255,255,0.1); }
+                .bh-4 { background: var(--blue-light); color: var(--blue-dark); border-color: #85B7EB; }
+                .bh-6 { background: var(--green-light); color: var(--green-dark); border-color: #97C459; }
+                .bh-w { background: var(--red-light); color: #791F1F; border-color: #F09595; }
+                .bh-wd, .bh-nb { background: var(--amber-light); color: var(--amber-dark); border-color: #EF9F27; }
                 
-                .step-header { font-size: 10px; font-weight: 900; color: rgba(16, 185, 129, 0.6); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-                .ball-btn { width: 66px; height: 66px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-                .ball-btn:active { transform: scale(0.9); }
-                .ball-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
-                .ball-btn span:first-child { font-size: 20px; font-weight: 900; line-height: 1; }
-                .ball-btn span:last-child { font-size: 8px; font-weight: 700; opacity: 0.5; text-transform: uppercase; margin-top: 2px; }
+                .ball-btn { height: 52px; border-radius: 12px; border: 0.5px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.1s; }
+                .ball-btn:active { transform: scale(0.95); opacity: 0.8; }
+                .bb-4 { background: var(--blue-light); color: var(--blue-dark); border-color: #85B7EB; }
+                .bb-6 { background: var(--green-light); color: var(--green-dark); border-color: #97C459; }
+                .bb-wd, .bb-nb { background: var(--amber-light); color: var(--amber-dark); border-color: #EF9F27; }
+                .bb-wk { background: var(--red-light); color: #791F1F; border-color: #F09595; }
+
+                .step-header { font-size: 11px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+                .card-premium { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; }
+                .metric-pill { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px 10px; text-align: center; border: 0.5px solid rgba(255,255,255,0.05); }
+                
+                .step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1); transition: all 0.3s; }
+                .step-dot.active { background: var(--teal); width: 24px; border-radius: 4px; }
+                .step-dot.done { background: #5DCAA5; }
             `}</style>
 
             {/* Top Bar */}
@@ -1502,53 +1522,63 @@ export default function ScoringDashboard() {
                 )}
                 {/* Toss Phase */}
                 {state.phase === 'toss' && (
-                    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                        <div className="text-center">
-                            <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">The Toss</h2>
-                            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Who is calling at the pitch?</p>
+                    <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
+                        <div className="bg-[#E1F5EE] border border-[#9FE1CB] rounded-3xl p-10 text-center relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#1D9E75]/5 rounded-full -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-700"></div>
+                            <div className="w-20 h-20 bg-[#1D9E75] rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl shadow-emerald-500/40 relative z-10">
+                                <Trophy size={40} className="text-[#E1F5EE]" />
+                            </div>
+                            <h2 className="text-2xl font-black text-[#085041] mb-2">Match Setup</h2>
+                            <p className="text-sm font-medium text-[#0F6E56]">Configure teams and decide the toss</p>
                         </div>
 
-                        <div className="relative h-48 flex items-center justify-center">
-                            <div className="absolute inset-0 bg-emerald-500/5 blur-[100px] rounded-full"></div>
-                            <div className="w-32 h-32 bg-gradient-to-br from-yellow-400 via-orange-500 to-yellow-600 rounded-full flex items-center justify-center text-5xl shadow-[0_0_50px_rgba(245,158,11,0.4)] border-8 border-white/10 ring-4 ring-orange-500/20 animate-bounce">🪙</div>
-                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-6 space-y-6">
+                            <div className="step-header">
+                                <Coins size={12} className="text-[#1D9E75]" />
+                                <span>Toss Result</span>
+                            </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            {TEAMS.map((t, i) => (
-                                <button key={i} onClick={() => updateState({ tossWinner: i, phase: 'bb_choice' })} className="relative overflow-hidden p-8 bg-white/5 border border-white/10 rounded-[2.5rem] flex flex-col items-center gap-4 hover:border-emerald-500/50 hover:bg-emerald-500/5 group transition-all">
-                                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Users size={80} /></div>
-                                    <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
-                                        <span className="text-2xl font-black text-emerald-400">{t.name.charAt(0).toUpperCase()}</span>
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#1D9E75] mb-2">Who won the toss?</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {[0, 1].map(i => (
+                                            <button 
+                                                key={i} 
+                                                onClick={() => updateState({ tossWinner: i, phase: 'bb_choice' })}
+                                                className={`p-5 rounded-2xl border transition-all text-sm font-black uppercase tracking-tight ${state.tossWinner === i ? 'bg-[#E1F5EE] border-[#1D9E75] text-[#085041] shadow-xl shadow-emerald-500/10' : 'bg-white/5 border-white/10 text-white/40'}`}
+                                            >
+                                                {TEAMS[i]?.name}
+                                            </button>
+                                        ))}
                                     </div>
-                                    <div className="text-center">
-                                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Pick Winner</p>
-                                        <span className="text-xs font-black uppercase tracking-widest text-white group-hover:text-emerald-400">{t.name}</span>
-                                    </div>
-                                </button>
-                            ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* Bat/Ball Choice Phase */}
                 {state.phase === 'bb_choice' && (
-                    <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
-                        <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-[3rem] p-10 text-center relative overflow-hidden">
-                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
-                            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-500 mb-3">Toss Result</h2>
-                            <p className="text-2xl font-black text-white mb-2">{TEAMS[state.tossWinner]?.name}</p>
-                            <p className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest">has won the toss</p>
+                    <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+                        <div className="bg-[#E1F5EE] border border-[#9FE1CB] rounded-3xl p-10 text-center relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#1D9E75]/5 rounded-full -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-700"></div>
+                            <div className="w-20 h-20 bg-[#1D9E75] rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl shadow-emerald-500/40 relative z-10">
+                                <Trophy size={40} className="text-[#E1F5EE]" />
+                            </div>
+                            <h2 className="text-2xl font-black text-[#085041] mb-2">{TEAMS[state.tossWinner]?.name} Won</h2>
+                            <p className="text-sm font-medium text-[#0F6E56]">Pick decision</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => updateState({ bbChoice: 'bat' })} className={`p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-6 transition-all duration-300 ${state.bbChoice === 'bat' ? 'bg-emerald-600/20 border-emerald-500 shadow-2xl shadow-emerald-500/20' : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'}`}>
-                                <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center text-4xl">🏏</div>
+                            <button onClick={() => updateState({ bbChoice: 'bat' })} className={`p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-6 transition-all duration-300 ${state.bbChoice === 'bat' ? 'bg-[#E1F5EE] border-[#1D9E75] text-[#085041] shadow-2xl' : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'}`}>
+                                <div className="w-20 h-20 bg-[#1D9E75]/10 rounded-full flex items-center justify-center text-4xl">🏏</div>
                                 <div className="text-center">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Decision</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1D9E75]">Decision</span>
                                     <p className="text-sm font-black uppercase tracking-widest text-white mt-1">Bat First</p>
                                 </div>
                             </button>
-                            <button onClick={() => updateState({ bbChoice: 'ball' })} className={`p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-6 transition-all duration-300 ${state.bbChoice === 'ball' ? 'bg-emerald-600/20 border-emerald-500 shadow-2xl shadow-emerald-500/20' : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'}`}>
+                            <button onClick={() => updateState({ bbChoice: 'ball' })} className={`p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-6 transition-all duration-300 ${state.bbChoice === 'ball' ? 'bg-[#E1F5EE] border-[#1D9E75] text-[#085041] shadow-2xl' : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'}`}>
                                 <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center text-4xl">⚾</div>
                                 <div className="text-center">
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Decision</span>
@@ -1557,18 +1587,21 @@ export default function ScoringDashboard() {
                             </button>
                         </div>
 
-                        <button 
-                            disabled={!state.bbChoice} 
-                            onClick={() => {
-                                const batTeam = state.bbChoice === 'bat' ? state.tossWinner : (state.tossWinner === 0 ? 1 : 0);
-                                const bowlTeam = state.bbChoice === 'bat' ? (state.tossWinner === 0 ? 1 : 0) : state.tossWinner;
-                                updateState({ battingTeam: batTeam, bowlingTeam: bowlTeam, phase: 'select_openers' });
-                                initTeams(batTeam, bowlTeam);
-                            }} 
-                            className="w-full bg-white text-[#0D1B0F] py-6 rounded-[2.5rem] font-black uppercase text-xs tracking-[0.3em] shadow-[0_20px_40px_rgba(255,255,255,0.1)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-20"
-                        >
-                            Select Openers <ArrowLeft className="rotate-180" size={16} />
-                        </button>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => updateState({ phase: 'toss', tossWinner: null, bbChoice: null })} className="py-5 border border-white/10 rounded-2xl font-black uppercase text-[10px] tracking-widest text-white/30">Back</button>
+                            <button 
+                                disabled={!state.bbChoice} 
+                                onClick={() => {
+                                    const batTeam = state.bbChoice === 'bat' ? state.tossWinner : (state.tossWinner === 0 ? 1 : 0);
+                                    const bowlTeam = state.bbChoice === 'bat' ? (state.tossWinner === 0 ? 1 : 0) : state.tossWinner;
+                                    updateState({ battingTeam: batTeam, bowlingTeam: bowlTeam, phase: 'select_openers' });
+                                    initTeams(batTeam, bowlTeam);
+                                }} 
+                                className="py-5 bg-[#1D9E75] text-[#E1F5EE] rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-emerald-500/20 disabled:opacity-20"
+                            >
+                                Next Step →
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -1766,90 +1799,253 @@ export default function ScoringDashboard() {
                         </div>
 
                         {activeTab === 'live' && (
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <AIAnalyticsBar 
                                     winProb={state.win_probability || 50} 
                                     momentum={state.momentum_score || 50}
                                     teamA={TEAMS[0]?.name || "Team A"}
                                     teamB={TEAMS[1]?.name || "Team B"}
                                 />
-                                <ScoreboardCard
-                                    runs={state.runs}
-                                    wickets={state.wickets}
-                                    overNum={state.overNum}
-                                    ballInOver={state.ballInOver}
-                                    overs={state.formatOvers}
-                                    teamName={TEAMS[state.battingTeam]?.name}
-                                    currentOverBalls={state.currentOverBalls}
-                                    inn1Score={state.inn1Score}
-                                    inn1Wickets={state.inn1Wickets}
-                                    inningsNum={state.inningsNum}
-                                    target={state.target}
-                                    runRate={(state.runs / (state.overNum + state.ballInOver / 6 || 1)).toFixed(2)}
-                                    requiredRunRate={state.inningsNum === 2 ? ((state.target - state.runs) / (((state.formatOvers * 6) - (state.overNum * 6 + state.ballInOver)) / 6 || 1)).toFixed(2) : '0.00'}
-                                />
                                 
-                                {/* Player Strip */}
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="bg-[#0a1a0c] border border-emerald-500/20 rounded-2xl p-3">
-                                        <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1.5 line-clamp-1">Striker</p>
-                                        <p className="text-[11px] font-black text-white truncate mb-1">{state.batters[state.striker]?.name || '—'}</p>
-                                        <p className="text-xl font-black text-emerald-400 leading-none">{state.batters[state.striker]?.r ?? 0}<span className="text-[10px] text-white/30 ml-1">({state.batters[state.striker]?.b ?? 0})</span></p>
+                                <div className="scoreboard card-premium shadow-xl shadow-emerald-500/5 bg-white border border-emerald-500/20">
+                                    <div className="score-row flex justify-between items-end mb-4 relative">
+                                        {state.freeHit && (
+                                            <div className="absolute -top-6 left-0 bg-gradient-to-r from-[#BA7517] to-amber-500 text-white text-[10px] uppercase font-black tracking-[0.2em] px-3 py-1 rounded-full shadow-lg shadow-amber-500/30 animate-pulse flex items-center gap-1.5">
+                                                <Zap size={10} className="fill-white" /> FREE HIT
+                                            </div>
+                                        )}
+                                        <div className="mt-2">
+                                            <div className="score-main flex items-baseline gap-2">
+                                                <span className="text-5xl font-black text-[#085041] tracking-tighter">{state.runs}</span>
+                                                <span className="text-2xl font-bold text-[#1D9E75]">/{state.wickets}</span>
+                                            </div>
+                                            <div className="score-overs text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                                                {state.overNum}.{state.ballInOver} overs &nbsp;·&nbsp; {state.formatOvers} over match
+                                            </div>
+                                        </div>
+                                        <div className="rr-block text-right">
+                                            <div className="flex flex-col items-end">
+                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">CRR</div>
+                                                <div className="text-3xl font-black text-[#185FA5]">{(state.runs / (state.overNum + state.ballInOver / 6 || 1)).toFixed(2)}</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="bg-[#0a1a0c] border border-white/5 rounded-2xl p-3 opacity-60">
-                                        <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1.5 line-clamp-1">Non-Str</p>
-                                        <p className="text-[11px] font-black text-white truncate mb-1">{state.batters[state.nonStriker]?.name || '—'}</p>
-                                        <p className="text-xl font-black text-white/40 leading-none">{state.batters[state.nonStriker]?.r ?? 0}<span className="text-[10px] text-white/20 ml-1">({state.batters[state.nonStriker]?.b ?? 0})</span></p>
+                                    
+                                    {state.inningsNum === 2 && (
+                                        <div className="mt-4 p-3 bg-[#E6F1FB] rounded-xl flex justify-between items-center border border-[#185FA5]/10">
+                                            <div className="text-[10px] font-black uppercase text-[#185FA5] tracking-widest">Target : {state.target}</div>
+                                            <div className="text-xs font-black text-[#0C447C]">Need {state.target - state.runs} off {(state.formatOvers * 6) - state.totalBalls}</div>
+                                        </div>
+                                    )}
+
+                                    <div className="over-progress h-1.5 bg-[#E1F5EE] rounded-full mt-5 overflow-hidden">
+                                        <div 
+                                            className="over-bar h-full bg-[#1D9E75] shadow-[0_0_10px_rgba(29,158,117,0.5)] transition-all duration-500" 
+                                            style={{ width: `${Math.min(100, ((state.overNum + state.ballInOver / 6) / state.formatOvers) * 100)}%` }}
+                                        ></div>
                                     </div>
-                                    <div className="bg-[#0a1a0c] border border-red-500/15 rounded-2xl p-3">
-                                        <p className="text-[8px] font-black text-red-400 uppercase tracking-widest mb-1.5 line-clamp-1">Bowler</p>
-                                        <p className="text-[11px] font-black text-white truncate mb-1">{state.bowlers[state.currentBowlerIdx]?.name || '—'}</p>
-                                        <p className="text-xl font-black text-red-400 leading-none">{state.bowlers[state.currentBowlerIdx]?.w ?? 0}<span className="text-[10px] text-white/30 ml-1">/{state.bowlers[state.currentBowlerIdx]?.r ?? 0}</span></p>
+                                    
+                                    <div className="metrics-row mt-6 grid grid-cols-4 gap-2">
+                                        <div className="metric-pill bg-[#F8FAFC] border-gray-100">
+                                            <div className="text-[#085041] font-black text-lg">{state.batters.reduce((acc, b) => acc + (b.fours || 0), 0)}</div>
+                                            <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">4s</div>
+                                        </div>
+                                        <div className="metric-pill bg-[#F8FAFC] border-gray-100">
+                                            <div className="text-[#085041] font-black text-lg">{state.batters.reduce((acc, b) => acc + (b.sixes || 0), 0)}</div>
+                                            <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">6s</div>
+                                        </div>
+                                        <div className="metric-pill bg-[#F8FAFC] border-gray-100">
+                                            <div className="text-[#085041] font-black text-lg">{state.currentOverBalls.filter(b => b === '·' || b === '0').length}</div>
+                                            <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">Dots</div>
+                                        </div>
+                                        <div className="metric-pill bg-[#FCEBEB] border-[#E24B4A]/20">
+                                            <div className="text-[#E24B4A] font-black text-lg">{state.wickets}</div>
+                                            <div className="text-[8px] font-bold text-[#E24B4A]/70 uppercase tracking-widest mt-1">Wkts</div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2.5 flex items-center justify-between px-4">
-                                    <div className="flex items-center gap-2">
-                                        <Users size={12} className="text-white/20" />
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/20">Partnership</span>
+                                {/* Record Ball Panel */}
+                                <div className="ball-panel card-premium bg-white border border-emerald-500/10 shadow-lg shadow-emerald-500/5">
+                                    <div className="step-header">
+                                        <div className="w-2 h-2 bg-[#1D9E75] rounded-full animate-pulse shadow-[0_0_8px_rgba(29,158,117,0.8)]"></div>
+                                        <span className="text-[#1D9E75]">Record Ball</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs font-black text-white/60">{state.partnership?.runs || 0}</span>
-                                        <span className="text-[10px] font-bold text-white/20">({state.partnership?.balls || 0})</span>
+                                    <div className="ball-grid grid grid-cols-4 gap-2.5 mb-6 mt-4">
+                                        {[0,1,2,3].map(r => (
+                                            <button key={r} onClick={() => recordBall(String(r))} className="ball-btn bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300">{r}</button>
+                                        ))}
+                                        <button onClick={() => recordBall('4')} className="ball-btn border-[#185FA5]/30 bg-[#E6F1FB] text-[#185FA5] hover:bg-[#D5E8FA] shadow-[0_4px_10px_rgba(24,95,165,0.1)]">4</button>
+                                        <button onClick={() => recordBall('6')} className="ball-btn border-[#639922]/30 bg-[#EAF3DE] text-[#639922] hover:bg-[#DDF0C5] shadow-[0_4px_10px_rgba(99,153,34,0.1)]">6</button>
+                                        <button onClick={() => recordBall('wd')} className="ball-btn border-[#BA7517]/30 bg-[#FAEEDA] text-[#BA7517] hover:bg-[#F6E1C4] shadow-[0_4px_10px_rgba(186,117,23,0.1)]">WD</button>
+                                        <button onClick={() => recordBall('nb')} className="ball-btn border-[#BA7517]/30 bg-[#FAEEDA] text-[#BA7517] hover:bg-[#F6E1C4] shadow-[0_4px_10px_rgba(186,117,23,0.1)]">NB</button>
+                                    </div>
+                                    <button onClick={() => updateState({ phase: 'wicket_type' })} className="w-full h-12 rounded-xl mb-6 bg-gradient-to-r from-[#E24B4A] to-red-600 font-black uppercase text-xs tracking-[0.2em] shadow-lg shadow-red-500/30 text-white hover:opacity-90 transition-opacity">WICKET</button>
+                                    
+                                    <div className="flex items-center justify-between mb-3 px-1">
+                                        <div className="panel-title text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Recent Deliveries</div>
+                                        <div className="flex gap-2">
+                                            <button onClick={handleUndo} className="p-2 bg-gray-50 border border-gray-100 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" title="Undo Ball">
+                                                <RotateCcw size={14} />
+                                            </button>
+                                            <button onClick={() => updateState({ striker: state.nonStriker, nonStriker: state.striker })} className="p-2 bg-gray-50 border border-gray-100 rounded-lg text-emerald-600 hover:bg-[#E1F5EE] border-emerald-100 transition-colors" title="Swap Strike">
+                                                <ArrowLeftRight size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="ball-history flex gap-2 min-h-[36px] overflow-x-auto pb-2 custom-scrollbar">
+                                        {state.currentOverBalls.map((b, i) => (
+                                            <div key={i} className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-black border ${b === '4' ? 'bg-[#E6F1FB] text-[#185FA5] border-[#185FA5]/20' : b === '6' ? 'bg-[#EAF3DE] text-[#639922] border-[#639922]/20' : b === 'W' ? 'bg-[#FCEBEB] text-[#E24B4A] border-[#E24B4A]/20' : (b === 'Wd' || b === 'Nb') ? 'bg-[#FAEEDA] text-[#BA7517] border-[#BA7517]/20' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                                                {b}
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                                <ScoringButtons
-                                    onRecord={recordBall}
-                                    onWicket={() => updateState({ phase: 'wicket_type' })}
-                                    onUndo={handleUndo}
-                                    onSwap={() => updateState({ striker: state.nonStriker, nonStriker: state.striker })}
-                                />
+
+                                {/* At the Crease & Bowling Panel */}
+                                <div className="players-panel card-premium bg-white border border-gray-200 shadow-md shadow-gray-200/50">
+                                    <div className="step-header">
+                                        <Swords size={12} className="text-[#1D9E75]" />
+                                        <span className="text-[#085041]">At the Crease</span>
+                                    </div>
+                                    <div className="space-y-1">
+                                        {[state.striker, state.nonStriker].map((idx, i) => {
+                                            const p = state.batters[idx];
+                                            if (!p) return null;
+                                            return (
+                                                <div key={idx} className="flex justify-between items-center py-4 border-b border-gray-100 last:border-0">
+                                                    <div>
+                                                        <span className="text-sm font-black text-gray-800 uppercase tracking-tight">{p.name}</span>
+                                                        {i === 0 && <span className="w-2 h-2 rounded-full bg-[#1D9E75] inline-block ml-2 align-middle shadow-[0_0_8px_rgba(29,158,117,0.5)]"></span>}
+                                                    </div>
+                                                    <div className="flex gap-6 items-center">
+                                                        <div className="text-right flex items-baseline gap-1">
+                                                            <div className="text-lg font-black text-gray-800 leading-none">{p.r}</div>
+                                                            <div className="text-[9px] font-bold text-gray-400 tracking-widest uppercase">({p.b})</div>
+                                                        </div>
+                                                        <div className="text-right w-12">
+                                                            <div className="text-base font-black text-[#1D9E75] leading-none">{((p.r / (p.b || 1)) * 100).toFixed(1)}</div>
+                                                            <div className="text-[7px] font-black text-gray-400 tracking-widest uppercase mt-0.5">SR</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    
+                                    <div className="mt-4 pt-4 border-t border-gray-100">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="step-header !mb-0 text-[#BA7517]">
+                                                <Zap size={12} className="text-[#BA7517] fill-[#BA7517]/20" />
+                                                <span className="text-gray-500 tracking-tight truncate max-w-[120px]">BOWLING — <span className="text-[#085041]">{state.bowlers[state.currentBowlerIdx]?.name || '—'}</span></span>
+                                            </div>
+                                            <span className="text-[10px] font-black text-[#BA7517] uppercase tracking-widest bg-[#FAEEDA] px-2 py-1 rounded-md">{state.bowlers[state.currentBowlerIdx] ? (state.bowlers[state.currentBowlerIdx].r / ((state.bowlers[state.currentBowlerIdx].balls || 1) / 6)).toFixed(2) : '0.00'} ECO</span>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            <div className="bg-gray-50 border border-gray-100 rounded-xl py-3 text-center">
+                                                <div className="text-sm font-black text-gray-700">{state.bowlers[state.currentBowlerIdx]?.overs || 0}.{state.bowlers[state.currentBowlerIdx]?.balls % 6 || 0}</div>
+                                                <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">Overs</div>
+                                            </div>
+                                            <div className="bg-gray-50 border border-gray-100 rounded-xl py-3 text-center">
+                                                <div className="text-sm font-black text-gray-700">{state.bowlers[state.currentBowlerIdx]?.r || 0}</div>
+                                                <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">Runs</div>
+                                            </div>
+                                            <div className="bg-[#FCEBEB] border border-[#E24B4A]/10 rounded-xl py-3 text-center">
+                                                <div className="text-sm font-black text-[#E24B4A]">{state.bowlers[state.currentBowlerIdx]?.w || 0}</div>
+                                                <div className="text-[8px] font-bold text-[#E24B4A]/70 uppercase tracking-widest mt-1">Wkts</div>
+                                            </div>
+                                            <div className="bg-[#E1F5EE] border border-[#1D9E75]/10 rounded-xl py-3 text-center">
+                                                <div className="text-sm font-black text-[#1D9E75]">{state.bowlers[state.currentBowlerIdx]?.balls || 0}</div>
+                                                <div className="text-[8px] font-bold text-[#1D9E75]/70 uppercase tracking-widest mt-1">Balls</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
                         {activeTab === 'scorecard' && (
-                            <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <p className="text-center text-white/20 text-[10px] uppercase font-black tracking-widest py-12">Scorecard View Loading...</p>
+                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                {/* Current Innings Scorecard */}
+                                <div className="card-premium bg-white border border-gray-200 shadow-md shadow-gray-200/50 p-4">
+                                    <h3 className="text-[11px] font-black text-[#085041] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Batting</h3>
+                                    <div className="space-y-1">
+                                        {state.batters.filter(b => b.batting || b.out).map((b, i) => (
+                                            <div key={i} className="flex justify-between items-center py-2.5 border-b border-gray-50 last:border-0">
+                                                <div className="flex-1">
+                                                    <span className="text-sm font-bold text-gray-800">{b.name}</span>
+                                                    <div className="text-[8px] font-bold text-gray-400 tracking-widest uppercase mt-0.5">{b.out ? 'OUT' : 'NOT OUT'}</div>
+                                                </div>
+                                                <div className="flex gap-3 justify-end items-center mr-1">
+                                                    <div className="text-center w-8"><span className="text-[13px] font-black text-[#1D9E75]">{b.r}</span><span className="text-[8px] font-bold text-gray-400 block -mt-0.5">({b.b})</span></div>
+                                                    <div className="text-center w-6"><span className="text-xs font-bold text-gray-600">{b.fours}</span><span className="text-[7px] font-bold text-gray-400 block">4s</span></div>
+                                                    <div className="text-center w-6"><span className="text-xs font-bold text-gray-600">{b.sixes}</span><span className="text-[7px] font-bold text-gray-400 block">6s</span></div>
+                                                    <div className="text-center w-8"><span className="text-xs font-bold text-[#185FA5]">{b.b > 0 ? ((b.r/b.b)*100).toFixed(0) : '0'}</span><span className="text-[7px] font-bold text-gray-400 block">SR</span></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <h3 className="text-[11px] font-black text-[#BA7517] uppercase tracking-widest mb-3 mt-6 border-b border-gray-100 pb-2">Bowling</h3>
+                                    <div className="space-y-1">
+                                        {state.bowlers.filter(bw => bw.balls > 0).map((bw, i) => (
+                                            <div key={i} className="flex justify-between items-center py-2.5 border-b border-gray-50 last:border-0">
+                                                <div className="flex-1">
+                                                    <span className="text-sm font-bold text-gray-800">{bw.name}</span>
+                                                    <div className="text-[8px] font-bold text-gray-400 tracking-widest uppercase mt-0.5">ECO {bw.balls > 0 ? (bw.r / (bw.balls/6)).toFixed(1) : '0.0'}</div>
+                                                </div>
+                                                <div className="flex gap-4 justify-end items-center mr-2">
+                                                    <div className="text-center w-8"><span className="text-[13px] font-black text-gray-700">{bw.overs}.{bw.balls%6}</span><span className="text-[7px] font-bold text-gray-400 block -mt-0.5">OV</span></div>
+                                                    <div className="text-center w-6"><span className="text-xs font-black text-gray-700">{bw.r}</span><span className="text-[7px] font-bold text-gray-400 block">R</span></div>
+                                                    <div className="text-center w-6"><span className="text-[13px] font-black text-[#E24B4A]">{bw.w}</span><span className="text-[7px] font-bold text-[#E24B4A]/70 block">W</span></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-5 pt-3 border-t border-dashed border-gray-200">
+                                        <div className="flex justify-between text-[10px] font-black text-gray-500 uppercase tracking-widest items-center">
+                                            <span>Extras</span>
+                                            <span className="text-gray-800 font-bold">{state.extras.wides + state.extras.noballs + state.extras.byes} <span className="text-gray-400 font-medium ml-1">(W {state.extras.wides}, NB {state.extras.noballs}, B {state.extras.byes})</span></span>
+                                        </div>
+                                        <div className="flex justify-between text-[11px] font-black text-gray-500 uppercase tracking-widest mt-2 items-center">
+                                            <span>Total Score</span>
+                                            <span className="text-[#1D9E75] text-[15px]">{state.runs}<span className="text-xs text-[#085041]">/{state.wickets}</span> <span className="text-[9px] text-gray-400 ml-1">({state.overNum}.{state.ballInOver} Ovs)</span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {state.inningsNum === 2 && state.inn1Batters && (
+                                    <div className="card-premium bg-gray-50 border border-gray-200 shadow-sm p-5 opacity-90 rounded-[1.5rem]">
+                                        <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 border-b border-gray-200 pb-2">1st Innings Summary</h3>
+                                        <div className="flex justify-between text-xs font-black text-gray-400 uppercase tracking-widest">
+                                            <span>Target Set</span>
+                                            <span className="text-[#185FA5] text-[13px]">{state.inn1Score + 1} <span className="text-[9px] text-gray-400 ml-1">Runs</span></span>
+                                        </div>
+                                        <div className="flex justify-between text-xs font-black text-gray-400 uppercase tracking-widest mt-2">
+                                            <span>1st Inn Score</span>
+                                            <span className="text-gray-700 text-[13px]">{state.inn1Score}-{state.inn1Wickets} <span className="text-[9px] text-gray-400 ml-1">({state.inn1Overs} Ovs)</span></span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         {activeTab === 'insights' && (
                             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="bg-[#0a1a0c] border border-emerald-500/20 rounded-[2rem] p-6">
+                                <div className="bg-white border border-gray-200 shadow-md shadow-emerald-500/5 rounded-[2.5rem] p-6">
                                     <div className="flex items-center gap-2 mb-4">
-                                        <Zap size={16} className="text-emerald-400 fill-emerald-400" />
-                                        <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400">Match Momentum</h3>
+                                        <Zap size={16} className="text-[#1D9E75] fill-[#1D9E75]" />
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-[#085041]">Match Momentum</h3>
                                     </div>
                                     <MomentumChart history={state.history_balls || []} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-white/5 border border-white/10 rounded-3xl p-4">
-                                        <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">Pressure Index</p>
-                                        <p className="text-xl font-black text-white">{Math.min(100, (state.runs / (state.overNum + state.ballInOver / 6 || 1) * 10).toFixed(0))}</p>
+                                    <div className="bg-[#F8FAFC] border border-gray-100 rounded-[2rem] p-5 text-center shadow-sm">
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Pressure Index</p>
+                                        <p className="text-3xl font-black text-[#E24B4A]">{Math.min(100, (state.runs / (state.overNum + state.ballInOver / 6 || 1) * 10).toFixed(0))}</p>
                                     </div>
-                                    <div className="bg-white/5 border border-white/10 rounded-3xl p-4">
-                                        <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">Win Probability</p>
-                                        <p className="text-xl font-black text-emerald-400">{state.win_probability || 50}%</p>
+                                    <div className="bg-[#E1F5EE] border border-[#1D9E75]/20 rounded-[2rem] p-5 text-center shadow-sm">
+                                        <p className="text-[9px] font-black text-[#1D9E75] uppercase tracking-widest mb-1.5">Win Probability</p>
+                                        <p className="text-3xl font-black text-[#085041]">{state.win_probability || 50}%</p>
                                     </div>
                                 </div>
                             </div>
@@ -1858,17 +2054,18 @@ export default function ScoringDashboard() {
                         {activeTab === 'commentary' && (
                             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <div className="flex items-center gap-2 px-1">
-                                    <Zap size={14} className="text-amber-500 fill-amber-500" />
-                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Live Commentary</h3>
+                                    <Zap size={14} className="text-[#1D9E75] fill-[#1D9E75]/20" />
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Live Commentary</h3>
                                 </div>
                                 <div className="space-y-2">
+                                    {commentary?.length === 0 && <p className="text-center text-[10px] font-black text-gray-300 uppercase tracking-widest py-8">No Commentary Expected</p>}
                                     {(commentary || []).slice(0, 10).map((comm, i) => (
-                                        <div key={i} className={`p-4 rounded-2xl border transition-all ${i === 0 ? 'bg-amber-500/5 border-amber-500/20' : 'bg-white/5 border-white/10 opacity-60'}`}>
-                                            <div className="flex justify-between items-start mb-1">
-                                                <span className="text-[10px] font-black bg-white/10 text-white/40 px-2 py-0.5 rounded-md">{comm.ball}</span>
-                                                <span className="text-[10px] font-black text-white/20">{comm.runs} R</span>
+                                        <div key={i} className={`p-4 rounded-[1.5rem] border transition-all shadow-sm ${i === 0 ? 'bg-[#E1F5EE] border-[#1D9E75]/30' : 'bg-white border-gray-100 opacity-80'}`}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${i === 0 ? 'bg-[#1D9E75]/10 text-[#085041]' : 'bg-gray-100 text-gray-500'}`}>{comm.ball}</span>
+                                                <span className={`text-[10px] font-black ${i === 0 ? 'text-[#1D9E75]' : 'text-gray-400'}`}>{comm.runs} R</span>
                                             </div>
-                                            <p className="text-[11px] font-bold text-white/80 leading-relaxed">{comm.text}</p>
+                                            <p className={`text-xs font-bold leading-snug ${i === 0 ? 'text-[#085041]' : 'text-gray-600'}`}>{comm.text}</p>
                                         </div>
                                     ))}
                                 </div>

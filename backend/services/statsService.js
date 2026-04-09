@@ -137,7 +137,9 @@ class StatsService {
             }
 
             const playerIds = Object.keys(playerStats);
-            const users = await User.find({ _id: { $in: playerIds } });
+            const mongoose = require('mongoose');
+            const validPlayerIds = playerIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+            const users = await User.find({ _id: { $in: validPlayerIds } });
             const userMap = new Map(users.map(u => [u._id.toString(), u]));
 
             const bulkOps = [];

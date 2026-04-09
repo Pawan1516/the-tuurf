@@ -17,6 +17,7 @@ const {
 const Worker = require('../models/Worker');
 const { generateBookingReport, createPDF } = require('../services/pdfReport');
 const { analyzeBookingAndGenerateMessage, getAIInsights } = require('../services/aiService');
+const Team = require('../models/Team');
 
 const formatTime12h = (t) => {
   if (!t) return '';
