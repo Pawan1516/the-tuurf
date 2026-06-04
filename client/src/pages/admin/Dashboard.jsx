@@ -143,20 +143,21 @@ const AdminDashboard = () => {
         <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
             <AdminSidebar user={user} logout={logout} mobileOpen={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
 
-      <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
-        {/* BI Style Top Bar */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
-            <div className="flex items-center gap-8">
+    <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+    {/* BI Style Top Bar */}
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-4 min-w-0">
                 {/* Mobile sidebar toggle */}
                 <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-2 mr-3 bg-slate-50 rounded-md">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
                 </button>
-                <div>
-                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
-                        <BarChart3 className="text-emerald-600" size={26} /> 
-                        Operational Intelligence <span className="text-slate-400">/ Executive Hub</span>
+                <div className="min-w-0">
+                    <h1 className="text-lg sm:text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3 truncate">
+                        <BarChart3 className="text-emerald-600" size={22} /> 
+                        <span className="truncate">Operational Intelligence</span>
+                        <span className="hidden sm:inline text-slate-400 font-normal">/ Executive Hub</span>
                     </h1>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Platform Performance Analytics v4.2</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Platform Performance</p>
                 </div>
             </div>
 
@@ -191,17 +192,17 @@ const AdminDashboard = () => {
             </div>
         </header>
 
-        <div className="max-w-[1600px] mx-auto p-10 space-y-10">
+            <div className="max-w-[1600px] mx-auto p-4 sm:p-10 space-y-8">
             
             {/* KPI Summary Matrix */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
                 {[
                     { label: 'Total Revenue', value: `₹${stats?.totalRevenue.toLocaleString()}`, trend: '+14.2%', icon: <Zap className="text-emerald-500" />, color: 'blue' },
                     { label: 'Node Bookings', value: stats?.totalBookings, trend: '+8.1%', icon: <Calendar className="text-amber-500" />, color: 'amber' },
                     { label: 'Active Users', value: stats?.totalUsers?.toLocaleString() || '0', trend: '+12.4%', icon: <Users className="text-emerald-500" />, color: 'indigo' },
                     { label: 'Efficiency', value: stats ? `${Math.round(((stats.statusBreakdown.confirmed || 0) / (stats.totalBookings || 1)) * 100)}%` : '0%', trend: 'Nominal', icon: <Activity className="text-emerald-500" />, color: 'emerald' }
                 ].map((kpi, idx) => (
-                    <div key={idx} className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group overflow-hidden relative">
+                    <div key={idx} className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all group overflow-hidden relative">
                         <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform duration-700">
                             {kpi.icon}
                         </div>
@@ -214,7 +215,7 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{kpi.label}</p>
-                        <h3 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter tabular-nums">{kpi.value}</h3>
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 uppercase tracking-tighter tabular-nums">{kpi.value}</h3>
                     </div>
                 ))}
             </div>

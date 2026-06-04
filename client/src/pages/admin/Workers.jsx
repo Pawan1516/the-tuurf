@@ -32,6 +32,7 @@ import {
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
 import AdminSidebar from '../../components/AdminSidebar';
+import AdminLayout from '../../components/AdminLayout';
 
 const AdminWorkers = () => {
   const navigate = useNavigate();
@@ -103,52 +104,8 @@ const AdminWorkers = () => {
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
-      <AdminSidebar user={user} logout={logout} />
-
-      <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
-        {/* BI Style Top Bar */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
-            <div className="flex items-center gap-8">
-                <div>
-                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
-                        <Briefcase className="text-emerald-600" size={26} /> 
-                        Personnel Registry <span className="text-slate-400">/ Operational Assets</span>
-                    </h1>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Human Resource Intelligence v4.2</p>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-6">
-                <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
-                    <div className="px-4 py-1.5 border-r border-slate-200">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
-                        <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
-                    </div>
-                    <div className="px-4 py-1.5">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Registry Synchronization</p>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                            <span className="text-[10px] font-black text-emerald-600 uppercase">Live Biometrics</span>
-                        </div>
-                    </div>
-                </div>
-                <button
-                  onClick={() => setShowForm(!showForm)}
-                  className={`px-8 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl transition-all flex items-center gap-3 active:scale-95 ${
-                    showForm 
-                    ? 'bg-slate-900 text-white shadow-slate-950/20' 
-                    : 'bg-emerald-600 text-white shadow-emerald-500/20'
-                  }`}
-                >
-                  {showForm ? <X size={18} /> : <UserPlus size={18} />}
-                  {showForm ? 'Abort Enrollment' : 'Enroll Operative'}
-                </button>
-            </div>
-        </header>
-
-        <div className="max-w-[1600px] mx-auto p-10 space-y-10">
+    return (
+        <AdminLayout title="Personnel Registry" subtitle="/ Operational Assets">
             
             {/* Personnel KPI Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
@@ -302,11 +259,10 @@ const AdminWorkers = () => {
                 </div>
             </div>
 
-        </div>
+                </div>
 
-      </main>
-    </div>
-  );
+        </AdminLayout>
+    );
 };
 
 export default AdminWorkers;

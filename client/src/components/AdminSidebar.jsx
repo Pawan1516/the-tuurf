@@ -49,9 +49,9 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
     return (
         <>
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex w-96 bg-white/70 backdrop-blur-2xl border-r border-white/5 flex-col sticky top-0 h-screen z-50 animate-in fade-in slide-in-from-left duration-700">
+        <aside className="hidden lg:flex w-72 bg-white/70 backdrop-blur-2xl border-r border-white/5 flex-col sticky top-0 h-screen z-50 animate-in fade-in slide-in-from-left duration-700">
             {/* Logo Section - Hub Protocol */}
-            <div className="p-10 border-b border-white/5/50 flex items-center gap-5">
+            <div className="p-6 border-b border-white/5/50 flex items-center gap-4">
                 <div className="bg-white p-3 rounded-[1.5rem] shadow-2xl relative group">
                     <img 
                         src="/logo.png" 
@@ -67,12 +67,12 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
             </div>
 
             {/* Navigation Section - Operational Flow */}
-            <div className="flex-1 p-8 space-y-1.5 overflow-y-auto no-scrollbar">
+            <div className="flex-1 p-6 space-y-1.5 overflow-y-auto no-scrollbar">
                 {/* Admin Profile Mini-Card - High Visibility */}
-                <div className="p-8 bg-white rounded-[2.5rem] border border-white/5 mb-8 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
+                <div className="p-6 bg-white rounded-2xl border border-white/5 mb-6 shadow-sm relative overflow-hidden group hover:scale-[1.01] transition-transform duration-300">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full"></div>
                     <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.3em] mb-2 relative z-10">Command Access</p>
-                    <h3 className="text-xl font-black text-black uppercase truncate relative z-10 tracking-tighter leading-none">{user?.name || 'God Mode'}</h3>
+                        <h3 className="text-lg font-black text-black uppercase truncate relative z-10 tracking-tighter leading-none">{user?.name || 'God Mode'}</h3>
                     <div className="flex items-center gap-2 mt-3 relative z-10">
                         <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
                         <p className="text-[9px] font-bold text-black/40 uppercase tracking-widest">Protocol Active</p>
@@ -86,7 +86,7 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
                         <Link
                             key={item.to}
                             to={item.to}
-                            className={`w-full flex items-center justify-between px-8 py-5 rounded-[2rem] transition-all group ${
+                            className={`w-full flex items-center justify-between px-6 py-3 rounded-lg transition-all group ${
                                 isActive
                                 ? 'bg-emerald-600 text-black shadow-[0_20px_40px_-5px_rgba(16,185,129,0.3)]'
                                 : 'text-zinc-400 hover:bg-white hover:text-black'
@@ -94,7 +94,7 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
                         >
                             <div className="flex items-center gap-4">
                                 <Icon size={20} className={isActive ? 'text-black' : 'text-zinc-300 group-hover:text-emerald-500 transition-colors'} />
-                                <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
+                                <span className="text-sm font-bold uppercase tracking-wide">{item.label}</span>
                             </div>
                             {isActive && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                         </Link>
@@ -103,14 +103,14 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
             </div>
 
             {/* Bottom Actions */}
-            <div className="p-6 border-t border-gray-50 bg-white/50">
+            <div className="p-4 border-t border-gray-50 bg-white/50">
                 <button 
                     onClick={handleLogout} 
-                    className="w-full flex items-center justify-between p-5 rounded-2xl bg-gray-900 text-black hover:bg-white transition-all group shadow-xl shadow-black/10"
+                    className="w-full flex items-center justify-between p-3 rounded-lg bg-red-600 text-white hover:opacity-95 transition-all group"
                 >
                     <div className="flex items-center gap-3">
                         <LogOut size={18} className="text-emerald-400" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Terminate Session</span>
+                        <span className="text-sm font-black uppercase tracking-widest">Logout</span>
                     </div>
                     <ChevronRight size={14} className="opacity-30 group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -120,8 +120,8 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
             {/* Mobile Drawer */}
             <div className={`lg:hidden fixed inset-0 z-[60] ${mobileOpen ? 'block' : 'hidden'}`} role="dialog" aria-modal="true">
                 <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-                <div className={`absolute left-0 top-0 bottom-0 w-80 bg-white/95 backdrop-blur-lg border-r border-white/5 shadow-xl transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform`}> 
-                    <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                <div className={`absolute left-0 top-0 bottom-0 w-full sm:w-80 bg-white/98 backdrop-blur-lg border-r border-white/5 shadow-xl transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform`} aria-label="Admin menu"> 
+                    <div className="p-4 border-b border-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <img src="/logo.png" alt="Logo" className="h-8" />
                             <div>
@@ -140,10 +140,10 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
                             const isActive = location.pathname === item.to;
                             const Icon = item.icon;
                             return (
-                                <Link key={item.to} to={item.to} onClick={onClose} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg mb-2 transition-all ${isActive ? 'bg-emerald-600 text-black' : 'text-zinc-500 hover:bg-slate-50'}`}>
+                                <Link key={item.to} to={item.to} onClick={onClose} className={`w-full flex items-center justify-between px-4 py-4 rounded-lg mb-2 transition-all ${isActive ? 'bg-emerald-600 text-black' : 'text-zinc-600 hover:bg-slate-50'}`}>
                                     <div className="flex items-center gap-3">
-                                        <Icon size={18} />
-                                        <span className="text-sm font-bold uppercase tracking-widest">{item.label}</span>
+                                        <Icon size={20} />
+                                        <span className="text-base font-black uppercase tracking-wide">{item.label}</span>
                                     </div>
                                     {isActive && <div className="w-2 h-2 bg-white rounded-full" />}
                                 </Link>
