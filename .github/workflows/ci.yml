@@ -20,7 +20,11 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install root deps
         run: |
-          if [ -f package.json ]; then npm ci; fi
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "No root package-lock.json; skipping npm ci"
+          fi
       - name: Lint client
         run: |
           if [ -f client/package.json ]; then cd client && npm ci && npm run lint || true; fi
