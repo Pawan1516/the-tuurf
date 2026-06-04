@@ -70,6 +70,7 @@ const AdminDashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
   const [loading, setLoading] = useState(true);
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [activityLogs, setActivityLogs] = useState([]);
 
   // AI Analyst State
@@ -139,13 +140,17 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
-      <AdminSidebar user={user} logout={logout} />
+        <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+            <AdminSidebar user={user} logout={logout} mobileOpen={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
 
       <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
         {/* BI Style Top Bar */}
         <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
             <div className="flex items-center gap-8">
+                {/* Mobile sidebar toggle */}
+                <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-2 mr-3 bg-slate-50 rounded-md">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
+                </button>
                 <div>
                     <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
                         <BarChart3 className="text-emerald-600" size={26} /> 
