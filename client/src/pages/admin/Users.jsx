@@ -238,8 +238,7 @@ const AdminUsers = () => {
                     </div>
                  </div>
             </div>
-            </div>
-      </AdminLayout>
+         </AdminLayout>
    );
 };
 

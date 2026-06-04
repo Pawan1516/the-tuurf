@@ -259,8 +259,6 @@ const AdminWorkers = () => {
                 </div>
             </div>
 
-                </div>
-
         </AdminLayout>
     );
 };

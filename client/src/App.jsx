@@ -11,6 +11,7 @@ import SessionManager from './components/SessionManager';
 import MobileNav from './components/MobileNav';
 import CricBotWidget from './components/CricBotWidget';
 import SplashScreen from './components/SplashScreen';
+import AdminLayout from './components/AdminLayout';
 import {
   Zap, Home, Calendar, Activity, Trophy, Users, User,
   Search, Bell, Menu, X, ChevronDown, MapPin, Phone,
@@ -431,20 +432,20 @@ function App() {
                   <Route path="/worker/report" element={<ProtectedRoute allowedRoles={['worker']}><WorkerReport /></ProtectedRoute>} />
 
                   {/* Protected: Admin */}
-                  <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-                  <Route path="/admin/operations" element={<ProtectedRoute allowedRoles={['admin']}><OperationsDashboard /></ProtectedRoute>} />
-                  <Route path="/admin/booking-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><BookingDashboard /></ProtectedRoute>} />
-                  <Route path="/admin/slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminSlots /></ProtectedRoute>} />
+                  <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/operations" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><OperationsDashboard /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/booking-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><BookingDashboard /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminSlots /></AdminLayout></ProtectedRoute>} />
                   <Route path="/admin/bookings" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookings /></ProtectedRoute>} />
                   <Route path="/admin/workers" element={<ProtectedRoute allowedRoles={['admin']}><AdminWorkers /></ProtectedRoute>} />
-                  <Route path="/admin/report" element={<ProtectedRoute allowedRoles={['admin']}><AdminReport /></ProtectedRoute>} />
-                  <Route path="/admin/booked-slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookedSlots /></ProtectedRoute>} />
-                  <Route path="/admin/bookings/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookingDetail /></ProtectedRoute>} />
-                  <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
+                  <Route path="/admin/report" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminReport /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/booked-slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminBookedSlots /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/bookings/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminBookingDetail /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
                   <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
-                  <Route path="/admin/scanner" element={<ProtectedRoute allowedRoles={['admin']}><AdminScanner /></ProtectedRoute>} />
-                  <Route path="/admin/strategy" element={<ProtectedRoute allowedRoles={['admin']}><StrategyHub /></ProtectedRoute>} />
-                  <Route path="/admin/cms" element={<ProtectedRoute allowedRoles={['admin']}><CMSHub /></ProtectedRoute>} />
+                  <Route path="/admin/scanner" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminScanner /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/strategy" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><StrategyHub /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/cms" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><CMSHub /></AdminLayout></ProtectedRoute>} />
                   <Route path="/cricket-analytics" element={<ProtectedRoute allowedRoles={['admin']}><CricketAnalyticsDashboard /></ProtectedRoute>} />
 
                   {/* Fallback */}
