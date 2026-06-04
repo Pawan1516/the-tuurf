@@ -1,6 +1,7 @@
 import axios from 'axios';
 // API configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001/api"; // backend runs on port 5001
+// Priority: REACT_APP_API_URL (CRA) -> NEXT_PUBLIC_API_URL (Next) -> runtime same-origin /api
+const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.origin}/api` : 'http://localhost:5001/api');
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
