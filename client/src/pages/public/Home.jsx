@@ -75,7 +75,7 @@ const Home = () => {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-4xl font-bold text-blue-600">🏟️ The Turf</h1>
+          <h1 className="text-4xl font-bold text-emerald-600">🏟️ The Turf</h1>
           <p className="text-gray-600 mt-2">Book your perfect sports slot</p>
         </div>
       </header>
@@ -84,13 +84,13 @@ const Home = () => {
       <main className="container mx-auto px-4 py-12">
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
           </div>
         ) : (
           <>
             {/* Today's Schedule Section */}
             {sortedTodaySlots.length > 0 && (
-              <div className="mb-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-lg p-8">
+              <div className="mb-12 bg-gradient-to-r from-emerald-600 to-emerald-600 text-white rounded-lg shadow-lg p-8">
                 <div className="mb-6">
                   <h2 className="text-3xl font-bold mb-2">📅 Today's Booking Schedule</h2>
                   <p className="text-blue-100">{today} • {sortedTodaySlots.length} hourly slots available</p>
@@ -145,8 +145,11 @@ const Home = () => {
                             <td className="px-4 py-3 text-center">
                               {status === 'free' ? (
                                 <button
-                                  onClick={() => navigate(`/book/${slot._id}`)}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+                                  onClick={() => {
+  const id = slot._id || slot.id;
+  if (id) navigate(`/book/${id}`);
+}}
+                                  className="bg-emerald-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
                                 >
                                   Book Now
                                 </button>
@@ -186,11 +189,11 @@ const Home = () => {
             </div>
 
             {/* Slots Grid */}
-            <div className="space-y-8">
+            <div id="slots" className="space-y-8">
               {Object.entries(groupedSlots).map(([date, daySlots]) => (
                 <div key={date} className="bg-white rounded-lg shadow p-6">
                   <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    <Calendar className="mr-2 text-blue-600" />
+                    <Calendar className="mr-2 text-emerald-600" />
                     {date}
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -241,3 +244,6 @@ const Home = () => {
 };
 
 export default Home;
+
+
+

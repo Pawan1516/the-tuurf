@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children, allowedRoles, requiresPremium }) => {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
-                <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Authenticating Presence...</p>
             </div>
         );
@@ -51,3 +51,6 @@ const ProtectedRoute = ({ children, allowedRoles, requiresPremium }) => {
 };
 
 export default ProtectedRoute;
+
+
+

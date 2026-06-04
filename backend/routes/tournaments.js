@@ -1,79 +1,91 @@
 const express = require('express');
 const router = express.Router();
 const Tournament = require('../models/Tournament');
-const verifyToken = require('../middleware/verifyToken');
-const roleGuard = require('../middleware/roleGuard');
+const Team = require('../models/Team');
+const Match = require('../models/Match');
 
-/**
- * @route   POST /api/tournaments
- * @desc    Create a new tournament
- * @access  Private (ADMIN)
- */
-router.post('/', verifyToken, roleGuard(['ADMIN', 'SUPER_ADMIN']), async (req, res) => {
+// List Tournaments
+router.get('/list', async (req, res) => {
     try {
-        const { name, format, start_date, end_date, entry_fee, prize_pool } = req.body;
-
-        if (!name || !format || !start_date) {
-            return res.status(400).json({ success: false, message: 'Tournament specs required.' });
-        }
-
-        const tournament = new Tournament({
-            name,
-            format,
-            start_date,
-            end_date,
-            entry_fee,
-            prize_pool
-        });
-
-        await tournament.save();
-        res.status(201).json({ success: true, tournament });
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
-/**
- * @route   GET /api/tournaments
- * @desc    Get all active tournaments
- * @access  Public
- */
-router.get('/', async (req, res) => {
-    try {
-        const tournaments = await Tournament.find({ status: { $ne: 'Cancelled' } }).sort({ start_date: 1 });
+        const tournaments = await Tournament.find().populate('organizer').sort({ createdAt: -1 });
         res.json({ success: true, tournaments });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-/**
- * @route   POST /api/tournaments/:id/register
- * @desc    Register a team for a tournament
- * @access  Private (CAPTAIN)
- */
-router.post('/:id/register', verifyToken, roleGuard(['CAPTAIN', 'ADMIN']), async (req, res) => {
+// Create Tournament
+router.post('/create', async (req, res) => {
     try {
-        const { team_id } = req.body;
+        const tournament = new Tournament(req.body);
+        await tournament.save();
+        res.json({ success: true, tournament });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Register Team to Tournament
+router.post('/:id/register-team', async (req, res) => {
+    try {
+        const { teamId } = req.body;
         const tournament = await Tournament.findById(req.params.id);
         
-        if (!tournament) return res.status(404).json({ success: false, message: 'Arena variant not found.' });
-        if (tournament.status !== 'Upcoming' && tournament.status !== 'Registration Open') {
-            return res.status(400).json({ success: false, message: 'Registry window is closed for this tournament.' });
+        if (tournament.registeredTeams.length >= tournament.totalTeams) {
+            return res.status(400).json({ success: false, message: "Tournament full" });
+        }
+        
+        tournament.registeredTeams.push({ team_id: teamId });
+        await tournament.save();
+        res.json({ success: true, tournament });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Schedule Matches (League - Round Robin)
+router.post('/:id/schedule', async (req, res) => {
+    try {
+        const tournament = await Tournament.findById(req.params.id);
+        if (tournament.matchType !== 'league') return res.status(400).json({ message: "Only league scheduling supported for now." });
+
+        const teams = tournament.registeredTeams.map(t => t.team_id);
+        const matches = [];
+
+        for (let i = 0; i < teams.length; i++) {
+            for (let j = i + 1; j < teams.length; j++) {
+                const match = new Match({
+                    title: `${tournament.name}: Match ${matches.length + 1}`,
+                    tournament: tournament._id,
+                    team_a: { team_id: teams[i] },
+                    team_b: { team_id: teams[j] },
+                    overs: tournament.oversPerMatch,
+                    status: 'Pending'
+                });
+                await match.save();
+                matches.push(match._id);
+            }
         }
 
-        // Check if already registered
-        const isRegistered = tournament.teams.find(t => t.team_id.toString() === team_id);
-        if (isRegistered) return res.status(400).json({ success: false, message: 'Team already rostered for this event.' });
-
-        tournament.teams.push({
-            team_id,
-            entry_fee_paid: false,
-            registration_status: 'Pending'
-        });
-
+        tournament.matches = matches;
+        tournament.status = 'ongoing';
         await tournament.save();
-        res.json({ success: true, message: 'Team variant registration request received.' });
+        
+        res.json({ success: true, matches_count: matches.length });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Get Points Table
+router.get('/:id/points-table', async (req, res) => {
+    try {
+        const tournament = await Tournament.findById(req.params.id).populate('registeredTeams.team_id');
+        const sorted = tournament.registeredTeams.sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            return b.nrr - a.nrr;
+        });
+        res.json({ success: true, table: sorted });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

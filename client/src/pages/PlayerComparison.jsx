@@ -87,7 +87,7 @@ const PlayerComparison = () => {
                 {/* COMBATANTS SECTION */}
                 <div className="lg:col-span-4 space-y-8">
                     <div className="relative group">
-                         <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-blue-600 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                         <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-emerald-600 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
                          <div className="relative bg-slate-900 rounded-[2.5rem] p-8 border border-white/5 space-y-8">
                             {/* PLAYER 1 */}
                             <div className="flex items-center gap-6">
@@ -141,13 +141,13 @@ const PlayerComparison = () => {
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-6">
-                                    <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center border-2 border-blue-500/30 overflow-hidden relative">
+                                    <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center border-2 border-emerald-500/30 overflow-hidden relative">
                                         <button onClick={() => navigate(`/player/compare/${id}`)} className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 flex items-center justify-center text-[8px] font-black uppercase transition-all backdrop-blur-sm">Change</button>
-                                         {player2?.image ? <img src={player2.image} alt={player2.name} className="w-full h-full object-cover" /> : <span className="text-3xl font-black text-blue-500">{player2?.name?.charAt(0)}</span>}
+                                         {player2?.image ? <img src={player2.image} alt={player2.name} className="w-full h-full object-cover" /> : <span className="text-3xl font-black text-emerald-500">{player2?.name?.charAt(0)}</span>}
                                     </div>
                                     <div>
                                         <h2 className="text-2xl font-black tracking-tight">{player2?.name}</h2>
-                                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded-full">Opponent</span>
+                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-full">Opponent</span>
                                     </div>
                                 </div>
                             )}
@@ -162,7 +162,7 @@ const PlayerComparison = () => {
                             </div>
                             <div className="bg-slate-900 p-6 rounded-3xl border border-white/5 text-center">
                                 <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">Form Rating</p>
-                                <p className="text-3xl font-black text-blue-500">{((player1?.stats?.batting?.average || 0) > (player2?.stats?.batting?.average || 0)) ? 'A+' : 'A'}</p>
+                                <p className="text-3xl font-black text-emerald-500">{((player1?.stats?.batting?.average || 0) > (player2?.stats?.batting?.average || 0)) ? 'A+' : 'A'}</p>
                             </div>
                         </div>
                     )}
@@ -183,7 +183,7 @@ const PlayerComparison = () => {
                                     <h3 className="text-xs font-black text-emerald-500 uppercase tracking-[0.3em] flex items-center gap-3"><Zap size={16} /> Power Comparison</h3>
                                     <div className="flex items-center gap-4 text-[10px] font-black uppercase">
                                         <div className="flex items-center gap-2"><div className="w-2 h-2 bg-emerald-500 rounded-full"></div> {player1.name}</div>
-                                        <div className="flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 rounded-full"></div> {player2.name}</div>
+                                        <div className="flex items-center gap-2"><div className="w-2 h-2 bg-emerald-500 rounded-full"></div> {player2.name}</div>
                                     </div>
                                 </div>
                                 
@@ -193,14 +193,14 @@ const PlayerComparison = () => {
                                             <PolarGrid stroke="#ffffff10" />
                                             <PolarAngleAxis dataKey="subject" stroke="#ffffff40" fontSize={12} fontWeight={900} />
                                             <PolarRadiusAxis angle={30} domain={[0, 100]} hide />
-                                            <Radar name={player1.name} dataKey="A" stroke="#10b981" fill="#10b981" fillOpacity={0.4} />
+                                            <Radar name={player1.name} dataKey="A" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.4} />
                                             <Radar name={player2.name} dataKey="B" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
                                             <Tooltip content={({ active, payload }) => {
                                                 if (active && payload && payload.length) {
                                                     return (
                                                         <div className="bg-slate-800 p-4 rounded-2xl shadow-2xl border border-white/10 text-[10px] font-black uppercase">
                                                             <p className="text-emerald-400 mb-2">{payload[0].name}: {payload[0].value}</p>
-                                                            <p className="text-blue-400">{payload[1].name}: {payload[1].value}</p>
+                                                            <p className="text-emerald-400">{payload[1].name}: {payload[1].value}</p>
                                                         </div>
                                                     )
                                                 }
@@ -225,13 +225,13 @@ const PlayerComparison = () => {
                                                         return (
                                                             <div className="bg-slate-800 p-4 rounded-2xl shadow-2xl border border-white/10 text-[10px] font-black uppercase">
                                                                 <p className="text-emerald-400 mb-1">{payload[0].value}</p>
-                                                                <p className="text-blue-400">{payload[1].value}</p>
+                                                                <p className="text-emerald-400">{payload[1].value}</p>
                                                             </div>
                                                         )
                                                     }
                                                     return null;
                                                 }} />
-                                                <Bar dataKey="p1" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                                <Bar dataKey="p1" fill="#3B82F6" radius={[4, 4, 0, 0]} />
                                                 <Bar dataKey="p2" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                                             </BarChart>
                                         </ResponsiveContainer>
@@ -252,7 +252,7 @@ const PlayerComparison = () => {
                                                 <div className="flex justify-between items-center text-[10px] font-black uppercase italic">
                                                     <span className="text-emerald-400">{item.p1}</span>
                                                     <span className="text-white/10 px-2 font-not-italic">vs</span>
-                                                    <span className="text-blue-400">{item.p2}</span>
+                                                    <span className="text-emerald-400">{item.p2}</span>
                                                 </div>
                                             </div>
                                         ))}
@@ -268,3 +268,6 @@ const PlayerComparison = () => {
 };
 
 export default PlayerComparison;
+
+
+

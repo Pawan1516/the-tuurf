@@ -127,7 +127,108 @@ const createPDF = (bookings, stats) => {
   return doc;
 };
 
+const createSingleBookingReceipt = (booking) => {
+  const doc = new PDFDocument({ margin: 50 });
+
+  // Add Arena Branding
+  const logoPath = path.join(__dirname, '../../client/public/logo.png');
+  if (fs.existsSync(logoPath)) {
+    doc.image(logoPath, 50, 45, { width: 50 });
+  }
+
+  // Header Title
+  doc
+    .fillColor('#000000')
+    .fontSize(20)
+    .font('Helvetica-Bold')
+    .text('THE TURF', 110, 57);
+
+  doc
+    .fontSize(10)
+    .font('Helvetica')
+    .text('Official Booking Receipt', 110, 80);
+
+  // Divider
+  doc.moveTo(50, 110).lineTo(550, 110).stroke('#E2E8F0');
+
+  // Receipt Meta Info
+  doc.fontSize(10).font('Helvetica-Bold').text('Receipt ID:', 50, 130);
+  doc.font('Helvetica').text(booking.receiptId || `TRF-${new Date().getFullYear()}-${booking._id.toString().slice(-4).toUpperCase()}`, 150, 130);
+
+  doc.font('Helvetica-Bold').text('Date Generated:', 350, 130);
+  doc.font('Helvetica').text(new Date().toLocaleString(), 450, 130);
+
+  // Subject Information
+  doc.moveDown(3);
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#2563EB').text('SUBJECT INFORMATION');
+  doc.moveDown(0.5);
+  doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold').text('Name:', 50, doc.y);
+  doc.font('Helvetica').text(booking.userName, 150, doc.y - 12);
+  
+  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').text('Mobile:', 50, doc.y);
+  doc.font('Helvetica').text(booking.userPhone, 150, doc.y - 12);
+
+  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').text('Location:', 50, doc.y);
+  doc.font('Helvetica').text(booking.turfLocation || 'Primary Arena', 150, doc.y - 12);
+
+  // Operational Node Matrix
+  doc.moveDown(2);
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#2563EB').text('OPERATIONAL NODE MATRIX');
+  doc.moveDown(0.5);
+  
+  const slotDate = booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-GB') : 'N/A';
+  const slotTime = booking.timeSlot || (booking.slot ? `${booking.slot.startTime} - ${booking.slot.endTime}` : 'N/A');
+
+  doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold').text('Deployment Date:', 50, doc.y);
+  doc.font('Helvetica').text(slotDate, 150, doc.y - 12);
+
+  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').text('Time Window:', 50, doc.y);
+  doc.font('Helvetica').text(slotTime, 150, doc.y - 12);
+
+  // Financial Protocol
+  doc.moveDown(2);
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#2563EB').text('FINANCIAL PROTOCOL');
+  doc.moveDown(0.5);
+
+  const advPayment = booking.paymentType === 'advance' ? booking.amount : 0;
+  const totalAmount = booking.totalAmount || booking.amount;
+  const balance = totalAmount - advPayment;
+
+  doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold').text('Total Fee:', 50, doc.y);
+  doc.font('Helvetica').text(`₹${totalAmount.toLocaleString()}`, 150, doc.y - 12);
+
+  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').text('Paid Amount:', 50, doc.y);
+  doc.font('Helvetica').text(`₹${booking.amount.toLocaleString()}`, 150, doc.y - 12);
+
+  if (balance > 0) {
+    doc.moveDown(0.5);
+    doc.font('Helvetica-Bold').fillColor('#B91C1C').text('Pending Balance:', 50, doc.y);
+    doc.font('Helvetica').text(`₹${balance.toLocaleString()}`, 150, doc.y - 12);
+  }
+
+  doc.moveDown(0.5);
+  doc.fillColor('#000000').font('Helvetica-Bold').text('Payment Status:', 50, doc.y);
+  doc.font('Helvetica').text(booking.paymentStatus?.toUpperCase() || 'PENDING', 150, doc.y - 12);
+
+  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').text('Transaction ID:', 50, doc.y);
+  doc.font('Helvetica').text(booking.transactionId || booking.paymentId || 'N/A', 150, doc.y - 12);
+
+  // Footer
+  doc.moveDown(4);
+  doc.fontSize(8).fillColor('#64748B').text('This is a computer-generated document. Transaction verified via Neural Registry node.', { align: 'center' });
+  doc.text('© 2026 THE TURF INFRASTRUCTURE GROUP', { align: 'center' });
+
+  return doc;
+};
+
 module.exports = {
   generateBookingReport,
-  createPDF
+  createPDF,
+  createSingleBookingReceipt
 };
+

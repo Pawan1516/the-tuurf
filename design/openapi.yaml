@@ -1,0 +1,159 @@
+openapi: 3.0.3
+info:
+  title: TheTurf Cricket Scoring API
+  version: 1.0.0
+  description: OpenAPI spec for core match and scoring endpoints
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/matches/verify-qr:
+    post:
+      summary: Verify match QR token and return match metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyQR'
+      responses:
+        '200':
+          description: Verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+  /api/matches/{id}/toss:
+    post:
+      summary: Submit toss result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TossPayload'
+      responses:
+        '200':
+          description: Toss recorded
+  /api/matches/{id}/start:
+    post:
+      summary: Start match (set openers and change match state to LIVE)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartMatchPayload'
+      responses:
+        '200':
+          description: Match started
+  /api/matches/{id}/balls:
+    post:
+      summary: Persist a ball event (also available via socket)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BallEvent'
+      responses:
+        '201':
+          description: Ball recorded
+  /api/matches/{id}/undo:
+    post:
+      summary: Undo last ball
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Undo applied
+components:
+  schemas:
+    VerifyQR:
+      type: object
+      required: [matchId, token]
+      properties:
+        matchId:
+          type: string
+        token:
+          type: string
+    Match:
+      type: object
+      properties:
+        _id:
+          type: string
+        status:
+          type: string
+        venue:
+          type: string
+        teams:
+          type: array
+          items:
+            type: object
+    TossPayload:
+      type: object
+      properties:
+        winner:
+          type: string
+        method:
+          type: string
+          enum: [heads, tails, manual]
+    StartMatchPayload:
+      type: object
+      properties:
+        overs:
+          type: integer
+        strikerId:
+          type: string
+        nonStrikerId:
+          type: string
+        bowlerId:
+          type: string
+    BallEvent:
+      type: object
+      properties:
+        inning:
+          type: integer
+        over:
+          type: integer
+        ball:
+          type: integer
+        runs:
+          type: integer
+        extra:
+          type: string
+          description: one of wide,no-ball,bye,leg-bye or empty
+        wicket:
+          type: object
+          nullable: true
+          properties:
+            type:
+              type: string
+            playerId:
+              type: string

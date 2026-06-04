@@ -17,11 +17,25 @@ import {
     Loader2,
     MessageCircle,
     Database,
-    Clock
+    Clock,
+    Phone,
+    MapPin,
+    User,
+    ArrowUpRight,
+    Send,
+    AlertTriangle,
+    CreditCard,
+    ShieldAlert,
+    CircleDot,
+    Maximize2,
+    Layers,
+    Cpu,
+    ArrowRight,
+    Download
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
-import { bookingsAPI, adminAPI } from '../../api/client';
-import MobileNav from '../../components/MobileNav';
+import { bookingsAPI, adminAPI, receiptsAPI } from '../../api/client';
+import AdminSidebar from '../../components/AdminSidebar';
 
 const AdminBookingDetail = () => {
     const { id } = useParams();
@@ -39,20 +53,8 @@ const AdminBookingDetail = () => {
     const [error, setError] = useState('');
     const [aiInsights, setAiInsights] = useState(null);
     const [fetchingAI, setFetchingAI] = useState(false);
-    const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
-
-    const navItems = [
-        { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-        { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-        { to: '/admin/workers', label: 'Workers', icon: Briefcase },
-        { to: '/admin/report', label: 'Report', icon: PieChart },
-    ];
-
-    const handleLogout = () => {
-        logout();
-        navigate('/admin/login');
-    };
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [isDownloading, setIsDownloading] = useState(false);
 
     const fetchBooking = useCallback(async () => {
         const fetchAIInsights = async () => {
@@ -72,8 +74,6 @@ const AdminBookingDetail = () => {
             const response = await bookingsAPI.getById(id);
             setBooking(response.data.booking);
             setUserName(response.data.booking.userName);
-
-            // Also fetch AI insights
             await fetchAIInsights();
         } catch (err) {
             console.error('Error fetching booking:', err);
@@ -82,21 +82,11 @@ const AdminBookingDetail = () => {
         }
     }, [id]);
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const { data } = await adminAPI.getSettings();
-                if (data.success) {
-                    setSettings(prev => ({ ...prev, ...data.settings }));
-                }
-            } catch (err) {
-                console.error('Settings fetch error:', err);
-            }
-        };
-        fetchSettings();
-    }, []);
-
-    useEffect(() => { fetchBooking(); }, [id, fetchBooking]);
+    useEffect(() => { 
+        fetchBooking(); 
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, [id, fetchBooking]);
 
     const handleStatusChange = async (newStatus) => {
         setUpdatingStatus(true);
@@ -109,10 +99,10 @@ const AdminBookingDetail = () => {
             } else {
                 await fetchBooking();
             }
-            setMsgSuccess(`✅ Booking ${newStatus}! WhatsApp sent to user.`);
+            setMsgSuccess(`Registry Node recalibrated to ${newStatus}.`);
             setTimeout(() => setMsgSuccess(''), 4000);
         } catch (error) {
-            setError('Failed to update status. Try again.');
+            setError('Registry update protocol failure.');
         } finally {
             setUpdatingStatus(false);
         }
@@ -125,7 +115,7 @@ const AdminBookingDetail = () => {
             setBooking(response.data.booking);
             return true;
         } catch (error) {
-            setError('Payment verification failed.');
+            setError('Payment verification failure.');
             return false;
         } finally {
             setUpdatingStatus(false);
@@ -134,18 +124,17 @@ const AdminBookingDetail = () => {
 
     const handleSendWhatsApp = async () => {
         if (!['confirmed', 'rejected', 'hold'].includes(booking.bookingStatus)) {
-            setError('Can only send WhatsApp for confirmed, rejected, or hold bookings.');
+            setError('Invalid status for transmission.');
             return;
         }
         setSendingMsg(true);
         setError('');
-        setMsgSuccess('');
         try {
             await bookingsAPI.resendNotification(id);
-            setMsgSuccess(`📱 WhatsApp sent to ${booking.userPhone}!`);
+            setMsgSuccess(`WhatsApp alert transmission complete.`);
             setTimeout(() => setMsgSuccess(''), 4000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to send WhatsApp message.');
+            setError('Transmission failure.');
         } finally {
             setSendingMsg(false);
         }
@@ -155,14 +144,13 @@ const AdminBookingDetail = () => {
         if (!customMsg.trim()) return;
         setSendingCustomMsg(true);
         setError('');
-        setMsgSuccess('');
         try {
             await adminAPI.sendMessage(booking.userPhone, customMsg, booking._id);
-            setMsgSuccess(`📱 Custom message sent to ${booking.userPhone}!`);
+            setMsgSuccess(`Custom transmission payload broadcasted.`);
             setCustomMsg('');
             setTimeout(() => setMsgSuccess(''), 4000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to send custom message.');
+            setError('Custom transmission protocol failure.');
         } finally {
             setSendingCustomMsg(false);
         }
@@ -175,300 +163,369 @@ const AdminBookingDetail = () => {
             setBooking(response.data.booking);
             setEditingName(false);
         } catch (error) {
-            setError('Failed to update name.');
+            setError('Identity update protocol failure.');
         }
     };
 
-    const NavItem = ({ to, label, icon: Icon, active = false }) => (
-        <Link
-            to={to}
-            className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-                ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-                : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
-        >
-            <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
-            <span className="text-xs font-black uppercase tracking-widest">{label}</span>
-        </Link>
-    );
-
-    // Status badge helper
-    const statusBadge = (status) => {
-        const map = {
-            confirmed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-            rejected: 'bg-red-100 text-red-700 border-red-200',
-            hold: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-            pending: 'bg-gray-100 text-gray-600 border-gray-200'
-        };
-        return map[status] || map.pending;
+    const handleDownloadReceipt = async () => {
+        try {
+            setIsDownloading(true);
+            const response = await receiptsAPI.download(id);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `receipt-${id.slice(-6)}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setMsgSuccess('Official Receipt downloaded.');
+            setTimeout(() => setMsgSuccess(''), 4000);
+        } catch (err) {
+            console.error('Download Protocol Failure:', err);
+            setError('Failed to transmit receipt payload.');
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
-    if (loading) return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Loading Booking...</p>
+
+    if (loading && !booking) return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+            <div className="relative">
+                <div className="w-24 h-24 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                <Database className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Accessing Node Registry...</p>
         </div>
     );
 
     if (!booking) return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
-            <h2 className="text-2xl font-black text-gray-900 mb-2 uppercase">Booking Not Found</h2>
-            <button onClick={() => navigate('/admin/bookings')} className="mt-8 bg-emerald-600 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest">
-                Back to Bookings
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-12 text-center">
+            <h2 className="text-3xl font-black text-slate-900 mb-8 uppercase italic tracking-tighter">Registry Node Null</h2>
+            <button onClick={() => navigate('/admin/bookings')} className="bg-slate-950 text-white px-12 py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">
+                Return to Registry hub
             </button>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
-            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+        <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+            <AdminSidebar user={user} logout={logout} />
 
-            
+            <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+                {/* BI Style Top Bar */}
+                <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        <div>
+                            <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                                <Database className="text-emerald-600" size={26} /> 
+                                Node Audit <span className="text-slate-400">/ Registry Investigation</span>
+                            </h1>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Transactional Integrity Registry v5.1</p>
+                        </div>
+                    </div>
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto pb-24">
-                <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-                    <button onClick={() => navigate('/admin/bookings')} className="flex items-center gap-2 md:gap-3 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 transition-colors">
-                        <ArrowLeft size={16} /> <span className="hidden md:inline">Return to Registry</span> <span className="md:hidden">Back</span>
-                    </button>
-                    <div className="flex flex-col items-end">
-                        <h2 className="text-sm md:text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">Booking #{booking._id?.slice(-4)}</h2>
-                        <span className={`mt-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2 md:px-3 py-1 rounded-full border ${statusBadge(booking.bookingStatus)}`}>
-                            {booking.bookingStatus}
-                        </span>
-                        {booking.aiRiskLevel && (
-                            <span className={`mt-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2 md:px-3 py-1 rounded-full border ${booking.aiRiskLevel === 'LOW' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                                booking.aiRiskLevel === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                                    'bg-red-100 text-red-700 border-red-200 animate-pulse'
-                                }`}>
-                                RISK: {booking.aiRiskLevel}
-                            </span>
-                        )}
+                    <div className="flex items-center gap-6">
+                        <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+                            <div className="px-4 py-1.5 border-r border-slate-200">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
+                                <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                            </div>
+                            <div className="px-4 py-1.5">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Audit Status</p>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase">Synchronized</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={() => navigate('/admin/bookings')} className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm flex items-center gap-3 px-6">
+                            <ArrowLeft size={18} />
+                            <span className="text-[10px] font-black uppercase tracking-widest italic">Registry Hub</span>
+                        </button>
                     </div>
                 </header>
 
-                <div className="p-4 md:p-10 space-y-6 md:space-y-10">
-                    {/* Alerts */}
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 text-[10px] md:text-xs font-bold px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl flex items-center gap-3">
-                            <XCircle size={16} /> {error}
+                <div className="max-w-[1600px] mx-auto p-10 space-y-12">
+                    
+                    {/* Header Protocol Banners */}
+                    <div className="flex flex-col xl:flex-row gap-8 items-start justify-between">
+                        <div className="flex flex-col gap-6">
+                            <div className="flex items-center gap-6">
+                                <h2 className="text-5xl font-black text-slate-950 tracking-tighter uppercase italic leading-none">
+                                    Booking <span className="text-emerald-600">#{booking._id?.slice(-6).toUpperCase()}</span>
+                                </h2>
+                                <div className="flex gap-4">
+                                    <StatusBadge status={booking.bookingStatus} />
+                                    {booking.aiRiskLevel && <RiskBadge level={booking.aiRiskLevel} />}
+                                </div>
+                            </div>
+                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] italic border-l-4 border-emerald-600 pl-6">Neural Transactional Audit & Behavioral Intel Layer</p>
                         </div>
-                    )}
-                    {msgSuccess && (
-                        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] md:text-xs font-bold px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl flex items-center gap-3">
-                            <CheckCircle size={16} /> {msgSuccess}
+                        
+                        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-200 flex items-center gap-8">
+                            <div className="flex flex-col">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Temporal Node Deployment</p>
+                                <div className="flex items-center gap-4">
+                                    <Calendar className="text-emerald-600" size={20} />
+                                    <p className="text-xl font-black text-slate-900 italic tabular-nums">{booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-GB') : '---'}</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={handleDownloadReceipt}
+                                disabled={isDownloading}
+                                className="bg-slate-950 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-emerald-600 transition-all active:scale-95 flex items-center gap-3 italic disabled:opacity-50"
+                            >
+                                {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                                Download Official Receipt
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Alerts Registry */}
+                    {(error || msgSuccess) && (
+                        <div className={`p-8 rounded-[2.5rem] flex items-center gap-6 border-4 shadow-2xl animate-fade-in ${error ? 'bg-rose-600 border-white text-white' : 'bg-emerald-600 border-white text-white'}`}>
+                            <div className="bg-white/20 p-4 rounded-2xl shadow-lg">
+                                {error ? <ShieldAlert size={24} /> : <CheckCircle size={24} />}
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80 mb-1 italic">Registry Broadcast</p>
+                                <p className="text-lg font-black uppercase tracking-tight italic leading-none">{error || msgSuccess}</p>
+                            </div>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-                        <div className="lg:col-span-2 space-y-6 md:space-y-8">
-                            {/* Customer Info Card */}
-                            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
-                                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 md:mb-10">Customer Info</h3>
-                                <div className="space-y-6 md:space-y-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                        <div className="lg:col-span-8 space-y-12">
+                            {/* Subject Identity Registry */}
+                            <div className="bg-white rounded-[4rem] p-12 border border-slate-200 shadow-sm group relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-12 opacity-[0.01] text-slate-900 pointer-events-none group-hover:scale-110 transition-all duration-1000">
+                                   <User size={350} />
+                                </div>
+                                <div className="flex items-center gap-8 border-b border-slate-100 pb-10 mb-12 relative z-10">
+                                    <div className="p-5 bg-slate-950 text-white rounded-[1.5rem] shadow-xl"><User size={28} /></div>
                                     <div>
-                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Legally Designated Name</p>
+                                        <h3 className="text-2xl font-black uppercase tracking-tighter text-slate-900 italic">Subject <span className="text-emerald-600">Identity registry</span></h3>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1.5 italic">Verified Operational Identity nodes</p>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-12 relative z-10">
+                                    <div className="bg-slate-50 p-10 rounded-[3rem] border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 italic ml-2">Designated Identity Name</p>
                                         {editingName ? (
-                                            <div className="flex flex-col gap-2">
-                                                <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} className="bg-gray-50 border-2 border-emerald-500 p-3 md:p-4 rounded-xl outline-none font-black text-gray-900 w-full text-sm md:text-base" />
-                                                <div className="flex gap-2">
-                                                    <button onClick={handleUserNameUpdate} className="flex-1 bg-emerald-600 text-white px-4 md:px-6 py-2 rounded-xl font-black uppercase text-[10px]">Save</button>
-                                                    <button onClick={() => { setUserName(booking.userName); setEditingName(false); }} className="flex-1 bg-gray-100 text-gray-500 px-4 md:px-6 py-2 rounded-xl font-black uppercase text-[10px]">Cancel</button>
+                                            <div className="flex gap-6 items-center">
+                                                <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} className="bg-white border-2 border-emerald-600 p-6 rounded-[1.8rem] outline-none font-black text-slate-900 w-full text-2xl uppercase italic transition-all shadow-xl shadow-emerald-500/10" />
+                                                <div className="flex gap-4">
+                                                    <button onClick={handleUserNameUpdate} className="bg-emerald-600 text-white p-6 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95"><CheckCircle size={24} /></button>
+                                                    <button onClick={() => { setUserName(booking.userName); setEditingName(false); }} className="bg-white text-slate-400 p-6 rounded-2xl border border-slate-200 active:scale-95"><XCircle size={24} /></button>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="flex justify-between items-center group">
-                                                <p className="text-xl md:text-3xl font-black text-gray-900 tracking-tight uppercase leading-none">{booking.userName}</p>
-                                                <button onClick={() => setEditingName(true)} className="text-emerald-600 p-2 hover:bg-emerald-50 rounded-lg"><Edit3 size={20} /></button>
+                                            <div className="flex justify-between items-center group/name">
+                                                <h4 className="text-4xl font-black text-slate-950 tracking-tighter uppercase italic leading-none group-hover/name:text-emerald-600 transition-colors duration-500">{booking.userName}</h4>
+                                                <button onClick={() => setEditingName(true)} className="p-5 bg-white text-slate-400 hover:bg-slate-950 hover:text-white rounded-2xl transition-all shadow-sm active:scale-95"><Edit3 size={22} /></button>
                                             </div>
                                         )}
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                                        <div>
-                                            <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Secure Line</p>
-                                            <p className="text-sm md:text-lg font-black text-gray-900">+91 {booking.userPhone}</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                        <div className="p-10 bg-slate-50 rounded-[3rem] border border-slate-100 group/ic hover:bg-white hover:border-emerald-600 transition-all duration-500">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 italic ml-1">Secure Line Transmission</p>
+                                            <div className="flex items-center gap-5">
+                                                <div className="p-3 bg-white rounded-xl text-emerald-600 shadow-sm"><Phone size={18} /></div>
+                                                <p className="text-2xl font-black text-slate-900 italic tabular-nums group-hover/ic:text-emerald-600 transition-colors">+91 {booking.userPhone}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Site Location</p>
-                                            <p className="text-sm md:text-lg font-black text-gray-900">{booking.turfLocation || 'Primary Unit'}</p>
+                                        <div className="p-10 bg-slate-50 rounded-[3rem] border border-slate-100 group/ic hover:bg-white hover:border-emerald-600 transition-all duration-500">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 italic ml-1">Assigned Deployment Site</p>
+                                            <div className="flex items-center gap-5">
+                                                <div className="p-3 bg-white rounded-xl text-emerald-600 shadow-sm"><MapPin size={18} /></div>
+                                                <p className="text-2xl font-black text-slate-900 italic uppercase group-hover/ic:text-emerald-600 transition-colors">{booking.turfLocation || 'Primary Arena'}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
-                                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 md:mb-10">Slot Matrix</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
+                            {/* Temporal Node Matrix */}
+                            <div className="bg-white rounded-[4rem] p-12 border border-slate-200 shadow-sm group relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-12 opacity-[0.01] text-slate-900 pointer-events-none group-hover:scale-110 transition-all duration-1000">
+                                   <Clock size={350} />
+                                </div>
+                                <div className="flex items-center gap-8 border-b border-slate-100 pb-10 mb-12 relative z-10">
+                                    <div className="p-5 bg-slate-950 text-white rounded-[1.5rem] shadow-xl"><Clock size={28} /></div>
                                     <div>
-                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Date</p>
-                                        <p className="text-xs md:text-lg font-black text-gray-900 leading-tight">
-                                            {booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'TBD'}
-                                        </p>
+                                        <h3 className="text-2xl font-black uppercase tracking-tighter text-slate-900 italic">Temporal <span className="text-emerald-600">Node Matrix</span></h3>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1.5 italic">Synchronized Schedule Nodes</p>
                                     </div>
-                                    <div>
-                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Time</p>
-                                        <p className="text-xs md:text-lg font-black text-emerald-600 leading-none">
-                                            {booking.slot?.startTime}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Slot Registry</p>
-                                        <p className="text-xs md:text-lg font-black text-gray-900 italic truncate leading-none">
-                                            #{booking.slot?._id?.slice(-4) || '---'}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[8px] md:text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 md:mb-2">Operative</p>
-                                        <p className="text-xs md:text-lg font-black text-gray-900 leading-none">{booking.slot?.assignedWorker?.name?.split(' ')[0] || 'Unassigned'}</p>
-                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-12 relative z-10">
+                                    <MatrixItem label="Deployment Date" value={booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '---'} />
+                                    <MatrixItem label="Operational Window" value={booking.slot?.startTime} highlight />
+                                    <MatrixItem label="Registry ID" value={`#NODE_${booking.slot?._id?.slice(-4).toUpperCase()}`} />
+                                    <MatrixItem label="Assigned Scorer" value={booking.slot?.assignedWorker?.name?.split(' ')[0] || 'Unassigned'} />
                                 </div>
                             </div>
 
-                            {/* AI INTELLIGENCE INTEL */}
-                            <div className="bg-emerald-950 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 text-white relative overflow-hidden group border border-white/5">
-                                <div className="absolute top-0 right-0 p-8 md:p-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                                    <Zap size={100} className="text-emerald-400" />
-                                </div>
-                                <div className="flex items-center gap-4 mb-6 md:mb-8">
-                                    <div className="bg-emerald-500/20 p-3 md:p-4 rounded-xl md:rounded-2xl border border-emerald-500/20">
-                                        <ShieldCheck className="text-emerald-400" size={24} />
+                            {/* Neural Behavioral Intelligence */}
+                            <div className="bg-slate-950 rounded-[4rem] p-12 text-white relative overflow-hidden group shadow-2xl shadow-slate-950/40">
+                                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-600/5 rounded-full blur-[120px] group-hover:bg-emerald-600/10 transition-all duration-1000"></div>
+                                <div className="flex items-center justify-between mb-12 relative z-10 border-b border-white/5 pb-10">
+                                    <div className="flex items-center gap-8">
+                                        <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 text-emerald-500 shadow-2xl backdrop-blur-xl group-hover:scale-110 transition-transform">
+                                            <Zap size={36} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none italic">Neural <span className="text-emerald-600">Behavioral Intel</span></h3>
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mt-2 italic">Automated Pattern Acquisition & Analytics</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="text-lg md:text-xl font-black tracking-tighter uppercase leading-none">Behavioral Intel</h3>
-                                        <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mt-1">AI Pattern Analysis</p>
+                                    <div className="hidden md:flex items-center gap-4 bg-white/5 px-6 py-2 rounded-full border border-white/5">
+                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Analysis Live</span>
                                     </div>
                                 </div>
 
                                 {fetchingAI ? (
-                                    <div className="flex items-center gap-3 text-emerald-400/60 font-black uppercase text-[8px] md:text-[10px]">
-                                        <Loader2 size={14} className="animate-spin" /> Scanning Repository...
+                                    <div className="flex flex-col items-center justify-center py-20 gap-6 relative z-10">
+                                        <Loader2 size={40} className="animate-spin text-emerald-500/40" />
+                                        <p className="text-[11px] font-black uppercase italic tracking-[0.4em] text-slate-600">Executing Neural Scan Protocol...</p>
                                     </div>
                                 ) : aiInsights ? (
-                                    <div className="space-y-6 md:space-y-8">
-                                        <div className="bg-white/5 rounded-2xl p-4 md:p-6 border border-white/5 backdrop-blur-sm">
-                                            <p className="text-emerald-400/60 text-[8px] md:text-[10px] font-black uppercase tracking-widest mb-2 md:mb-3">Executive Summary</p>
-                                            <p className="text-xs md:text-sm font-medium leading-relaxed italic text-emerald-50">"{aiInsights.insights}"</p>
+                                    <div className="space-y-12 relative z-10">
+                                        <div className="p-12 bg-white/5 rounded-[3rem] border border-white/5 backdrop-blur-3xl relative overflow-hidden group/intel">
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-600 shadow-[0_0_15px_rgba(37,99,235,0.5)]"></div>
+                                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em] mb-6 italic">Strategic Executive Synthesis</p>
+                                            <p className="text-xl font-medium leading-relaxed italic text-blue-50/90 font-serif border-l-2 border-white/5 pl-8">"{aiInsights.insights}"</p>
                                         </div>
-                                        <div className="grid grid-cols-3 gap-3 md:gap-4">
-                                            <div className="bg-white/5 p-3 md:p-4 rounded-xl border border-white/5">
-                                                <p className="text-emerald-400/40 text-[7px] md:text-[8px] font-black uppercase mb-1">Total</p>
-                                                <p className="text-base md:text-xl font-black">{aiInsights.stats?.total || 0}</p>
-                                            </div>
-                                            <div className="bg-white/5 p-3 md:p-4 rounded-xl border border-white/5">
-                                                <p className="text-emerald-500/40 text-[7px] md:text-[8px] font-black uppercase mb-1">Conf</p>
-                                                <p className="text-base md:text-xl font-black text-emerald-400">{aiInsights.stats?.confirmed || 0}</p>
-                                            </div>
-                                            <div className="bg-white/5 p-3 md:p-4 rounded-xl border border-white/5">
-                                                <p className="text-red-400/40 text-[7px] md:text-[8px] font-black uppercase mb-1">Flops</p>
-                                                <p className="text-base md:text-xl font-black text-red-400">{aiInsights.stats?.noShow || 0}</p>
-                                            </div>
+                                        <div className="grid grid-cols-3 gap-8">
+                                            <IntelStat label="Registry volume" value={aiInsights.stats?.total || 0} />
+                                            <IntelStat label="Confirmed nodes" value={aiInsights.stats?.confirmed || 0} color="text-emerald-500" />
+                                            <IntelStat label="Registry collapse" value={aiInsights.stats?.noShow || 0} color="text-rose-500" />
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-emerald-400/40 text-[8px] md:text-[10px] font-black uppercase italic">No behavioral data retrieved from node.</p>
+                                    <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[3rem] relative z-10">
+                                        <AlertTriangle size={32} className="text-slate-800 mx-auto mb-6" />
+                                        <p className="text-slate-700 text-[11px] font-black uppercase tracking-[0.4em] italic">Waiting for temporal behavioral acquisition payload.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
 
-                        {/* Right Panel — Actions */}
-                        <div className="space-y-6">
-                            {/* Payment Card */}
-                            <div className="bg-emerald-950 rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 text-white shadow-2xl shadow-emerald-950/20">
-                                <h3 className="text-[10px] font-black text-emerald-400/60 uppercase tracking-[0.2em] mb-6">Payment Status</h3>
-                                <div className="space-y-5">
-                                    <div className="bg-white/5 border border-white/5 p-4 md:p-5 rounded-2xl">
-                                        <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">{booking.paymentType === 'full' ? 'Full Fee Paid' : 'Advance Paid (40%)'}</p>
-                                        <p className="text-2xl md:text-4xl font-black tracking-tighter">₹{booking.amount?.toLocaleString()}</p>
+                        {/* Audit Actions Panel */}
+                        <div className="lg:col-span-4 space-y-12">
+                            {/* Financial Registry Matrix */}
+                            <div className="bg-slate-900 rounded-[3.5rem] p-10 text-white shadow-2xl shadow-slate-950/40 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-600/10 blur-[60px] rounded-full group-hover:bg-emerald-600/20 transition-all duration-1000"></div>
+                                <div className="flex items-center gap-5 mb-10 border-b border-white/5 pb-8 relative z-10">
+                                    <div className="p-4 bg-white/5 text-emerald-500 rounded-2xl shadow-xl border border-white/10 backdrop-blur-md"><CreditCard size={24} /></div>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tighter italic leading-none">Financial <span className="text-emerald-600">Matrix Registry</span></h3>
+                                </div>
+
+                                <div className="space-y-8 relative z-10">
+                                    <div className="p-10 bg-white/5 border border-white/5 rounded-[2.5rem] flex flex-col gap-6 group/price hover:bg-white/10 transition-all duration-500">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest italic">{booking.paymentType === 'full' ? 'Full Deployment Fee' : 'Advance Reservation payload'}</p>
+                                            <Maximize2 size={16} className="text-white/20" />
+                                        </div>
+                                        <div className="flex items-end justify-between">
+                                           <h4 className="text-6xl font-black tracking-tighter italic tabular-nums leading-none group-hover/price:text-emerald-500 transition-colors">₹{booking.amount?.toLocaleString()}</h4>
+                                           <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic opacity-40">INR NODE</div>
+                                        </div>
                                         {booking.paymentType === 'advance' && (
-                                            <p className="text-[10px] font-black text-yellow-400 uppercase tracking-widest mt-2 flex justify-between">
-                                                <span>Pending Matrix:</span>
-                                                <span>₹{(booking.totalAmount - booking.amount)?.toLocaleString()}</span>
-                                            </p>
+                                            <div className="pt-6 border-t border-white/5 flex justify-between items-center mt-2">
+                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Pending Matrix Balance</span>
+                                                <span className="text-2xl font-black text-amber-500 italic tabular-nums">₹{(booking.totalAmount - booking.amount)?.toLocaleString()}</span>
+                                            </div>
                                         )}
                                     </div>
-                                    <div className="bg-white/5 border border-white/5 p-4 md:p-5 rounded-2xl">
-                                        <p className="text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Payment UTR No.</p>
-                                        <p className="text-xs md:text-sm font-black tracking-widest break-all text-white">
-                                            {booking.transactionId || booking.paymentId || 'Pending'}
-                                        </p>
+                                    
+                                    <div className="p-8 bg-white/5 border border-white/5 rounded-[2rem] space-y-4 hover:bg-white/10 transition-all duration-500">
+                                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] italic ml-1">Transaction Identity Hash (UTR)</p>
+                                        <div className="p-4 bg-black/40 rounded-xl font-mono text-[11px] font-black tracking-[0.2em] break-all text-emerald-400 tabular-nums border border-white/5">
+                                            {booking.transactionId || booking.paymentId || 'AWAITING_REGISTRY_Acquisition'}
+                                        </div>
                                     </div>
-                                    <div className={`p-4 rounded-xl border-2 text-center text-[8px] md:text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${booking.paymentStatus === 'verified' ? 'border-emerald-500 text-emerald-400' : booking.paymentStatus === 'submitted' ? 'border-purple-400 text-purple-400' : 'border-yellow-500 text-yellow-400'}`}>
-                                        {booking.paymentStatus === 'verified' && <ShieldCheck size={14} />}
-                                        {booking.paymentStatus === 'submitted' ? `STATUS: SUBMITTED` : booking.paymentStatus}
+
+                                    <div className={`p-6 rounded-[1.8rem] border-4 text-center text-[10px] font-black uppercase tracking-[0.3em] italic flex items-center justify-center gap-4 transition-all duration-500 ${
+                                        booking.paymentStatus === 'verified' ? 'border-emerald-600/30 bg-emerald-600/5 text-emerald-500' : 
+                                        booking.paymentStatus === 'submitted' ? 'border-amber-600/30 bg-amber-600/5 text-amber-500' : 
+                                        'border-white/10 bg-white/5 text-slate-500'
+                                    }`}>
+                                        <CircleDot size={12} className={booking.paymentStatus === 'submitted' ? 'animate-pulse' : ''} />
+                                        Registry Status: {booking.paymentStatus?.toUpperCase()}
                                     </div>
+
                                     {booking.paymentStatus === 'submitted' && (
-                                        <button onClick={handleVerifyPayment} disabled={updatingStatus} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                                            {updatingStatus ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-                                            Verify Payment
+                                        <button onClick={handleVerifyPayment} disabled={updatingStatus} className="w-full bg-emerald-600 hover:bg-white hover:text-emerald-600 text-white py-6 rounded-[1.8rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all flex items-center justify-center gap-4 italic">
+                                            {updatingStatus ? <Loader2 size={20} className="animate-spin" /> : <ShieldCheck size={20} />}
+                                            Validate Registry Node
                                         </button>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 border border-gray-100 shadow-xl space-y-3">
-                                <h3 className="text-[10px] md:text-xs font-black text-gray-900 uppercase tracking-[0.15em] mb-4 md:mb-6">System Protocol</h3>
+                            {/* Operational Protocol Execution */}
+                            <div className="bg-white rounded-[4rem] p-12 border border-slate-200 shadow-sm space-y-6 group">
+                                <div className="flex items-center gap-6 mb-10 border-b border-slate-100 pb-8">
+                                    <div className="p-4 bg-slate-950 text-white rounded-2xl shadow-xl transition-all duration-500 group-hover:bg-emerald-600"><Layers size={24} /></div>
+                                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter italic leading-none">Protocol <span className="text-emerald-600">Execution</span></h3>
+                                </div>
 
-                                {/* Confirm */}
-                                <button
-                                    onClick={() => handleStatusChange('confirmed')}
-                                    disabled={updatingStatus || booking.bookingStatus === 'confirmed'}
-                                    className="w-full bg-emerald-600 text-white py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1"
-                                >
-                                    {updatingStatus ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                    Finalize Slot
-                                </button>
+                                <div className="space-y-4">
+                                    <ProtocolButton 
+                                        onClick={() => handleStatusChange('confirmed')} 
+                                        active={booking.bookingStatus === 'confirmed'} 
+                                        loading={updatingStatus} 
+                                        label="Confirm Deployment" 
+                                        icon={<CheckCircle size={18} />}
+                                        color="blue"
+                                    />
+                                    <ProtocolButton 
+                                        onClick={() => handleStatusChange('rejected')} 
+                                        active={booking.bookingStatus === 'rejected'} 
+                                        loading={updatingStatus} 
+                                        label="Reject Entry" 
+                                        icon={<XCircle size={18} />}
+                                        color="rose"
+                                    />
+                                    <ProtocolButton 
+                                        onClick={() => handleStatusChange('hold')} 
+                                        active={booking.bookingStatus === 'hold'} 
+                                        loading={updatingStatus} 
+                                        label="Temporal Hold" 
+                                        icon={<Clock size={18} />}
+                                        color="amber"
+                                    />
+                                </div>
 
-                                {/* Reject */}
-                                <button
-                                    onClick={() => handleStatusChange('rejected')}
-                                    disabled={updatingStatus || booking.bookingStatus === 'rejected'}
-                                    className="w-full bg-red-50 text-red-600 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-red-100 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-red-200 active:border-b-0 active:translate-y-1"
-                                >
-                                    <XCircle size={16} />
-                                    Reject Entry
-                                </button>
-
-                                {/* Hold */}
-                                <button
-                                    onClick={() => handleStatusChange('hold')}
-                                    disabled={updatingStatus || booking.bookingStatus === 'hold'}
-                                    className="w-full bg-yellow-50 text-yellow-700 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-yellow-100 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-yellow-200 active:border-b-0 active:translate-y-1"
-                                >
-                                    <Clock size={16} />
-                                    Neutralize Hold
-                                </button>
-
-                                <div className="border-t border-gray-100 pt-3">
-                                    {/* Send WhatsApp */}
+                                <div className="pt-12 border-t border-slate-100 mt-10 space-y-8">
                                     <button
                                         onClick={handleSendWhatsApp}
                                         disabled={sendingMsg || !['confirmed', 'rejected', 'hold'].includes(booking.bookingStatus)}
-                                        className="w-full bg-[#25D366] text-white py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-[#1ebe5c] transition-all disabled:opacity-30 flex items-center justify-center gap-3 shadow-lg shadow-green-200"
+                                        className="w-full bg-[#25D366] text-white py-6 rounded-[1.8rem] font-black uppercase text-[11px] tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center gap-4 shadow-2xl shadow-green-500/20 italic"
                                     >
-                                        {sendingMsg ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
-                                        WhatsApp Alert
+                                        {sendingMsg ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                                        WhatsApp Alert transmission
                                     </button>
-                                    <p className="text-[8px] text-gray-400 text-center mt-2 font-medium">
-                                        Status alert to +91 {booking.userPhone}
-                                    </p>
-                                </div>
-
-                                <div className="border-t border-gray-100 pt-4 md:pt-6 mt-3 space-y-3 md:space-y-4">
-                                    <h4 className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Custom Broadcast</h4>
-                                    <textarea
-                                        value={customMsg}
-                                        onChange={(e) => setCustomMsg(e.target.value)}
-                                        placeholder="Transmit custom payload..."
-                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 text-[10px] md:text-xs font-medium outline-none focus:border-emerald-500 focus:bg-white transition-all min-h-[80px] md:min-h-[100px] resize-none"
-                                    />
-                                    <button
-                                        onClick={handleSendCustomWhatsApp}
-                                        disabled={sendingCustomMsg || !customMsg.trim()}
-                                        className="w-full bg-emerald-100 text-emerald-700 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-emerald-200 transition-all disabled:opacity-30 flex items-center justify-center gap-3 border-b-4 border-emerald-300 active:border-b-0 active:translate-y-1"
-                                    >
-                                        {sendingCustomMsg ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                                        Send Payload
-                                    </button>
+                                    
+                                    <div className="space-y-4">
+                                       <textarea
+                                          value={customMsg}
+                                          onChange={(e) => setCustomMsg(e.target.value)}
+                                          placeholder="INPUT CUSTOM BROADCAST PAYLOAD..."
+                                          className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-100 rounded-[1.8rem] p-8 text-[11px] font-black uppercase tracking-widest outline-none transition-all h-40 resize-none italic placeholder:text-slate-300 leading-relaxed"
+                                       />
+                                       <button
+                                          onClick={handleSendCustomWhatsApp}
+                                          disabled={sendingCustomMsg || !customMsg.trim()}
+                                          className="w-full bg-slate-950 text-white py-6 rounded-[1.8rem] font-black uppercase text-[11px] tracking-widest hover:bg-emerald-600 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-4 italic group/send"
+                                       >
+                                          {sendingCustomMsg ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} className="group-hover/send:translate-x-1 group-hover/send:-translate-y-1 transition-transform" />}
+                                          Execute Custom Broadcast
+                                       </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -476,6 +533,70 @@ const AdminBookingDetail = () => {
                 </div>
             </main>
         </div>
+    );
+};
+
+const StatusBadge = ({ status }) => {
+    const map = {
+        confirmed: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+        rejected: 'bg-rose-50 text-rose-600 border-rose-100',
+        hold: 'bg-amber-50 text-amber-600 border-amber-100',
+        pending: 'bg-blue-50 text-emerald-600 border-blue-100'
+    };
+    return (
+        <span className={`text-[10px] font-black uppercase tracking-[0.3em] px-6 py-2.5 rounded-full border shadow-sm italic flex items-center gap-2 ${map[status] || map.pending}`}>
+            <CircleDot size={10} className={status === 'pending' ? 'animate-pulse' : ''} />
+            {status}
+        </span>
+    );
+};
+
+const RiskBadge = ({ level }) => {
+    const map = {
+        LOW: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+        MEDIUM: 'bg-amber-50 text-amber-600 border-amber-100',
+        HIGH: 'bg-rose-50 text-rose-600 border-rose-100 animate-pulse'
+    };
+    return (
+        <span className={`text-[10px] font-black uppercase tracking-[0.3em] px-6 py-2.5 rounded-full border shadow-sm italic flex items-center gap-2 ${map[level] || map.LOW}`}>
+            <ShieldAlert size={12} />
+            RISK: {level}
+        </span>
+    );
+};
+
+const MatrixItem = ({ label, value, highlight }) => (
+    <div className="group/matrix">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 italic transition-colors group-hover/matrix:text-emerald-600">{label}</p>
+        <p className={`text-xl font-black uppercase italic tabular-nums leading-none transition-all group-hover/matrix:translate-x-1 ${highlight ? 'text-emerald-600 underline decoration-4 underline-offset-8 decoration-emerald-600/10' : 'text-slate-950'}`}>{value}</p>
+    </div>
+);
+
+const IntelStat = ({ label, value, color }) => (
+    <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5 hover:bg-white/10 transition-all duration-500 flex flex-col justify-center h-[140px] relative overflow-hidden group/is">
+        <div className="absolute top-0 right-0 p-4 opacity-[0.03] text-white group-hover/is:scale-125 transition-transform">
+            <Activity size={60} />
+        </div>
+        <p className="text-slate-500 text-[9px] font-black uppercase mb-3 italic tracking-[0.2em] relative z-10 leading-none">{label}</p>
+        <p className={`text-3xl font-black italic tabular-nums relative z-10 leading-none ${color || 'text-white'}`}>{value}</p>
+    </div>
+);
+
+const ProtocolButton = ({ onClick, active, loading, label, icon, color }) => {
+    const colors = {
+        blue: 'bg-emerald-600 hover:bg-blue-700 text-white shadow-emerald-500/20',
+        rose: 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20',
+        amber: 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-500/20'
+    };
+    return (
+        <button
+            onClick={onClick}
+            disabled={loading || active}
+            className={`w-full py-6 rounded-[1.8rem] font-black uppercase text-[11px] tracking-[0.2em] transition-all disabled:opacity-30 flex items-center justify-center gap-4 shadow-xl active:scale-95 italic ${active ? 'bg-slate-50 text-slate-300 shadow-none border border-slate-100' : colors[color]}`}
+        >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : icon}
+            {label}
+        </button>
     );
 };
 

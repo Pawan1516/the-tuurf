@@ -189,9 +189,9 @@ const BookingPage = () => {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6">
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
             <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Initializing Reservation Protocol...</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Initializing Reservation Protocol...</p>
         </div>
     );
 
@@ -199,19 +199,19 @@ const BookingPage = () => {
     const convenienceFee = calculatedPrice - courtFee;
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] pb-24">
+        <div className="min-h-screen bg-white pb-24">
             {/* Minimal Header for Flow */}
-            <div className="bg-white border-b border-gray-100 h-20 md:h-24 flex items-center px-4 md:px-6 sticky top-0 z-50">
+            <div className="bg-white/80 backdrop-blur-xl border-b border-zinc-100 h-20 md:h-24 flex items-center px-4 md:px-6 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-                    <button onClick={() => navigate('/')} className="flex items-center gap-2 md:gap-3 text-gray-400 hover:text-emerald-600 transition-all group">
-                        <div className="bg-gray-50 p-2 md:p-2.5 rounded-xl group-hover:bg-emerald-50 transition-colors">
+                    <button onClick={() => navigate('/')} className="flex items-center gap-2 md:gap-3 text-slate-400 hover:text-emerald-600 transition-all group">
+                        <div className="bg-white p-2 md:p-2.5 rounded-xl group-hover:bg-emerald-50 transition-colors">
                             <ArrowLeft size={18} />
                         </div>
                         <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em]">Abort Reservation</span>
                     </button>
                     <div className="flex items-center gap-3 md:gap-4">
                         <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse shadow-lg shadow-emerald-500/50"></div>
-                        <span className="text-[8px] md:text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Live Node Sync</span>
+                        <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Live Node Sync</span>
                     </div>
                 </div>
             </div>
@@ -225,36 +225,36 @@ const BookingPage = () => {
                             <div className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] w-fit">
                                 Milestone: Slot Reservation
                             </div>
-                            <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">
+                            <h1 className="text-3xl md:text-5xl font-black text-black tracking-tighter uppercase leading-none">
                                 Allocation <span className="text-emerald-600">Details</span>
                             </h1>
-                            <p className="text-xs md:text-sm text-gray-500 font-medium leading-relaxed max-w-sm">
+                            <p className="text-xs md:text-sm text-slate-400 font-medium leading-relaxed max-w-sm">
                                 System ready for slot assignment. Verify the temporal window and location identifiers before proceeding.
                             </p>
                         </div>
 
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex flex-col gap-3 md:gap-4 transition-transform hover:scale-[1.02]">
-                                    <div className="bg-emerald-100 p-3 rounded-2xl text-emerald-600 w-fit">
+                                <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 shadow-xl shadow-emerald-900/[0.02] flex flex-col gap-3 md:gap-4 transition-transform hover:scale-[1.02]">
+                                    <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600 w-fit">
                                         <Calendar size={24} />
                                     </div>
                                     <div>
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Target Date</p>
-                                        <p className="font-black text-gray-900 text-lg uppercase tracking-tight">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Date</p>
+                                        <p className="font-black text-black text-lg uppercase tracking-tight">
                                             {formData.date ? new Date(formData.date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'SELECT DATE'}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex flex-col gap-3 md:gap-4 transition-transform hover:scale-[1.02]">
-                                    <div className="bg-emerald-100 p-3 rounded-2xl text-emerald-600 w-fit">
+                                <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 shadow-xl shadow-emerald-900/[0.02] flex flex-col gap-3 md:gap-4 transition-transform hover:scale-[1.02]">
+                                    <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600 w-fit">
                                         <Clock size={24} />
                                     </div>
                                     <div>
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Temporal Window</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Temporal Window</p>
                                         <div className="flex items-center justify-between">
-                                            <p className="font-black text-gray-900 text-lg uppercase tracking-tight leading-none">
+                                            <p className="font-black text-black text-lg uppercase tracking-tight leading-none">
                                                 {formatTime12h(formData.startTime)} – {formatTime12h(formData.endTime)}
                                             </p>
                                             {formData.startTime && formData.endTime && (
@@ -272,36 +272,36 @@ const BookingPage = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.03] flex items-center gap-4 md:gap-6">
-                                <div className="bg-emerald-500/10 p-5 rounded-3xl text-emerald-600 border border-emerald-500/20">
-                                    <Zap size={28} className="fill-emerald-600/10" />
+                            <div className="bg-white p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-emerald-900/[0.03] flex items-center gap-4 md:gap-6">
+                                <div className="bg-emerald-600 p-5 rounded-3xl text-black shadow-lg shadow-emerald-200">
+                                    <Zap size={28} className="fill-white/20" />
                                 </div>
                                 <div>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Fee (Min-wise)</p>
-                                    <p className="text-3xl font-black text-gray-900 tracking-tighter leading-none">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Fee (Min-wise)</p>
+                                    <p className="text-3xl font-black text-black tracking-tighter leading-none">
                                         ₹{calculatedPrice.toLocaleString()}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] flex items-center justify-between transition-transform hover:scale-[1.01]">
+                            <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 shadow-xl shadow-emerald-900/[0.02] flex items-center justify-between transition-transform hover:scale-[1.01]">
                                 <div className="flex items-center gap-6">
-                                    <div className="bg-emerald-100 p-4 rounded-3xl text-emerald-600 shadow-inner">
+                                    <div className="bg-emerald-50 p-4 rounded-3xl text-emerald-600 shadow-inner">
                                         <MapPin size={28} />
                                     </div>
                                     <div>
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Venue Cluster</p>
-                                        <p className="font-black text-gray-900 text-xl uppercase tracking-tighter">{settings.TURF_LOCATION}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Venue Cluster</p>
+                                        <p className="font-black text-black text-xl uppercase tracking-tighter">{settings.TURF_LOCATION}</p>
                                         <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest mt-0.5">Arena One · Premier Surface</p>
                                     </div>
                                 </div>
                                 <div className="hidden md:block">
-                                    <Zap size={24} className="text-gray-100 fill-gray-100" />
+                                    <Zap size={24} className="text-zinc-100 fill-zinc-100" />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-[#1e293b] p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-emerald-950/20 text-white relative overflow-hidden">
+                        <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-emerald-950/20 text-black relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-6 opacity-10">
                                 <ShieldCheck size={140} className="text-emerald-400" />
                             </div>
@@ -309,27 +309,27 @@ const BookingPage = () => {
                                 <Zap size={18} className="fill-emerald-400" /> Arena Protocol v1.0
                             </div>
                             <h3 className="text-xl font-black uppercase tracking-tight mb-4 relative z-10">Encryption Active</h3>
-                            <p className="text-sm text-gray-400 leading-relaxed font-medium relative z-10">
+                            <p className="text-sm text-slate-400 leading-relaxed font-medium relative z-10">
                                 All reservation data is handled through our high-precision matching engine. Confirmation identifiers will be transmitted to your terminal via encrypted WhatsApp protocol.
                             </p>
                         </div>
                     </div>
 
                     {/* Right Column: Reservation Form */}
-                    <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] shadow-2xl shadow-emerald-950/5 p-5 md:p-12 border border-blue-50/20 relative">
+                    <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] shadow-2xl shadow-emerald-950/5 p-5 md:p-12 border border-emerald-50/20 relative">
                         <div className="mb-5 md:mb-12 flex items-center justify-between">
                             <div>
-                                <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tighter uppercase leading-none">Identity</h2>
-                                <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-2">Operator Information</p>
+                                <h2 className="text-2xl md:text-3xl font-black text-black tracking-tighter uppercase leading-none">Identity</h2>
+                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2">Operator Information</p>
                             </div>
-                            <div className="h-12 w-12 md:h-14 md:w-14 bg-gray-50 rounded-2xl flex items-center justify-center text-emerald-600 border border-gray-100">
+                            <div className="h-12 w-12 md:h-14 md:w-14 bg-white rounded-2xl flex items-center justify-center text-emerald-600 border border-zinc-100">
                                 <User size={24} />
                             </div>
                         </div>
 
                         {/* AI Agent Recommendation Banner */}
                         {(aiLoading || aiRecommendation) && (
-                            <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50 shadow-inner flex gap-4 items-start">
+                            <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100/50 shadow-inner flex gap-4 items-start">
                                 <div className="bg-emerald-100 p-2.5 rounded-xl shrink-0">
                                     <Sparkles size={20} className="text-emerald-600 animate-pulse" />
                                 </div>
@@ -353,17 +353,18 @@ const BookingPage = () => {
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Date</label>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Date</label>
                                         <input
                                             type="date"
                                             value={formData.date}
+                                            min={new Date().toISOString().split('T')[0]}
                                             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-6 rounded-[1.5rem] outline-none transition-all font-black text-sm text-gray-900 uppercase tracking-wider"
+                                            className="w-full bg-white border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-6 rounded-[1.5rem] outline-none transition-all font-black text-sm text-black uppercase tracking-wider"
                                             required
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Time Segment ({settings.TURF_OPEN_HOUR}:00 - {settings.TURF_CLOSE_HOUR}:00)</label>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Time Segment ({settings.TURF_OPEN_HOUR}:00 - {settings.TURF_CLOSE_HOUR}:00)</label>
                                         <div className="flex flex-col gap-2">
                                             <div className="flex gap-2">
                                                 <input
@@ -372,7 +373,7 @@ const BookingPage = () => {
                                                     max="23:00"
                                                     value={formData.startTime}
                                                     onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                                                    className="w-1/2 bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 md:p-6 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-gray-900 uppercase tracking-wider"
+                                                    className="w-1/2 bg-white border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 md:p-6 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-black uppercase tracking-wider"
                                                     required
                                                 />
                                                 <input
@@ -381,7 +382,7 @@ const BookingPage = () => {
                                                     max="23:00"
                                                     value={formData.endTime}
                                                     onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                                                    className="w-1/2 bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 md:p-6 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-gray-900 uppercase tracking-wider"
+                                                    className="w-1/2 bg-white border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 md:p-6 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-black uppercase tracking-wider"
                                                     required
                                                 />
                                             </div>
@@ -391,7 +392,7 @@ const BookingPage = () => {
                                                         key={mins}
                                                         type="button"
                                                         onClick={() => adjustEndTime(mins)}
-                                                        className="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100"
+                                                        className="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-black transition-all border border-emerald-100"
                                                     >
                                                         {mins} MINS
                                                     </button>
@@ -402,83 +403,83 @@ const BookingPage = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Identity</label>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Identity</label>
                                     <div className="relative group">
-                                        <User className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-emerald-500 transition-colors" size={18} />
+                                        <User className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-emerald-500 transition-colors" size={18} />
                                         <input
                                             type="text"
                                             placeholder="RECIPIENT NAME"
                                             value={formData.fullName}
                                             onChange={(e) => setFormData({ ...formData, fullName: e.target.value.toUpperCase() })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-5 md:p-6 pl-14 md:pl-16 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-gray-900 placeholder:text-gray-200 uppercase tracking-wider"
+                                            className="w-full bg-white border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-5 md:p-6 pl-14 md:pl-16 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-black placeholder:text-zinc-200 uppercase tracking-wider"
                                             required
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Comm-Link</label>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">WhatsApp Comm-Link</label>
                                     <div className="relative group">
-                                        <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-emerald-500 transition-colors" size={18} />
+                                        <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-emerald-500 transition-colors" size={18} />
                                         <input
                                             type="tel"
                                             maxLength="10"
                                             placeholder="000 000 0000"
                                             value={formData.whatsappNumber}
                                             onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value.replace(/\D/g, '') })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-5 md:p-6 pl-14 md:pl-16 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-gray-900 placeholder:text-gray-200 tracking-[0.15em] md:tracking-[0.2em]"
+                                            className="w-full bg-white border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-5 md:p-6 pl-14 md:pl-16 rounded-xl md:rounded-[1.5rem] outline-none transition-all font-black text-xs md:text-sm text-black placeholder:text-zinc-200 tracking-[0.15em] md:tracking-[0.2em]"
                                             required
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Payment Protocol *</label>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Payment Protocol *</label>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <button
                                             type="button"
                                             onClick={() => setPaymentType('advance')}
-                                            className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col gap-1 text-left ${paymentType === 'advance' ? 'border-emerald-600 bg-emerald-50/50' : 'border-gray-50 bg-gray-50/50 grayscale opacity-60'}`}
+                                            className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col gap-1 text-left ${paymentType === 'advance' ? 'border-emerald-600 bg-emerald-50/50' : 'border-zinc-50 bg-white/50 grayscale opacity-60'}`}
                                         >
                                             <div className="flex justify-between items-center w-full">
-                                                <span className={`text-[10px] font-black uppercase tracking-widest ${paymentType === 'advance' ? 'text-emerald-700' : 'text-gray-400'}`}>Advance Support</span>
-                                                <Zap size={14} className={paymentType === 'advance' ? 'text-emerald-600' : 'text-gray-300'} />
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${paymentType === 'advance' ? 'text-emerald-700' : 'text-slate-400'}`}>Advance Support</span>
+                                                <Zap size={14} className={paymentType === 'advance' ? 'text-emerald-600' : 'text-zinc-300'} />
                                             </div>
-                                            <span className="text-xl font-black text-gray-900 tracking-tighter">40% RESERVATION</span>
-                                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Pay ₹{Math.ceil(calculatedPrice * 0.4)} now</span>
+                                            <span className="text-xl font-black text-black tracking-tighter">40% RESERVATION</span>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Pay ₹{Math.ceil(calculatedPrice * 0.4)} now</span>
                                         </button>
 
                                         <button
                                             type="button"
                                             onClick={() => setPaymentType('full')}
-                                            className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col gap-1 text-left ${paymentType === 'full' ? 'border-emerald-600 bg-emerald-50/50' : 'border-gray-50 bg-gray-50/50 grayscale opacity-60'}`}
+                                            className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col gap-1 text-left ${paymentType === 'full' ? 'border-emerald-600 bg-emerald-50/50' : 'border-zinc-50 bg-white/50 grayscale opacity-60'}`}
                                         >
                                             <div className="flex justify-between items-center w-full">
-                                                <span className={`text-[10px] font-black uppercase tracking-widest ${paymentType === 'full' ? 'text-emerald-700' : 'text-gray-400'}`}>Full Settlement</span>
-                                                <ShieldCheck size={14} className={paymentType === 'full' ? 'text-emerald-600' : 'text-gray-300'} />
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${paymentType === 'full' ? 'text-emerald-700' : 'text-slate-400'}`}>Full Settlement</span>
+                                                <ShieldCheck size={14} className={paymentType === 'full' ? 'text-emerald-600' : 'text-zinc-300'} />
                                             </div>
-                                            <span className="text-xl font-black text-gray-900 tracking-tighter">100% PRIORITY</span>
-                                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Pay ₹{calculatedPrice} now</span>
+                                            <span className="text-xl font-black text-black tracking-tighter">100% PRIORITY</span>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Pay ₹{calculatedPrice} now</span>
                                         </button>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-gray-950 p-10 rounded-[2.5rem] space-y-6 shadow-2xl shadow-gray-950/20">
+                            <div className="bg-white p-10 rounded-[2.5rem] space-y-6 shadow-2xl shadow-zinc-950/20">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-gray-500 font-black uppercase tracking-[0.2em] text-[9px]">Infrastructure Access</span>
-                                    <span className="font-black text-white text-xs tracking-wider">₹{courtFee.toLocaleString()}.00</span>
+                                    <span className="text-slate-400 font-black uppercase tracking-[0.2em] text-[9px]">Infrastructure Access</span>
+                                    <span className="font-black text-black text-xs tracking-wider">₹{courtFee.toLocaleString()}.00</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-gray-500 font-black uppercase tracking-[0.2em] text-[9px]">System Overhead</span>
-                                    <span className="font-black text-white text-xs tracking-wider">₹{convenienceFee.toLocaleString()}.00</span>
+                                    <span className="text-slate-400 font-black uppercase tracking-[0.2em] text-[9px]">System Overhead</span>
+                                    <span className="font-black text-black text-xs tracking-wider">₹{convenienceFee.toLocaleString()}.00</span>
                                 </div>
                                 <div className="pt-6 border-t border-white/5 flex justify-between items-center">
                                     <div className="flex flex-col">
-                                        <span className="font-black text-white/40 uppercase tracking-widest text-[9px]">
+                                        <span className="font-black text-black/40 uppercase tracking-widest text-[9px]">
                                             {paymentType === 'full' ? 'Priority Settlement' : 'Confirmation Token (40%)'}
                                         </span>
                                         {paymentType === 'advance' && (
-                                            <span className="text-[8px] font-bold text-yellow-400/60 uppercase tracking-widest">
+                                            <span className="text-[8px] font-bold text-amber-400/60 uppercase tracking-widest">
                                                 Rest ₹{calculatedPrice - Math.ceil(calculatedPrice * 0.4)} at Arena
                                             </span>
                                         )}
@@ -491,7 +492,7 @@ const BookingPage = () => {
 
                             {error && (
                                 <div className="bg-red-50/50 border-2 border-red-100/50 p-6 rounded-[1.5rem] flex items-start gap-4 animate-shake">
-                                    <div className="bg-red-500 text-white p-1.5 rounded-lg shadow-lg shadow-red-500/30 shrink-0"><Info size={14} /></div>
+                                    <div className="bg-red-500 text-black p-1.5 rounded-lg shadow-lg shadow-red-500/30 shrink-0"><Info size={14} /></div>
                                     <p className="text-red-700 text-[10px] font-black uppercase tracking-widest leading-normal">System: {error}</p>
                                 </div>
                             )}
@@ -500,7 +501,7 @@ const BookingPage = () => {
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 text-white font-black py-7 rounded-[2rem] shadow-2xl shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 group overflow-hidden relative"
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-zinc-200 text-black font-black py-7 rounded-[2rem] shadow-2xl shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 group overflow-hidden relative"
                                 >
                                     {submitting ? (
                                         <>
@@ -515,7 +516,7 @@ const BookingPage = () => {
                                     )}
                                 </button>
                                 <div className="text-center px-6">
-                                    <p className="text-[8px] text-gray-300 font-bold uppercase tracking-[0.3em] leading-relaxed">
+                                    <p className="text-[8px] text-zinc-300 font-bold uppercase tracking-[0.3em] leading-relaxed">
                                         By authorizing, you consent to the <span className="text-emerald-600/60 underline cursor-pointer hover:text-emerald-600 transition-colors">Protocol Agreements</span> and automated system policies.
                                     </p>
                                 </div>
@@ -529,3 +530,6 @@ const BookingPage = () => {
 };
 
 export default BookingPage;
+
+
+

@@ -20,13 +20,67 @@ import {
     X,
     BarChart,
     RefreshCw,
-    CheckCircle2
+    CheckCircle2,
+    TrendingUp,
+    TrendingDown,
+    Activity as ActivityIcon,
+    Layers,
+    Cpu,
+    Download
 } from 'lucide-react';
+import { 
+    ResponsiveContainer, 
+    RadarChart, 
+    PolarGrid, 
+    PolarAngleAxis, 
+    PolarRadiusAxis, 
+    Radar, 
+    AreaChart, 
+    Area, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip,
+    ComposedChart,
+    Bar,
+    Line,
+    Legend,
+    Cell,
+    PieChart,
+    Pie
+} from 'recharts';
 import io from 'socket.io-client';
 import AuthContext from '../context/AuthContext';
-import apiClient, { bookingsAPI, slotsAPI, matchesAPI, authAPI, analyticsAPI } from '../api/client';
+import apiClient, { bookingsAPI, slotsAPI, matchesAPI, authAPI, analyticsAPI, receiptsAPI } from '../api/client';
 import MobileNav from '../components/MobileNav';
 import MatchCreationModal from '../components/MatchCreationModal';
+
+const TiltCard = ({ children, className }) => {
+    const [rotate, setRotate] = useState({ x: 0, y: 0 });
+    const handleMouseMove = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        setRotate({ x: (centerY - y) / 15, y: (x - centerX) / 15 });
+    };
+    return (
+        <div 
+            className={`${className} transition-transform duration-500 ease-out`}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setRotate({ x: 0, y: 0 })}
+            style={{ 
+                transform: `perspective(1000px) rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`,
+                transformStyle: 'preserve-3d'
+            }}
+        >
+            <div style={{ transform: 'translateZ(20px)', transformStyle: 'preserve-3d' }}>
+                {children}
+            </div>
+        </div>
+    );
+};
 
 const UserDashboard = () => {
     const { user, logout } = useContext(AuthContext);
@@ -43,6 +97,7 @@ const UserDashboard = () => {
     const [editLoading, setEditLoading] = useState(false);
     const [editError, setEditError] = useState('');
     const [editSuccess, setEditSuccess] = useState('');
+    const [downloadingId, setDownloadingId] = useState(null);
     const navigate = useNavigate();
 
     const navItems = [
@@ -158,7 +213,7 @@ const UserDashboard = () => {
     };
 
     const handleMatchSuccess = (match) => {
-        navigate(`/scoring/${match._id}`);
+        navigate(`/match/result/${match._id}`);
     };
 
     const formatTime12h = (time24) => {
@@ -174,7 +229,7 @@ const UserDashboard = () => {
         switch (status) {
             case 'confirmed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
             case 'rejected': return 'bg-red-100 text-red-700 border-red-200';
-            case 'pending': return 'bg-blue-100 text-blue-700 border-blue-200';
+            case 'pending': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
             case 'hold': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
             default: return 'bg-gray-100 text-gray-700 border-gray-200';
         }
@@ -253,18 +308,38 @@ const UserDashboard = () => {
         }
     };
 
+    const handleDownloadReceipt = async (id) => {
+        try {
+            setDownloadingId(id);
+            const response = await receiptsAPI.download(id);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `receipt-${id.slice(-6)}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error('Download Protocol Failure:', err);
+            alert('Failed to transmit receipt payload.');
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
+
     const getStatusInfo = (status) => {
         switch (status) {
             case 'confirmed': return { icon: <CheckCircle className="text-emerald-500" size={16} />, label: 'CONFIRMED', color: 'text-emerald-600', bg: 'bg-emerald-50' };
             case 'rejected': return { icon: <XCircle className="text-red-500" size={16} />, label: 'REJECTED', color: 'text-red-600', bg: 'bg-red-50' };
             case 'hold': return { icon: <Clock className="text-yellow-500" size={16} />, label: 'ON HOLD', color: 'text-yellow-600', bg: 'bg-yellow-50' };
-            default: return { icon: <Activity className="text-blue-500" size={16} />, label: 'PENDING', color: 'text-blue-600', bg: 'bg-blue-50' };
+            default: return { icon: <Activity className="text-emerald-500" size={16} />, label: 'PENDING', color: 'text-emerald-600', bg: 'bg-emerald-50' };
         }
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
+            <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
                 <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Loading Your Experience...</p>
             </div>
@@ -275,9 +350,9 @@ const UserDashboard = () => {
         <div className="min-h-screen premium-gradient flex flex-col md:flex-row overflow-hidden">
             <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} className="md:hidden" />
 
-            <aside className="hidden md:flex w-96 bg-white/70 backdrop-blur-2xl border-r border-slate-100 flex-col sticky top-0 h-screen z-50 animate-in fade-in slide-in-from-left duration-700">
-                <div className="p-10 border-b border-slate-100/50 flex items-center gap-5">
-                    <div className="bg-slate-900 p-3 rounded-[1.5rem] shadow-2xl relative group">
+            <aside className="hidden md:flex w-96 bg-white/70 backdrop-blur-2xl border-r border-zinc-100 flex-col sticky top-0 h-screen z-50 animate-in fade-in slide-in-from-left duration-700">
+                <div className="p-10 border-b border-zinc-100/50 flex items-center gap-5">
+                    <div className="bg-white p-3 rounded-[1.5rem] shadow-2xl relative group">
                         <img 
                             src="/logo.png" 
                             alt="Logo" 
@@ -286,59 +361,59 @@ const UserDashboard = () => {
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></div>
                     </div>
                     <div>
-                        <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none uppercase">{settings.TURF_NAME}</h1>
+                        <h1 className="text-xl font-black text-black tracking-tighter leading-none uppercase">{settings.TURF_NAME}</h1>
                         <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-1 shrink-0">Arena Network</p>
                     </div>
                 </div>
 
                 <div className="flex-1 p-8 space-y-3 overflow-y-auto no-scrollbar">
-                    <div className="p-8 bg-slate-900 rounded-[2.5rem] border border-white/5 mb-10 shadow-2xl relative overflow-hidden group">
+                    <div className="p-8 bg-emerald-950 rounded-[2.5rem] border border-slate-100 mb-10 shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full"></div>
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-2 relative z-10">Digital ID</p>
-                        <h3 className="text-xl font-black text-white uppercase truncate relative z-10 tracking-tight">{user?.name}</h3>
+                        <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.3em] mb-2 relative z-10">Digital ID</p>
+                        <h3 className="text-xl font-black text-black uppercase truncate relative z-10 tracking-tight">{user?.name}</h3>
                         <div className="flex items-center gap-2 mt-2 relative z-10">
                              <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
-                             <p className="text-[10px] font-bold text-white/40 tabular-nums uppercase tracking-widest">+91 {user?.phone}</p>
+                             <p className="text-[10px] font-bold text-black/40 tabular-nums uppercase tracking-widest">+91 {user?.phone}</p>
                         </div>
                     </div>
 
                     <button
                         onClick={() => navigate('/dashboard')}
                         className={`w-full flex items-center justify-between px-8 py-5 rounded-[2rem] transition-all group ${window.location.pathname === '/dashboard'
-                            ? 'bg-emerald-600 text-white shadow-[0_20px_40px_-5px_rgba(16,185,129,0.3)]'
-                            : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
+                            ? 'bg-emerald-600 text-black shadow-[0_20px_40px_-5px_rgba(37,99,235,0.3)]'
+                            : 'text-slate-400 hover:bg-zinc-50 hover:text-black'
                             }`}
                     >
                         <div className="flex items-center gap-4">
-                            <LayoutDashboard size={20} className={window.location.pathname === '/dashboard' ? 'text-white' : 'text-slate-300 group-hover:text-emerald-500 transition-colors'} />
+                            <LayoutDashboard size={20} className={window.location.pathname === '/dashboard' ? 'text-black' : 'text-slate-400 group-hover:text-emerald-500 transition-colors'} />
                             <span className="text-xs font-black uppercase tracking-widest">Activity Feed</span>
                         </div>
                         {window.location.pathname === '/dashboard' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                     </button>
 
-                    <button onClick={() => navigate('/')} className="w-full flex items-center justify-between px-8 py-5 rounded-[2rem] text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all group">
+                    <button onClick={() => navigate('/')} className="w-full flex items-center justify-between px-8 py-5 rounded-[2rem] text-slate-400 hover:bg-zinc-50 hover:text-black transition-all group">
                         <div className="flex items-center gap-4">
-                             <Calendar size={20} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                             <Calendar size={20} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
                              <span className="text-xs font-black uppercase tracking-widest">Reserve Slot</span>
                         </div>
                         <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                     </button>
 
-                    <button onClick={() => navigate('/leaderboard')} className="w-full flex items-center justify-between px-8 py-5 rounded-[2rem] text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all group">
+                    <button onClick={() => navigate('/leaderboard')} className="w-full flex items-center justify-between px-8 py-5 rounded-[2rem] text-slate-400 hover:bg-zinc-50 hover:text-black transition-all group">
                         <div className="flex items-center gap-4">
-                             <Trophy size={20} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                             <Trophy size={20} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
                              <span className="text-xs font-black uppercase tracking-widest">Leaderboard</span>
                         </div>
                         <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                     </button>
 
-                    <button onClick={() => navigate('/player-analytics')} className={`w-full flex items-center justify-between px-8 py-5 rounded-[2rem] transition-all group ${window.location.pathname === '/player-analytics'
-                        ? 'bg-emerald-600 text-white shadow-[0_20px_40px_-5px_rgba(16,185,129,0.3)]'
-                        : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
+                    <button onClick={() => navigate('/player-intel')} className={`w-full flex items-center justify-between px-8 py-5 rounded-[2rem] transition-all group ${window.location.pathname === '/player-intel'
+                        ? 'bg-emerald-600 text-black shadow-[0_20px_40px_-5px_rgba(37,99,235,0.3)]'
+                        : 'text-slate-400 hover:bg-zinc-50 hover:text-black'
                         }`}>
                         <div className="flex items-center gap-4">
-                             <BarChart size={20} className={window.location.pathname === '/player-analytics' ? 'text-white' : 'text-slate-300 group-hover:text-emerald-500 transition-colors'} />
-                             <span className="text-xs font-black uppercase tracking-widest">Player Intel</span>
+                             <BarChart size={20} className={window.location.pathname === '/player-intel' ? 'text-black' : 'text-slate-400 group-hover:text-emerald-500 transition-colors'} />
+                             <span className="text-xs font-black uppercase tracking-widest">Intel Hub</span>
                         </div>
                         <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                     </button>
@@ -346,7 +421,7 @@ const UserDashboard = () => {
                 </div>
 
                 <div className="p-8 mt-auto">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-between p-6 rounded-[2rem] bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all group border border-rose-500/20">
+                    <button onClick={handleLogout} className="w-full flex items-center justify-between p-6 rounded-[2rem] bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-black transition-all group border border-rose-500/20">
                         <div className="flex items-center gap-3">
                             <LogOut size={18} className="group-hover:rotate-180 transition-transform duration-500" />
                             <span className="text-[10px] font-black uppercase tracking-widest">Sign Out Hub</span>
@@ -359,17 +434,17 @@ const UserDashboard = () => {
             <main className="flex-1 overflow-y-auto gpu-layer">
                 <header className="hidden md:flex nav-glass px-12 h-28 items-center justify-between sticky top-0 z-40">
                     <div className="flex gap-12 h-full items-center">
-                        <span className="text-2xl font-black tracking-tighter uppercase h-full border-b-[6px] border-emerald-600 transition-all pt-2 text-slate-900 flex items-center">
+                        <span className="text-2xl font-black tracking-tighter uppercase h-full border-b-[6px] border-emerald-600 transition-all pt-2 text-black flex items-center">
                             User Profile
                         </span>
                     </div>
                     <div className="flex items-center gap-6">
-                        <div className="w-px h-8 bg-slate-100"></div>
+                        <div className="w-px h-8 bg-zinc-100"></div>
                         <div className="text-right">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Network Status</p>
                             <div className="flex items-center gap-2 justify-end">
-                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Operations Live</p>
+                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+                                <p className="text-[10px] font-black text-black uppercase tracking-widest">Operations Live</p>
                             </div>
                         </div>
                     </div>
@@ -378,7 +453,7 @@ const UserDashboard = () => {
                 <div className="p-4 md:p-10 space-y-6 md:space-y-12 mb-nav md:mb-0">
                 
                 <div className="space-y-10">
-                        <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
+                        <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 border border-black/5 shadow-xl">
                             {!isEditingProfile ? (
                                 <div className="flex flex-col md:flex-row items-center gap-10">
                                     <div className="relative group">
@@ -389,7 +464,7 @@ const UserDashboard = () => {
                                                 <Zap size={64} className="text-emerald-300" />
                                             )}
                                         </div>
-                                        <div className="absolute -bottom-4 -right-4 bg-emerald-600 text-white p-5 rounded-3xl shadow-xl shadow-emerald-200 border-4 border-white">
+                                        <div className="absolute -bottom-4 -right-4 bg-emerald-600 text-black p-5 rounded-3xl shadow-xl shadow-emerald-200 border-4 border-white">
                                             <Trophy size={24} />
                                         </div>
                                     </div>
@@ -398,29 +473,29 @@ const UserDashboard = () => {
                                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                                             <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest leading-none">PLAYER PROFILE</span>
                                         </div>
-                                        <h2 className="text-5xl md:text-7xl font-black text-gray-900 uppercase tracking-tighter leading-[0.8]">{profile?.name}</h2>
-                                        <div className="flex items-center gap-2 text-gray-500 font-mono text-sm border-l-4 border-emerald-500 pl-4 py-1">
+                                        <h2 className="text-5xl md:text-8xl font-bebas text-black uppercase tracking-tight leading-[0.85]">{profile?.name}</h2>
+                                        <div className="flex items-center gap-2 text-zinc-500 font-mono text-sm border-l-4 border-emerald-500 pl-4 py-1">
                                             <Phone size={14} className="text-emerald-600" />
-                                            <span>+91 {profile?.phone}</span>
+                                            <span className="font-bold tracking-widest text-zinc-700">+91 {profile?.phone}</span>
                                         </div>
-                                        <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                            <div className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.primary_role || 'All-Rounder'}</div>
-                                            <div className="bg-emerald-100 text-emerald-800 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">{profile?.cricket_profile?.batting_style || 'Right Hand'}</div>
-                                            <div className="bg-emerald-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200">CAREER SCORE: {profile?.score || 0}</div>
+                                        <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                                            <div className="bg-white text-black px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg">{profile?.cricket_profile?.primary_role || 'All-Rounder'}</div>
+                                            <div className="bg-emerald-50 text-emerald-800 px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-emerald-100">{profile?.cricket_profile?.batting_style || 'Right Hand'}</div>
+                                            <div className="bg-emerald-600 text-black px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20">ELO: {profile?.score || 0}</div>
                                             {profile?.subscription?.isPremium && (
-                                                <div className="bg-gradient-to-r from-amber-400 to-amber-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 flex items-center gap-2 animate-bounce-subtle">
+                                                <div className="bg-gradient-to-r from-amber-400 to-amber-600 text-black px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 flex items-center gap-2 animate-bounce-subtle">
                                                     <Zap size={14} className="fill-white" />
                                                     Intel Pass Active
                                                 </div>
                                             )}
                                             {/* NEW PREMIUM LOGIC */}
                                             {profile?.isPremium && profile?.trialEndDate && new Date(profile.trialEndDate) > new Date() && !profile.premiumExpiry && (
-                                                <div className="bg-emerald-100 text-emerald-800 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-200">
+                                                <div className="bg-emerald-50 text-emerald-800 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-200">
                                                     🎉 7-Day Free Trial Activated (Ends in {Math.ceil((new Date(profile.trialEndDate) - new Date()) / (1000 * 60 * 60 * 24))} days)
                                                 </div>
                                             )}
                                             {profile?.isPremium && profile?.premiumExpiry && new Date(profile.premiumExpiry) > new Date() && (
-                                                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200">
+                                                <div className="bg-gradient-to-r from-emerald-600 to-green-600 text-black px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200">
                                                     ✅ Premium Active (Until {new Date(profile.premiumExpiry).toLocaleDateString()})
                                                 </div>
                                             )}
@@ -433,14 +508,14 @@ const UserDashboard = () => {
                                         <div className="pt-2 flex flex-wrap gap-4">
                                             <button
                                                 onClick={startEditProfile}
-                                                className="inline-flex items-center gap-2 bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-200 text-gray-600 hover:text-emerald-700 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                                className="inline-flex items-center gap-2 bg-zinc-50 hover:bg-emerald-50 border border-zinc-200 hover:border-emerald-200 text-zinc-600 hover:text-emerald-700 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
                                             >
                                                 <Edit3 size={14} /> Edit Profile
                                             </button>
                                             <button
                                                 onClick={handleSyncStats}
                                                 disabled={editLoading}
-                                                className="inline-flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 text-emerald-700 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                                                className="inline-flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 text-emerald-700 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 shadow-sm"
                                             >
                                                 <RefreshCw size={14} className={editLoading ? 'animate-spin' : ''} />
                                                 {editLoading ? 'Syncing...' : 'Sync Match Stats'}
@@ -457,8 +532,8 @@ const UserDashboard = () => {
                             ) : (
                                 <form onSubmit={handleSaveProfile} className="space-y-6">
                                     <div className="flex items-center justify-between mb-2">
-                                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Edit Profile</h3>
-                                        <button type="button" onClick={cancelEdit} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-all">
+                                        <h3 className="text-sm font-black text-black uppercase tracking-widest">Edit Profile</h3>
+                                        <button type="button" onClick={cancelEdit} className="p-2 rounded-xl hover:bg-zinc-100 text-slate-400 hover:text-zinc-700 transition-all">
                                             <X size={18} />
                                         </button>
                                     </div>
@@ -472,36 +547,36 @@ const UserDashboard = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Full Name</label>
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Full Name</label>
                                             <input
                                                 type="text"
                                                 value={editForm.name}
                                                 onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
-                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                                className="w-full bg-zinc-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-black transition-all"
                                                 placeholder="Your name"
                                                 required
                                             />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Mobile Number</label>
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Mobile Number</label>
                                             <div className="relative">
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">+91</span>
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">+91</span>
                                                 <input
                                                     type="tel"
                                                     value={editForm.phone}
                                                     onChange={e => setEditForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
-                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 pl-14 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                                    className="w-full bg-zinc-50 border-2 border-transparent focus:border-emerald-400 p-4 pl-14 rounded-2xl outline-none font-bold text-sm text-black transition-all"
                                                     placeholder="10-digit number"
                                                     maxLength={10}
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Cricket Role</label>
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Cricket Role</label>
                                             <select
                                                 value={editForm.primary_role}
                                                 onChange={e => setEditForm(f => ({ ...f, primary_role: e.target.value }))}
-                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                                className="w-full bg-zinc-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-black transition-all"
                                             >
                                                 {['Batsman', 'Bowler', 'All-rounder', 'Wicketkeeper'].map(r => (
                                                     <option key={r} value={r}>{r}</option>
@@ -509,11 +584,11 @@ const UserDashboard = () => {
                                             </select>
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Batting Style</label>
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Batting Style</label>
                                             <select
                                                 value={editForm.batting_style}
                                                 onChange={e => setEditForm(f => ({ ...f, batting_style: e.target.value }))}
-                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                                className="w-full bg-zinc-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-black transition-all"
                                             >
                                                 {['Right-hand bat', 'Left-hand bat'].map(s => (
                                                     <option key={s} value={s}>{s}</option>
@@ -521,11 +596,11 @@ const UserDashboard = () => {
                                             </select>
                                         </div>
                                         <div className="space-y-1 md:col-span-2">
-                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Bowling Style</label>
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Bowling Style</label>
                                             <select
                                                 value={editForm.bowling_style}
                                                 onChange={e => setEditForm(f => ({ ...f, bowling_style: e.target.value }))}
-                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-gray-900 transition-all"
+                                                className="w-full bg-zinc-50 border-2 border-transparent focus:border-emerald-400 p-4 rounded-2xl outline-none font-bold text-sm text-black transition-all"
                                             >
                                                 {['Right-arm fast', 'Right-arm medium', 'Right-arm offbreak', 'Right-arm legbreak', 'Left-arm fast', 'Left-arm medium', 'Left-arm orthodox', 'Left-arm chinaman', 'None'].map(s => (
                                                     <option key={s} value={s}>{s}</option>
@@ -538,14 +613,14 @@ const UserDashboard = () => {
                                         <button
                                             type="submit"
                                             disabled={editLoading}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                                            className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-white text-black py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 shadow-lg"
                                         >
                                             <Save size={15} /> {editLoading ? 'Saving...' : 'Save Changes'}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={cancelEdit}
-                                            className="px-6 py-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-widest transition-all"
+                                            className="px-6 py-4 rounded-2xl bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-[10px] font-black uppercase tracking-widest transition-all"
                                         >
                                             Cancel
                                         </button>
@@ -555,113 +630,183 @@ const UserDashboard = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                            {/* BATTING ARSENAL */}
-                            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-xl">
-                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-10 text-emerald-600">
-                                    <Swords size={16} /> Batting Arsenal
+                            <TiltCard className="bg-white rounded-[3rem] p-8 md:p-10 border border-black/5 shadow-xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[60px] rounded-full pointer-events-none" />
+                                <h3 className="text-xs font-black text-emerald-600 uppercase tracking-[0.3em] flex items-center gap-3 mb-10">
+                                    <Swords size={18} /> Batting Arsenal
                                 </h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center col-span-2">
-                                        <p className="text-4xl font-black text-gray-900">{profile?.stats?.batting?.runs || 0}</p>
-                                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Total Runs</p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 relative z-10">
+                                    <div className="bg-emerald-500/5 p-6 rounded-[2rem] border border-emerald-500/10 text-center col-span-2 shadow-sm">
+                                        <p className="text-5xl font-bebas text-black tracking-wide">{profile?.stats?.batting?.runs || 0}</p>
+                                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Total Career Runs</p>
                                     </div>
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-2xl font-black text-gray-900">{profile?.stats?.batting?.average || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Avg</p>
+                                    <div className="bg-zinc-50 p-6 rounded-[2rem] text-center border border-zinc-100 shadow-sm">
+                                        <p className="text-3xl font-bebas text-zinc-800">{profile?.stats?.batting?.average || 0}</p>
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Avg</p>
                                     </div>
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-2xl font-black text-gray-900">{profile?.stats?.batting?.strike_rate || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase">S/R</p>
+                                    <div className="bg-zinc-50 p-6 rounded-[2rem] text-center border border-zinc-100 shadow-sm">
+                                        <p className="text-3xl font-bebas text-zinc-800">{profile?.stats?.batting?.strike_rate || 0}</p>
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">S/R</p>
                                     </div>
-                                    <div className="bg-gray-50 p-6 rounded-3xl text-center col-span-2">
-                                        <p className="text-2xl font-black text-gray-900">{profile?.stats?.batting?.high_score || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Personal Best</p>
+                                    <div className="bg-white text-black p-6 rounded-[2rem] text-center col-span-2 shadow-xl border border-slate-100">
+                                        <p className="text-3xl font-bebas text-emerald-400">{profile?.stats?.batting?.high_score || 0}</p>
+                                        <p className="text-[8px] font-black text-black/30 uppercase tracking-widest mt-1">Personal Best</p>
                                     </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.fours || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">4s</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.sixes || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">6s</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.not_outs || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">N/O</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.fifties || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">50s</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.hundreds || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">100s</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.batting?.innings || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Inns</p>
+                                    <div className="grid grid-cols-3 gap-3 col-span-2">
+                                        <div className="bg-emerald-50 p-4 rounded-2xl text-center border border-emerald-100">
+                                            <p className="text-xl font-bebas text-emerald-700">{profile?.stats?.batting?.fours || 0}</p>
+                                            <p className="text-[8px] font-black text-emerald-600/40 uppercase">4s</p>
+                                        </div>
+                                        <div className="bg-emerald-50 p-4 rounded-2xl text-center border border-emerald-100">
+                                            <p className="text-xl font-bebas text-emerald-700">{profile?.stats?.batting?.sixes || 0}</p>
+                                            <p className="text-[8px] font-black text-emerald-600/40 uppercase">6s</p>
+                                        </div>
+                                        <div className="bg-emerald-50 p-4 rounded-2xl text-center border border-emerald-100">
+                                            <p className="text-xl font-bebas text-emerald-700">{profile?.stats?.batting?.not_outs || 0}</p>
+                                            <p className="text-[8px] font-black text-emerald-600/40 uppercase">N/O</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </TiltCard>
 
-                            {/* BOWLING COMMAND */}
-                            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-xl">
-                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-10 text-emerald-600">
-                                    <Database size={16} /> Bowling Command
+                            <TiltCard className="bg-white rounded-[3rem] p-8 md:p-10 border border-black/5 shadow-xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-[60px] rounded-full pointer-events-none" />
+                                <h3 className="text-xs font-black text-green-600 uppercase tracking-[0.3em] flex items-center gap-3 mb-10">
+                                    <Database size={18} /> Bowling Command
                                 </h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.wickets || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Wkts</p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 relative z-10">
+                                    <div className="bg-green-500/5 p-6 rounded-[2rem] border border-green-500/10 text-center shadow-sm">
+                                        <p className="text-4xl font-bebas text-black">{profile?.stats?.bowling?.wickets || 0}</p>
+                                        <p className="text-[8px] font-black text-green-600 uppercase">Wickets</p>
                                     </div>
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.economy || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Eco</p>
+                                    <div className="bg-zinc-50 p-6 rounded-[2rem] text-center border border-zinc-100 shadow-sm">
+                                        <p className="text-3xl font-bebas text-zinc-800">{profile?.stats?.bowling?.economy || 0}</p>
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Eco</p>
                                     </div>
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.overs || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Overs</p>
+                                    <div className="bg-zinc-50 p-6 rounded-[2rem] text-center border border-zinc-100 shadow-sm">
+                                        <p className="text-3xl font-bebas text-zinc-800">{profile?.stats?.bowling?.overs || 0}</p>
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Overs</p>
                                     </div>
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.bowling?.best_bowling?.wickets || 0} / {profile?.stats?.bowling?.best_bowling?.runs || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Best</p>
+                                    <div className="bg-white text-black p-6 rounded-[2rem] text-center shadow-xl border border-slate-100">
+                                        <p className="text-3xl font-bebas text-green-400">{profile?.stats?.bowling?.best_bowling?.wickets || 0}/{profile?.stats?.bowling?.best_bowling?.runs || 0}</p>
+                                        <p className="text-[8px] font-black text-black/30 uppercase tracking-widest mt-1">Best Fig.</p>
                                     </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.matches || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Inns</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.runs_conceded || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Runs</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.three_wicket_hauls || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">3W</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-3xl text-center">
-                                        <p className="text-xl font-black text-gray-900">{profile?.stats?.bowling?.five_wicket_hauls || 0}</p>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">5W</p>
+                                    <div className="grid grid-cols-3 gap-3 col-span-4">
+                                        <div className="bg-green-50 p-4 rounded-2xl text-center border border-green-100 shadow-sm">
+                                            <p className="text-xl font-bebas text-green-700">{profile?.stats?.bowling?.matches || 0}</p>
+                                            <p className="text-[8px] font-black text-green-600/40 uppercase">Inns</p>
+                                        </div>
+                                        <div className="bg-green-50 p-4 rounded-2xl text-center border border-green-100 shadow-sm">
+                                            <p className="text-xl font-bebas text-green-700">{profile?.stats?.bowling?.runs_conceded || 0}</p>
+                                            <p className="text-[8px] font-black text-green-600/40 uppercase">Runs</p>
+                                        </div>
+                                        <div className="bg-green-50 p-4 rounded-2xl text-center border border-green-100 shadow-sm">
+                                            <p className="text-xl font-bebas text-green-700">{profile?.stats?.bowling?.three_wicket_hauls || 0}</p>
+                                            <p className="text-[8px] font-black text-green-600/40 uppercase">3W</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </TiltCard>
 
                             {/* FIELDING PROWESS */}
-                            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-xl md:col-span-2 xl:col-span-1">
-                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-10 text-emerald-600">
+                            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-black/5 shadow-xl md:col-span-2 xl:col-span-1">
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-10 text-emerald-600">
                                     <Trophy size={16} /> Fielding Prowess
                                 </h3>
                                 <div className="grid grid-cols-3 gap-4 md:gap-6">
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.fielding?.catches || 0}</p>
+                                    <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 text-center shadow-sm">
+                                        <p className="text-3xl font-black text-black">{profile?.stats?.fielding?.catches || 0}</p>
                                         <p className="text-[8px] font-black text-emerald-600 uppercase">Catches</p>
                                     </div>
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.fielding?.run_outs || 0}</p>
+                                    <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 text-center shadow-sm">
+                                        <p className="text-3xl font-black text-black">{profile?.stats?.fielding?.run_outs || 0}</p>
                                         <p className="text-[8px] font-black text-emerald-600 uppercase">Run Outs</p>
                                     </div>
-                                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-50 text-center">
-                                        <p className="text-3xl font-black text-gray-900">{profile?.stats?.fielding?.stumpings || 0}</p>
+                                    <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 text-center shadow-sm">
+                                        <p className="text-3xl font-black text-black">{profile?.stats?.fielding?.stumpings || 0}</p>
                                         <p className="text-[8px] font-black text-emerald-600 uppercase">Stumpings</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* INTELLIGENCE ANALYTICS HUB (Power BI / Tableau Style) */}
+                        <div className="bg-white rounded-[3rem] p-10 md:p-14 border border-slate-100 shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-emerald-500 group-hover:scale-110 transition-transform duration-1000">
+                                <Cpu size={300} />
+                            </div>
+                            <div className="flex flex-col md:flex-row items-center justify-between mb-12 relative z-10">
+                                <div>
+                                    <h3 className="text-sm font-black text-emerald-500 uppercase tracking-[0.3em] italic mb-1">Intelligence Analytics Hub</h3>
+                                    <p className="text-xl font-black text-black uppercase tracking-tighter italic">Career Performance Yield & Matrix</p>
+                                </div>
+                                <div className="flex items-center gap-6 mt-6 md:mt-0">
+                                    <div className="px-5 py-2 bg-emerald-600/20 text-emerald-400 rounded-xl border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest italic flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div> Fast Data Processing
+                                    </div>
+                                    <button onClick={() => navigate('/player-intel')} className="text-[10px] font-black text-black/40 hover:text-black uppercase tracking-widest transition-colors flex items-center gap-2">
+                                        Full Intel Suite <ChevronRight size={14} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid lg:grid-cols-12 gap-10 relative z-10">
+                                {/* Skill Matrix Radar */}
+                                <div className="lg:col-span-5 bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-slate-100 p-8 flex flex-col items-center">
+                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest italic mb-8 self-start">Neural Skill Matrix</p>
+                                    <div className="h-[300px] w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
+                                                { subject: 'Batting', A: profile?.stats?.batting?.runs ? Math.min(profile.stats.batting.runs / 2, 100) : 10 },
+                                                { subject: 'Bowling', A: profile?.stats?.bowling?.wickets ? Math.min(profile.stats.bowling.wickets * 10, 100) : 10 },
+                                                { subject: 'Fielding', A: profile?.stats?.fielding?.catches ? Math.min(profile.stats.fielding.catches * 15, 100) : 10 },
+                                                { subject: 'Consistency', A: profile?.stats?.batting?.average ? Math.min(profile.stats.batting.average * 2, 100) : 10 },
+                                                { subject: 'Power', A: profile?.stats?.batting?.sixes ? Math.min(profile.stats.batting.sixes * 8, 100) : 10 },
+                                                { subject: 'Precision', A: profile?.stats?.bowling?.economy ? Math.max(100 - (profile.stats.bowling.economy * 10), 10) : 10 }
+                                            ]}>
+                                                <PolarGrid stroke="#ffffff10" />
+                                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900 }} />
+                                                <Radar name={user?.name} dataKey="A" stroke="#059669" strokeWidth={3} fill="#059669" fillOpacity={0.3} />
+                                            </RadarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Performance Trend */}
+                                <div className="lg:col-span-7 bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-slate-100 p-8">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest italic">ELO Yield History</p>
+                                        <div className="flex items-center gap-2 text-emerald-500">
+                                            <TrendingUp size={14} />
+                                            <span className="text-[10px] font-black italic">+24.2%</span>
+                                        </div>
+                                    </div>
+                                    <div className="h-[280px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={[
+                                                { name: 'Jan', elo: 1200 },
+                                                { name: 'Feb', elo: 1250 },
+                                                { name: 'Mar', elo: 1180 },
+                                                { name: 'Apr', elo: 1340 },
+                                                { name: 'May', elo: 1420 },
+                                                { name: 'Jun', elo: profile?.score || 1420 }
+                                            ]}>
+                                                <defs>
+                                                    <linearGradient id="colorElo" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#059669" stopOpacity={0.3}/>
+                                                        <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900 }} axisLine={false} />
+                                                <YAxis tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900 }} axisLine={false} hide />
+                                                <Tooltip 
+                                                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff10', borderRadius: '1rem' }}
+                                                    itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
+                                                />
+                                                <Area type="monotone" dataKey="elo" stroke="#059669" strokeWidth={4} fillOpacity={1} fill="url(#colorElo)" />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
                                     </div>
                                 </div>
                             </div>
@@ -670,46 +815,46 @@ const UserDashboard = () => {
                         {/* Recent Matches Section */}
                         <div className="space-y-6">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Recent Battles</h3>
-                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest px-4 py-1.5 bg-emerald-50 rounded-full">{myMatches.length} Matches</span>
+                                <h3 className="text-xl font-black text-black uppercase tracking-tight">Recent Battles</h3>
+                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest px-4 py-1.5 bg-emerald-50 rounded-full border border-emerald-100 shadow-sm">{myMatches.length} Matches</span>
                             </div>
 
                             {myMatches.length === 0 ? (
-                                <div className="p-12 text-center bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
-                                    <Swords size={32} className="mx-auto mb-4 text-gray-300" />
-                                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">No match records found.</p>
+                                <div className="p-12 text-center bg-zinc-50 rounded-[2rem] border border-dashed border-zinc-200">
+                                    <Swords size={32} className="mx-auto mb-4 text-slate-400" />
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No match records found.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     {myMatches.map((m) => (
                                         <div key={m._id} 
-                                            onClick={() => navigate(`/scoring/${m._id}`)}
-                                            className="bg-white border border-gray-100 p-6 rounded-[2rem] hover:border-emerald-200 hover:shadow-lg transition-all cursor-pointer group flex flex-col md:flex-row md:items-center gap-6"
+                                            onClick={() => navigate(m.status === 'Completed' || m.status === 'In Progress' ? `/live/${m._id}` : `/match/result/${m._id}`)}
+                                            className="bg-white border border-zinc-100 p-6 rounded-[2rem] hover:border-emerald-200 hover:shadow-lg transition-all cursor-pointer group flex flex-col md:flex-row md:items-center gap-6"
                                         >
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-3 mb-2">
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${m.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600 animate-pulse'}`}>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-sm ${m.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600 animate-pulse'}`}>
                                                         {m.status}
                                                     </span>
-                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tight">#{m._id.slice(-6)}</span>
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">#{m._id.slice(-6)}</span>
                                                 </div>
-                                                <h4 className="text-base font-black text-gray-900 uppercase tracking-tight leading-none mb-1">
+                                                <h4 className="text-base font-black text-black uppercase tracking-tight leading-none mb-1">
                                                     {m.team_a?.team_id?.name || m.quick_teams?.team_a?.name} vs {m.team_b?.team_id?.name || m.quick_teams?.team_b?.name}
                                                 </h4>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase">
                                                     {new Date(m.start_time).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                 </p>
                                             </div>
 
-                                            <div className="flex items-center gap-8 px-8 border-l border-r border-gray-50">
+                                            <div className="flex items-center gap-8 px-8 border-l border-r border-zinc-50">
                                                 <div className="text-center">
-                                                    <p className="text-lg font-black text-gray-900 leading-none">{m.team_a?.score || 0}</p>
-                                                    <p className="text-[8px] font-black text-gray-400 uppercase">TMA</p>
+                                                    <p className="text-lg font-black text-black leading-none">{m.team_a?.score || 0}</p>
+                                                    <p className="text-[8px] font-black text-slate-400 uppercase">TMA</p>
                                                 </div>
                                                 <div className="text-emerald-200 font-black">VS</div>
                                                 <div className="text-center">
-                                                    <p className="text-lg font-black text-gray-900 leading-none">{m.team_b?.score || 0}</p>
-                                                    <p className="text-[8px] font-black text-gray-400 uppercase">TMB</p>
+                                                    <p className="text-lg font-black text-black leading-none">{m.team_b?.score || 0}</p>
+                                                    <p className="text-[8px] font-black text-slate-400 uppercase">TMB</p>
                                                 </div>
                                             </div>
 
@@ -718,17 +863,17 @@ const UserDashboard = () => {
                                                 const performance = getMyMatchStats(m);
                                                 if (!performance) return null;
                                                 return (
-                                                    <div className="hidden lg:flex items-center gap-4 px-6 border-r border-gray-50">
+                                                    <div className="hidden lg:flex items-center gap-4 px-6 border-r border-zinc-50">
                                                         {performance.batting && (
                                                             <div className="text-left">
-                                                                <p className="text-emerald-600 text-sm font-black leading-none">{performance.batting.runs}* <span className="text-[10px] text-gray-400">({performance.batting.balls})</span></p>
-                                                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Your Batting</p>
+                                                                <p className="text-emerald-600 text-sm font-black leading-none">{performance.batting.runs}* <span className="text-[10px] text-slate-400">({performance.batting.balls})</span></p>
+                                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Your Batting</p>
                                                             </div>
                                                         )}
                                                         {performance.bowling && (
-                                                            <div className="text-left border-l border-gray-100 pl-4 ml-2">
+                                                            <div className="text-left border-l border-zinc-100 pl-4 ml-2">
                                                                 <p className="text-emerald-600 text-sm font-black leading-none">{performance.bowling.wickets} Wkts</p>
-                                                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Your Bowling</p>
+                                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Your Bowling</p>
                                                             </div>
                                                         )}
                                                     </div>
@@ -737,8 +882,8 @@ const UserDashboard = () => {
 
                                             <div className="flex-1 text-right">
                                                 {m.status === 'Completed' ? (
-                                                    <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl">
-                                                        <Trophy size={14} className="text-yellow-500" />
+                                                    <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm">
+                                                        <Trophy size={14} className="text-amber-500" />
                                                         <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">
                                                             Detailed Intel
                                                         </span>
@@ -754,15 +899,15 @@ const UserDashboard = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-gray-100 shadow-xl shadow-emerald-900/[0.02]">
+                    <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border border-black/5 shadow-xl">
                         <div className="flex justify-between items-center mb-6 md:mb-8">
-                            <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                            <h3 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
                                 <Zap size={16} className="text-emerald-500" /> TODAY'S RAPID BOOKING
                                 {!dbConnected && (
-                                    <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[8px] animate-pulse">DB OFFLINE</span>
+                                    <span className="bg-red-500 text-black px-2 py-0.5 rounded-full text-[8px] animate-pulse shadow-sm">DB OFFLINE</span>
                                 )}
                                 {dbConnected && todaySlots.length > 0 && (
-                                    <span className="bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full text-[8px]">LIVE SYNC</span>
+                                    <span className="bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full text-[8px] shadow-sm border border-emerald-100">LIVE SYNC</span>
                                 )}
                             </h3>
                             <button onClick={() => navigate('/')} className="text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:underline">VIEW ALL</button>
@@ -770,11 +915,11 @@ const UserDashboard = () => {
 
                         <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide -mx-2 px-2">
                             {todaySlots.length === 0 ? (
-                                <div className="flex flex-col items-start gap-2 py-4 px-4 bg-gray-50 rounded-3xl border border-dashed border-gray-200 w-full animate-pulse">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                                <div className="flex flex-col items-start gap-2 py-4 px-4 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200 w-full animate-pulse">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
                                         {loading ? 'Initializing Connection...' : 'Status Report: 0 Segments Loaded'}
                                     </p>
-                                    <p className="text-xs font-bold text-gray-500 uppercase italic">
+                                    <p className="text-xs font-bold text-zinc-500 uppercase italic">
                                         {loading ? 'Fetching live telemetry from The Turf...' : 'Initialization pending. No active slots for the selected segment.'}
                                     </p>
                                 </div>
@@ -823,7 +968,7 @@ const UserDashboard = () => {
                                 </div>
                                 <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-2 uppercase">No Active Registries</h3>
                                 <p className="text-sm text-gray-400 font-bold mb-8 uppercase tracking-tighter max-w-xs mx-auto">Your booked slots and match identifiers will appear here after confirmation.</p>
-                                <button onClick={() => navigate('/')} className="w-full md:w-auto bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-3 mx-auto group">
+                                <button onClick={() => navigate('/')} className="w-full md:w-auto bg-emerald-600 text-black px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-3 mx-auto group">
                                     <Calendar size={18} className="group-hover:rotate-12 transition-transform" />
                                     Reserve Your First Slot
                                 </button>
@@ -835,11 +980,11 @@ const UserDashboard = () => {
                                     return (
                                         <div key={booking._id} className="bg-white rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-xl shadow-emerald-900/[0.04] flex flex-col items-center group hover:border-emerald-200 transition-all gap-8">
                                             {/* Date Circle */}
-                                            <div className="w-20 h-20 rounded-full bg-emerald-50 border-4 border-white shadow-lg flex flex-col items-center justify-center -mt-[5rem] bg-white group-hover:bg-emerald-600 group-hover:text-white transition-all transform group-hover:scale-110">
-                                                <p className="text-[10px] font-black uppercase leading-none mb-1">
+                                            <div className="w-20 h-20 rounded-full bg-emerald-50 border-4 border-white shadow-lg flex flex-col items-center justify-center -mt-[5rem] group-hover:bg-emerald-600 group-hover:text-black transition-all transform group-hover:scale-110">
+                                                <p className="text-[10px] font-black uppercase leading-none mb-1 text-emerald-600 group-hover:text-emerald-100">
                                                     {booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString('en-US', { month: 'short' }) : (booking.createdAt ? new Date(booking.createdAt).toLocaleDateString('en-US', { month: 'short' }) : 'N/A')}
                                                 </p>
-                                                <p className="text-2xl font-black leading-none uppercase">
+                                                <p className="text-2xl font-black leading-none uppercase text-black group-hover:text-black">
                                                     {booking.slot?.date ? new Date(booking.slot.date).getDate() : (booking.createdAt ? new Date(booking.createdAt).getDate() : '??')}
                                                 </p>
                                             </div>
@@ -878,13 +1023,22 @@ const UserDashboard = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="w-full md:w-auto">
+                                                <div className="w-full md:w-auto flex flex-col md:flex-row gap-4">
                                                     {booking.bookingStatus === 'confirmed' && (
-                                                        <button 
-                                                            onClick={() => handleCreateMatchClick(booking)}
-                                                            className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-10 py-5 rounded-[1.8rem] shadow-xl shadow-emerald-200 transition-all flex items-center justify-center gap-3 active:scale-95">
-                                                            🏏 Create Match
-                                                        </button>
+                                                        <>
+                                                            <button 
+                                                                onClick={() => handleCreateMatchClick(booking)}
+                                                                className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-black text-[10px] font-black uppercase tracking-[0.2em] px-8 py-5 rounded-[1.8rem] shadow-xl shadow-emerald-200 transition-all flex items-center justify-center gap-3 active:scale-95">
+                                                                🏏 Create Match
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleDownloadReceipt(booking._id)}
+                                                                disabled={downloadingId === booking._id}
+                                                                className="flex-1 md:flex-none bg-zinc-100 hover:bg-white hover:text-black text-zinc-600 text-[10px] font-black uppercase tracking-[0.2em] px-8 py-5 rounded-[1.8rem] transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50">
+                                                                {downloadingId === booking._id ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
+                                                                Receipt
+                                                            </button>
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
@@ -898,22 +1052,22 @@ const UserDashboard = () => {
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         {(booking.matches || []).map((m, mi) => (
                                                             <div key={mi} className={`relative overflow-hidden rounded-[2.5rem] p-6 border transition-all duration-500 ${
-                                                                m.status === 'Completed' ? 'bg-gradient-to-br from-[#064E3B] to-[#022C22] border-emerald-400/30' : 'bg-gray-950 border-gray-800'
+                                                                m.status === 'Completed' ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 border-slate-100' : 'bg-zinc-50 border-zinc-200'
                                                             }`}>
                                                                 <div className="flex justify-between items-center mb-4">
-                                                                    <div className="bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                                                                        <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">{m.status === 'Completed' ? 'FINAL' : 'LIVE'}</p>
+                                                                    <div className={`${m.status === 'Completed' ? 'bg-emerald-500/10' : 'bg-emerald-50'} px-3 py-1 rounded-full border ${m.status === 'Completed' ? 'border-emerald-500/20' : 'border-emerald-100'}`}>
+                                                                        <p className={`text-[8px] font-black ${m.status === 'Completed' ? 'text-emerald-400' : 'text-emerald-600'} uppercase tracking-widest`}>{m.status === 'Completed' ? 'FINAL' : 'LIVE'}</p>
                                                                     </div>
                                                                     <button 
-                                                                        onClick={() => navigate(`/scoring/${m._id}`)}
-                                                                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
-                                                                        {m.status === 'Completed' ? 'Intel' : 'Score'}
+                                                                        onClick={() => navigate(m.status === 'Completed' || m.status === 'In Progress' ? `/live/${m._id}` : `/match/result/${m._id}`)}
+                                                                        className="bg-emerald-600 hover:bg-emerald-500 text-black px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
+                                                                        {m.status === 'Completed' ? 'Intel' : 'View'}
                                                                     </button>
                                                                 </div>
-                                                                <h4 className="text-[11px] font-black text-white uppercase tracking-tight mb-1">
+                                                                <h4 className={`text-[11px] font-black ${m.status === 'Completed' ? 'text-black' : 'text-black'} uppercase tracking-tight mb-1`}>
                                                                     {m.status === 'Completed' && m.result?.won_by ? (m.result.won_by === 'Tie' ? 'MATCH TIED' : `WON BY ${m.result.margin} ${m.result.won_by === 'Runs' ? 'RUNS' : 'WICKETS'}`) : `${m.quick_teams?.team_a?.name || 'TMA'} Vs. ${m.quick_teams?.team_b?.name || 'TMB'}`}
                                                                 </h4>
-                                                                <p className="text-[8px] font-bold text-emerald-400/40 uppercase tracking-widest leading-none">Arena Session: #{m._id.slice(-6)}</p>
+                                                                <p className={`text-[8px] font-bold ${m.status === 'Completed' ? 'text-emerald-400/40' : 'text-emerald-600/40'} uppercase tracking-widest leading-none`}>Arena Session: #{m._id.slice(-6)}</p>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -930,7 +1084,7 @@ const UserDashboard = () => {
                                                 {booking.bookingStatus === 'confirmed' && (booking.matches || []).length < 5 && (
                                                     <button 
                                                         onClick={() => handleCreateMatchClick(booking)}
-                                                        className="bg-emerald-600 active:bg-emerald-700 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl shadow-md shadow-emerald-200 transition-all flex items-center gap-2">
+                                                        className="bg-emerald-600 active:bg-emerald-700 hover:bg-emerald-500 text-black text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl shadow-md shadow-emerald-200 transition-all flex items-center gap-2">
                                                         🏏 Create {(booking.matches || []).length > 0 ? 'Next' : ''} Match
                                                     </button>
                                                 )}
@@ -957,3 +1111,6 @@ const UserDashboard = () => {
 };
 
 export default UserDashboard;
+
+
+

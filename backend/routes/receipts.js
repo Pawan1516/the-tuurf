@@ -65,4 +65,31 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// GET /api/receipts/download/:id
+router.get('/download/:id', async (req, res) => {
+  try {
+    const { createSingleBookingReceipt } = require('../services/pdfReport');
+    
+    const booking = await Booking.findById(req.params.id)
+      .populate('slot')
+      .populate('user', 'name phone email');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking node not found' });
+    }
+
+    const doc = createSingleBookingReceipt(booking);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="receipt-${booking._id.toString().slice(-6)}.pdf"`);
+
+    doc.pipe(res);
+    doc.end();
+  } catch (error) {
+    console.error('Receipt Download Error:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error during PDF transmission.' });
+  }
+});
+
+
 module.exports = router;

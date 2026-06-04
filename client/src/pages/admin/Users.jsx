@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Calendar,
@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronRight,
   User,
+   Phone,
   Mail,
   Lock,
   Search,
@@ -16,68 +17,51 @@ import {
   Settings,
   ShieldCheck,
   Eye,
-  EyeOff
-, Clock} from 'lucide-react';
+  EyeOff,
+  Clock,
+  Zap,
+  Users as UsersIcon,
+  Filter,
+  ArrowRight,
+  Database,
+  ShieldAlert,
+  ArrowUpRight,
+  RefreshCcw,
+  Cpu,
+  Layers,
+  CircleDot
+} from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
-import MobileNav from '../../components/MobileNav';
 import AdminSidebar from '../../components/AdminSidebar';
 
 const AdminUsers = () => {
-
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
-  const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
   const [showPasswords, setShowPasswords] = useState({});
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-  const navItems = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/admin/operations', label: 'Operations HUB', icon: Activity },
-    { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
-    { to: '/admin/users', label: 'User Control', icon: User },
-    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
-    { to: '/admin/settings', label: 'Settings', icon: Settings },
-    { to: '/admin/scanner', label: 'QR Scanner', icon: Clock }
-  ];
-
-  const handleLogout = () => {
-    logout();
-    navigate('/admin/login');
-  };
-
-  useEffect(() => {
-    fetchUsers();
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const { data } = await adminAPI.getSettings();
-      if (data.success) {
-        setSettings(prev => ({ ...prev, ...data.settings }));
-      }
-    } catch (err) {
-      console.error('Settings fetch error:', err);
-    }
-  };
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminAPI.getUsers();
       setUsers(response.data.users || []);
     } catch (error) {
-      setError('Neural registry access denied or failed.');
+      setError('Neural registry access failure.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, [fetchUsers]);
 
   const togglePassword = (userId) => {
     setShowPasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
@@ -85,123 +69,220 @@ const AdminUsers = () => {
 
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.userPhone?.includes(searchTerm)
   );
 
-  const NavItem = ({ to, label, icon: Icon, active = false }) => (
-    <Link
-      to={to}
-      className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-        ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-        : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
-    >
-      <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
-      <span className="text-xs font-black uppercase tracking-widest">{label}</span>
-    </Link>
+  if (loading) return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+        <div className="relative">
+            <div className="w-24 h-24 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
+            <UsersIcon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
+        </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Accessing Subject Registry...</p>
+    </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col lg:flex-row">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+    <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+      <AdminSidebar user={user} logout={logout} />
 
-      <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
+      <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+        {/* BI Style Top Bar */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-8">
+                <div>
+                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                        <UsersIcon className="text-emerald-600" size={26} /> 
+                        Subject Registry <span className="text-slate-400">/ Neural Nodes</span>
+                    </h1>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Identity Intelligence v5.0</p>
+                </div>
+            </div>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-24">
-
-        <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-          <div className="flex flex-col">
-            <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">User Registry</h2>
-            <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Personnel Database</p>
-          </div>
-
-          <div className="relative group hidden md:block">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-600 transition-colors" size={18} />
-            <input 
-              type="text" 
-              placeholder="SEARCH IDENTITY..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-3 pl-12 rounded-xl text-[10px] font-black tracking-widest uppercase outline-none w-64 md:w-80 transition-all"
-            />
-          </div>
+            <div className="flex items-center gap-6">
+                <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+                    <div className="px-4 py-1.5 border-r border-slate-200">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
+                        <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                    </div>
+                    <div className="px-4 py-1.5">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Database Synchronization</p>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                            <span className="text-[10px] font-black text-emerald-600 uppercase">Registry Live</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={16} />
+                    <input 
+                        type="text" 
+                        placeholder="SEARCH IDENTITY..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="bg-slate-100 border border-slate-200 focus:bg-white focus:border-emerald-600 p-3 pl-12 rounded-xl text-[10px] font-black tracking-widest uppercase outline-none w-64 transition-all italic"
+                    />
+                </div>
+                <button onClick={fetchUsers} className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-blue-700 transition-all">
+                    <RefreshCcw size={20} />
+                </button>
+            </div>
         </header>
 
-        <div className="p-4 md:p-10">
-          {error && (
-            <div className="bg-red-50 border border-red-100 p-6 rounded-[2rem] flex items-center gap-4 text-red-600 mb-8">
-              <Activity className="shrink-0" size={18} />
-              <p className="text-[10px] md:text-xs font-black uppercase tracking-tight">{error}</p>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="py-40 flex flex-col items-center gap-6">
-              <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Decrypting User Data...</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-[2rem] md:rounded-[3rem] overflow-hidden border border-gray-100 shadow-2xl shadow-emerald-900/[0.03]">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50/50">
-                      <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Identified Name</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Comms Email</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Access Key (Hash)</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {filteredUsers.length > 0 ? filteredUsers.map((u) => (
-                      <tr key={u._id} className="hover:bg-emerald-50/30 transition-colors group">
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center font-black text-xs uppercase group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                              {u.name.slice(0, 2)}
+        <div className="max-w-[1600px] mx-auto p-10 space-y-10">
+            
+            {/* Identity KPI Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                {[
+                    { label: 'Total Subjects', value: users.length, icon: <UsersIcon className="text-emerald-500" /> },
+                    { label: 'Verified Nodes', value: users.length, icon: <ShieldCheck className="text-emerald-500" /> },
+                    { label: 'Registry Load', value: 'Nominal', icon: <Activity className="text-emerald-500" /> },
+                    { label: 'Database Health', value: '100%', icon: <Database className="text-slate-500" /> }
+                ].map((kpi, idx) => (
+                    <div key={idx} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-2xl transition-all group overflow-hidden relative">
+                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform duration-700">
+                            {kpi.icon}
+                        </div>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-blue-50 transition-colors">
+                                {kpi.icon}
                             </div>
-                            <span className="font-bold text-gray-900 uppercase tracking-tight text-sm">{u.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-2 text-gray-500 font-medium text-xs">
-                            <Mail size={14} className="text-emerald-400" />
-                            {u.email}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-3">
-                            <Lock size={14} className="text-gray-300" />
-                            <code className="bg-gray-50 px-3 py-1.5 rounded-lg text-[10px] font-mono text-gray-400 truncate max-w-[200px] inline-block">
-                              {showPasswords[u._id] ? (u.realPassword || '⚠️ Requires User Login') : '••••••••••••••••'}
-                            </code>
-                            <button 
-                              onClick={() => togglePassword(u._id)}
-                              className="text-gray-300 hover:text-emerald-600 transition-colors"
-                            >
-                              {showPasswords[u._id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 text-right">
-                          <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full border border-emerald-100">
-                            <CheckCircle size={12} />
-                            <span className="text-[9px] font-black uppercase tracking-widest">Verified</span>
-                          </div>
-                        </td>
-                      </tr>
-                    )) : (
-                      <tr>
-                        <td colSpan="4" className="px-8 py-20 text-center">
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No matching identities found in local clusters.</p>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{kpi.label}</p>
+                        <h3 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter tabular-nums">{kpi.value}</h3>
+                    </div>
+                ))}
             </div>
-          )}
+
+            {error && (
+                <div className="bg-rose-50 border border-rose-100 p-6 rounded-[2rem] flex items-center gap-4 text-rose-600 animate-fade-in">
+                    <ShieldAlert size={20} />
+                    <p className="text-[10px] font-black uppercase tracking-widest italic">{error}</p>
+                </div>
+            )}
+
+            {/* Main Identity Table */}
+            <div className="bg-white rounded-[3.5rem] shadow-sm border border-slate-200 overflow-hidden relative">
+                 <div className="absolute top-0 right-0 p-12 opacity-[0.01] text-slate-900 pointer-events-none">
+                    <Cpu size={300} />
+                 </div>
+                 
+                 {/* Table Header Controls */}
+                 <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-8 bg-white/50 backdrop-blur-xl relative z-10">
+                    <div className="flex items-center gap-6">
+                       <div className="bg-slate-950 text-white p-4 rounded-2xl shadow-xl">
+                          <Layers size={24} />
+                       </div>
+                       <div>
+                          <h4 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">{filteredUsers.length} <span className="text-slate-400">/ {users.length}</span></h4>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1.5 italic">Filtered Identity Nodes</p>
+                       </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                       <div className="bg-slate-50 px-6 py-2.5 rounded-xl border border-slate-200 flex items-center gap-3">
+                          <CircleDot size={12} className="text-emerald-600 animate-pulse" />
+                          <span className="text-[9px] font-black text-slate-900 uppercase tracking-widest italic">Neural Registry Stream Active</span>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="overflow-x-auto custom-scrollbar relative z-10">
+                    <table className="w-full text-left border-collapse">
+                       <thead>
+                          <tr className="bg-slate-50/50">
+                             {['Subject Persona', 'Comm Protocol', 'Security Hash', 'System Status', 'Verification'].map(h => (
+                                <th key={h} className="px-10 py-8 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] italic border-b border-slate-100">{h}</th>
+                             ))}
+                          </tr>
+                       </thead>
+                       <tbody className="divide-y divide-slate-50">
+                          {filteredUsers.length > 0 ? filteredUsers.map((u) => (
+                            <tr key={u._id} className="hover:bg-slate-50/80 transition-all group">
+                               <td className="px-10 py-10">
+                                  <div className="flex items-center gap-6">
+                                     <div className="w-16 h-16 bg-slate-950 text-white rounded-[1.5rem] flex items-center justify-center font-black text-xl uppercase group-hover:bg-emerald-600 transition-all shadow-xl italic tabular-nums">
+                                        {u.name.slice(0, 2)}
+                                     </div>
+                                     <div className="flex flex-col">
+                                        <span className="font-black text-slate-900 uppercase tracking-tighter text-lg italic group-hover:text-emerald-600 transition-colors leading-none mb-2">{u.name}</span>
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic tabular-nums border-l-2 border-emerald-600/20 pl-2">UID_{u._id.slice(-8).toUpperCase()}</span>
+                                     </div>
+                                  </div>
+                               </td>
+                               <td className="px-10 py-10">
+                                  <div className="space-y-3">
+                                     <div className="flex items-center gap-3 text-slate-600 font-black text-[11px] italic">
+                                        <Mail size={14} className="text-emerald-600" />
+                                        {u.email}
+                                     </div>
+                                     <div className="flex items-center gap-3 text-slate-400 font-black text-[10px] italic tabular-nums">
+                                        <Phone size={14} className="text-slate-300" />
+                                        +91 {u.userPhone || 'PROTOCOL_ERROR'}
+                                     </div>
+                                  </div>
+                               </td>
+                               <td className="px-10 py-10">
+                                  <div className="flex items-center gap-4">
+                                     <div className="bg-slate-100/50 border border-slate-200 px-6 py-3 rounded-xl flex items-center gap-5 group-hover:bg-white transition-all shadow-inner">
+                                        <Lock size={14} className="text-slate-400" />
+                                        <code className="text-[10px] font-black text-slate-600 tracking-[0.2em] uppercase tabular-nums">
+                                           {showPasswords[u._id] ? (u.realPassword || 'HASH_NULL') : '••••••••••••'}
+                                        </code>
+                                     </div>
+                                     <button onClick={() => togglePassword(u._id)} className="p-3 bg-white border border-slate-200 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white hover:border-slate-950 transition-all shadow-sm">
+                                        {showPasswords[u._id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                                     </button>
+                                  </div>
+                               </td>
+                               <td className="px-10 py-10">
+                                  <div className="flex items-center gap-5">
+                                     <div className="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
+                                        <div className="h-full bg-emerald-600 w-full rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)]"></div>
+                                     </div>
+                                     <span className="text-[9px] font-black text-slate-900 uppercase italic">Nominal</span>
+                                  </div>
+                               </td>
+                               <td className="px-10 py-10">
+                                  <div className="inline-flex items-center gap-3 bg-emerald-50 text-emerald-600 px-5 py-2 rounded-full border border-emerald-100 shadow-sm group-hover:bg-emerald-600 group-hover:text-white transition-all cursor-default italic">
+                                     <ShieldCheck size={14} />
+                                     <span className="text-[9px] font-black uppercase tracking-widest">Verified Identity</span>
+                                  </div>
+                               </td>
+                            </tr>
+                          )) : (
+                            <tr>
+                               <td colSpan="5" className="px-10 py-48 text-center bg-slate-50/20">
+                                  <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto text-slate-200 mb-8 border border-slate-100">
+                                     <Database size={48} strokeWidth={1} />
+                                  </div>
+                                  <h5 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic mb-3">Zero Matching Node Identities</h5>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] italic leading-relaxed">No subject nodes detected in the current filter parameters.<br/>Initiate broad scan to reset parameters.</p>
+                               </td>
+                            </tr>
+                          )}
+                       </tbody>
+                    </table>
+                 </div>
+
+                 {/* Registry Footer */}
+                 <div className="p-8 bg-slate-950 text-white border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 to-transparent"></div>
+                    <div className="flex items-center gap-6 relative z-10">
+                       <div className="bg-white/10 p-4 rounded-2xl shadow-2xl backdrop-blur-md border border-white/10"><Activity size={24} className="text-emerald-500 animate-pulse" /></div>
+                       <div>
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic mb-1">Neural Infrastructure Sync</p>
+                          <p className="text-xs font-black text-white uppercase italic tracking-wide">Protocol Alpha-9 | {filteredUsers.length} Operational Identities Online</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-4 relative z-10">
+                       <button className="px-10 py-4 bg-white/10 hover:bg-white text-white hover:text-slate-900 border border-white/10 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-2xl flex items-center gap-3 italic">
+                          Extract Identity Registry <ArrowUpRight size={18} />
+                       </button>
+                    </div>
+                 </div>
+            </div>
         </div>
       </main>
     </div>
@@ -209,4 +290,3 @@ const AdminUsers = () => {
 };
 
 export default AdminUsers;
-

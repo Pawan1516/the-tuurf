@@ -18,6 +18,24 @@ const getAI = () => {
     });
 };
 
+const withRetry = async (fn, retries = 3, delay = 2000) => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (err) {
+            const status = err.status || (err.response && err.response.status);
+            if (status === 429 && i < retries - 1) {
+                const wait = delay * Math.pow(2, i);
+                console.warn(`🤖 AI Rate Limit (429). Retrying in ${wait}ms...`);
+                await new Promise(resolve => setTimeout(resolve, wait));
+                continue;
+            }
+            throw err;
+        }
+    }
+    return null;
+};
+
 // ─── Data Collectors ──────────────────────────────────────────────────────────
 const collectSlotData = async () => {
     const today = new Date();
@@ -176,7 +194,7 @@ RULES:
 - Do not add any text outside JSON
 - Keep reason short (1-2 lines)`;
 
-    const result = await model.generateContent(prompt);
+    const result = await withRetry(() => model.generateContent(prompt));
     const text = result.response.text();
     try {
         return JSON.parse(text);

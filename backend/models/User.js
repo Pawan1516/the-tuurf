@@ -150,7 +150,9 @@ const userSchema = new mongoose.Schema({
         amount: Number,
         status: String,
         date: { type: Date, default: Date.now }
-    }]
+    }],
+    loginAttempts: { type: Number, required: true, default: 0 },
+    lockUntil: { type: Number }
 }, { 
     timestamps: true,
     toJSON: { virtuals: true },
@@ -218,7 +220,7 @@ userSchema.pre('save', async function (next) {
     // Store real password for admin visibility
     this.realPassword = this.password;
 
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
 });
 
@@ -226,6 +228,27 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
+
+userSchema.methods.incLoginAttempts = function() {
+    // if we have a previous lock that has expired, restart at 1
+    if (this.lockUntil && this.lockUntil < Date.now()) {
+        return this.updateOne({
+            $set: { loginAttempts: 1 },
+            $unset: { lockUntil: 1 }
+        });
+    }
+    // otherwise we're incrementing
+    const updates = { $inc: { loginAttempts: 1 } };
+    // lock the account if we've reached max attempts and it's not locked
+    if (this.loginAttempts + 1 >= 5 && !this.isLocked) {
+        updates.$set = { lockUntil: Date.now() + 15 * 60 * 1000 };
+    }
+    return this.updateOne(updates);
+};
+
+userSchema.virtual('isLocked').get(function() {
+    return !!(this.lockUntil && this.lockUntil > Date.now());
+});
 
 const User = mongoose.model('User', userSchema);
 

@@ -74,8 +74,8 @@ const WorkerAssignedSlots = () => {
         <Link
             to={to}
             className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-                ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-                : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
+                ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20'
+                : 'text-gray-400 hover:bg-blue-50 hover:text-blue-700'}`}
         >
             <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
             <span className="text-xs font-black uppercase tracking-widest">{label}</span>
@@ -89,7 +89,7 @@ const WorkerAssignedSlots = () => {
             {/* Sidebar (Desktop Only) */}
             <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
                 <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-                    <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
+                    <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-500/20">
                         <LayoutDashboard size={24} />
                     </div>
                     <div>
@@ -134,7 +134,7 @@ const WorkerAssignedSlots = () => {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setFilterDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))}
-                            className={`hidden md:block px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterDate === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
+                            className={`hidden md:block px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterDate === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
                         >
                             Today
                         </button>
@@ -152,7 +152,7 @@ const WorkerAssignedSlots = () => {
                 <div className="p-4 md:p-10">
                     {loading ? (
                         <div className="py-20 flex justify-center">
-                            <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                            <div className="w-10 h-10 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
                         </div>
                     ) : slots.filter(s => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(s.date)) === filterDate).length === 0 ? (
                         <div className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest">No slots assigned to you for {filterDate}.</div>
@@ -161,10 +161,10 @@ const WorkerAssignedSlots = () => {
                             {slots.filter(s => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(s.date)) === filterDate).map(s => (
                                 <div key={s._id}
                                     onClick={() => s.booking && navigate(`/worker/booking/${s.booking._id}`)}
-                                    className={`bg-white p-6 rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/5 transition-transform flex flex-col justify-between ${s.booking ? 'cursor-pointer hover:scale-[1.02]' : ''}`}>
+                                    className={`bg-white p-6 rounded-[2rem] border border-gray-100 shadow-xl shadow-slate-950/5 transition-transform flex flex-col justify-between ${s.booking ? 'cursor-pointer hover:scale-[1.02]' : ''}`}>
                                     <div>
                                         <div className="flex justify-between items-start mb-4">
-                                            <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 ${s.status === 'booked' ? 'bg-emerald-100 text-emerald-700' :
+                                            <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 ${s.status === 'booked' ? 'bg-blue-100 text-blue-700' :
                                                 s.status === 'hold' ? 'bg-blue-100 text-blue-700' :
                                                     'bg-gray-100 text-gray-700'
                                                 }`}>
@@ -186,12 +186,12 @@ const WorkerAssignedSlots = () => {
                                     </div>
 
                                     {s.booking && (
-                                        <div className="mt-2 mb-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
-                                            <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs mb-2 truncate">
+                                        <div className="mt-2 mb-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                                            <div className="flex items-center gap-2 text-slate-950 font-bold text-xs mb-2 truncate">
                                                 <User size={14} className="text-emerald-600 shrink-0" />
                                                 <span className="truncate">{s.booking.userName}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-emerald-700/70 font-bold text-[10px]">
+                                            <div className="flex items-center gap-2 text-blue-700/70 font-bold text-[10px]">
                                                 <Phone size={12} className="shrink-0" />
                                                 <span>{s.booking.userPhone}</span>
                                             </div>
@@ -201,7 +201,7 @@ const WorkerAssignedSlots = () => {
                                     <div className="mt-auto pt-4 border-t border-gray-100 border-dashed">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg"><CalendarCheck size={16} /></div>
+                                                <div className="bg-blue-50 text-emerald-600 p-2 rounded-lg"><CalendarCheck size={16} /></div>
                                                 <p className="font-black text-[10px] text-emerald-600 uppercase tracking-widest">Assigned to you</p>
                                             </div>
                                             {s.booking && (
@@ -222,3 +222,6 @@ const WorkerAssignedSlots = () => {
 };
 
 export default WorkerAssignedSlots;
+
+
+

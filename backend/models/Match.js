@@ -7,6 +7,7 @@ const matchSchema = new mongoose.Schema({
     },
     title: { type: String }, // e.g. "Team A vs Team B"
     format: { type: String, enum: ['T3', 'T5', 'T6', 'T7', 'T8', 'T10', 'T12', 'T15', 'T20', '30-over', '50-over', 'Custom'] },
+    overs: { type: Number, default: 20 },
     start_time: { type: Date, required: true },
     end_time: { type: Date },
     location: { type: String, default: 'The Turf' },
@@ -78,8 +79,7 @@ const matchSchema = new mongoose.Schema({
                 is_captain: { type: Boolean, default: false },
                 is_wk: { type: Boolean, default: false },
                 is_linked: { type: Boolean, default: false },
-                sms_invite_sent: { type: Boolean, default: false },
-                claim_token: { type: String },
+                participation_status: { type: String, enum: ['waiting', 'confirmed'], default: 'waiting' },
                 batting_position: Number
             }]
         },
@@ -96,8 +96,7 @@ const matchSchema = new mongoose.Schema({
                 is_captain: { type: Boolean, default: false },
                 is_wk: { type: Boolean, default: false },
                 is_linked: { type: Boolean, default: false },
-                sms_invite_sent: { type: Boolean, default: false },
-                claim_token: { type: String },
+                participation_status: { type: String, enum: ['waiting', 'confirmed'], default: 'waiting' },
                 batting_position: Number
             }]
         }
@@ -208,7 +207,7 @@ const matchSchema = new mongoose.Schema({
     live_active_team: { type: String, enum: ['A', 'B'], default: 'A' },
     
     // Awards and Completion
-    status: { type: String, enum: ['Scheduled', 'In Progress', 'Completed', 'Abandoned', 'Cancelled'], default: 'Scheduled' },
+    status: { type: String, enum: ['Pending', 'Approved', 'Scheduled', 'In Progress', 'Completed', 'Abandoned', 'Cancelled'], default: 'Pending' },
     result: {
         winner: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
         won_by: { type: String, enum: ['Runs', 'Wickets', 'Tie', 'Super Over', 'Pending'] },
@@ -250,13 +249,16 @@ const matchSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Indexes for fast lookup
-matchSchema.index({ 'verification.qr_code.code': 1 });
+// matchSchema.index({ 'verification.qr_code.code': 1 });
 matchSchema.index({ 'verification.status': 1 });
 matchSchema.index({ 'start_control.can_start': 1 });
 matchSchema.index({ start_time: 1 });
 
 matchSchema.methods.canBeScored = function() {
-    return this.verification.status === 'VERIFIED' || this.is_offline_match;
+    return this.verification.status === 'VERIFIED' 
+        || this.is_offline_match 
+        || this.status === 'Approved'
+        || this.status === 'In Progress';
 };
 
 const Match = mongoose.model('Match', matchSchema);

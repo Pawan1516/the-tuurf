@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { receiptsAPI } from '../api/client';
 import { 
   CheckCircle2, 
   Download, 
@@ -18,7 +19,7 @@ import {
 export const QRCodeDisplay = ({ token, expiry }) => {
   return (
     <div className="flex flex-col items-center bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm">
-      <div className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-100 mb-6 flex items-center gap-2">
+      <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl border border-blue-100 mb-6 flex items-center gap-2">
         <ShieldCheck size={14} />
         <span className="text-[10px] font-black uppercase tracking-widest leading-none">Official Access Pass</span>
       </div>
@@ -56,7 +57,27 @@ export const WhatsAppReceiptButton = ({ receipt }) => {
 };
 
 export const BookingReceiptModal = ({ receipt, onClose }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
   if (!receipt) return null;
+
+  const handleDownloadPDF = async () => {
+    try {
+        setIsDownloading(true);
+        const response = await receiptsAPI.download(receipt.booking_id);
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `receipt-${receipt.receipt_id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    } catch (err) {
+        console.error('PDF Download Protocol Failure:', err);
+        alert('Failed to transmit receipt payload.');
+    } finally {
+        setIsDownloading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
@@ -68,7 +89,7 @@ export const BookingReceiptModal = ({ receipt, onClose }) => {
                 <img 
                     src="/logo.png" 
                     alt="The Turf" 
-                    className="h-16 w-auto object-contain bg-emerald-50 p-2 rounded-2xl shadow-sm border border-emerald-100"
+                    className="h-16 w-auto object-contain bg-blue-50 p-2 rounded-2xl shadow-sm border border-blue-100"
                     onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = 'https://cdn-icons-png.flaticon.com/512/3233/3233513.png';
@@ -134,8 +155,11 @@ export const BookingReceiptModal = ({ receipt, onClose }) => {
 
             <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col gap-3">
                 <div className="flex gap-3">
-                     <button className="flex-1 flex items-center justify-center gap-2 bg-slate-100 text-slate-900 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-200 transition-all border border-slate-200">
-                        <Download size={16} /> PDF
+                     <button 
+                        onClick={handleDownloadPDF}
+                        disabled={isDownloading}
+                        className="flex-1 flex items-center justify-center gap-2 bg-slate-100 text-slate-900 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-200 transition-all border border-slate-200 disabled:opacity-50">
+                        {isDownloading ? <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin"></div> : <Download size={16} />} PDF
                      </button>
                      <WhatsAppReceiptButton receipt={receipt} />
                 </div>
@@ -181,11 +205,11 @@ export const ReceiptCard = ({ receipt, onClick }) => {
     return (
         <div 
           onClick={onClick}
-          className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-emerald-200 transition-all cursor-pointer group"
+          className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all cursor-pointer group"
         >
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-blue-50 text-emerald-600 rounded-xl flex items-center justify-center">
                         <Calendar size={18} />
                     </div>
                     <div>
@@ -194,7 +218,7 @@ export const ReceiptCard = ({ receipt, onClick }) => {
                     </div>
                 </div>
                 <div className="flex flex-col items-end">
-                    <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">Confirmed</span>
+                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">Confirmed</span>
                     <span className="text-[6px] font-black text-slate-300 uppercase mt-1">ID: {receipt.receipt_id}</span>
                 </div>
             </div>
@@ -212,3 +236,6 @@ export const ReceiptCard = ({ receipt, onClick }) => {
         </div>
     );
 };
+
+
+

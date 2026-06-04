@@ -82,7 +82,7 @@ const FirebaseAuthTest = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-3xl shadow-xl shadow-emerald-100">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-3xl shadow-xl shadow-blue-100">
         <div>
           <h2 className="mt-6 text-center text-3xl font-black text-gray-900 tracking-tighter uppercase">
             Firebase Auth Validation
@@ -120,14 +120,14 @@ const FirebaseAuthTest = () => {
             <button
               onClick={handleRegister}
               disabled={loading || !email || !password}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-xs font-black rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 uppercase tracking-widest disabled:opacity-50 transition-all"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-xs font-black rounded-xl text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 uppercase tracking-widest disabled:opacity-50 transition-all"
             >
               1. Register & Send Verification
             </button>
             <button
               onClick={handleLogin}
               disabled={loading || !email || !password}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-xs font-black rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 uppercase tracking-widest disabled:opacity-50 transition-all"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-xs font-black rounded-xl text-white bg-emerald-600 hover:bg-blue-700 shadow-lg shadow-emerald-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 uppercase tracking-widest disabled:opacity-50 transition-all"
             >
               2. Validate Login (Checked)
             </button>
@@ -156,7 +156,7 @@ const FirebaseAuthTest = () => {
 
         {statusMsg && (
           <div className={`mt-4 p-4 rounded-xl text-center text-xs font-bold leading-relaxed ${
-            statusMsg.includes('Successful') ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'
+            statusMsg.includes('Successful') ? 'bg-blue-50 text-slate-900' : 'bg-red-50 text-red-800'
           }`}>
             {statusMsg}
           </div>
@@ -176,3 +176,6 @@ const FirebaseAuthTest = () => {
 };
 
 export default FirebaseAuthTest;
+
+
+

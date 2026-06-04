@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Settings as SettingsIcon,
   LayoutDashboard,
@@ -18,15 +18,25 @@ import {
   Moon,
   Info,
   TrendingUp,
-  User
+  User,
+  ShieldCheck,
+  Globe,
+  Cpu,
+  Layers,
+  ArrowRight,
+  ShieldAlert,
+  Loader2,
+  MousePointer2,
+  Lock,
+  Wallet,
+  RefreshCcw,
+  CircleDot
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
-import MobileNav from '../../components/MobileNav';
 import AdminSidebar from '../../components/AdminSidebar';
 
 const AdminSettings = () => {
-
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
@@ -48,53 +58,35 @@ const AdminSettings = () => {
     UPI_ID: 'theturf@upi'
   });
 
-  const navItems = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/admin/operations', label: 'Operations HUB', icon: TrendingUp },
-    { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
-    { to: '/admin/users', label: 'User Control', icon: User },
-    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
-    { to: '/admin/settings', label: 'Settings', icon: SettingsIcon },
-    { to: '/admin/scanner', label: 'QR Scanner', icon: Clock }
-  ];
+  const fetchSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.getSettings();
+      if (response.data.success) {
+        setSettings(prev => ({ ...prev, ...response.data.settings }));
+      }
+    } catch (error) {
+      console.error('Settings sync failure:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
+    fetchSettings();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const response = await adminAPI.getSettings();
-        if (response.data.success) {
-          // Merge fetched settings with defaults to ensure all keys exist
-          setSettings(prev => ({
-            ...prev,
-            ...response.data.settings
-          }));
-        }
-      } catch (error) {
-        console.error('Error fetching settings:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSettings();
-  }, []);
+  }, [fetchSettings]);
 
   const handleSave = async (e) => {
-    e.preventDefault();
+    if(e) e.preventDefault();
     setSaving(true);
     setMessage({ type: '', text: '' });
-
     try {
       const response = await adminAPI.saveSettings(settings);
       if (response.data.success) {
         setMessage({ type: 'success', text: 'Global infrastructure calibrated successfully.' });
-        // Optionally trigger a slot re-sync here or inform the admin to do so
+        setTimeout(() => setMessage({ type: '', text: '' }), 5000);
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Synchronization failure: ' + (error.response?.data?.message || error.message) });
@@ -111,308 +103,227 @@ const AdminSettings = () => {
     }));
   };
 
-  const NavItem = ({ to, label, icon: Icon, active = false }) => (
-    <Link
-      to={to}
-      className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-        ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-        : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
-    >
-      <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
-      <span className="text-xs font-black uppercase tracking-widest">{label}</span>
-    </Link>
+  if (loading) return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+        <div className="relative">
+            <div className="w-24 h-24 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
+            <SettingsIcon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
+        </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Accessing Calibration Registry...</p>
+    </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+    <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+      <AdminSidebar user={user} logout={logout} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto pb-24">
-
-        <header className="hidden md:flex bg-white/80 backdrop-blur-md px-10 h-24 items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <h2 className="text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Settings</h2>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">System Calibration</p>
+      <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+        {/* BI Style Top Bar */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-8">
+                <div>
+                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                        <SettingsIcon className="text-emerald-600" size={26} /> 
+                        System Calibration <span className="text-slate-400">/ Global Config</span>
+                    </h1>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Core Configuration Hub v6.1</p>
+                </div>
             </div>
-            <div className="h-10 w-[1px] bg-gray-100"></div>
-            <div className="flex flex-col">
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
-              <p className="text-xl font-black text-gray-900 tracking-tighter tabular-nums">{currentTime.toLocaleTimeString()}</p>
+
+            <div className="flex items-center gap-6">
+                <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+                    <div className="px-4 py-1.5 border-r border-slate-200">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
+                        <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                    </div>
+                    <div className="px-4 py-1.5">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Infrastructure Health</p>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                            <span className="text-[10px] font-black text-emerald-600 uppercase">Optimal</span>
+                        </div>
+                    </div>
+                </div>
+                <button 
+                  onClick={handleSave} 
+                  disabled={saving}
+                  className="flex items-center gap-4 bg-emerald-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50 italic"
+                >
+                  {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  {saving ? 'Synchronizing...' : 'Commit Configuration'}
+                </button>
             </div>
-          </div>
         </header>
 
-        <div className="p-6 md:p-10 max-w-5xl mx-auto w-full">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Fetching Global Config...</p>
-              </div>
+        <div className="max-w-[1600px] mx-auto p-10 space-y-10">
+            
+            {message.text && (
+                <div className={`p-8 rounded-[2.5rem] flex items-center gap-6 border-4 shadow-2xl animate-fade-in ${message.type === 'success' ? 'bg-emerald-600 border-white text-white' : 'bg-rose-600 border-white text-white'}`}>
+                    <div className="bg-white/20 p-4 rounded-2xl">
+                        {message.type === 'success' ? <CheckCircle size={24} /> : <ShieldAlert size={24} />}
+                    </div>
+                    <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80 mb-1 italic">Structural Broadcast</p>
+                        <p className="text-lg font-black uppercase tracking-tight italic leading-none">{message.text}</p>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                
+                {/* Pricing Strategy Calibration */}
+                <div className="lg:col-span-7 bg-white rounded-[3.5rem] p-12 border border-slate-200 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.02] text-emerald-600 group-hover:rotate-12 transition-all duration-1000">
+                        <TrendingUp size={250} />
+                    </div>
+                    <div className="flex items-center gap-8 border-b border-slate-100 pb-10 mb-10 relative z-10">
+                        <div className="p-5 bg-slate-950 text-white rounded-[1.5rem] shadow-xl"><TrendingUp size={28} /></div>
+                        <div>
+                            <h3 className="text-2xl font-black uppercase tracking-tighter text-slate-900 italic">Pricing <span className="text-emerald-600">Calibration Matrix</span></h3>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1.5 italic">Revenue Optimization & Economic Tier Logic</p>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-12 relative z-10">
+                        <div className="space-y-10">
+                            <PriceInput label="Weekday Primary Rate" value={settings.PRICE_DAY} onChange={(val) => handleInputChange('PRICE_DAY', val)} icon={<Sun size={18} className="text-amber-500" />} />
+                            <PriceInput label="Weekday Nocturnal Rate" value={settings.PRICE_NIGHT} onChange={(val) => handleInputChange('PRICE_NIGHT', val)} icon={<Moon size={18} className="text-emerald-600" />} />
+                        </div>
+                        <div className="space-y-10">
+                            <PriceInput label="Weekend Peak Rate" value={settings.PRICE_WEEKEND_DAY} onChange={(val) => handleInputChange('PRICE_WEEKEND_DAY', val)} icon={<Zap size={18} className="text-emerald-500" />} />
+                            <PriceInput label="Weekend Premium Rate" value={settings.PRICE_WEEKEND_NIGHT} onChange={(val) => handleInputChange('PRICE_WEEKEND_NIGHT', val)} icon={<Activity size={18} className="text-rose-600" />} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Operational Thresholds Hub */}
+                <div className="lg:col-span-5 bg-white rounded-[3.5rem] p-12 border border-slate-200 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.02] text-slate-900 group-hover:scale-110 transition-all duration-1000">
+                        <Clock size={250} />
+                    </div>
+                    <div className="flex items-center gap-8 border-b border-slate-100 pb-10 mb-10 relative z-10">
+                        <div className="p-5 bg-emerald-600 text-white rounded-[1.5rem] shadow-xl"><Clock size={28} /></div>
+                        <div>
+                            <h3 className="text-2xl font-black uppercase tracking-tighter text-slate-900 italic">Temporal <span className="text-slate-400">Parameters</span></h3>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1.5 italic">Shift Windows & Synchronization Thresholds</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-10 relative z-10">
+                        <div className="grid grid-cols-2 gap-8">
+                            <SelectInput label="Transition Hour" value={settings.PRICE_TRANSITION_HOUR} onChange={(val) => handleInputChange('PRICE_TRANSITION_HOUR', val)} options={[...Array(24)].map((_, i) => ({ val: i, label: `${i.toString().padStart(2, '0')}:00 HRS` }))} />
+                            <NumberInput label="Node Hold Duration" value={settings.HOLD_DURATION_MINUTES} onChange={(val) => handleInputChange('HOLD_DURATION_MINUTES', val)} unit="MIN" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-8">
+                            <SelectInput label="Arena Activation" value={settings.TURF_OPEN_HOUR} onChange={(val) => handleInputChange('TURF_OPEN_HOUR', val)} options={[...Array(24)].map((_, i) => ({ val: i, label: `${i.toString().padStart(2, '0')}:00 HRS` }))} />
+                            <SelectInput label="Arena Termination" value={settings.TURF_CLOSE_HOUR} onChange={(val) => handleInputChange('TURF_CLOSE_HOUR', val)} options={[...Array(24)].map((_, i) => ({ val: i, label: `${i.toString().padStart(2, '0')}:00 HRS` }))} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Global Platform Identity & Ledger */}
+                <div className="lg:col-span-12 bg-slate-950 rounded-[3.5rem] p-12 text-white shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-emerald-500 group-hover:-translate-x-10 transition-all duration-[2000ms]">
+                        <Globe size={450} />
+                    </div>
+                    
+                    <div className="flex items-center gap-8 border-b border-white/5 pb-10 mb-12 relative z-10">
+                        <div className="p-5 bg-emerald-600 text-white rounded-[1.5rem] shadow-2xl"><Globe size={28} /></div>
+                        <div>
+                            <h3 className="text-3xl font-black uppercase tracking-tighter italic">Global Platform <span className="text-emerald-500">Identity Registry</span></h3>
+                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1.5 italic">Geographic Location & Settlement Infrastructure Config</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 relative z-10">
+                        <TextInput label="Platform Alias" value={settings.TURF_NAME} onChange={(val) => handleInputChange('TURF_NAME', val)} icon={<Cpu size={20} />} />
+                        <TextInput label="Settlement Ledger (UPI)" value={settings.UPI_ID} onChange={(val) => handleInputChange('UPI_ID', val)} icon={<Wallet size={20} />} />
+                        <TextInput label="Physical Deployment Site" value={settings.TURF_LOCATION} onChange={(val) => handleInputChange('TURF_LOCATION', val)} icon={<Database size={20} />} />
+                    </div>
+                </div>
             </div>
-          ) : (
-            <form onSubmit={handleSave} className="space-y-10">
-              
-              {message.text && (
-                <div className={`p-6 rounded-[1.5rem] flex items-center gap-4 border-2 animate-in fade-in slide-in-from-top-4 duration-500 ${
-                  message.type === 'success' 
-                    ? 'bg-emerald-50 border-emerald-100 text-emerald-700' 
-                    : 'bg-red-50 border-red-100 text-red-700'
-                }`}>
-                  <div className={`p-2 rounded-xl text-white ${message.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>
-                    {message.type === 'success' ? <CheckCircle size={18} /> : <Info size={18} />}
-                  </div>
-                  <p className="text-xs font-black uppercase tracking-widest">{message.text}</p>
+
+            {/* Safety Protocol Banner */}
+            <div className="p-12 bg-emerald-600 rounded-[3.5rem] shadow-xl text-white flex flex-col md:flex-row items-center gap-10 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:rotate-45 transition-all duration-1000">
+                    <ShieldAlert size={180} />
                 </div>
-              )}
-
-              {/* Pricing Calibration */}
-              <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 shadow-2xl shadow-emerald-900/5 border border-gray-100 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                  <TrendingUp size={120} className="text-emerald-950" />
+                <div className="bg-white/10 p-8 rounded-[2rem] shadow-2xl backdrop-blur-md border border-white/10">
+                    <Info size={40} className="text-white" />
                 </div>
-
-                <div className="flex items-center gap-4 mb-10">
-                  <div className="bg-emerald-500 text-white p-3 rounded-2xl shadow-lg shadow-emerald-200">
-                    <Zap size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">Pricing Strategy</h3>
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Hourly Rates & Variations</p>
-                  </div>
+                <div className="space-y-4 relative z-10">
+                    <h4 className="text-2xl font-black uppercase tracking-tighter italic leading-none">Infrastructure Integrity Notice</h4>
+                    <p className="text-sm font-bold opacity-90 leading-relaxed max-w-5xl italic uppercase tracking-wider">
+                        Modification of these operational variables impacts all future node cluster generations. To force-recalibrate active availability segments, please execute the <span className="text-slate-900 bg-white px-2 py-0.5 rounded-md mx-1 font-black">SYSTEM_REBOOT</span> protocol from the AI Command Hub.
+                    </p>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                  <div className="space-y-6">
-                    <label className="block">
-                      <span className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">
-                        <Sun size={14} className="text-yellow-500" /> Weekday Day Price
-                      </span>
-                      <div className="relative group">
-                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                        <input
-                          type="number"
-                          value={settings.PRICE_DAY}
-                          onChange={(e) => handleInputChange('PRICE_DAY', e.target.value)}
-                          className="w-full bg-gray-50 border-2 border-slate-100 focus:border-emerald-500/30 focus:bg-white p-5 pl-12 rounded-2xl outline-none transition-all font-black text-lg text-gray-900"
-                        />
-                      </div>
-                    </label>
-
-                    <label className="block">
-                      <span className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">
-                        <Moon size={14} className="text-slate-800" /> Weekday Night Price
-                      </span>
-                      <div className="relative group">
-                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                        <input
-                          type="number"
-                          value={settings.PRICE_NIGHT}
-                          onChange={(e) => handleInputChange('PRICE_NIGHT', e.target.value)}
-                          className="w-full bg-gray-50 border-2 border-slate-100 focus:border-emerald-500/30 focus:bg-white p-5 pl-12 rounded-2xl outline-none transition-all font-black text-lg text-gray-900"
-                        />
-                      </div>
-                    </label>
-                  </div>
-
-                  <div className="space-y-6">
-                    <label className="block">
-                      <span className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">
-                        <Sun size={14} className="text-emerald-500" /> Weekend Day Price
-                      </span>
-                      <div className="relative group">
-                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                        <input
-                          type="number"
-                          value={settings.PRICE_WEEKEND_DAY}
-                          onChange={(e) => handleInputChange('PRICE_WEEKEND_DAY', e.target.value)}
-                          className="w-full bg-gray-50 border-2 border-slate-100 focus:border-emerald-500/30 focus:bg-white p-5 pl-12 rounded-2xl outline-none transition-all font-black text-lg text-gray-900"
-                        />
-                      </div>
-                    </label>
-
-                    <label className="block">
-                      <span className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">
-                        <Moon size={14} className="text-emerald-950" /> Weekend Night Price
-                      </span>
-                      <div className="relative group">
-                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                        <input
-                          type="number"
-                          value={settings.PRICE_WEEKEND_NIGHT}
-                          onChange={(e) => handleInputChange('PRICE_WEEKEND_NIGHT', e.target.value)}
-                          className="w-full bg-gray-50 border-2 border-slate-100 focus:border-emerald-500/30 focus:bg-white p-5 pl-12 rounded-2xl outline-none transition-all font-black text-lg text-gray-900"
-                        />
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Operational Thresholds */}
-              <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 shadow-2xl shadow-emerald-900/5 border border-gray-100">
-                <div className="flex items-center gap-4 mb-10">
-                  <div className="bg-emerald-950 text-white p-3 rounded-2xl">
-                    <Clock size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">Operational Thresholds</h3>
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Timeline & Access Windows</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-                  <label className="block">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-4">Day/Night Split Hour</span>
-                    <select
-                      value={settings.PRICE_TRANSITION_HOUR}
-                      onChange={(e) => handleInputChange('PRICE_TRANSITION_HOUR', e.target.value)}
-                      className="w-full bg-gray-50 border-2 border-slate-100 p-5 rounded-2xl outline-none transition-all font-black text-lg text-gray-900"
-                    >
-                      {[...Array(24)].map((_, i) => (
-                        <option key={i} value={i}>{i.toString().padStart(2, '0')}:00</option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-4">Opening Hour</span>
-                    <select
-                      value={settings.TURF_OPEN_HOUR}
-                      onChange={(e) => handleInputChange('TURF_OPEN_HOUR', e.target.value)}
-                      className="w-full bg-gray-50 border-2 border-slate-100 p-5 rounded-2xl outline-none transition-all font-black text-lg text-gray-900"
-                    >
-                      {[...Array(24)].map((_, i) => (
-                        <option key={i} value={i}>{i.toString().padStart(2, '0')}:00</option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-4">Closing Hour</span>
-                    <select
-                      value={settings.TURF_CLOSE_HOUR}
-                      onChange={(e) => handleInputChange('TURF_CLOSE_HOUR', e.target.value)}
-                      className="w-full bg-gray-50 border-2 border-slate-100 p-5 rounded-2xl outline-none transition-all font-black text-lg text-gray-900"
-                    >
-                      {[...Array(24)].map((_, i) => (
-                        <option key={i} value={i}>{i.toString().padStart(2, '0')}:00</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <label className="block">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-4">Hold Duration (Minutes)</span>
-                    <div className="relative group">
-                      <input
-                        type="number"
-                        value={settings.HOLD_DURATION_MINUTES}
-                        onChange={(e) => handleInputChange('HOLD_DURATION_MINUTES', e.target.value)}
-                        className="w-full bg-gray-50 border-2 border-slate-100 p-5 rounded-2xl outline-none transition-all font-black text-lg text-gray-900"
-                      />
-                    </div>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-4">Venue Name</span>
-                    <div className="relative group">
-                      <input
-                        type="text"
-                        value={settings.TURF_NAME}
-                        onChange={(e) => handleInputChange('TURF_NAME', e.target.value)}
-                        className="w-full bg-gray-50 border-2 border-slate-100 p-5 rounded-2xl outline-none transition-all font-black text-base text-gray-900"
-                        placeholder="The Turf"
-                      />
-                    </div>
-                  </label>
-
-                  <label className="block md:col-span-2">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-4">Venue Location</span>
-                    <div className="relative group">
-                      <input
-                        type="text"
-                        value={settings.TURF_LOCATION}
-                        onChange={(e) => handleInputChange('TURF_LOCATION', e.target.value)}
-                        className="w-full bg-gray-50 border-2 border-slate-100 p-5 rounded-2xl outline-none transition-all font-black text-base text-gray-900"
-                        placeholder="Plot no 491, Madhavapuri Hills..."
-                      />
-                    </div>
-                  </label>
-
-                  <label className="block md:col-span-2">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-4">UPI ID for Payments</span>
-                    <div className="relative group">
-                      <input
-                        type="text"
-                        value={settings.UPI_ID}
-                        onChange={(e) => handleInputChange('UPI_ID', e.target.value)}
-                        className="w-full bg-gray-50 border-2 border-slate-100 p-5 rounded-2xl outline-none transition-all font-black text-base text-gray-900"
-                        placeholder="yourname@upi"
-                      />
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-6">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 text-white font-black p-8 rounded-[2rem] shadow-2xl shadow-emerald-500/20 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-4 group"
-                >
-                  {saving ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Committing Changes...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={20} className="group-hover:scale-125 transition-transform" />
-                      Save Configurations
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      setSaving(true);
-                      await adminAPI.syncSlots();
-                      setMessage({ type: 'success', text: 'Infrastructure node synchronized with latest pricing.' });
-                    } catch (e) {
-                      setMessage({ type: 'error', text: 'Synchronization Interrupt.' });
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                  className="bg-gray-900 hover:bg-black text-white px-10 rounded-[2rem] font-black uppercase text-[10px] tracking-widest hidden md:flex items-center justify-center gap-3"
-                >
-                  <Database size={16} /> Re-Sync Infrastructure
-                </button>
-              </div>
-
-              <div className="bg-emerald-950 p-8 rounded-[2rem] text-emerald-100/60 border border-white/5 flex items-start gap-4">
-                <Info size={24} className="shrink-0 text-emerald-400" />
-                <p className="text-[10px] md:text-xs font-medium leading-relaxed">
-                  <span className="font-black text-white uppercase">Critical Alert:</span> Updating these configurations will impact all freshly generated slots. To apply prices to existing free slots, use the <span className="text-white font-bold underline">Re-Sync Infrastructure</span> protocol after saving. Booked slots will remain unaffected to preserve historical data integrity.
-                </p>
-              </div>
-
-            </form>
-          )}
+            </div>
         </div>
-        </main>
-      </div>
+      </main>
     </div>
   );
 };
 
-export default AdminSettings;
+const PriceInput = ({ label, value, onChange, icon }) => (
+  <div className="space-y-4">
+    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic flex items-center gap-3">
+       {icon} {label}
+    </label>
+    <div className="relative group">
+       <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-black italic text-xl">₹</span>
+       <input 
+         type="number" 
+         value={value} 
+         onChange={(e) => onChange(e.target.value)} 
+         className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-100 p-6 pl-14 rounded-2xl font-black text-2xl text-slate-900 outline-none transition-all italic tabular-nums group-hover:bg-white" 
+       />
+    </div>
+  </div>
+);
 
+const SelectInput = ({ label, value, onChange, options }) => (
+  <div className="space-y-4">
+    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">{label}</label>
+    <div className="relative group">
+        <select 
+          value={value} 
+          onChange={(e) => onChange(e.target.value)} 
+          className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-100 p-5 rounded-xl font-black text-[11px] text-slate-900 outline-none transition-all italic cursor-pointer appearance-none uppercase tracking-widest group-hover:bg-white"
+        >
+           {options.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
+        </select>
+        <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 rotate-90 pointer-events-none" />
+    </div>
+  </div>
+);
+
+const NumberInput = ({ label, value, onChange, unit }) => (
+  <div className="space-y-4">
+    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">{label}</label>
+    <div className="relative group">
+       <input 
+         type="number" 
+         value={value} 
+         onChange={(e) => onChange(e.target.value)} 
+         className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-100 p-5 rounded-xl font-black text-[11px] text-slate-900 outline-none transition-all italic group-hover:bg-white" 
+       />
+       <span className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black text-[8px] uppercase tracking-widest italic">{unit}</span>
+    </div>
+  </div>
+);
+
+const TextInput = ({ label, value, onChange, icon }) => (
+  <div className="space-y-4">
+    <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2 italic flex items-center gap-3">
+       {icon} {label}
+    </label>
+    <input 
+      type="text" 
+      value={value} 
+      onChange={(e) => onChange(e.target.value)} 
+      className="w-full bg-white/5 border-2 border-transparent focus:border-emerald-500/30 p-6 rounded-2xl font-black text-[11px] text-white outline-none transition-all italic tracking-widest uppercase placeholder:text-slate-700 hover:bg-white/10" 
+    />
+  </div>
+);
+
+export default AdminSettings;

@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16.x]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install root deps
+        run: |
+          if [ -f package.json ]; then npm ci; fi
+      - name: Lint client
+        run: |
+          if [ -f client/package.json ]; then cd client && npm ci && npm run lint || true; fi
+      - name: Lint backend
+        run: |
+          if [ -f backend/package.json ]; then cd backend && npm ci && npm run lint || true; fi

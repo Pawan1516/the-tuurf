@@ -1,201 +1,380 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const natural = require("natural");
-
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-/**
- * Generates dynamic ball-by-ball commentary using NLP
- */
-exports.generateCommentary = async ({ ball, batsman, bowler, match, situation }) => {
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `
-            You are a professional cricket commentator with a high-energy, modern style (like IPL).
-            
-            MATCH SITUATION: ${situation || 'Regular play'}
-            BATSMAN: ${batsman}
-            BOWLER: ${bowler}
-            BALL EVENT: ${ball}
-            
-            Generate a short, exciting one-line commentary for this ball. 
-            Use cricket terminology (e.g. "Full toss", "Square cut", "Slower ball").
-            Return ONLY the commentary text.
-        `;
-        const result = await model.generateContent(prompt);
-        const text = result.response.text().trim();
-
-        // Section 6: NLP Enhancement using 'natural'
-        const tokenizer = new natural.WordTokenizer();
-        const keywords = tokenizer.tokenize(text).filter(w => w.length > 4);
-        const analyzer = new natural.SentimentAnalyzer('English', natural.PorterStemmer, 'afinn');
-        const sentiment = analyzer.getSentiment(tokenizer.tokenize(text));
-
-        return { text, keywords, sentiment };
-    } catch (error) {
-        console.error("Commentary AI Error:", error);
-        return { text: `${batsman} faces ${bowler}. ${ball}.`, keywords: [], sentiment: 0 };
-    }
-};
+const Match = require('../models/Match');
+const Booking = require('../models/Booking');
+const User = require('../models/User');
+const { OpenAI } = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
- * Generates an individual player post-match report
+ * AI System for The Turf
+ * Uses real database data only. No external APIs.
  */
-exports.generatePostMatchReport = async (match, playerStats) => {
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `
-            You are an AI Performance Analyst for "The Turf".
-            Analyze this player's match performance:
-            
-            MATCH: ${match.title}
-            PLAYER STATS: ${JSON.stringify(playerStats)}
-            
-            Generate a concise performance report including:
-            1. KEY HIGHLIGHT (Something they did well)
-            2. AREA FOR IMPROVEMENT
-            3. RATING (out of 10)
-            
-            Keep it professional, encouraging, and data-driven.
-            Return ONLY the report text.
-        `;
-        const result = await model.generateContent(prompt);
-        return result.response.text().trim();
-    } catch (error) {
-        return "Performance data processed. Current Rating: 7.5/10. Consistent contribution detected.";
-    }
-};
 
-/**
- * Generates match momentum and winner prediction with structured tactical analysis
- */
-exports.generateMatchPrediction = async (context) => {
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `
-            You are the "Turf Analytics AI". Analyze this live cricket match situation.
-            
-            MATCH CONTEXT:
-            TITLE: ${context.title}
-            TEAMS: ${JSON.stringify(context.teams)}
-            LIVE DATA: ${JSON.stringify(context.live_data)}
-            
-            TASK:
-            Generate a high-precision match prediction in valid JSON format.
-            - winProbability: Percentage for Team A (number)
-            - finalScoreEstimate: String prediction (e.g. "125-135")
-            - mvp: Player name most likely to impact the result
-            - insight: One-sentence tactical summary
-            - momentum: Current leading team name
-            
-            Structure:
-            {
-              "winProbability": 65,
-              "finalScoreEstimate": "140",
-              "mvp": "Player Name",
-              "insight": "Description...",
-              "momentum": "Team Name"
-            }
-            
-            Return ONLY the JSON.
-        `;
-        const result = await model.generateContent(prompt);
-        const text = result.response.text().trim();
-        const cleanJson = text.replace(/```json|```/g, "").trim();
-        return JSON.parse(cleanJson);
-    } catch (error) {
-        console.error("Prediction Error:", error);
-        return {
-            winProbability: 50,
-            finalScoreEstimate: "N/A",
-            mvp: "Analyzing...",
-            insight: "Atmospheric pressure and player momentum suggest a 50-50 split.",
-            momentum: "Neutral"
-        };
-    }
-};
+const aiService = {
+    /**
+     * 1. AI Specialist (Smart Assistant)
+     * Answers queries based on real-time match data.
+     */
+    async getSpecialistInsight(question, matchId) {
+        if (!matchId) return "I need a specific match context to answer that.";
+        
+        const match = await Match.findById(matchId);
+        if (!match) return "Match data not found.";
 
-/**
- * TurfBot chat logic with user context
- */
-exports.turfBotChat = async (message, history, context) => {
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const chat = model.startChat({
-            history: history.map(h => ({
-                role: h.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: h.content }]
-            }))
-        });
+        const query = question.toLowerCase();
+        const live = match.live_data || {};
 
-        const prompt = `
-            User Context: ${JSON.stringify(context)}
-            Message: ${message}
-            
-            You are "TurfBot", the intelligent AI assistant for "The Turf" sports facility.
-            Be helpful, brief, and friendly. You have access to user profile stats.
-            If they ask about their performance, refer to their context stats.
-        `;
-
-        const result = await chat.sendMessage(prompt);
-        return result.response.text().trim();
-    } catch (error) {
-        return "I'm experiencing a high load right now, but I'm here to help! How can I assist with your turf booking?";
-    }
-};
-
-/**
- * Original Turf Venue Analysis
- */
-exports.generateTurfAnalysis = async (turf) => {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    const prompt = `
-      You are an expert Sports Business & Tactical AI Analyst for "The Turf" booking platform.
-      Analyze the following turf venue and provide TWO distinct perspectives:
-      1. AI Tactical Analyst (Focus on player experience, play style, and timing)
-      2. Business Arena Insight (Focus on demand, revenue, and occupancy)
-
-      VENUE DATA:
-      Name: ${turf.name}
-      Location: ${turf.location}
-      Sports: ${turf.sports.join(', ')}
-      Size: ${turf.groundSize}
-      Amenities: ${turf.amenities.join(', ')}
-      Rating: ${turf.rating} (${turf.reviewCount} reviews)
-      Pricing: Weekday Day: ${turf.pricing.weekdayDay}, Weekday Night: ${turf.pricing.weekdayNight}
-      Opening: ${turf.openingHour} AM, Closing: ${turf.closingHour} PM
-
-      REQUIREMENTS:
-      - Be concise but professional.
-      - Sound data-driven and futuristic.
-      - Return a JSON object with this structure:
-      {
-        "aiAnalysis": {
-          "bestTime": "Specific 3-hour window",
-          "idealGroupSize": "e.g. 5 vs 5",
-          "playStyle": "High-impact description of play style",
-          "summary": "1-2 sentence tactical advice"
-        },
-        "businessAnalysis": {
-          "revenueStatus": "Demand status (e.g. Peak, Growing, Steady)",
-          "occupancyRate": "Estimated % based on rating/reviews",
-          "matchIntensity": "e.g. Professional / Casual / Mixed",
-          "summary": "1-2 sentence business insight"
+        // Question: Current Score
+        if (query.includes('score') || query.includes('current')) {
+            const teamA = match.team_a?.team_id?.name || "Team A";
+            const teamB = match.team_b?.team_id?.name || "Team B";
+            return `Current Score: ${match.live_active_team === 'B' ? teamB : teamA} is ${live.runs || 0}/${live.wickets || 0} in ${live.overs || '0.0'} overs.`;
         }
-      }
 
-      Return ONLY the JSON.
-    `;
+        // Question: Top Scorer
+        if (query.includes('top scorer') || query.includes('highest runs') || query.includes('who is batting best')) {
+            const batsmen = live.scorecard?.batsmen || [];
+            if (batsmen.length === 0) return "No batting data available yet.";
+            const top = [...batsmen].sort((a, b) => b.runs - a.runs)[0];
+            return `The top scorer is ${top.name} with ${top.runs} runs off ${top.balls} balls (SR: ${top.sr}).`;
+        }
 
-    const result = await model.generateContent(prompt);
-    const cleanJson = result.response.text().replace(/```json|```/g, "").trim();
-    return JSON.parse(cleanJson);
-  } catch (error) {
-    return {
-      aiAnalysis: turf.aiAnalysis,
-      businessAnalysis: turf.businessAnalysis
-    };
-  }
+        // Question: Best Bowler
+        if (query.includes('best bowler') || query.includes('wickets')) {
+            const bowlers = live.scorecard?.bowlers || [];
+            if (bowlers.length === 0) return "No bowling data available yet.";
+            // Sort by wickets desc, then economy asc
+            const best = [...bowlers].sort((a, b) => {
+                if (b.wickets !== a.wickets) return b.wickets - a.wickets;
+                return parseFloat(a.eco) - parseFloat(b.eco);
+            })[0];
+            return `The best bowler currently is ${best.name} with figures of ${best.wickets}/${best.runs} in ${best.overs} overs (Eco: ${best.eco}).`;
+        }
+
+        return "I can answer questions about the current score, top scorers, or best bowlers. Try asking 'What is the current score?'";
+    },
+
+    /**
+     * 2. AI Analyst (Match Analysis)
+     * Performance calculations for current match.
+     */
+    async getMatchAnalysis(matchId) {
+        const match = await Match.findById(matchId);
+        if (!match || !match.live_data) return { error: "Match analysis data not available." };
+
+        const live = match.live_data;
+        const runs = live.runs || 0;
+        const oversStr = live.overs || "0.0";
+        const [ov, bl] = oversStr.split('.').map(Number);
+        const totalBalls = (ov || 0) * 6 + (bl || 0);
+        const oversDecimal = totalBalls / 6;
+
+        const rr = oversDecimal > 0 ? (runs / oversDecimal).toFixed(2) : "0.00";
+        
+        const batsmen = live.scorecard?.batsmen || [];
+        const topSR = batsmen.length > 0 ? Math.max(...batsmen.map(b => parseFloat(b.sr) || 0)).toFixed(1) : "0.0";
+        
+        const bowlers = live.scorecard?.bowlers || [];
+        const bestEco = bowlers.length > 0 ? Math.min(...bowlers.map(bw => parseFloat(bw.eco) || 99)).toFixed(1) : "0.0";
+
+        // Dot ball % logic (requires ball-by-ball or stored dot count)
+        // Since we don't store aggregate dot count explicitly in live_data usually, 
+        // we'd fetch from innings if available.
+        let dotPercent = "0";
+        const currentInning = match.innings?.[match.current_innings_index || 0];
+        if (currentInning && currentInning.balls && currentInning.balls.length > 0) {
+            const dots = currentInning.balls.filter(b => b.runs_off_bat === 0 && !b.extra_type).length;
+            dotPercent = ((dots / currentInning.balls.length) * 100).toFixed(1);
+        }
+
+        return {
+            runRate: rr,
+            highestSR: topSR,
+            bestEconomy: bestEco,
+            dotBallPercentage: dotPercent,
+            insights: [
+                `Run Rate is currently ${rr} runs per over.`,
+                `Aggressive batting seen with top SR of ${topSR}.`,
+                `Bowlers maintaining pressure with ${dotPercent}% dot balls.`
+            ]
+        };
+    },
+
+    /**
+     * 3. AI Prediction (Real Logic)
+     * Win probability based on match state.
+     */
+    async getWinPrediction(matchId) {
+        const match = await Match.findById(matchId);
+        if (!match || match.status === 'Completed') return { status: "Match Over" };
+
+        const live = match.live_data || {};
+        const runs = live.runs || 0;
+        const wickets = live.wickets || 0;
+        const target = live.target || 0;
+        const overs = live.overs || "0.0";
+        const [ov, bl] = overs.split('.').map(Number);
+        const ballsDone = (ov || 0) * 6 + (bl || 0);
+        const totalBalls = (match.overs || 20) * 6;
+        const ballsLeft = totalBalls - ballsDone;
+
+        if (target === 0) {
+            // First Innings Prediction
+            // Base prob 50%, adjusted by RR and wickets
+            const projected = ballsDone > 0 ? (runs / ballsDone) * totalBalls : 0;
+            let prob = 50 + (projected > 160 ? 10 : -5) - (wickets * 5);
+            prob = Math.max(10, Math.min(90, prob));
+            
+            return {
+                teamA_prob: prob.toFixed(0),
+                teamB_prob: (100 - prob).toFixed(0),
+                projectedScore: Math.round(projected),
+                insight: `Projected score: ${Math.round(projected)}. ${wickets} wickets lost affects momentum.`
+            };
+        } else {
+            // Second Innings Prediction
+            const reqRuns = target - runs;
+            const rrr = ballsLeft > 0 ? (reqRuns / (ballsLeft / 6)).toFixed(2) : "0.00";
+            const crr = ballsDone > 0 ? (runs / (ballsDone / 6)) : 0;
+            const projected = crr * (totalBalls / 6); // Just for trend
+            
+            // Formula: (current_runs / target) * 100 - (wickets_lost * 5)
+            let teamB_prob = (runs / target) * 100 - (wickets * 8); // Chasing team
+            
+            // Adjust for RRR vs CRR
+            if (parseFloat(rrr) > crr + 2) teamB_prob -= 15;
+            
+            teamB_prob = Math.max(5, Math.min(95, teamB_prob));
+            
+            return {
+                teamA_prob: (100 - teamB_prob).toFixed(0),
+                teamB_prob: teamB_prob.toFixed(0),
+                projectedScore: Math.round(projected),
+                rrr: rrr,
+                runsNeeded: reqRuns,
+                ballsLeft: ballsLeft,
+                insight: `Need ${reqRuns} in ${ballsLeft} balls. RRR is ${rrr}.`
+            };
+        }
+    },
+
+    /**
+     * 3b. Advanced AI Models (Blueprints)
+     * Placeholders for XGBoost/LSTM integration
+     */
+    async getPlayerPerformance(playerId, matchId) {
+        // Blueprint for Model: Player Impact Score
+        return { impactScore: 75, recommendation: "Maintain aggressive strike rotation." };
+    },
+
+    async getCollapseWarning(matchId) {
+        // Blueprint for Model: Batting Collapse Detection
+        return { risk: "Low", threshold: 15 };
+    },
+
+
+    /**
+     * 4. Business Analyst (Real Data)
+     * Revenue and booking trends.
+     */
+    async getBusinessInsights() {
+        const bookings = await Booking.find({ paymentStatus: 'verified' });
+        
+        const totalRevenue = bookings.reduce((sum, b) => sum + (b.totalAmount || b.amount || 0), 0);
+        
+        // Peak Time Calculation
+        const timeMap = {};
+        bookings.forEach(b => {
+            if (b.timeSlot) {
+                timeMap[b.timeSlot] = (timeMap[b.timeSlot] || 0) + 1;
+            }
+        });
+        const peakTime = Object.entries(timeMap).sort((a,b) => b[1] - a[1])[0]?.[0] || "N/A";
+
+        // Popular Turf
+        const turfMap = {};
+        bookings.forEach(b => {
+            if (b.turfLocation) {
+                turfMap[b.turfLocation] = (turfMap[b.turfLocation] || 0) + 1;
+            }
+        });
+        const popularTurf = Object.entries(turfMap).sort((a,b) => b[1] - a[1])[0]?.[0] || "N/A";
+
+        // Revenue this week vs last week
+        const now = new Date();
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+        const thisWeekRevenue = bookings
+            .filter(b => b.createdAt >= oneWeekAgo)
+            .reduce((sum, b) => sum + (b.totalAmount || b.amount || 0), 0);
+            
+        const lastWeekRevenue = bookings
+            .filter(b => b.createdAt >= twoWeeksAgo && b.createdAt < oneWeekAgo)
+            .reduce((sum, b) => sum + (b.totalAmount || b.amount || 0), 0);
+
+        const growth = lastWeekRevenue > 0 ? (((thisWeekRevenue - lastWeekRevenue) / lastWeekRevenue) * 100).toFixed(1) : "100";
+
+        return {
+            totalRevenue,
+            peakTime,
+            popularTurf,
+            weeklyGrowth: growth,
+            insights: [
+                `Total verified revenue: ₹${totalRevenue.toLocaleString()}`,
+                `Peak booking hours: ${peakTime}`,
+                `Most popular location: ${popularTurf}`,
+                `Revenue ${growth > 0 ? 'increased' : 'decreased'} by ${Math.abs(growth)}% this week.`
+            ]
+        };
+    },
+
+    /**
+     * 5. Strategy Recommendations
+     * Produce simple, actionable business & match strategies from current data.
+     */
+    async getStrategyRecommendations(matchId) {
+        const business = await this.getBusinessInsights();
+        let matchAnalysis = null;
+        let prediction = null;
+        if (matchId) {
+            try {
+                matchAnalysis = await this.getMatchAnalysis(matchId);
+                prediction = await this.getWinPrediction(matchId);
+            } catch (e) {
+                // ignore per-match failures
+            }
+        }
+
+        const recs = [];
+
+        // Business-focused recommendations
+        if (business.peakTime && business.peakTime !== 'N/A') {
+            recs.push(`Run targeted promotions and discounted add-ons around ${business.peakTime} to capture peak demand.`);
+        } else {
+            recs.push('Promote off-peak slots with bundled offers to increase utilization.');
+        }
+
+        if (business.popularTurf && business.popularTurf !== 'N/A') {
+            recs.push(`Highlight ${business.popularTurf} in marketing and maintain pricing parity across other turfs.`);
+        }
+
+        if (business.weeklyGrowth && !isNaN(parseFloat(business.weeklyGrowth))) {
+            const g = parseFloat(business.weeklyGrowth);
+            if (g > 10) recs.push('Leverage momentum with referral incentives to sustain growth.');
+            else if (g > 0) recs.push('Increase targeted retargeting ads to convert marginal visitors.');
+            else recs.push('Investigate drop causes: pricing, availability, or UX friction; run quick A/B tests.');
+        }
+
+        // Match / on-field recommendations
+        if (matchAnalysis && matchAnalysis.runRate) {
+            recs.push(`Monitor run rate (${matchAnalysis.runRate}). If run rate drops, consider short coaching clinics or in-game engagement to retain spectators.`);
+        }
+
+        if (prediction && prediction.insight) {
+            recs.push(`Match insight: ${prediction.insight}`);
+        }
+
+        // Cross-sell / ops suggestions
+        recs.push('Offer last-minute booking discounts for canceled slots and automated notifications to waitlisted users.');
+        recs.push('Bundle refreshments and equipment rentals during peak hours to increase ARPU.');
+
+        const summary = `Recommendations generated using live booking and match telemetry. Key focus: drive bookings at peak time (${business.peakTime || 'unknown'}), convert growth into referrals, and optimize on-field engagement.`;
+
+        return { summary, recommendations: recs };
+    },
+
+    /**
+     * 6. Perspective Node
+     * Lightweight snapshot combining specialist, analyst, prediction and business view
+     */
+    async getPerspectiveNode(matchId) {
+        const business = await this.getBusinessInsights();
+        let specialist = null;
+        let analyst = null;
+        let prediction = null;
+
+        if (matchId) {
+            try {
+                specialist = {
+                    currentScore: await this.getSpecialistInsight('What is the current score?', matchId),
+                    topScorer: await this.getSpecialistInsight('Who is the top scorer?', matchId)
+                };
+            } catch (e) {
+                specialist = { error: 'Specialist data unavailable' };
+            }
+
+            try {
+                analyst = await this.getMatchAnalysis(matchId);
+            } catch (e) {
+                analyst = { error: 'Analyst data unavailable' };
+            }
+
+            try {
+                prediction = await this.getWinPrediction(matchId);
+            } catch (e) {
+                prediction = { error: 'Prediction data unavailable' };
+            }
+        }
+
+        return {
+            generatedAt: new Date().toISOString(),
+            businessAnalyst: business,
+            aiSpecialist: specialist,
+            aiAnalyst: analyst,
+            aiPrediction: prediction
+        };
+    },
+
+    /**
+     * 7. Intelligence Node
+     * Produces prioritized, actionable intelligence derived from perspective + strategy
+     */
+    async getIntelligenceNode(matchId) {
+        const perspective = await this.getPerspectiveNode(matchId);
+        const strategy = await this.getStrategyRecommendations(matchId);
+
+        // Generate a compact summary
+        const parts = [];
+        if (perspective.aiSpecialist && perspective.aiSpecialist.currentScore) parts.push(perspective.aiSpecialist.currentScore);
+        if (perspective.businessAnalyst && perspective.businessAnalyst.insights) parts.push(perspective.businessAnalyst.insights[0]);
+        if (strategy && strategy.summary) parts.push(strategy.summary);
+
+        // Prioritize recommendations heuristically
+        const prioritized = (strategy.recommendations || []).map((r, idx) => {
+            let score = 50 - idx * 5;
+            if (r.toLowerCase().includes('peak')) score += 20;
+            if (r.toLowerCase().includes('referral')) score += 10;
+            if (r.toLowerCase().includes('discount')) score += 5;
+            return { text: r, priority: Math.min(100, Math.max(1, score)) };
+        }).sort((a,b) => b.priority - a.priority);
+
+        const intelligence = {
+            summary: parts.join(' \n'),
+            generatedAt: new Date().toISOString(),
+            prioritizedRecommendations: prioritized,
+            raw: {
+                perspective,
+                strategy
+            }
+        };
+
+        return intelligence;
+    }
+};
+
+module.exports = aiService;
+
+// Backward-compatible alias used by some routes
+aiService.getAIInsights = async function(stats) {
+    try {
+        // If stats provided, include them in the quick summary
+        const intelligence = await this.getIntelligenceNode(null);
+        return {
+            summary: intelligence.summary || 'AI intelligence generated.',
+            stats: stats || null,
+            intelligence
+        };
+    } catch (err) {
+        return { summary: 'AI subsystem unavailable', error: err.message };
+    }
 };

@@ -41,7 +41,7 @@ const BookingSuccess = () => {
 
         <div className="mb-6">
           <p className="text-gray-600">
-            Redirecting to home in <span className="font-bold text-blue-600">{countdown}</span> seconds...
+            Redirecting to home in <span className="font-bold text-emerald-600">{countdown}</span> seconds...
           </p>
         </div>
 
@@ -61,3 +61,6 @@ const BookingSuccess = () => {
 };
 
 export default BookingSuccess;
+
+
+

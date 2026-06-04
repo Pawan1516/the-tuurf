@@ -17,12 +17,6 @@ const Payment = () => {
       setError('No booking found. Please book a slot first.');
       return;
     }
-
-    // Load Razorpay script
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
   }, [bookingId, amount]);
 
   const handlePayment = async () => {
@@ -132,7 +126,7 @@ const Payment = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-blue-600">Payment</h1>
+          <h1 className="text-3xl font-bold text-emerald-600">Payment</h1>
         </div>
       </header>
 
@@ -146,14 +140,14 @@ const Payment = () => {
             </div>
           )}
 
-          <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6">
-            <p className={`font-bold mb-2 uppercase tracking-widest text-xs ${paymentType === 'full' ? 'text-emerald-700' : 'text-blue-700'}`}>
+          <div className="bg-blue-50 border-l-4 border-emerald-600 p-4 mb-6">
+            <p className={`font-bold mb-2 uppercase tracking-widest text-xs ${paymentType === 'full' ? 'text-blue-700' : 'text-blue-700'}`}>
               {paymentType === 'full' ? 'Full Payment (100%)' : 'Advance Payment (40%)'}
             </p>
             <p className="text-gray-700 mb-2">
               <span className="font-medium">Booking ID:</span> {bookingId.slice(-6)}
             </p>
-            <p className={`text-4xl font-black ${paymentType === 'full' ? 'text-emerald-600' : 'text-blue-600'}`}>₹{amount}</p>
+            <p className={`text-4xl font-black ${paymentType === 'full' ? 'text-emerald-600' : 'text-emerald-600'}`}>₹{amount}</p>
           </div>
 
           <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-lg mb-6 border border-purple-200">
@@ -170,7 +164,7 @@ const Payment = () => {
             <div className="flex gap-2">
               <button
                 onClick={downloadQRCode}
-                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded transition"
+                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-indigo-700 text-white py-2 px-4 rounded transition"
               >
                 <Download size={18} />
                 Download QR
@@ -210,3 +204,6 @@ const Payment = () => {
 };
 
 export default Payment;
+
+
+

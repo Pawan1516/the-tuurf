@@ -3,13 +3,13 @@
   "name": "The Turf - AI Driven Space",
   "icons": [
     {
-      "src": "logo192.png",
+      "src": "logo.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "logo512.png",
+      "src": "logo.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
@@ -24,12 +24,16 @@
     {
       "name": "Live Scores",
       "url": "/",
-      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
     },
     {
       "name": "Book Turf",
       "url": "/dashboard",
-      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
     }
-  ]
+  ],
+  "serviceworker": {
+    "src": "service-worker.js",
+    "scope": "/"
+  }
 }

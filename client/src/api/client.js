@@ -1,10 +1,6 @@
 import axios from 'axios';
 // API configuration
-let API_BASE_URL = '/api';
-
-if (process.env.NODE_ENV === 'production') {
-  API_BASE_URL = 'https://the-tuurf-ufkd.onrender.com/api';
-}
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001/api"; // backend runs on port 5001
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -13,48 +9,112 @@ const apiClient = axios.create({
   }
 });
 
-// Add token to requests
+let accessToken = localStorage.getItem('token');
+if (accessToken) {
+  apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+}
+
+const setAccessToken = (token) => {
+  accessToken = token;
+  if (token) {
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete apiClient.defaults.headers.common['Authorization'];
+  }
+};
+
+export { setAccessToken };
+export default apiClient;
+// Request Interceptor: Attach Access Token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
+    config.withCredentials = true; // Crucial for HttpOnly cookies
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Handle responses
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Response Interceptor: Handle Expiry & Auto-Refresh
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Clear local storage if token is invalid
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      
-      // ONLY redirect if we are on a protected page
-      const protectedPaths = ['/dashboard', '/admin', '/worker'];
-      const isProtected = protectedPaths.some(p => window.location.pathname.startsWith(p));
-      const IsLoginPage = window.location.pathname.includes('login');
+  async (error) => {
+    const originalRequest = error.config;
 
-      if (isProtected && !IsLoginPage) {
-        window.location.href = '/login';
+    // Handle 401 & Expiry
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+        .then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return apiClient(originalRequest);
+        })
+        .catch(err => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+        if (data.success && data.token) {
+          setAccessToken(data.token);
+          localStorage.setItem('token', data.token);
+          apiClient.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+          processQueue(null, data.token);
+          return apiClient(originalRequest);
+        }
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        
+        // Refresh failed (likely expired/invalid) - Force Logout
+        setAccessToken(null);
+        localStorage.removeItem('user');
+        
+        const protectedPaths = ['/dashboard', '/admin', '/worker'];
+        const isProtected = protectedPaths.some(p => window.location.pathname.startsWith(p));
+        if (isProtected && !window.location.pathname.includes('login')) {
+          window.location.href = '/login?expired=true';
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
+
     return Promise.reject(error);
   }
 );
 
 // Authentication APIs
 export const authAPI = {
-  login: (email, password) => apiClient.post('/auth/login', { email, password }),
+  login: (email, password, adminKey = null) => apiClient.post('/auth/login', { email, password, admin_key: adminKey }),
+  logout: () => apiClient.post('/auth/logout'),
+  logoutAll: () => apiClient.post('/auth/logout-all'),
   sendRegisterOTP: (email) => apiClient.post('/auth/send-register-otp', { email }),
   verifyRegistration: (data) => apiClient.post('/auth/register-verify', data),
   getProfile: () => apiClient.get('/auth/profile'),
   updateProfile: (data) => apiClient.put('/auth/profile', data),
   updateFCMToken: (data) => apiClient.post('/auth/update-fcm-token', data),
+  quickLogin: (mobile, name) => apiClient.post('/auth/quick-login', { mobile, name }),
 };
 
 // Slots APIs
@@ -110,11 +170,13 @@ export const paymentsAPI = {
 
 // Admin APIs
 export const adminAPI = {
+  getAllBookings: () => apiClient.get('/admin/bookings'),
   createWorker: (data) => apiClient.post('/admin/workers', data),
   getWorkers: () => apiClient.get('/admin/workers'),
   updateWorker: (id, data) =>
     apiClient.put(`/admin/workers/${id}`, data),
   deleteWorker: (id) => apiClient.delete(`/admin/workers/${id}`),
+  getBusiness: () => apiClient.get('/admin/business'),
   getRevenue: (period) =>
     apiClient.get('/admin/revenue', { params: { period } }),
   downloadPDFReport: (filters) =>
@@ -198,8 +260,10 @@ export const receiptsAPI = {
 // Analytics APIs
 export const analyticsAPI = {
     getPlayerStats: (id) => apiClient.get(`/analytics/player/${id}/stats`),
-    syncUserStats: (id) => apiClient.post(`/analytics/sync-user-stats/${id}`)
+    syncUserStats: (id) => apiClient.post(`/analytics/sync-user-stats/${id}`),
+    compare: (p1, p2) => apiClient.get('/analytics/compare', { params: { player1: p1, player2: p2 } })
 };
 
-export default apiClient;
+
+
 

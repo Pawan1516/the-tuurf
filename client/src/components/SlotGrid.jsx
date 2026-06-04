@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import apiClient from '../api/client';
 
 const SlotGrid = () => {
+    const navigate = useNavigate();
     const [slots, setSlots] = useState([]);
     const [selectedDate, setSelectedDate] = useState(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
     const [loading, setLoading] = useState(true);
@@ -10,7 +12,7 @@ const SlotGrid = () => {
         const fetchSlots = async () => {
             try {
                 setLoading(true);
-                const res = await axios.get(`http://localhost:5000/api/slots?date=${selectedDate}`);
+                const res = await apiClient.get(`/slots?date=${selectedDate}`);
                 setSlots(res.data);
                 setLoading(false);
             } catch (err) {
@@ -33,8 +35,7 @@ const SlotGrid = () => {
 
     const handleSlotClick = (slot) => {
         if (slot.status === 'free') {
-            alert(`Booking ${slot.startTime} - ${slot.endTime} on ${slot.date}`);
-            // TODO: Open booking modal
+            navigate(`/book/${slot._id}`);
         }
     };
 
@@ -46,13 +47,13 @@ const SlotGrid = () => {
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="px-6 py-3 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold text-gray-700"
+                    className="px-6 py-3 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-semibold text-gray-700"
                 />
             </div>
 
             {loading ? (
                 <div className="flex justify-center items-center py-20">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
                 </div>
             ) : slots.length === 0 ? (
                 <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 italic">
@@ -79,3 +80,6 @@ const SlotGrid = () => {
 };
 
 export default SlotGrid;
+
+
+

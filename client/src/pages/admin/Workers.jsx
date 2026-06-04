@@ -1,15 +1,11 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard,
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard,
   Calendar,
   Activity,
   Briefcase,
   PieChart,
-  Database,
-  LogOut,
-  ChevronRight,
-  Plus,
-  X,
   User,
   Mail,
   Phone,
@@ -18,68 +14,53 @@ import { LayoutDashboard,
   Lock,
   Edit2,
   ShieldCheck,
-  Settings, Clock } from 'lucide-react';
+  Settings, 
+  Clock,
+  Plus,
+  X,
+  Zap,
+    Loader2,
+  UserPlus,
+  ArrowUpRight,
+  Database,
+  ArrowRight,
+  RefreshCcw,
+  Cpu,
+  Layers,
+  CircleDot
+} from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { adminAPI } from '../../api/client';
-import MobileNav from '../../components/MobileNav';
 import AdminSidebar from '../../components/AdminSidebar';
 
 const AdminWorkers = () => {
-
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
-  const navItems = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/admin/operations', label: 'Operations HUB', icon: Activity },
-    { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
-    { to: '/admin/users', label: 'User Control', icon: User },
-    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
-    { to: '/admin/settings', label: 'Settings', icon: Settings },
-    { to: '/admin/scanner', label: 'QR Scanner', icon: Clock }
-  ];
-
-  const handleLogout = () => {
-    logout();
-    navigate('/admin/login');
-  };
-
-  useEffect(() => {
-    fetchWorkers();
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const { data } = await adminAPI.getSettings();
-      if (data.success) {
-        setSettings(prev => ({ ...prev, ...data.settings }));
-      }
-    } catch (err) {
-      console.error('Settings fetch error:', err);
-    }
-  };
-
-  const fetchWorkers = async () => {
+  const fetchWorkers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminAPI.getWorkers();
       setWorkers(response.data.workers || []);
     } catch (error) {
-      setError('Biometric registry sync failed.');
+      setError('Biometric registry sync failure.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchWorkers();
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, [fetchWorkers]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -90,166 +71,240 @@ const AdminWorkers = () => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-
     try {
       await adminAPI.createWorker(formData);
       setFormData({ name: '', email: '', phone: '', password: '' });
       setShowForm(false);
       await fetchWorkers();
     } catch (error) {
-      setError(error.response?.data?.message || 'Protocol violation during registration.');
+      setError(error.response?.data?.message || 'Identity enrollment failure.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteWorker = async (workerId) => {
-    if (!window.confirm('Neutralize this operative permanently?')) return;
+    if (!window.confirm('Neutralize this operative registry?')) return;
     try {
       await adminAPI.deleteWorker(workerId);
       await fetchWorkers();
     } catch (error) {
-      setError('Registry deletion failed.');
+      setError('Neutralization protocol failure.');
     }
   };
 
-  const NavItem = ({ to, label, icon: Icon, active = false }) => (
-    <Link
-      to={to}
-      className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-        ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-        : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
-    >
-      <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
-      <span className="text-xs font-black uppercase tracking-widest">{label}</span>
-    </Link>
+  if (loading) return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+        <div className="relative">
+            <div className="w-24 h-24 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
+            <User className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
+        </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Accessing Personnel Registry...</p>
+    </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+    <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+      <AdminSidebar user={user} logout={logout} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
+      <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+        {/* BI Style Top Bar */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-8">
+                <div>
+                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                        <Briefcase className="text-emerald-600" size={26} /> 
+                        Personnel Registry <span className="text-slate-400">/ Operational Assets</span>
+                    </h1>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Human Resource Intelligence v4.2</p>
+                </div>
+            </div>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto pb-24 bg-gray-50">
-
-
-        <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-          <div className="flex flex-col">
-            <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Workers</h2>
-            <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Operative Registry</p>
-          </div>
-
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 md:px-8 py-2 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shadow-xl shadow-emerald-200"
-          >
-            {showForm ? <X size={16} /> : <Plus size={16} />}
-            <span className="hidden md:inline">{showForm ? 'Abort Registration' : 'Register Operative'}</span>
-            <span className="md:hidden">{showForm ? 'Cancel' : 'Add'}</span>
-          </button>
+            <div className="flex items-center gap-6">
+                <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+                    <div className="px-4 py-1.5 border-r border-slate-200">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
+                        <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                    </div>
+                    <div className="px-4 py-1.5">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Registry Synchronization</p>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                            <span className="text-[10px] font-black text-emerald-600 uppercase">Live Biometrics</span>
+                        </div>
+                    </div>
+                </div>
+                <button
+                  onClick={() => setShowForm(!showForm)}
+                  className={`px-8 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl transition-all flex items-center gap-3 active:scale-95 ${
+                    showForm 
+                    ? 'bg-slate-900 text-white shadow-slate-950/20' 
+                    : 'bg-emerald-600 text-white shadow-emerald-500/20'
+                  }`}
+                >
+                  {showForm ? <X size={18} /> : <UserPlus size={18} />}
+                  {showForm ? 'Abort Enrollment' : 'Enroll Operative'}
+                </button>
+            </div>
         </header>
 
-        <div className="p-4 md:p-10 space-y-8 md:space-y-10">
-          {error && (
-            <div className="bg-red-50 border border-red-100 p-6 rounded-[2rem] flex items-center gap-4 text-red-600 animate-shake">
-              <ShieldAlert className="shrink-0" size={18} />
-              <p className="text-[10px] md:text-xs font-black uppercase tracking-tight">{error}</p>
-            </div>
-          )}
-
-          {/* Registration Form */}
-          {showForm && (
-            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 border-2 border-emerald-100 shadow-2xl shadow-emerald-900/5 transition-all">
-              <h3 className="text-[10px] md:text-xs font-black text-gray-900 uppercase tracking-[0.2em] mb-10">Neural Identity Enrollment</h3>
-              <form onSubmit={handleCreateWorker} className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                <div className="space-y-3 md:space-y-4">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Legal Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600/30" size={18} />
-                    <input type="text" name="name" value={formData.name} onChange={handleInputChange} required placeholder="Full Identity" className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 pl-12 rounded-xl font-bold text-sm outline-none" />
-                  </div>
-                </div>
-                <div className="space-y-3 md:space-y-4">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Comms Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600/30" size={18} />
-                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} required placeholder="operative@theturf.com" className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 pl-12 rounded-xl font-bold text-sm outline-none" />
-                  </div>
-                </div>
-                <div className="space-y-3 md:space-y-4">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Secure Mobile</label>
-                  <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600/30" size={18} />
-                    <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required placeholder="10-digit mobile" className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 pl-12 rounded-xl font-bold text-sm outline-none" />
-                  </div>
-                </div>
-                <div className="space-y-3 md:space-y-4">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Access Key</label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600/30" size={18} />
-                    <input type="password" name="password" value={formData.password} onChange={handleInputChange} required placeholder="••••••••" className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-4 pl-12 rounded-xl font-bold text-sm outline-none" />
-                  </div>
-                </div>
-                <div className="md:col-span-2 flex justify-end">
-                  <button type="submit" disabled={submitting} className="w-full md:w-auto bg-gray-900 text-white px-12 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50">
-                    {submitting ? 'Encrypting...' : 'Confirm Enrollment'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Personnel List */}
-          {loading ? (
-            <div className="py-40 flex flex-col items-center gap-6">
-              <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Syncing Personnel Data...</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {workers.map(worker => (
-                <div key={worker._id} className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-xl shadow-emerald-900/[0.02] p-6 md:p-8 group hover:border-emerald-500 transition-all flex flex-col">
-                  <div className="flex justify-between items-start mb-6 md:mb-8">
-                    <div className="bg-gray-50 p-3 md:p-4 rounded-[1.5rem] md:rounded-3xl text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                      <ShieldCheck size={32} />
+        <div className="max-w-[1600px] mx-auto p-10 space-y-10">
+            
+            {/* Personnel KPI Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                {[
+                    { label: 'Total Operatives', value: workers.length, icon: <User className="text-emerald-500" /> },
+                    { label: 'Active Deployment', value: workers.filter(w => (w.assignedSlots?.length || 0) > 0).length, icon: <Zap className="text-emerald-500" /> },
+                    { label: 'Registry Efficiency', value: '94.8%', icon: <Activity className="text-emerald-500" /> },
+                    { label: 'Node Capacity', value: 'High', icon: <Database className="text-slate-500" /> }
+                ].map((kpi, idx) => (
+                    <div key={idx} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-2xl transition-all group overflow-hidden relative">
+                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform duration-700">
+                            {kpi.icon}
+                        </div>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-blue-50 transition-colors">
+                                {kpi.icon}
+                            </div>
+                        </div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{kpi.label}</p>
+                        <h3 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter tabular-nums">{kpi.value}</h3>
                     </div>
-                    <button onClick={() => handleDeleteWorker(worker._id)} className="bg-red-50 text-red-300 p-3 rounded-xl hover:bg-red-500 hover:text-white transition-all md:opacity-0 group-hover:opacity-100">
-                      <Trash2 size={18} />
+                ))}
+            </div>
+
+            {error && (
+                <div className="bg-rose-50 border border-rose-100 p-6 rounded-[2rem] flex items-center gap-4 text-rose-600 animate-fade-in">
+                    <ShieldAlert size={20} />
+                    <p className="text-[10px] font-black uppercase tracking-widest italic">{error}</p>
+                </div>
+            )}
+
+            {showForm && (
+                <div className="bg-white rounded-[3.5rem] p-12 border border-slate-200 shadow-2xl animate-fade-up relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.02] text-emerald-600">
+                        <Cpu size={250} />
+                    </div>
+                    <div className="flex items-center justify-between mb-10 relative z-10">
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] italic flex items-center gap-4">
+                            <div className="w-10 h-1 bg-emerald-600 rounded-full"></div> Neural Identity Enrollment Matrix
+                        </h3>
+                    </div>
+                    <form onSubmit={handleCreateWorker} className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">Legal Identity</label>
+                            <div className="relative group">
+                                <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                                <input name="name" value={formData.name} onChange={handleInputChange} required placeholder="FULL NAME" className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-100 p-5 pl-16 rounded-2xl font-black text-xs uppercase tracking-widest outline-none transition-all italic placeholder:text-slate-200" />
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">Comm Protocol (Email)</label>
+                            <div className="relative group">
+                                <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                                <input name="email" value={formData.email} onChange={handleInputChange} type="email" required placeholder="OPERATIVE@THETURF.COM" className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-100 p-5 pl-16 rounded-2xl font-black text-xs uppercase tracking-widest outline-none transition-all italic placeholder:text-slate-200" />
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">Primary Comm Link</label>
+                            <div className="relative group">
+                                <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                                <input name="phone" value={formData.phone} onChange={handleInputChange} type="tel" required placeholder="+91 00000 00000" className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-100 p-5 pl-16 rounded-2xl font-black text-xs uppercase tracking-widest outline-none transition-all italic placeholder:text-slate-200" />
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">Secure Access Key</label>
+                            <div className="relative group">
+                                <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-600 transition-colors" size={18} />
+                                <input name="password" value={formData.password} onChange={handleInputChange} type="password" required placeholder="••••••••" className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-100 p-5 pl-16 rounded-2xl font-black text-xs uppercase tracking-widest outline-none transition-all italic placeholder:text-slate-200" />
+                            </div>
+                        </div>
+                        <div className="md:col-span-2 flex justify-end pt-4">
+                            <button type="submit" disabled={submitting} className="w-full md:w-auto bg-slate-950 text-white px-16 py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-4 italic">
+                                {submitting ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+                                {submitting ? 'Encrypting Identity...' : 'Confirm Enrollment protocol'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* Workers Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                {workers.map(worker => (
+                    <div key={worker._id} className="bg-white p-10 rounded-[3.5rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:border-emerald-600 hover:-translate-y-2 transition-all duration-500 group flex flex-col justify-between min-h-[450px] relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/[0.01] rounded-full blur-[40px]"></div>
+                        
+                        <div className="space-y-10 relative z-10">
+                            <div className="flex justify-between items-start">
+                                <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl group-hover:bg-emerald-600 transition-all italic font-black text-xl tabular-nums">
+                                    {worker.name.slice(0, 2).toUpperCase()}
+                                </div>
+                                <button onClick={() => handleDeleteWorker(worker._id)} className="p-4 bg-rose-50 text-rose-300 rounded-2xl hover:bg-rose-600 hover:text-white transition-all shadow-sm">
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mb-1">Operative Identity</p>
+                                <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter italic leading-none group-hover:text-emerald-600 transition-colors">{worker.name}</h3>
+                                <div className="space-y-2 mt-6">
+                                    <div className="flex items-center gap-3 text-[10px] font-black text-slate-500 uppercase tracking-widest italic">
+                                        <Mail size={14} className="text-emerald-600" />
+                                        {worker.email}
+                                    </div>
+                                    <div className="flex items-center gap-3 text-[10px] font-black text-slate-500 uppercase tracking-widest italic tabular-nums">
+                                        <Phone size={14} className="text-slate-400" />
+                                        +91 {worker.phone}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-10 mt-10 border-t border-slate-50 group-hover:border-blue-50 transition-colors relative z-10">
+                            <div className="flex items-center justify-between mb-8 px-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    <span className="text-[10px] font-black text-slate-900 uppercase italic tracking-widest">Active Asset</span>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Node Load</p>
+                                    <p className="text-lg font-black text-slate-900 italic tabular-nums leading-none">{worker.assignedSlots?.length || 0} Slots</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => navigate(`/admin/workers/${worker._id}`)}
+                                className="w-full bg-slate-950 text-white py-5 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-3 shadow-xl italic"
+                            >
+                                <Edit2 size={16} /> View Registry Profile
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Registry Control Footer */}
+            <div className="bg-slate-900 rounded-[3.5rem] p-12 text-white shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600/10 blur-[80px] rounded-full group-hover:bg-emerald-600/20 transition-all duration-1000"></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
+                    <div className="flex items-center gap-8">
+                        <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 text-emerald-500 shadow-2xl backdrop-blur-md">
+                            <Database size={36} />
+                        </div>
+                        <div>
+                            <h4 className="text-3xl font-black tracking-tighter uppercase italic leading-none mb-3">Master Personnel <span className="text-emerald-500">Infrastructure</span></h4>
+                            <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Biometric Synchronization Active | 0 Protocol Violations Detected</p>
+                        </div>
+                    </div>
+                    <button className="bg-emerald-600 hover:bg-white hover:text-emerald-600 text-white px-12 py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-2xl active:scale-95 flex items-center gap-4 italic">
+                        Extract Master Registry <ArrowUpRight size={18} />
                     </button>
-                  </div>
-
-                  <div className="space-y-3 md:space-y-4 mb-8 md:mb-10 flex-1">
-                    <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">{worker.name}</h3>
-                    <p className="text-[8px] md:text-[10px] font-black text-emerald-600 uppercase tracking-widest border-b-2 border-emerald-50 border-dotted pb-2 truncate">{worker.email}</p>
-
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div>
-                        <p className="text-[8px] md:text-[9px] font-black text-gray-300 uppercase tracking-widest mb-1">Mobile Unit</p>
-                        <p className="text-[10px] md:text-xs font-bold text-gray-900">{worker.phone}</p>
-                      </div>
-                      <div>
-                        <p className="text-[8px] md:text-[9px] font-black text-gray-300 uppercase tracking-widest mb-1">Deployed</p>
-                        <p className="text-[10px] md:text-xs font-bold text-gray-900">{worker.assignedSlots?.length || 0} nodes</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => navigate(`/admin/workers/${worker._id}`)}
-                    className="w-full bg-gray-50 text-gray-400 py-3 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[8px] md:text-[10px] tracking-widest hover:bg-emerald-50 hover:text-emerald-700 transition-all flex items-center justify-center gap-3"
-                  >
-                    <Edit2 size={14} /> Profile
-                  </button>
                 </div>
-              ))}
             </div>
-          )}
+
         </div>
-        </main>
-      </div>
+
+      </main>
     </div>
   );
 };

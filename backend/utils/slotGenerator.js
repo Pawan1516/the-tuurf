@@ -55,6 +55,7 @@ const autoGenerateSlots = async (daysAhead = 30) => {
         for (let i = 0; i < daysAhead; i++) {
             const date = new Date(`${kolkataDateStr}T00:00:00.000Z`);
             date.setDate(date.getDate() + i);
+            console.log(`[Generator] Processing day ${i+1}/${daysAhead}: ${date.toDateString()}`);
             
             const nextDay = new Date(date);
             nextDay.setDate(nextDay.getDate() + 1);
@@ -106,6 +107,7 @@ const autoGenerateSlots = async (daysAhead = 30) => {
         }
 
         // 3. Retroactive Price Update for existing FREE slots
+        console.log(`[Generator] Checking for retroactive price updates...`);
         const allFreeSlots = await Slot.find({ status: 'free' });
         const bulkOps = [];
         

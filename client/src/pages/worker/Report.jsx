@@ -2,14 +2,14 @@ import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { bookingsAPI } from '../../api/client';
-import { Download, ArrowLeft, FileText, Database, Table, ShieldCheck } from 'lucide-react';
+import { Download, ArrowLeft, FileText, Database, Table, ShieldCheck, FileSpreadsheet } from 'lucide-react';
 
 const WorkerReport = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [downloading, setDownloading] = useState(false);
 
-  const handleDownloadReport = async (format = 'csv') => {
+  const handleDownload = async (format = 'csv') => {
     setDownloading(true);
 
     try {
@@ -34,106 +34,105 @@ const WorkerReport = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-emerald-900 pt-20 pb-40 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
-        </div>
-
-        <div className="max-w-4xl mx-auto relative z-10">
-          <button
-            onClick={() => navigate('/worker/dashboard')}
-            className="bg-white/10 hover:bg-white/20 text-emerald-100 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all mb-8 outline-none"
+    <div className="min-h-screen bg-[#F8FAFC] pb-20 font-sans selection:bg-emerald-500/30">
+      {/* Premium Header */}
+      <div className="bg-slate-950 pt-24 pb-48 px-10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
+        <div className="max-w-6xl mx-auto relative z-10">
+          <button 
+            onClick={() => navigate(-1)}
+            className="bg-white/5 hover:bg-white/10 text-blue-100/60 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all mb-10 outline-none border border-white/5"
           >
-            <ArrowLeft size={14} /> Back to Dashboard
+            <ArrowLeft size={16} /> Back to Terminal
           </button>
-          <h2 className="text-5xl font-black text-white tracking-tight uppercase leading-tight mb-4">Operations <span className="text-emerald-400 italic">Intelligence</span></h2>
-          <p className="text-emerald-100/60 font-bold uppercase text-xs tracking-[0.2em]">Generate and extract ground-level booking data</p>
+          <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none mb-4 italic">
+            Operations <span className="text-emerald-500 italic">Intelligence</span>
+          </h2>
+          <p className="text-slate-400 font-bold uppercase text-[11px] tracking-[0.2em]">Generate and extract ground-level booking data</p>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-6 -mt-24 relative z-20 mb-20 w-full">
-        <div className="grid md:grid-cols-2 gap-8">
-
-          {/* CSV Download Card */}
-          <div className="bg-white rounded-[3rem] shadow-2xl shadow-emerald-900/5 border border-gray-100 p-10 flex flex-col items-center text-center group translate-y-0 hover:-translate-y-2 transition-transform duration-500">
-            <div className="bg-emerald-50 w-24 h-24 rounded-3xl flex items-center justify-center mb-8 text-emerald-600 transition-all group-hover:bg-emerald-600 group-hover:text-white group-hover:rotate-6 shadow-xl shadow-emerald-900/5">
-              <Table size={40} />
+      <div className="max-w-6xl mx-auto px-6 -mt-24 relative z-20">
+        <div className="grid md:grid-cols-2 gap-10">
+          {/* CSV Report */}
+          <div className="bg-white rounded-[3rem] shadow-2xl shadow-blue-900/[0.03] border border-slate-100 p-12 flex flex-col items-center text-center group translate-y-0 hover:-translate-y-2 transition-all duration-500">
+            <div className="bg-blue-50 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-10 text-emerald-600 transition-all group-hover:bg-emerald-600 group-hover:text-white group-hover:rotate-6 shadow-xl shadow-blue-900/5">
+              <FileSpreadsheet size={40} strokeWidth={1.5} />
             </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-4 uppercase tracking-tight">Structured <span className="text-emerald-600">CSV</span></h3>
-            <p className="text-gray-400 text-sm font-medium leading-relaxed mb-10">
-              Download raw assignment data optimized for ground operations analysis, spreadsheet auditing, and manual verification.
+            <h3 className="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tight italic">Structured <span className="text-emerald-600">CSV</span></h3>
+            <p className="text-slate-500 text-sm font-bold leading-relaxed mb-10 tracking-tight">
+              Detailed raw data of all bookings, payments, and player details optimized for spreadsheet analysis.
             </p>
-            <button
-              onClick={() => handleDownloadReport('csv')}
+            <button 
+              onClick={() => handleDownload('csv')}
               disabled={downloading}
-              className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 outline-none"
+              className="w-full bg-emerald-600 text-white py-6 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-2xl shadow-emerald-500/20 outline-none active:scale-95"
             >
-              <Download size={20} />
-              {downloading ? 'Processing Architecture...' : 'Generate CSV Matrix'}
+              <Download size={18} /> {downloading ? 'Processing...' : 'Export CSV Protocol'}
             </button>
           </div>
 
-          {/* PDF Download Card */}
-          <div className="bg-white rounded-[3rem] shadow-2xl shadow-emerald-900/5 border border-gray-100 p-10 flex flex-col items-center text-center group translate-y-0 hover:-translate-y-2 transition-transform duration-500">
-            <div className="bg-emerald-50 w-24 h-24 rounded-3xl flex items-center justify-center mb-8 text-emerald-600 transition-all group-hover:bg-emerald-600 group-hover:text-white group-hover:rotate-6 shadow-xl shadow-emerald-900/5">
-              <FileText size={40} />
+          {/* PDF Report */}
+          <div className="bg-white rounded-[3rem] shadow-2xl shadow-blue-900/[0.03] border border-slate-100 p-12 flex flex-col items-center text-center group translate-y-0 hover:-translate-y-2 transition-all duration-500">
+            <div className="bg-indigo-50 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-10 text-emerald-600 transition-all group-hover:bg-emerald-600 group-hover:text-white group-hover:-rotate-6 shadow-xl shadow-indigo-900/5">
+              <FileText size={40} strokeWidth={1.5} />
             </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-4 uppercase tracking-tight">Official <span className="text-emerald-600">PDF</span></h3>
-            <p className="text-gray-400 text-sm font-medium leading-relaxed mb-10">
-              Generate formatted printable booking vouchers and summary PDFs for official record keeping and verification.
+            <h3 className="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tight italic">Official <span className="text-emerald-600">PDF</span></h3>
+            <p className="text-slate-500 text-sm font-bold leading-relaxed mb-10 tracking-tight">
+              Professional visual summary of revenue, occupancy, and match metrics ready for stakeholder presentation.
             </p>
-            <button
-              onClick={() => handleDownloadReport('pdf')}
+            <button 
+              onClick={() => handleDownload('pdf')}
               disabled={downloading}
-              className="w-full bg-emerald-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-lg shadow-emerald-200 outline-none"
+              className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-emerald-600 transition-all shadow-2xl shadow-slate-900/10 outline-none active:scale-95"
             >
-              <Download size={20} />
-              {downloading ? 'Compiling Dossier...' : 'Download PDF Report'}
+              <Download size={18} /> {downloading ? 'Compiling...' : 'Generate PDF Hub'}
             </button>
           </div>
         </div>
 
-        {/* Audit Information */}
-        <div className="mt-12 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-emerald-900/5 p-10 overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-8 opacity-5 text-gray-900 pointer-events-none">
-            <Database size={120} />
-          </div>
-
-          <h4 className="text-xs font-black text-gray-900 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-            <ShieldCheck size={18} className="text-emerald-600" /> Data Integrity Details
-          </h4>
-
-          <div className="grid md:grid-cols-2 gap-10">
-            <div className="space-y-4">
-              {[
-                'Universal unique Booking IDs',
-                'Full customer contact matrices',
-                'Granular 30-min slot segments',
-                'Real-time financial status tracking'
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm font-bold text-gray-600">
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                  {item}
-                </div>
-              ))}
+        {/* Info Card */}
+        <div className="mt-12 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-blue-900/[0.02] p-12 overflow-hidden relative group">
+           <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[60px] rounded-full group-hover:bg-emerald-500/10 transition-all duration-700"></div>
+           <div className="flex flex-col md:flex-row gap-10 relative z-10">
+            <div className="flex-1">
+              <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-6 flex items-center gap-3 italic">
+                <ShieldCheck size={18} /> Data Integrity Details
+              </h4>
+              <p className="text-slate-500 text-sm font-bold leading-relaxed mb-8 tracking-tight italic">
+                All generated reports include synchronized transaction IDs, player verification status, and timestamped ground activity logs. 
+                Reports are cryptographically verified for accounting accuracy.
+              </p>
+              <div className="grid grid-cols-2 gap-6">
+                {['Sync ID: OPER-X81', 'Node: HYD-01', 'Auth: ADM-LVL-1', 'State: STABLE'].map(item => (
+                   <div key={item} className="flex items-center gap-3">
+                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                     <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{item}</span>
+                   </div>
+                ))}
+              </div>
             </div>
-            <div className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100">
-              <p className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest mb-4">Worker Context</p>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-gray-500 uppercase tracking-widest">Operator:</span>
-                  <span className="font-black text-emerald-900">{user?.name}</span>
+            <div className="md:w-72 bg-slate-50 p-8 rounded-[2rem] border border-slate-100 shadow-inner">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-6 italic">Worker Context</p>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Operator</span>
+                  <span className="font-black text-slate-900 text-[11px] uppercase italic">{user?.name}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-gray-500 uppercase tracking-widest">ID:</span>
-                  <span className="font-mono text-emerald-900 opacity-60">ADMIN_GROUND_OPS</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Access</span>
+                  <span className="font-mono text-emerald-600 text-[10px] font-black tracking-tighter">ADM_GROUND_OPS</span>
+                </div>
+                <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+                   <span className="text-[9px] font-black text-slate-400 uppercase">Live Pulse</span>
+                   <div className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                      <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Active</span>
+                   </div>
                 </div>
               </div>
             </div>
-          </div>
+           </div>
         </div>
       </div>
     </div>

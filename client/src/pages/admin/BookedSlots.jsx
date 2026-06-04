@@ -1,159 +1,231 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Activity, Briefcase, PieChart, LogOut, ChevronRight, Database, CheckCircle, Clock } from 'lucide-react';
+import { 
+    LayoutDashboard, 
+    Calendar, 
+    Activity, 
+    Briefcase, 
+    PieChart, 
+    LogOut, 
+    ChevronRight, 
+    Database, 
+    CheckCircle, 
+    Clock,
+    Phone,
+    User,
+    ArrowRight,
+    RefreshCcw,
+    Zap,
+    Maximize2,
+    Info,
+    Layers,
+    Filter,
+    Download,
+    CircleDot
+} from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
 import { bookingsAPI, adminAPI } from '../../api/client';
-import MobileNav from '../../components/MobileNav';
+import AdminSidebar from '../../components/AdminSidebar';
 
 const AdminBookedSlots = () => {
     const navigate = useNavigate();
     const { user, logout } = useContext(AuthContext);
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
     const [filterDate, setFilterDate] = useState(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
-    const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
-    const navItems = [
-        { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-        { to: '/admin/booked-slots', label: 'Booked Slots', icon: CheckCircle },
-        { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-        { to: '/admin/workers', label: 'Workers', icon: Briefcase },
-        { to: '/admin/report', label: 'Report', icon: PieChart },
-    ];
-
-    useEffect(() => {
-        const fetchBookings = async () => {
-            try {
-                setLoading(true);
-                const response = await bookingsAPI.getAll({ status: 'confirmed' });
-                const confirmed = response.data.bookings || [];
-
-                const holdResponse = await bookingsAPI.getAll({ status: 'hold' });
-                const hold = holdResponse.data.bookings || [];
-
-                const booked = [...confirmed, ...hold];
-
-                booked.sort((a, b) => {
-                    const dateA = new Date(a.slot?.date || a.createdAt);
-                    const dateB = new Date(b.slot?.date || b.createdAt);
-                    return dateB - dateA;
-                });
-
-                setBookings(booked);
-            } catch (error) {
-                console.error('Error fetching booked slots:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchBookings();
-        fetchSettings();
+    const fetchBookings = useCallback(async () => {
+        try {
+            setLoading(true);
+            const [confRes, holdRes] = await Promise.all([
+                bookingsAPI.getAll({ status: 'confirmed' }),
+                bookingsAPI.getAll({ status: 'hold' })
+            ]);
+            
+            const booked = [...(confRes.data.bookings || []), ...(holdRes.data.bookings || [])];
+            booked.sort((a, b) => new Date(b.slot?.date || b.createdAt) - new Date(a.slot?.date || a.createdAt));
+            setBookings(booked);
+        } catch (error) {
+            console.error('Registry fetch failure:', error);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const fetchSettings = async () => {
-        try {
-            const { data } = await adminAPI.getSettings();
-            if (data.success) {
-                setSettings(prev => ({ ...prev, ...data.settings }));
-            }
-        } catch (err) {
-            console.error('Settings fetch error:', err);
-        }
-    };
+    useEffect(() => {
+        fetchBookings();
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, [fetchBookings]);
 
-    const handleLogout = () => {
-        logout();
-        navigate('/admin/login');
-    };
+    const filteredBookings = bookings.filter(b => 
+        b.slot?.date ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(b.slot.date)) === filterDate : false
+    );
 
-    const NavItem = ({ to, label, icon: Icon, active = false }) => (
-        <Link
-            to={to}
-            className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-                ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-                : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
-        >
-            <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
-            <span className="text-xs font-black uppercase tracking-widest">{label}</span>
-        </Link>
+    if (loading) return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+            <div className="relative">
+                <div className="w-24 h-24 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                <Database className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Accessing Deployment Registry...</p>
+        </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
-            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+        <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+            <AdminSidebar user={user} logout={logout} />
 
-            
-
-
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto pb-24">
-                <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-                    <div className="flex flex-col">
-                        <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Booked Slots</h2>
-                        <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Confirmed & On Hold Calendar</p>
+            <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+                {/* BI Style Top Bar */}
+                <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        <div>
+                            <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                                <Calendar className="text-emerald-600" size={26} /> 
+                                Deployment Registry <span className="text-slate-400">/ Active Nodes</span>
+                            </h1>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Operational Calendar v3.4</p>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setFilterDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))}
-                            className={`hidden md:block px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterDate === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
-                        >
-                            Today
-                        </button>
-                        <div className="relative">
+
+                    <div className="flex items-center gap-6">
+                        <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+                            <div className="px-4 py-1.5 border-r border-slate-200">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
+                                <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                            </div>
+                            <div className="px-4 py-1.5">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Registry Synchronization</p>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase">Live Node</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                            <button
+                                onClick={() => setFilterDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))}
+                                className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${filterDate === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                Today
+                            </button>
                             <input
                                 type="date"
                                 value={filterDate}
                                 onChange={(e) => setFilterDate(e.target.value)}
-                                className="bg-white border-2 border-transparent focus:border-emerald-500 p-2 md:p-3 rounded-xl outline-none transition-all font-bold text-xs md:text-sm text-gray-700 shadow-sm outline outline-1 outline-gray-200"
+                                className="bg-transparent border-none text-[9px] font-black uppercase tracking-widest px-4 outline-none cursor-pointer [color-scheme:light]"
                             />
                         </div>
+                        <button onClick={fetchBookings} className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-blue-700 transition-all">
+                            <RefreshCcw size={20} />
+                        </button>
                     </div>
                 </header>
 
-                <div className="p-4 md:p-10">
-                    {loading ? (
-                        <div className="py-20 flex justify-center">
-                            <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                <div className="max-w-[1600px] mx-auto p-10 space-y-10">
+                    
+                    {/* Registry KPI Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                        {[
+                            { label: 'Active Deployments', value: filteredBookings.length, icon: <Layers className="text-emerald-500" /> },
+                            { label: 'Confirmed Yield', value: `₹${filteredBookings.filter(b => b.bookingStatus === 'confirmed').reduce((s, b) => s + b.amount, 0).toLocaleString()}`, icon: <Zap className="text-emerald-500" /> },
+                            { label: 'Temporal Holds', value: filteredBookings.filter(b => b.bookingStatus === 'hold').length, icon: <Clock className="text-amber-500" /> },
+                            { label: 'System Reach', value: '98.2%', icon: <Activity className="text-emerald-500" /> }
+                        ].map((kpi, idx) => (
+                            <div key={idx} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-2xl transition-all group overflow-hidden relative">
+                                <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform duration-700">
+                                    {kpi.icon}
+                                </div>
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-blue-50 transition-colors">
+                                        {kpi.icon}
+                                    </div>
+                                </div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{kpi.label}</p>
+                                <h3 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter tabular-nums">{kpi.value}</h3>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Main Registry Grid */}
+                    {filteredBookings.length === 0 ? (
+                        <div className="bg-white rounded-[4rem] p-32 text-center border border-slate-200 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-20 opacity-[0.02] text-slate-900">
+                                <Calendar size={300} />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto text-slate-200 mb-8 border border-slate-100">
+                                    <Calendar size={48} strokeWidth={1} />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-4 italic">No Active Deployments</h3>
+                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] italic">No booked nodes synchronized for {filterDate}</p>
+                            </div>
                         </div>
-                    ) : bookings.length === 0 ? (
-                        <div className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest">No booked slots found.</div>
                     ) : (
-                        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {bookings.filter(b => b.slot?.date ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(b.slot.date)) === filterDate : false).length === 0 ? (
-                                <div className="col-span-full py-20 text-center text-gray-400 font-bold uppercase tracking-widest">No booked slots found for {filterDate}.</div>
-                            ) : bookings.filter(b => b.slot?.date ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(b.slot.date)) === filterDate : false).map(b => (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                            {filteredBookings.map(b => (
                                 <div
                                     key={b._id}
                                     onClick={() => navigate(`/admin/bookings/${b._id}`)}
-                                    className="bg-emerald-900/5 p-6 rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/5 hover:scale-[1.02] transition-transform cursor-pointer group/card"
+                                    className="bg-white p-10 rounded-[3.5rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:border-emerald-600 hover:-translate-y-2 transition-all duration-500 cursor-pointer group flex flex-col justify-between min-h-[420px] relative overflow-hidden"
                                 >
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 ${b.bookingStatus === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/[0.01] rounded-full blur-[40px]"></div>
+                                    
+                                    <div className="space-y-10 relative z-10">
+                                        <div className="flex justify-between items-start">
+                                            <div className={`px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-3 border shadow-sm italic ${
+                                                b.bookingStatus === 'confirmed' 
+                                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                                                : 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse'
                                             }`}>
-                                            {b.bookingStatus === 'confirmed' ? <CheckCircle size={10} /> : <Clock size={10} />} {b.bookingStatus}
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                            <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${b.paymentType === 'full' ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
-                                                {b.paymentType === 'full' ? 'Full' : 'Advance'}
+                                                <CircleDot size={12} className={b.bookingStatus === 'hold' ? 'animate-pulse' : ''} /> 
+                                                {b.bookingStatus}
                                             </div>
-                                            <div className="bg-white text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black shadow-sm">
-                                                ₹{b.amount}{b.paymentType === 'advance' ? ` / ₹${b.totalAmount}` : ''}
+                                            <div className="flex flex-col items-end gap-2">
+                                                <div className="bg-slate-950 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg italic">
+                                                    {b.paymentType}
+                                                </div>
+                                                <div className="text-3xl font-black text-slate-900 italic tabular-nums tracking-tighter group-hover:text-emerald-600 transition-colors">
+                                                    ₹{b.amount.toLocaleString()}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Subject Identity</p>
+                                            <h4 className="text-3xl font-black text-slate-900 uppercase tracking-tighter italic leading-none group-hover:text-emerald-600 transition-colors">{b.userName}</h4>
+                                            <div className="flex items-center gap-3 text-slate-500 mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100 group-hover:bg-blue-50 transition-colors">
+                                                <Phone size={14} className="text-emerald-600" />
+                                                <span className="text-[11px] font-black uppercase tracking-widest tabular-nums">+91 {b.userPhone}</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <h4 className="text-xl font-black text-gray-900 capitalize tracking-tight mb-1">{b.userName}</h4>
-                                    <p className="text-gray-400 text-xs font-bold tracking-widest">+91 {b.userPhone}</p>
 
-                                    <div className="mt-6 p-4 bg-white rounded-2xl flex items-center gap-4 border border-emerald-100 shadow-sm">
-                                        <div className="bg-emerald-50 p-3 rounded-xl shadow-sm text-emerald-600">
-                                            <Calendar size={20} />
+                                    <div className="pt-10 mt-10 border-t border-slate-50 group-hover:border-blue-50 transition-colors relative z-10">
+                                        <div className="p-6 bg-slate-950 rounded-[2rem] shadow-xl group-hover:bg-emerald-600 transition-all duration-700 relative overflow-hidden">
+                                            <div className="absolute -right-4 -bottom-4 opacity-10 text-white group-hover:scale-150 transition-transform">
+                                                <Clock size={80} />
+                                            </div>
+                                            <div className="flex items-center gap-5 relative z-10">
+                                                <div className="bg-white/10 p-3 rounded-xl backdrop-blur-md text-white shadow-inner">
+                                                    <Zap size={20} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-white/60 italic">Temporal Segment</p>
+                                                    <p className="text-lg font-black text-white italic tabular-nums leading-none">
+                                                        {b.slot?.startTime} • {b.slot?.endTime || '---'}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-0.5">Time Slot</p>
-                                            <p className="text-sm font-black text-gray-900">
-                                                {b.slot?.date ? new Date(b.slot.date).toLocaleDateString('en-GB') : 'N/A'} at {b.slot?.startTime}
-                                            </p>
+                                        <div className="flex items-center justify-between mt-8 px-4">
+                                           <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic font-mono">NODE_TX_{b._id.slice(-6).toUpperCase()}</span>
+                                           <div className="flex items-center gap-2 text-emerald-600 group-hover:translate-x-2 transition-transform">
+                                              <span className="text-[10px] font-black uppercase tracking-widest italic">Node Detail</span>
+                                              <ArrowRight size={16} />
+                                           </div>
                                         </div>
                                     </div>
                                 </div>

@@ -120,7 +120,7 @@ const WorkerBookingDetail = () => {
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
-      <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+      <div className="w-12 h-12 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Loading Booking...</p>
     </div>
   );
@@ -131,7 +131,7 @@ const WorkerBookingDetail = () => {
         <AlertCircle size={40} />
       </div>
       <h2 className="text-2xl font-black text-gray-900 mb-2 uppercase">Booking Not Found</h2>
-      <button onClick={() => navigate('/worker/dashboard')} className="mt-8 bg-emerald-600 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-emerald-700 transition-all">
+      <button onClick={() => navigate('/worker/dashboard')} className="mt-8 bg-emerald-600 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-all">
         Return to Dashboard
       </button>
     </div>
@@ -148,8 +148,8 @@ const WorkerBookingDetail = () => {
     <Link
       to={to}
       className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-        ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-        : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
+        ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20'
+        : 'text-gray-400 hover:bg-blue-50 hover:text-blue-700'}`}
     >
       <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
       <span className="text-xs font-black uppercase tracking-widest">{label}</span>
@@ -163,7 +163,7 @@ const WorkerBookingDetail = () => {
       {/* Sidebar (Desktop Only) */}
       <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
         <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-          <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
+          <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-500/20">
             <LayoutDashboard size={24} />
           </div>
           <div>
@@ -202,7 +202,7 @@ const WorkerBookingDetail = () => {
 
 
         {/* Header */}
-        <div className="bg-emerald-950 pt-10 md:pt-20 pb-32 md:pb-40 px-4 md:px-6 relative overflow-hidden">
+        <div className="bg-black pt-10 md:pt-20 pb-32 md:pb-40 px-4 md:px-6 relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-400 rounded-full blur-3xl"></div>
           </div>
@@ -210,7 +210,7 @@ const WorkerBookingDetail = () => {
             <div className="space-y-3 md:space-y-4 w-full">
               <button
                 onClick={() => navigate('/worker/dashboard')}
-                className="bg-white/10 hover:bg-white/20 text-emerald-100 px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all mb-2 md:mb-4 outline-none"
+                className="bg-white/10 hover:bg-white/20 text-blue-100 px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all mb-2 md:mb-4 outline-none"
               >
                 <ArrowLeft size={14} /> Back to Dashboard
               </button>
@@ -241,7 +241,7 @@ const WorkerBookingDetail = () => {
             </div>
           )}
           {msgSuccess && (
-            <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] md:text-xs font-bold px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl flex items-center gap-3">
+            <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-700 text-[10px] md:text-xs font-bold px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl flex items-center gap-3">
               <CheckCircle size={16} /> {msgSuccess}
             </div>
           )}
@@ -250,7 +250,7 @@ const WorkerBookingDetail = () => {
             {/* Left: Customer + Slot Info */}
             <div className="lg:col-span-2 space-y-6 md:space-y-8">
               {/* Customer Card */}
-              <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-emerald-900/5 border border-gray-100 p-6 md:p-10">
+              <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-slate-950/5 border border-gray-100 p-6 md:p-10">
                 <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-[0.3em] mb-6 md:mb-10 flex items-center gap-3">
                   <User size={16} className="text-emerald-600" /> Customer Information
                 </h3>
@@ -268,7 +268,7 @@ const WorkerBookingDetail = () => {
                     ) : (
                       <div className="flex justify-between items-center group">
                         <p className="text-lg md:text-2xl font-black text-gray-900 tracking-tight leading-none uppercase">{booking.userName}</p>
-                        <button onClick={() => setEditingName(true)} className="text-emerald-600 p-2 hover:bg-emerald-50 rounded-lg transition-colors">
+                        <button onClick={() => setEditingName(true)} className="text-emerald-600 p-2 hover:bg-blue-50 rounded-lg transition-colors">
                           <Edit3 size={18} />
                         </button>
                       </div>
@@ -278,14 +278,14 @@ const WorkerBookingDetail = () => {
                     <div>
                       <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 md:mb-3">Phone</p>
                       <div className="flex items-center gap-3 text-sm md:text-lg font-black text-gray-900 tracking-tight">
-                        <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600"><Phone size={18} /></div>
+                        <div className="bg-blue-50 p-2 rounded-lg text-emerald-600"><Phone size={18} /></div>
                         +91 {booking.userPhone}
                       </div>
                     </div>
                     <div>
                       <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 md:mb-3">Location</p>
                       <div className="flex items-center gap-3 text-sm md:text-lg font-black text-gray-900 tracking-tight">
-                        <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600"><MapPin size={18} /></div>
+                        <div className="bg-blue-50 p-2 rounded-lg text-emerald-600"><MapPin size={18} /></div>
                         {booking.turfLocation || 'Primary Unit'}
                       </div>
                     </div>
@@ -294,7 +294,7 @@ const WorkerBookingDetail = () => {
               </div>
 
               {/* Slot Details */}
-              <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-emerald-900/5 border border-gray-100 p-6 md:p-10">
+              <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-slate-950/5 border border-gray-100 p-6 md:p-10">
                 <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-[0.3em] mb-6 md:mb-10 flex items-center gap-3">
                   <Calendar size={16} className="text-emerald-600" /> Slot Details
                 </h3>
@@ -326,7 +326,7 @@ const WorkerBookingDetail = () => {
             {/* Right: Action Buttons */}
             <div className="space-y-6">
               {/* Payment Verification */}
-              <div className="bg-emerald-950 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-emerald-900/20 p-6 md:p-8 text-white">
+              <div className="bg-black rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-slate-950/20 p-6 md:p-8 text-white">
                 <h3 className="text-[9px] md:text-[10px] font-black text-emerald-400/60 uppercase tracking-[0.2em] mb-4 md:mb-6">Financial Verification</h3>
                 <div className="space-y-4 md:space-y-5">
                   <div className="bg-white/5 border border-white/10 p-4 md:p-5 rounded-2xl">
@@ -352,14 +352,14 @@ const WorkerBookingDetail = () => {
               </div>
 
               {/* Status Buttons */}
-              <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-emerald-900/5 border border-gray-100 p-6 md:p-8">
+              <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-slate-950/5 border border-gray-100 p-6 md:p-8">
                 <h3 className="text-[10px] md:text-xs font-black text-gray-900 uppercase tracking-[0.15em] mb-4 md:mb-6">Ground Protocol</h3>
                 <div className="space-y-3">
                   {/* Confirm */}
                   <button
                     onClick={() => handleStatusChange('confirmed')}
                     disabled={updatingStatus || booking.bookingStatus === 'confirmed'}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-30 text-white py-3 md:py-4 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest flex items-center justify-center gap-3 transition-all outline-none border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1"
+                    className="w-full bg-emerald-600 hover:bg-blue-700 disabled:opacity-30 text-white py-3 md:py-4 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest flex items-center justify-center gap-3 transition-all outline-none border-b-4 border-slate-900 active:border-b-0 active:translate-y-1"
                   >
                     {updatingStatus ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                     Finalize Slot
@@ -414,3 +414,6 @@ const WorkerBookingDetail = () => {
 };
 
 export default WorkerBookingDetail;
+
+
+

@@ -65,8 +65,8 @@ const WorkerBookedSlots = () => {
         <Link
             to={to}
             className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-                ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-                : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
+                ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20'
+                : 'text-gray-400 hover:bg-blue-50 hover:text-blue-700'}`}
         >
             <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
             <span className="text-xs font-black uppercase tracking-widest">{label}</span>
@@ -80,7 +80,7 @@ const WorkerBookedSlots = () => {
             {/* Sidebar (Desktop Only) */}
             <aside className="hidden md:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen z-50">
                 <div className="p-8 border-b border-gray-50 flex items-center gap-4">
-                    <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-200">
+                    <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg shadow-emerald-500/20">
                         <LayoutDashboard size={24} />
                     </div>
                     <div>
@@ -125,7 +125,7 @@ const WorkerBookedSlots = () => {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setFilterDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))}
-                            className={`hidden md:block px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterDate === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
+                            className={`hidden md:block px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterDate === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
                         >
                             Today
                         </button>
@@ -143,7 +143,7 @@ const WorkerBookedSlots = () => {
                 <div className="p-4 md:p-10">
                     {loading ? (
                         <div className="py-20 flex justify-center">
-                            <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                            <div className="w-10 h-10 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
                         </div>
                     ) : bookings.length === 0 ? (
                         <div className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest">No booked slots found.</div>
@@ -155,15 +155,15 @@ const WorkerBookedSlots = () => {
                                 <div
                                     key={b._id}
                                     onClick={() => navigate(`/worker/booking/${b._id}`)}
-                                    className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-xl shadow-emerald-900/5 hover:scale-[1.02] transition-transform cursor-pointer group/card"
+                                    className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-xl shadow-slate-950/5 hover:scale-[1.02] transition-transform cursor-pointer group/card"
                                 >
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 ${b.bookingStatus === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                                        <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 ${b.bookingStatus === 'confirmed' ? 'bg-blue-100 text-blue-700' : 'bg-blue-100 text-blue-700'
                                             }`}>
                                             {b.bookingStatus === 'confirmed' ? <CheckCircle size={10} /> : <Clock size={10} />} {b.bookingStatus}
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
-                                            <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${b.paymentType === 'full' ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
+                                            <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${b.paymentType === 'full' ? 'bg-emerald-600 text-white' : 'bg-emerald-600 text-white'}`}>
                                                 {b.paymentType === 'full' ? 'Full' : 'Advance'}
                                             </div>
                                             <div className="bg-gray-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black shadow-sm">
@@ -196,3 +196,6 @@ const WorkerBookedSlots = () => {
 };
 
 export default WorkerBookedSlots;
+
+
+

@@ -1,32 +1,30 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Calendar,
-  Activity,
-  Briefcase,
-  PieChart,
-  LogOut,
-  ChevronRight,
-  Search,
-  Plus,
-  Check,
-  X,
-  MessageSquare,
-  MoreVertical,
+import { useNavigate } from 'react-router-dom';
+import { 
+  Search, 
+  Activity, 
+  Calendar, 
+  Download, 
+  ShieldCheck, 
+  User, 
+  Clock, 
+  ChevronRight, 
+  Filter,
+  ArrowUpRight,
   Database,
-  Zap,
-  Settings,
-  ShieldCheck,
-  TrendingUp,
-  Clock,
-  User
+  ArrowRight,
+  RefreshCcw,
+  Loader2,
+  MousePointer2,
+  Layers,
+  LayoutDashboard,
+  CircleDot,
+  FileText,
+  Maximize2
 } from 'lucide-react';
-import { toast } from 'react-toastify';
-import AuthContext from '../../context/AuthContext';
-import { bookingsAPI, adminAPI } from '../../api/client';
-import MobileNav from '../../components/MobileNav';
 import AdminSidebar from '../../components/AdminSidebar';
+import AuthContext from '../../context/AuthContext';
+import { adminAPI, receiptsAPI } from '../../api/client';
 
 const AdminBookings = () => {
   const navigate = useNavigate();
@@ -35,403 +33,294 @@ const AdminBookings = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showManualModal, setShowManualModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [settings, setSettings] = useState({
-    PRICE_DAY: 1000,
-    PRICE_NIGHT: 1200,
-    PRICE_WEEKEND_DAY: 1000,
-    PRICE_WEEKEND_NIGHT: 1400,
-    PRICE_TRANSITION_HOUR: 18,
-    TURF_NAME: 'The Turf'
-  });
-  const [manualData, setManualData] = useState({
-    userName: '',
-    userPhone: '',
-    amount: '1000',
-    date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
-    startTime: '18:00',
-    endTime: '19:00',
-    paymentType: 'full'
-  });
-
-  const [aiCommand, setAiCommand] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResponse, setAiResponse] = useState(null);
-
-  const navItems = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/admin/operations', label: 'Operations HUB', icon: Zap },
-    { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
-    { to: '/admin/users', label: 'User Control', icon: User },
-    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
-    { to: '/admin/settings', label: 'Settings', icon: Settings },
-    { to: '/admin/scanner', label: 'QR Scanner', icon: Clock }
-  ];
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
-      const [bookingsRes, settingsRes] = await Promise.all([
-        bookingsAPI.getAll(filter !== 'all' ? { status: filter } : {}),
-        adminAPI.getSettings()
-      ]);
-      
-      setBookings(bookingsRes.data.bookings || []);
-      if (settingsRes.data.success) {
-        setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
+      const { data } = await adminAPI.getAllBookings();
+      if (data.success) {
+        setBookings(data.bookings);
       }
     } catch (err) {
-      console.error('Failed to fetch bookings:', err);
+      console.error('Booking registry sync failure:', err);
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, []);
 
   useEffect(() => {
     fetchBookings();
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, [fetchBookings]);
 
-  useEffect(() => {
-    if (manualData.startTime && manualData.endTime && manualData.date) {
-      const [sh, sm] = manualData.startTime.split(':').map(Number);
-      const [eh, em] = manualData.endTime.split(':').map(Number);
-      const duration = (eh * 60 + em) - (sh * 60 + sm);
-      if (duration > 0) {
-        const bookingDate = new Date(manualData.date);
-        const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
-        const isDay = sh < settings.PRICE_TRANSITION_HOUR;
-        
-        const baseRate = isWeekend 
-          ? (isDay ? settings.PRICE_WEEKEND_DAY : settings.PRICE_WEEKEND_NIGHT) 
-          : (isDay ? settings.PRICE_DAY : settings.PRICE_NIGHT);
-        
-        let totalPrice = (duration / 60) * baseRate;
-        
-        if (sh < settings.PRICE_TRANSITION_HOUR && (sh + duration / 60) > settings.PRICE_TRANSITION_HOUR) {
-          const dayHours = (settings.PRICE_TRANSITION_HOUR * 60 - (sh * 60 + sm)) / 60;
-          const nightHours = (duration / 60) - dayHours;
-          const nightRate = isWeekend ? settings.PRICE_WEEKEND_NIGHT : settings.PRICE_NIGHT;
-          totalPrice = (dayHours * baseRate) + (nightHours * nightRate);
-        }
-        
-        setManualData(prev => ({ ...prev, amount: Math.max(200, Math.ceil(totalPrice)).toString() }));
-      }
-    }
-  }, [manualData.startTime, manualData.endTime, manualData.date, settings]);
-
-  const handleManualBookingSubmit = async (e) => {
-    e.preventDefault();
-    if (!manualData.userName || !manualData.userPhone || !manualData.amount || !manualData.date || !manualData.startTime || !manualData.endTime) {
-      toast.error('Mission Parameters Missing: All fields are required.');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await adminAPI.manualBooking(manualData);
-      setShowManualModal(false);
-      setManualData({
-        userName: '',
-        userPhone: '',
-        amount: '1000',
-        date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
-        startTime: '18:00',
-        endTime: '19:00',
-        paymentType: 'full'
-      });
-      toast.success('Manual Entry successfully synchronized.');
-      fetchBookings();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Synchronization failure.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleStatusChange = async (bookingId, newStatus) => {
-    try {
-      await bookingsAPI.updateStatus(bookingId, newStatus);
-      toast.success(`Booking status updated to ${newStatus}.`);
-      fetchBookings();
-    } catch (error) {
-      toast.error('Status change error.');
-    }
-  };
-
-  const handleResendNotification = async (bookingId) => {
-    try {
-      await bookingsAPI.resendNotification(bookingId);
-      toast.success('✅ Communication packet delivered via WhatsApp.');
-    } catch (err) {
-      toast.error('❌ Notification node unreachable.');
-    }
-  };
-
-  const handleSendMessage = async (booking) => {
-    const message = window.prompt(`TRIGGER COMMUNICATION PACKET FOR ${booking.userName}`, `HELLO ${booking.userName}, YOUR SESSION AT ${settings.TURF_NAME} HAS BEEN CONFIRMED. PROTOCOLS ACTIVE.`);
-    if (!message) return;
-
-    try {
-      await adminAPI.sendMessage(booking.userPhone, message, booking._id);
-      toast.success('✅ Data packet delivered via official node.');
-    } catch (err) {
-      toast.error('❌ Communication failure: Payload rejected.');
-    }
-  };
-
-  const handleDirectChat = (b) => {
-    let cleaned = b.userPhone.toString().replace(/\D/g, '');
-    if (cleaned.length === 10) cleaned = '91' + cleaned;
-    const msg = `Hello ${b.userName}, this is ${settings.TURF_NAME}. Regarding your booking...`;
-    window.open(`https://wa.me/${cleaned}?text=${encodeURIComponent(msg)}`, '_blank');
-  };
-
-  const handleAICommand = async (e) => {
-    e.preventDefault();
-    if (!aiCommand.trim()) return;
-    setAiLoading(true);
-    setAiResponse(null);
-    try {
-      const { data } = await adminAPI.aiCommand(aiCommand);
-      setAiResponse(data);
-      if (data.type === 'MANUAL_BOOKING' && data.success) {
-        fetchBookings();
-        toast.success('AI processed manual booking successfully!');
-      }
-      setAiCommand('');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'AI Command failed');
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/admin/login');
-  };
-
-  const getStatusTheme = (status) => {
-    switch (status) {
-      case 'confirmed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'rejected': return 'bg-red-100 text-red-700 border-red-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'submitted': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'hold': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'no-show': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'cancelled': return 'bg-gray-200 text-gray-500 border-gray-300';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
-
-  const formatTime12h = (time24) => {
-    if (!time24) return '';
-    const [hours, minutes] = time24.split(':');
-    const h = parseInt(hours);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${minutes} ${ampm}`;
-  };
-
   const filteredBookings = bookings.filter(b => {
-    const matchesSearch = b.userName.toLowerCase().includes(searchTerm.toLowerCase()) || b.userPhone.includes(searchTerm);
-    if (!matchesSearch) return false;
-    if (filter === 'all') return true;
-    if (filter === 'history') {
-        const bookingDate = new Date(b.slot?.date || Date.now());
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        return bookingDate < today;
-    }
-    return b.bookingStatus === filter;
+    const matchesFilter = filter === 'all' || b.status === filter;
+    const matchesSearch = searchTerm === '' || 
+      b._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.userId?.phone?.includes(searchTerm) ||
+      b.timeSlot?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
   });
 
+  const handleDownloadReceipt = async (id) => {
+    try {
+        setDownloadingId(id);
+        const response = await receiptsAPI.download(id);
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `receipt-${id.slice(-6)}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    } catch (err) {
+        console.error('Download Protocol Failure:', err);
+        alert('Failed to transmit receipt payload.');
+    } finally {
+        setDownloadingId(null);
+    }
+  };
+
+  if (loading && bookings.length === 0) return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+        <div className="relative">
+            <div className="w-24 h-24 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
+            <Database className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
+        </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Accessing Booking Registry...</p>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+    <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+      <AdminSidebar user={user} logout={logout} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
-
-        <main className="flex-1 overflow-y-auto pb-24">
-          <header className="bg-white/80 backdrop-blur-md px-6 md:px-10 h-20 md:h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-            <div className="flex flex-col">
-              <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Ops Log</h2>
-              <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Booking Registry</p>
-            </div>
-
-            <div className="flex items-center gap-2 md:gap-4">
-              <button
-                onClick={() => setShowManualModal(true)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white p-3 md:px-8 md:py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shadow-xl shadow-emerald-200"
-              >
-                <Plus size={18} />
-                <span className="hidden md:inline">Add Manual Booking</span>
-              </button>
-              <div className="relative w-40 md:w-80">
-                <Search className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 p-2 pl-10 md:p-3 md:pl-14 rounded-xl md:rounded-2xl outline-none transition-all font-bold text-xs md:text-sm"
-                />
-              </div>
-            </div>
-          </header>
-
-          <div className="p-4 md:p-10 pb-0">
-            <div className="bg-gray-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Zap size={120} className="text-emerald-400" />
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-emerald-600 p-2 rounded-lg">
-                    <Zap size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-black uppercase tracking-widest text-xs md:text-sm">CricBot Command</h3>
-                    <p className="text-emerald-400 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] mt-1">AI-Powered Deployment</p>
-                  </div>
+      <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+        {/* BI Style Top Bar */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-8">
+                <div>
+                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                        <Database className="text-emerald-600" size={26} /> 
+                        Booking Log <span className="text-slate-400">/ Registry Audit</span>
+                    </h1>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Master Transaction Ledger v4.5</p>
                 </div>
+            </div>
 
-                <form onSubmit={handleAICommand} className="relative flex flex-col md:block gap-4">
-                  <input
-                    type="text"
-                    placeholder='MANUAL: Ravi, 9123456789, 28 Feb, 7 PM'
-                    value={aiCommand}
-                    onChange={(e) => setAiCommand(e.target.value)}
-                    className="w-full bg-white/10 border-2 border-white/5 focus:border-emerald-500/50 p-4 md:p-6 rounded-2xl md:rounded-[2rem] outline-none text-white font-bold text-sm md:text-lg placeholder:text-white/20 transition-all md:pr-40"
-                  />
-                  <button
-                    type="submit"
-                    disabled={aiLoading}
-                    className="md:absolute right-4 md:top-1/2 md:-translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl md:rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {aiLoading ? 'Processing...' : (
-                      <>
-                        Execute <ChevronRight size={16} />
-                      </>
-                    )}
-                  </button>
-                </form>
-
-                {aiResponse && (
-                  <div className="mt-6 animate-in slide-in-from-top-4 duration-500">
-                    <div className={`p-6 rounded-[2rem] border-2 ${aiResponse.type === 'MANUAL_BOOKING' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-white/5 border-white/5'}`}>
-                      <div className="flex items-start gap-4">
-                        <div className={`p-2 rounded-lg mt-1 ${aiResponse.type === 'MANUAL_BOOKING' ? 'bg-emerald-500 text-white' : 'bg-white/20 text-white'}`}>
-                          {aiResponse.type === 'MANUAL_BOOKING' ? <Check size={16} /> : <MessageSquare size={16} />}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-white font-bold leading-relaxed whitespace-pre-wrap">{aiResponse.reply}</p>
-                          {aiResponse.parsed_data && (
-                            <div className="mt-4 flex flex-wrap gap-4 pt-4 border-t border-white/5">
-                              <div className="flex flex-col text-xs">
-                                <span className="text-white/40 uppercase">Target</span>
-                                <span className="text-emerald-400 font-black">{aiResponse.parsed_data.name}</span>
-                              </div>
-                              <div className="flex flex-col text-xs">
-                                <span className="text-white/40 uppercase">Schedule</span>
-                                <span className="text-white font-black">{aiResponse.parsed_data.date} @ {aiResponse.parsed_data.startTime}</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+            <div className="flex items-center gap-6">
+                <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+                    <div className="px-4 py-1.5 border-r border-slate-200">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
+                        <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {showManualModal && (
-            <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 w-full max-w-lg shadow-2xl">
-                <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-lg font-black text-gray-900 uppercase">System Entry</h3>
-                  <button onClick={() => setShowManualModal(false)} className="p-2 text-gray-400 hover:text-red-500"><X size={20} /></button>
+                    <div className="px-4 py-1.5">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Registry Synchronization</p>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                            <span className="text-[10px] font-black text-emerald-600 uppercase">Live Nodes</span>
+                        </div>
+                    </div>
                 </div>
-                <form onSubmit={handleManualBookingSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <input type="date" required value={manualData.date} onChange={(e) => setManualData({...manualData, date: e.target.value})} className="bg-gray-50 p-4 rounded-xl font-bold" />
-                    <input type="number" required value={manualData.amount} onChange={(e) => setManualData({...manualData, amount: e.target.value})} className="bg-gray-50 p-4 rounded-xl font-bold" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <input type="time" required value={manualData.startTime} onChange={(e) => setManualData({...manualData, startTime: e.target.value})} className="bg-gray-50 p-4 rounded-xl font-bold" />
-                    <input type="time" required value={manualData.endTime} onChange={(e) => setManualData({...manualData, endTime: e.target.value})} className="bg-gray-50 p-4 rounded-xl font-bold" />
-                  </div>
-                  <input type="text" placeholder="Name" required value={manualData.userName} onChange={(e) => setManualData({...manualData, userName: e.target.value})} className="w-full bg-gray-50 p-4 rounded-xl font-bold" />
-                  <input type="tel" placeholder="Phone" required value={manualData.userPhone} onChange={(e) => setManualData({...manualData, userPhone: e.target.value})} className="w-full bg-gray-50 p-4 rounded-xl font-bold" />
-                  <button type="submit" disabled={submitting} className="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase">Confirm</button>
-                </form>
-              </div>
+                <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                  {['all', 'confirmed', 'pending', 'rejected'].map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setFilter(p)}
+                      className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${filter === p
+                        ? 'bg-white text-emerald-600 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={fetchBookings} className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-blue-700 transition-all">
+                    <RefreshCcw size={20} />
+                </button>
             </div>
-          )}
+        </header>
 
-          <div className="p-4 md:p-10 space-y-8">
-            <div className="bg-white p-2 rounded-2xl border border-gray-100 flex flex-wrap gap-1">
-              {['all', 'pending', 'confirmed', 'rejected', 'hold', 'history'].map(s => (
-                <button key={s} onClick={() => setFilter(s)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === s ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:bg-gray-50'}`}>{s}</button>
-              ))}
-            </div>
-
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl overflow-hidden">
-              {loading ? (
-                <div className="py-20 text-center"><p className="animate-pulse">Loading Logs...</p></div>
-              ) : filteredBookings.length === 0 ? (
-                <div className="py-20 text-center text-gray-400 uppercase font-black">No Records Found</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="bg-gray-900 text-white text-[10px] uppercase font-black">
-                        <th className="px-6 py-4">Name</th>
-                        <th className="px-6 py-4">Mobile</th>
-                        <th className="px-6 py-4">Slot</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4">Amount</th>
-                        <th className="px-6 py-4 text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {filteredBookings.map((b) => (
-                        <tr key={b._id} className="hover:bg-emerald-50/20 transition-colors">
-                          <td className="px-6 py-6 font-black uppercase">{b.userName}</td>
-                          <td className="px-6 py-6 font-bold cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleDirectChat(b)}>
-  {b.userPhone}
-</td>
-                          <td className="px-6 py-6 text-xs">{b.slot?.date ? new Date(b.slot.date).toLocaleDateString() : 'N/A'}<br/>{formatTime12h(b.slot?.startTime)}</td>
-                          <td className="px-6 py-6"><span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase border ${getStatusTheme(b.bookingStatus)}`}>{b.bookingStatus}</span></td>
-                          <td className="px-6 py-6 font-black flex items-center gap-2">
-                             <span>₹{b.amount}</span>
-                             {b.paymentStatus === 'verified' && <ShieldCheck size={14} className="text-emerald-500" />}
-                          </td>
-                          <td className="px-6 py-6">
-                            <div className="flex gap-1 justify-center">
-                              <button onClick={() => handleStatusChange(b._id, 'confirmed')} className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Check size={16} /></button>
-                              <button onClick={() => handleStatusChange(b._id, 'rejected')} className="p-2 bg-red-50 text-red-500 rounded-lg"><X size={16} /></button>
-                              <button onClick={() => handleResendNotification(b._id)} className="p-2 bg-purple-50 text-purple-600 rounded-lg" title="Resend Notification"><Zap size={16} /></button>
-                              <button onClick={() => handleSendMessage(b)} className="p-2 bg-blue-50 text-blue-600 rounded-lg" title="Custom Message"><MessageSquare size={16} /></button>
-                              <button onClick={() => handleDirectChat(b)} className="p-2 bg-gray-50 text-gray-600 rounded-lg" title="WhatsApp Link"><TrendingUp size={16} /></button>
-                              <button onClick={() => navigate(`/admin/bookings/${b._id}`)} className="p-2 bg-gray-50 text-gray-400 rounded-lg"><MoreVertical size={16} /></button>
+        <div className="max-w-[1600px] mx-auto p-10 space-y-10">
+            
+            {/* Booking KPI Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                {[
+                    { label: 'Total Logs', value: bookings.length, icon: <Database className="text-emerald-500" /> },
+                    { label: 'Confirmed Nodes', value: bookings.filter(b => b.status === 'confirmed').length, icon: <ShieldCheck className="text-emerald-500" /> },
+                    { label: 'Audit Efficiency', value: '100%', icon: <Activity className="text-emerald-500" /> },
+                    { label: 'Database Health', value: 'Optimal', icon: <Layers className="text-slate-500" /> }
+                ].map((kpi, idx) => (
+                    <div key={idx} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-2xl transition-all group overflow-hidden relative">
+                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform duration-700">
+                            {kpi.icon}
+                        </div>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-blue-50 transition-colors">
+                                {kpi.icon}
                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                        </div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{kpi.label}</p>
+                        <h3 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter tabular-nums">{kpi.value}</h3>
+                    </div>
+                ))}
             </div>
-          </div>
-        </main>
-      </div>
+
+            {/* Registry Table Hub */}
+            <div className="bg-white rounded-[3.5rem] shadow-sm border border-slate-200 overflow-hidden relative">
+                 <div className="absolute top-0 right-0 p-12 opacity-[0.01] text-slate-900 pointer-events-none">
+                    <Layers size={300} />
+                 </div>
+                 
+                 {/* Table Header Controls */}
+                 <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-8 bg-white/50 backdrop-blur-xl relative z-10">
+                    <div className="flex items-center gap-6">
+                       <div className="bg-slate-950 text-white p-4 rounded-2xl shadow-xl">
+                          <Database size={24} />
+                       </div>
+                       <div>
+                          <h4 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">{filteredBookings.length} <span className="text-slate-400">/ {bookings.length}</span></h4>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1.5 italic">Synchronized Transaction Records</p>
+                       </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-6 flex-1 max-w-xl">
+                       <div className="relative flex-1 group">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={16} />
+                          <input 
+                             type="text" 
+                             value={searchTerm}
+                             onChange={(e) => setSearchTerm(e.target.value)}
+                             placeholder="SEARCH IDENTITY, NODE, OR PAYLOAD..."
+                             className="bg-slate-100 border border-slate-200 focus:bg-white focus:border-emerald-600 p-3 pl-12 rounded-xl outline-none text-[10px] font-black text-slate-900 w-full transition-all italic tracking-widest uppercase"
+                          />
+                       </div>
+                       <button className="bg-slate-950 hover:bg-emerald-600 text-white p-3 rounded-xl transition-all shadow-xl active:scale-95 group">
+                          <Download size={20} className="group-hover:-translate-y-0.5 transition-transform" />
+                       </button>
+                    </div>
+                 </div>
+
+                 <div className="overflow-x-auto custom-scrollbar relative z-10">
+                    <table className="w-full text-left border-collapse">
+                       <thead>
+                          <tr className="bg-slate-50/50">
+                             {['Protocol ID', 'Operational Node', 'Registry Subject', 'Temporal Config', 'Status', 'Audit'].map(h => (
+                                <th key={h} className="px-10 py-8 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] italic border-b border-slate-100">{h}</th>
+                             ))}
+                          </tr>
+                       </thead>
+                       <tbody className="divide-y divide-slate-50">
+                          {filteredBookings.length > 0 ? (
+                             filteredBookings.map((b) => (
+                                <tr key={b._id} className="hover:bg-slate-50/80 transition-all group">
+                                   <td className="px-10 py-10">
+                                      <div className="flex flex-col">
+                                         <span className="text-[11px] font-black text-slate-950 tracking-tighter uppercase mb-1 italic group-hover:text-emerald-600 transition-colors tabular-nums">TXN_{b._id.slice(-8).toUpperCase()}</span>
+                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic tabular-nums border-l-2 border-emerald-600/20 pl-2">{new Date(b.createdAt).toLocaleDateString('en-GB')}</span>
+                                      </div>
+                                   </td>
+                                   <td className="px-10 py-10">
+                                      <div className="flex items-center gap-4">
+                                         <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+                                            <Layers size={16} />
+                                         </div>
+                                         <div className="flex flex-col">
+                                            <span className="text-[11px] font-black text-slate-900 uppercase italic tracking-tight leading-none mb-1">{b.turfId?.name || 'MAIN_ARENA'}</span>
+                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest italic">PROTOCOL_ALPHA</span>
+                                         </div>
+                                      </div>
+                                   </td>
+                                   <td className="px-10 py-10">
+                                      <div className="flex flex-col">
+                                         <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight italic leading-none mb-1">{b.userId?.name || 'GUEST_OPERATIVE'}</span>
+                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic tabular-nums border-l-2 border-slate-200 pl-2">LINK: {b.userId?.phone || 'N/A'}</span>
+                                      </div>
+                                   </td>
+                                   <td className="px-10 py-10">
+                                      <div className="bg-white border border-slate-200 px-5 py-2 rounded-xl inline-flex flex-col shadow-sm group-hover:border-blue-100 transition-all">
+                                         <span className="text-[10px] font-black text-slate-950 italic tracking-tighter tabular-nums mb-1 leading-none">{b.timeSlot}</span>
+                                         <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest italic leading-none">CLUSTER_NODE</span>
+                                      </div>
+                                   </td>
+                                   <td className="px-10 py-10">
+                                      <div className={`inline-flex px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border italic shadow-sm items-center gap-2 ${
+                                         b.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                                         b.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse' :
+                                         'bg-rose-50 text-rose-600 border-rose-100'
+                                      }`}>
+                                         <CircleDot size={10} className={b.status === 'pending' ? 'animate-pulse' : ''} />
+                                         {b.status}
+                                      </div>
+                                   </td>
+                                   <td className="px-10 py-10">
+                                      <div className="flex items-center gap-3">
+                                         <button 
+                                            onClick={() => navigate(`/admin/booking/${b._id}`)}
+                                            className="bg-white border border-slate-200 p-2.5 rounded-xl text-slate-400 hover:text-emerald-600 hover:border-emerald-600 transition-all shadow-sm active:scale-95 group/btn"
+                                            title="Audit Record"
+                                         >
+                                            <Search size={16} className="group-hover/btn:scale-110 transition-transform" />
+                                         </button>
+                                          <button 
+                                             onClick={() => handleDownloadReceipt(b._id)}
+                                             disabled={downloadingId === b._id}
+                                             className="bg-white border border-slate-200 p-2.5 rounded-xl text-slate-400 hover:text-slate-950 hover:border-slate-950 transition-all shadow-sm active:scale-95 group/btn disabled:opacity-50"
+                                             title="Download Intel"
+                                          >
+                                             {downloadingId === b._id ? (
+                                                <Loader2 size={16} className="animate-spin text-emerald-600" />
+                                             ) : (
+                                                <Download size={16} className="group-hover/btn:-translate-y-0.5 transition-transform" />
+                                             )}
+                                          </button>
+                                      </div>
+                                   </td>
+                                </tr>
+                             ))
+                          ) : (
+                             <tr>
+                                <td colSpan="6" className="py-48 text-center bg-slate-50/20">
+                                   <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto text-slate-200 mb-8 border border-slate-100">
+                                      <Calendar size={48} strokeWidth={1} />
+                                   </div>
+                                   <h5 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic mb-3">Zero Matching Clusters</h5>
+                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] italic leading-relaxed">No registry records detected in the current filter node.<br/>Initiate broad scan to reset parameters.</p>
+                                </td>
+                             </tr>
+                          )}
+                       </tbody>
+                    </table>
+                 </div>
+
+                 {/* Registry Footer */}
+                 <div className="p-8 bg-slate-950 text-white border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 to-transparent"></div>
+                    <div className="flex items-center gap-6 relative z-10">
+                       <div className="bg-white/10 p-4 rounded-xl shadow-2xl backdrop-blur-md border border-white/10 text-emerald-500">
+                          <Activity size={24} className="animate-pulse" />
+                       </div>
+                       <div>
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic mb-1">Pagination Protocol Status</p>
+                          <p className="text-xs font-black text-white uppercase italic tracking-wide">Nominal | Displaying Cluster 1 of 1</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-4 relative z-10">
+                       <button className="px-10 py-4 bg-white/10 hover:bg-white text-white hover:text-slate-900 border border-white/10 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-2xl flex items-center gap-3 italic" disabled>
+                          Previous Phase
+                       </button>
+                       <button className="px-10 py-4 bg-white/10 hover:bg-white text-white hover:text-slate-900 border border-white/10 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-2xl flex items-center gap-3 italic" disabled>
+                          Next Phase
+                       </button>
+                    </div>
+                 </div>
+            </div>
+        </div>
+      </main>
     </div>
   );
 };

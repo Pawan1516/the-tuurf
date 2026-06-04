@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import jsQR from 'jsqr';
 import apiClient from '../../api/client';
 import AuthContext from '../../context/AuthContext';
-import MobileNav from '../../components/MobileNav';
 import AdminSidebar from '../../components/AdminSidebar';
 import { toast } from 'react-toastify';
 
@@ -26,7 +25,16 @@ import {
     LogOut,
     ChevronRight,
     Search,
-    Database
+    Database,
+    QrCode,
+    RefreshCcw,
+    ShieldAlert,
+    Clock,
+    Cpu,
+    Target,
+    Maximize2,
+    CircleDot,
+    Layers
 } from 'lucide-react';
 
 // ─── Real Camera QR Scanner (jsQR — works in ALL browsers) ──────────────────
@@ -60,7 +68,7 @@ const CameraScanner = ({ onScan }) => {
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: 'both' // Vital for diverse lighting and dark-mode QRs
+            inversionAttempts: 'both' 
         });
 
         if (code && code.data) {
@@ -71,13 +79,12 @@ const CameraScanner = ({ onScan }) => {
 
     useEffect(() => {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            setCamError('Camera API not supported in this browser (HTTPS required).');
+            setCamError('Optical Sensor interface not supported (HTTPS required).');
             return;
         }
 
         const startCamera = async () => {
             const constraintsList = [
-                // 1. High-Performance Mobile Constraints (Prioritize rear high-res)
                 { 
                     video: { 
                         facingMode: { ideal: 'environment' },
@@ -86,29 +93,23 @@ const CameraScanner = ({ onScan }) => {
                         frameRate: { ideal: 30, max: 60 }
                     } 
                 },
-                // 2. Standard Mobile Rear
                 { video: { facingMode: { exact: 'environment' } } },
-                // 3. Fallback Rear
                 { video: { facingMode: 'environment' } },
-                // 4. Basic video
                 { video: true }
             ];
 
             let stream = null;
-            let lastErr = null;
-
             for (const constraints of constraintsList) {
                 try {
                     stream = await navigator.mediaDevices.getUserMedia(constraints);
                     if (stream) break;
                 } catch (err) {
                     console.warn(`Scanner: Constraints fallback triggered`, err.name);
-                    lastErr = err;
                 }
             }
 
             if (!stream) {
-                setCamError('Scanner Error: Permission denied or no camera detected. If you are on an iQOO/Vivo device, ensure you are using Chrome and have granted system-level camera permissions to the browser.');
+                setCamError('Sensor Error: Access denied or no optic node detected.');
                 return;
             }
 
@@ -119,9 +120,8 @@ const CameraScanner = ({ onScan }) => {
                 video.onloadedmetadata = () => {
                     video.play().then(() => {
                         setIsReady(true);
-                        // Scan more frequently (150ms) for better performance on premium devices
                         intervalRef.current = setInterval(scanFrame, 150);
-                    }).catch(e => console.error('Scanner stream playback failed:', e));
+                    }).catch(e => console.error('Sensor stream playback failed:', e));
                 };
             }
         };
@@ -130,31 +130,45 @@ const CameraScanner = ({ onScan }) => {
         return () => stopCamera();
     }, [scanFrame, stopCamera]);
 
-    // Hidden canvas for frame processing
     const hiddenCanvas = <canvas ref={canvasRef} style={{ display: 'none' }} />;
 
     if (camError) {
         return (
-            <div className="rounded-[2.5rem] border-2 border-dashed border-yellow-500/30 p-8 flex flex-col items-center gap-4 bg-yellow-500/5">
+            <div className="rounded-[3.5rem] border-4 border-dashed border-rose-100 p-16 flex flex-col items-center gap-10 bg-rose-50/20 animate-fade-in relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-12 opacity-[0.02] text-rose-600">
+                    <ShieldAlert size={250} />
+                </div>
                 {hiddenCanvas}
-                <AlertTriangle className="text-yellow-500" size={32} />
-                <p className="text-yellow-400 text-xs font-bold text-center uppercase tracking-wide leading-relaxed max-w-sm">{camError}</p>
-                <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest text-center">— OR — paste QR payload manually below —</p>
-                <div className="w-full max-w-md">
-                    <input
-                        type="text"
-                        value={manualInput}
-                        onChange={e => setManualInput(e.target.value)}
-                        placeholder="Paste QR payload here..."
-                        className="w-full p-5 rounded-[1.5rem] bg-gray-900/50 border-2 border-dashed border-gray-700 text-emerald-400 font-mono text-xs focus:border-emerald-500 outline-none transition-all placeholder:text-gray-600"
-                        autoFocus
-                        onKeyDown={e => { if (e.key === 'Enter' && manualInput.trim()) { stopCamera(); onScan(manualInput.trim()); }}}
-                    />
+                <div className="p-6 bg-rose-600 text-white rounded-[1.5rem] shadow-2xl relative z-10">
+                   <ShieldAlert size={48} />
+                </div>
+                <div className="text-center space-y-4 relative z-10">
+                    <h4 className="text-xl font-black text-rose-700 uppercase tracking-tighter italic">Sensor Initialization Failure</h4>
+                    <p className="text-rose-600/60 text-[10px] font-black uppercase tracking-[0.3em] leading-relaxed max-w-sm mx-auto italic">{camError}</p>
+                </div>
+                <div className="w-full max-w-md space-y-6 relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="h-px flex-1 bg-rose-100"></div>
+                        <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.4em]">— MANUAL OVERRIDE —</p>
+                        <div className="h-px flex-1 bg-rose-100"></div>
+                    </div>
+                    <div className="relative group">
+                        <Cpu className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-600 transition-colors" size={20} />
+                        <input
+                            type="text"
+                            value={manualInput}
+                            onChange={e => setManualInput(e.target.value)}
+                            placeholder="INPUT REGISTRY PAYLOAD HASH"
+                            className="w-full p-6 pl-16 rounded-2xl bg-white border-2 border-slate-100 text-emerald-600 font-mono text-xs focus:border-emerald-600 outline-none transition-all placeholder:text-slate-200 shadow-sm italic"
+                            autoFocus
+                            onKeyDown={e => { if (e.key === 'Enter' && manualInput.trim()) { stopCamera(); onScan(manualInput.trim()); }}}
+                        />
+                    </div>
                     <button
                         onClick={() => { if (manualInput.trim()) { stopCamera(); onScan(manualInput.trim()); }}}
-                        className="w-full mt-3 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all"
+                        className="w-full bg-slate-950 text-white py-6 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all shadow-2xl hover:bg-emerald-600 italic"
                     >
-                        Submit Payload
+                        Force Registry Validation
                     </button>
                 </div>
             </div>
@@ -162,10 +176,8 @@ const CameraScanner = ({ onScan }) => {
     }
 
     return (
-        <div className="relative rounded-[2.5rem] overflow-hidden border-2 border-emerald-500/30 bg-black" style={{ minHeight: '300px' }}>
+        <div className="relative rounded-[4rem] overflow-hidden border-2 border-slate-200 bg-black shadow-2xl" style={{ minHeight: '500px' }}>
             {hiddenCanvas}
-
-            {/* Live camera feed */}
             <video
                 ref={videoRef}
                 playsInline
@@ -175,42 +187,49 @@ const CameraScanner = ({ onScan }) => {
                 style={{ display: isReady ? 'block' : 'none' }}
             />
 
-            {/* Scanning overlay */}
             {isReady && (
                 <>
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="relative w-56 h-56 md:w-64 md:h-64">
-                            <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-emerald-400 rounded-tl-xl"/>
-                            <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-emerald-400 rounded-tr-xl"/>
-                            <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-emerald-400 rounded-bl-xl"/>
-                            <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-emerald-400 rounded-br-xl"/>
+                        <div className="relative w-72 h-72 md:w-96 md:h-96">
+                            <div className="absolute top-0 left-0 w-16 h-16 border-t-8 border-l-8 border-emerald-600 rounded-tl-[2.5rem]"/>
+                            <div className="absolute top-0 right-0 w-16 h-16 border-t-8 border-r-8 border-emerald-600 rounded-tr-[2.5rem]"/>
+                            <div className="absolute bottom-0 left-0 w-16 h-16 border-b-8 border-l-8 border-emerald-600 rounded-bl-[2.5rem]"/>
+                            <div className="absolute bottom-0 right-0 w-16 h-16 border-b-8 border-r-8 border-emerald-600 rounded-br-[2.5rem]"/>
                             <div 
-                                className="absolute left-2 right-2 h-0.5 bg-emerald-400 shadow-lg shadow-emerald-400/50"
-                                style={{ animation: 'scanLine 2s ease-in-out infinite' }}
+                                className="absolute left-4 right-4 h-1 bg-emerald-500 shadow-[0_0_30px_rgba(37,99,235,1)]"
+                                style={{ animation: 'scanLine 4s ease-in-out infinite' }}
                             />
+                            <div className="absolute inset-0 bg-emerald-500/5 backdrop-blur-[1px]"></div>
                         </div>
                     </div>
-                    <div className="absolute bottom-4 left-0 right-0 text-center">
-                        <span className="bg-black/70 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
-                            🔍 Align QR code inside the box
+                    <div className="absolute top-10 left-10 flex items-center gap-4">
+                        <div className="px-5 py-2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-3">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,1)]"></div>
+                            <span className="text-[9px] font-black text-white uppercase tracking-widest italic">Optic Feed: Active</span>
+                        </div>
+                    </div>
+                    <div className="absolute bottom-10 left-0 right-0 text-center px-10">
+                        <span className="bg-white/10 backdrop-blur-2xl border border-white/10 text-white text-[10px] font-black uppercase tracking-[0.4em] px-10 py-4 rounded-full italic">
+                           Registry Acquisition protocol Alpha-9
                         </span>
                     </div>
                 </>
             )}
 
-            {/* Loading state */}
             {!isReady && !camError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black" style={{ minHeight: '300px' }}>
-                    <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"/>
-                    <p className="text-emerald-400 text-xs font-black uppercase tracking-widest">Opening Camera...</p>
-                    <p className="text-gray-600 text-[10px] mt-2 uppercase tracking-widest">Please allow camera access if prompted</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950">
+                    <div className="relative">
+                        <div className="w-24 h-24 border-4 border-emerald-600/10 border-t-emerald-600 rounded-full animate-spin"></div>
+                        <Target className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
+                    </div>
+                    <p className="text-white text-[10px] font-black uppercase tracking-[0.4em] italic mt-10">Synchronizing Optic Node...</p>
                 </div>
             )}
 
             <style>{`
                 @keyframes scanLine {
-                    0%, 100% { top: 10%; }
-                    50% { top: 90%; }
+                    0%, 100% { top: 10%; opacity: 0.3; }
+                    50% { top: 90%; opacity: 1; }
                 }
             `}</style>
         </div>
@@ -224,35 +243,26 @@ const Scanner = () => {
     const [matchDetails, setMatchDetails] = useState(null);
     const [dashboardStats, setDashboardStats] = useState(null);
     const [showScanner, setShowScanner] = useState(false);
+    const [currentTime, setCurrentTime] = useState(new Date());
     
     const [showOverride, setShowOverride] = useState(false);
     const [overrideMatchId, setOverrideMatchId] = useState('');
     const [overrideReason, setOverrideReason] = useState('');
-    const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
 
-    const navItems = [
-        { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/admin/operations', label: 'Operations HUB', icon: Zap },
-        { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-        { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-        { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
-        { to: '/admin/users', label: 'User Control', icon: Database },
-        { to: '/admin/report', label: 'Intelligence', icon: PieChart },
-        { to: '/admin/settings', label: 'Settings', icon: Settings },
-        { to: '/admin/scanner', label: 'QR Scanner', icon: Zap }
-    ];
-
-    const fetchDashboard = React.useCallback(async () => {
+    const fetchDashboard = useCallback(async () => {
         try {
             const res = await apiClient.get('/admin/scan-dashboard');
             if (res.data.success) setDashboardStats(res.data.dashboard);
         } catch (error) {
-            console.error('Error fetching dashboard:', error);
+            console.error('Error fetching scanner intelligence:', error);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
+    useEffect(() => { 
+        fetchDashboard(); 
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, [fetchDashboard]);
 
     const handleScan = async (payload) => {
         if (!payload) return;
@@ -267,7 +277,7 @@ const Scanner = () => {
             if (res.data.success) {
                 setScanStatus('success');
                 setMatchDetails(res.data.match);
-                toast.success('✅ Match Verified Successfully!');
+                toast.success('✅ Subject Verified Successfully');
                 fetchDashboard();
             }
         } catch (err) {
@@ -285,250 +295,339 @@ const Scanner = () => {
                 reason: overrideReason
             });
             if (res.data.success) {
-                toast.success('Admin Manual Override Successful.');
+                toast.success('Manual Override protocol Authorized');
                 setShowOverride(false);
                 setOverrideMatchId('');
                 setOverrideReason('');
                 fetchDashboard();
             }
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Override Authorization Failure.');
+            toast.error(err.response?.data?.message || 'Authorization Failure');
         }
     };
 
-    const NavItem = ({ to, label, icon: Icon, active = false }) => (
-        <Link
-            to={to}
-            className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-            ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-            : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
-        >
-            <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
-            <span className="text-xs font-black uppercase tracking-widest">{label}</span>
-        </Link>
-    );
-
-    const handleLogout = () => {
-        logout();
-        // navigate('/admin/login'); // Or window.location.href if no navigate
-    };
-
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-emerald-500/30">
-            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+        <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+            <AdminSidebar user={user} logout={logout} />
 
-            <div className="flex flex-1 overflow-hidden">
-                <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
-
-                {/* Main Content */}
-                <main className="flex-1 overflow-y-auto pb-24">
-
-            <div className="p-4 md:p-10 pb-20">
-            {/* Header Area */}
-            <div className="max-w-7xl mx-auto flex flex-col justify-between items-start md:items-center gap-6 mb-12">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="bg-emerald-600 p-2 rounded-xl shadow-lg shadow-emerald-900/40">
-                            <ShieldCheck size={20} className="text-white" />
-                        </div>
-                        <h1 className="text-2xl font-black uppercase tracking-tighter text-gray-900">Verification Center</h1>
-                    </div>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Operational Security Hub / Workflow 03</p>
-                </div>
-
-                {dashboardStats && (
-                    <div className="flex flex-wrap gap-4">
-                        <div className="bg-white border border-gray-100 shadow-sm px-6 py-3 rounded-2xl flex items-center gap-4">
-                            <Activity size={16} className="text-blue-500" />
-                            <div>
-                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Active matches</p>
-                                <p className="text-sm font-black text-gray-900">{dashboardStats.matches.total}</p>
-                            </div>
-                        </div>
-                        <div className="bg-white border border-gray-100 shadow-sm px-6 py-3 rounded-2xl flex items-center gap-4">
-                            <Zap size={16} className="text-emerald-500" />
-                            <div>
-                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Verified Today</p>
-                                <p className="text-sm font-black text-emerald-600">{dashboardStats.matches.verified}</p>
-                            </div>
+            <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+                {/* BI Style Top Bar */}
+                <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        <div>
+                            <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                                <QrCode className="text-emerald-600" size={26} /> 
+                                Verification Center <span className="text-slate-400">/ Security Hub</span>
+                            </h1>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Optic Validation Hub v4.1</p>
                         </div>
                     </div>
-                )}
-            </div>
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Main Scanning HUD */}
-                <div className="lg:col-span-8 space-y-8">
-                    <div className="bg-gray-800/40 backdrop-blur-xl border border-gray-700/50 rounded-[3rem] p-8 md:p-12 shadow-2xl overflow-hidden relative">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/5 rounded-full blur-[100px] pointer-events-none"/>
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"/>
-
-                        <div className="flex flex-col justify-between items-center gap-8 relative z-10">
-                            <div className="text-center md:text-left">
-                                <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Camera QR Scanner</h2>
-                                <p className="text-gray-400 text-sm max-w-sm font-bold uppercase tracking-tight leading-relaxed">
-                                    Point the camera at the match QR code to instantly verify and unlock scoring.
-                                </p>
+                    <div className="flex items-center gap-6">
+                        <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+                            <div className="px-4 py-1.5 border-r border-slate-200">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
+                                <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
                             </div>
-                            <button 
-                                onClick={() => setShowScanner(prev => !prev)}
-                                className={`px-10 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center gap-4 ${
-                                    showScanner 
-                                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-900/40' 
-                                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-900/40'
-                                }`}
-                            >
-                                {showScanner ? <><XCircle size={18} /> Stop Camera</> : <><Camera size={18} /> Open Camera</>}
-                            </button>
-                        </div>
-
-                        {/* Scanner Viewport */}
-                        <div className="mt-10">
-                            {showScanner ? (
-                                <CameraScanner
-                                    onScan={handleScan}
-                                    onClose={() => setShowScanner(false)}
-                                />
-                            ) : (
-                                <div className="bg-gray-800/20 rounded-[2.5rem] border-2 border-dashed border-gray-700 h-64 flex flex-col items-center justify-center text-gray-600 gap-4">
-                                    <CameraOff className="opacity-20" size={48} />
-                                    <p className="text-xs font-black uppercase tracking-widest">Camera Offline — Press "Open Camera" to Start</p>
+                            <div className="px-4 py-1.5">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Security Status</p>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase">Secure Hub</span>
                                 </div>
-                            )}
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setShowScanner(prev => !prev)}
+                            className={`px-10 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl transition-all flex items-center gap-4 active:scale-95 italic ${
+                                showScanner 
+                                ? 'bg-rose-600 text-white shadow-rose-500/20' 
+                                : 'bg-emerald-600 text-white shadow-emerald-500/20'
+                            }`}
+                        >
+                            {showScanner ? <><XCircle size={18} /> Terminate Sensor</> : <><Camera size={18} /> Initialize Sensor</>}
+                        </button>
+                    </div>
+                </header>
+
+                <div className="max-w-[1600px] mx-auto p-10 space-y-12">
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                        {/* Main Verification HUD */}
+                        <div className="lg:col-span-8 space-y-10">
+                            <div className="bg-white rounded-[4rem] p-12 shadow-sm border border-slate-200 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-12 opacity-[0.01] text-slate-900 pointer-events-none">
+                                    <Target size={300} />
+                                </div>
+                                
+                                <div className="flex flex-col md:flex-row justify-between items-center gap-10 relative z-10 border-b border-slate-100 pb-12 mb-12">
+                                    <div className="text-center md:text-left">
+                                        <div className="flex items-center gap-6 mb-4 justify-center md:justify-start">
+                                            <div className="p-5 bg-slate-950 text-white rounded-2xl shadow-2xl">
+                                               <QrCode size={32} />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter italic leading-none">Security <span className="text-emerald-600">Verification Matrix</span></h2>
+                                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2 italic">Awaiting Subject Identity Registry Scan</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                                        <div className="px-6 py-2 border-r border-slate-200">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Acquisitions</p>
+                                            <p className="text-lg font-black text-slate-900 italic tabular-nums leading-none">{dashboardStats?.matches?.verified || 0}</p>
+                                        </div>
+                                        <div className="px-6 py-2">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Sensor Heat</p>
+                                            <p className="text-lg font-black text-emerald-600 italic tabular-nums leading-none">Optimal</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="relative">
+                                    {showScanner ? (
+                                        <CameraScanner
+                                            onScan={handleScan}
+                                            onClose={() => setShowScanner(false)}
+                                        />
+                                    ) : (
+                                        <div className="bg-slate-50 rounded-[3.5rem] border-4 border-dashed border-slate-200 h-[500px] flex flex-col items-center justify-center text-slate-300 gap-8 group hover:border-blue-200 transition-all duration-500 overflow-hidden relative">
+                                            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-100/50"></div>
+                                            <div className="w-32 h-32 bg-white rounded-[2.5rem] flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 relative z-10 border border-slate-100">
+                                               <CameraOff className="text-slate-200 group-hover:text-emerald-600 transition-colors" size={56} strokeWidth={1} />
+                                            </div>
+                                            <div className="text-center space-y-3 relative z-10">
+                                                <h4 className="text-xl font-black text-slate-400 uppercase tracking-tighter italic">Optic Sensor Offline</h4>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.4em] italic opacity-60">Initiate sensor deployment for identity validation</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => setShowScanner(true)}
+                                                className="bg-slate-950 text-white px-12 py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-emerald-600 transition-all relative z-10 italic"
+                                            >
+                                                Deploy Verification Node
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {scanStatus !== 'idle' && (
+                                    <div className={`mt-12 p-10 rounded-[3rem] border-2 shadow-2xl animate-fade-up relative overflow-hidden ${
+                                        scanStatus === 'success' ? 'bg-emerald-50/50 border-emerald-100 text-emerald-800' : 
+                                        scanStatus === 'scanning' ? 'bg-blue-50/50 border-blue-100 text-blue-800' : 
+                                        'bg-rose-50/50 border-rose-100 text-rose-800'
+                                    }`}>
+                                        <div className="absolute top-0 right-0 p-10 opacity-[0.05] pointer-events-none">
+                                            {scanStatus === 'success' ? <ShieldCheck size={150} /> : <ShieldAlert size={150} />}
+                                        </div>
+                                        <div className="flex items-start gap-8 relative z-10">
+                                            <div className={`p-6 rounded-[1.8rem] shadow-2xl ${
+                                                scanStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                                                scanStatus === 'scanning' ? 'bg-emerald-600 text-white' : 
+                                                'bg-rose-600 text-white'
+                                            }`}>
+                                                {scanStatus === 'success' ? <CheckCircle size={32} /> : 
+                                                 scanStatus === 'scanning' ? <RefreshCcw className="animate-spin" size={32} /> : 
+                                                 <XCircle size={32} />}
+                                            </div>
+                                            
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between mb-6 border-b border-black/5 pb-6">
+                                                    <h3 className="text-3xl font-black uppercase tracking-tighter italic">
+                                                        {scanStatus === 'success' ? 'Identity Authorized' : 
+                                                         scanStatus === 'scanning' ? 'Payload Decryption...' : 
+                                                         'Authorization Refused'}
+                                                    </h3>
+                                                    {scanStatus === 'success' && (
+                                                        <div className="bg-emerald-600 text-white px-5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest italic animate-pulse shadow-lg">
+                                                            Live Access
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {scanStatus === 'success' && matchDetails && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                                        <div className="space-y-6">
+                                                            <div className="space-y-1">
+                                                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40 italic">Operational Title</p>
+                                                                <p className="text-xl font-black uppercase italic tracking-tighter">{matchDetails.title}</p>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40 italic">Subject Identity</p>
+                                                                <p className="text-lg font-black uppercase italic tracking-tight">{matchDetails.userName || 'Unknown Subject'}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 border border-emerald-100/50 space-y-4">
+                                                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                                               <span className="opacity-40 italic">Registry Hash</span>
+                                                               <span className="text-slate-900 font-mono">TX_{matchDetails._id.slice(-8).toUpperCase()}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                                               <span className="opacity-40 italic">temporal Status</span>
+                                                               <span className="text-emerald-600 italic">Confirmed</span>
+                                                            </div>
+                                                            <div className="pt-4 border-t border-emerald-100 flex items-center gap-3 text-emerald-600">
+                                                                <Zap size={14} className="animate-pulse" />
+                                                                <span className="text-[9px] font-black uppercase tracking-widest italic">Live Session Intelligence Unlocked</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {scanStatus === 'error' && (
+                                                    <div className="space-y-8">
+                                                        <p className="text-sm font-black uppercase tracking-widest opacity-60 leading-relaxed italic max-w-2xl">The identity signature provided is invalid or session entropy has exceeded limits. Security breach protocol initiated.</p>
+                                                        <div className="flex gap-4">
+                                                            <button 
+                                                                onClick={() => setShowOverride(true)}
+                                                                className="bg-rose-600 hover:bg-slate-900 text-white px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-rose-500/30 transition-all italic"
+                                                            >
+                                                                Invoke Manual Override Protocol
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => { setScanStatus('idle'); setShowScanner(true); }}
+                                                                className="bg-white border-2 border-rose-100 text-rose-600 px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-50 transition-all italic"
+                                                            >
+                                                                Reset Optic Node
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Status Feedback */}
-                        {scanStatus !== 'idle' && (
-                            <div className={`mt-8 p-8 rounded-[2rem] border-2 animate-in slide-in-from-bottom-4 duration-500 ${
-                                scanStatus === 'success' ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400' : 
-                                scanStatus === 'scanning' ? 'bg-blue-500/5 border-blue-500/20 text-blue-400' : 
-                                'bg-red-500/5 border-red-500/20 text-red-400'
-                            }`}>
-                                <div className="flex items-start gap-4">
-                                    {scanStatus === 'success' ? <CheckCircle size={24} /> : 
-                                     scanStatus === 'scanning' ? <Activity className="animate-pulse" size={24} /> : 
-                                     <XCircle size={24} />}
-                                    
-                                    <div className="flex-1">
-                                        <h3 className="text-lg font-black uppercase tracking-tight mb-2">
-                                            {scanStatus === 'success' ? 'Verification Successful' : 
-                                             scanStatus === 'scanning' ? 'Decrypting Payload...' : 
-                                             'Authorization Failed'}
-                                        </h3>
-                                        {scanStatus === 'success' && matchDetails && (
-                                            <div className="space-y-1 text-xs font-bold uppercase opacity-80">
-                                                <p>Match Node: {matchDetails.title}</p>
-                                                <p>Verification Token: #{matchDetails._id.slice(-8)}</p>
-                                                <p className="text-emerald-500">Live Scoring Protocols: Unlocked</p>
+                        {/* Sidebar Security Controls */}
+                        <div className="lg:col-span-4 space-y-10">
+                            {/* Override Terminal */}
+                            <div className="bg-white rounded-[3.5rem] p-10 shadow-sm border border-slate-200 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-8 opacity-[0.02] text-amber-600 group-hover:rotate-12 transition-all duration-1000">
+                                    <ShieldAlert size={150} />
+                                </div>
+                                <div className="flex items-center gap-5 mb-8 relative z-10">
+                                    <div className="p-4 bg-amber-50 text-amber-600 rounded-2xl shadow-sm border border-amber-100"><AlertTriangle size={24} /></div>
+                                    <div>
+                                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic leading-none">Security <span className="text-amber-600">Override</span></h2>
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1 italic">Manual Identity Injection Node</p>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-relaxed mb-10 italic relative z-10">
+                                    Manual protocols are authorized ONLY when physical presence is confirmed but optical sensor fails to acquire registry. Protocol violation is logged.
+                                </p>
+                                
+                                {(showOverride || scanStatus === 'error') ? (
+                                    <form onSubmit={handleManualOverride} className="space-y-8 animate-fade-in relative z-10">
+                                        <div className="space-y-3">
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2 italic">
+                                                <Lock size={12} className="text-rose-600" /> Target registry ID
+                                            </label>
+                                            <div className="relative group">
+                                                <Database className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-rose-600 transition-colors" size={16} />
+                                                <input 
+                                                    type="text" 
+                                                    value={overrideMatchId}
+                                                    onChange={(e) => setOverrideMatchId(e.target.value)}
+                                                    placeholder="UID_XXXXXX"
+                                                    className="w-full bg-slate-50 border-2 border-transparent focus:border-rose-100 p-4 pl-12 rounded-xl outline-none text-xs font-black tracking-widest transition-all italic placeholder:text-slate-200"
+                                                    required
+                                                />
                                             </div>
-                                        )}
-                                        {scanStatus === 'error' && (
-                                            <div className="space-y-4">
-                                                <p className="text-xs font-bold uppercase opacity-80 leading-relaxed">The identity signature provided is invalid or has expired sessions.</p>
-                                                <button 
-                                                    onClick={() => setShowOverride(true)}
-                                                    className="bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all"
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2 italic">
+                                                <ShieldCheck size={12} className="text-emerald-600" /> Justification Node
+                                            </label>
+                                            <div className="relative group">
+                                                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 rotate-90 pointer-events-none" size={16} />
+                                                <select 
+                                                    value={overrideReason}
+                                                    onChange={(e) => setOverrideReason(e.target.value)}
+                                                    className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-100 p-4 rounded-xl outline-none text-[10px] font-black uppercase tracking-widest transition-all appearance-none cursor-pointer italic"
+                                                    required
                                                 >
-                                                    Manual Override Protocol
-                                                </button>
+                                                    <option value="">Select Justification...</option>
+                                                    <option value="Physical Verification Success">Physical Identity Confirmed</option>
+                                                    <option value="Device Failure">Optic Sensor Hardware Failure</option>
+                                                    <option value="Network Isolation">Registry Network Isolation</option>
+                                                </select>
                                             </div>
-                                        )}
+                                        </div>
+                                        <button 
+                                            type="submit"
+                                            className="w-full bg-slate-950 text-white py-6 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-2xl hover:bg-rose-600 italic"
+                                        >
+                                            Authorize Force Override
+                                        </button>
+                                    </form>
+                                ) : (
+                                    <button 
+                                        onClick={() => setShowOverride(true)}
+                                        className="w-full border-4 border-dashed border-slate-100 text-slate-300 py-16 rounded-[3.5rem] hover:bg-slate-50 hover:border-blue-100 hover:text-emerald-600 transition-all group relative z-10"
+                                    >
+                                        <Unlock size={40} className="mx-auto mb-6 opacity-20 group-hover:scale-125 group-hover:opacity-100 transition-all duration-700" />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.4em] italic leading-relaxed block">Invoke Manual<br/>Override protocol</span>
+                                    </button>
+                                )}
+                            </div>
+                            
+                            {/* Analytics Terminal */}
+                            <div className="bg-slate-950 rounded-[3.5rem] p-10 shadow-2xl flex flex-col gap-8 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-8 opacity-[0.05] text-emerald-500 group-hover:scale-110 transition-all duration-1000">
+                                    <Activity size={180} />
+                                </div>
+                                <div className="flex items-center gap-5 relative z-10">
+                                    <div className="p-4 bg-white/5 text-emerald-500 rounded-2xl shadow-xl border border-white/10 backdrop-blur-md"><Activity size={24} /></div>
+                                    <div>
+                                        <h2 className="text-xl font-black text-white uppercase tracking-tighter italic leading-none">Security <span className="text-emerald-500">Analytics</span></h2>
+                                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">Real-time validation intelligence</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-5 pt-8 border-t border-white/5 relative z-10">
+                                   <div className="flex justify-between items-center group/row">
+                                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic group-hover/row:text-slate-400 transition-colors">Sensor Latency</span>
+                                      <span className="text-[10px] font-black text-emerald-500 uppercase italic tabular-nums">34ms</span>
+                                   </div>
+                                   <div className="flex justify-between items-center group/row">
+                                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic group-hover/row:text-slate-400 transition-colors">Acquisition Rate</span>
+                                      <span className="text-[10px] font-black text-white uppercase italic tabular-nums">98.2%</span>
+                                   </div>
+                                   <div className="flex justify-between items-center group/row">
+                                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic group-hover/row:text-slate-400 transition-colors">System Entropy</span>
+                                      <span className="text-[10px] font-black text-emerald-500 uppercase italic tracking-widest">Stable</span>
+                                   </div>
+                                   <div className="pt-6 border-t border-white/5">
+                                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em] italic mb-4">Live Threat Map</p>
+                                      <div className="flex gap-2">
+                                         {[...Array(8)].map((_, i) => (
+                                            <div key={i} className={`h-1.5 flex-1 rounded-full ${i < 6 ? 'bg-emerald-600' : 'bg-white/5'} shadow-[0_0_8px_rgba(37,99,235,0.3)]`}></div>
+                                         ))}
+                                      </div>
+                                   </div>
+                                </div>
+                            </div>
+
+                            {/* System Status Banner */}
+                            <div className="bg-white rounded-[3.5rem] p-10 shadow-sm border border-slate-200 overflow-hidden relative group">
+                                <div className="absolute top-0 right-0 p-8 opacity-[0.02] text-slate-950 group-hover:rotate-45 transition-all duration-1000">
+                                    <Maximize2 size={120} />
+                                </div>
+                                <div className="flex items-center gap-6 relative z-10">
+                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500">
+                                        <Layers size={24} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mb-1">Global Node Registry</p>
+                                        <p className="text-xs font-black text-slate-900 uppercase italic tracking-tighter">Sync: ACTIVE (100%)</p>
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
                 </div>
-
-                {/* Sidebar Controls */}
-                <div className="lg:col-span-4 space-y-8">
-                    <div className="bg-gray-800/40 backdrop-blur-xl border border-gray-700/50 rounded-[3rem] p-8 shadow-2xl">
-                        <div className="flex items-center gap-3 mb-6">
-                            <AlertTriangle className="text-yellow-500" size={20} />
-                            <h2 className="text-lg font-black text-white uppercase tracking-tight">System Override</h2>
-                        </div>
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-tight leading-relaxed mb-8">
-                            Only use manual protocols when physical team identity is confirmed but optical scanning fails.
-                        </p>
-                        
-                        {(showOverride || scanStatus === 'error') ? (
-                            <form onSubmit={handleManualOverride} className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                        <Lock size={12} /> Target Match ID
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        value={overrideMatchId}
-                                        onChange={(e) => setOverrideMatchId(e.target.value)}
-                                        placeholder="Enter ID..."
-                                        className="w-full bg-gray-900/50 border border-gray-700 p-4 rounded-2xl outline-none focus:border-red-500/50 text-sm font-bold transition-all"
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                        <ShieldCheck size={12} /> Justification
-                                    </label>
-                                    <select 
-                                        value={overrideReason}
-                                        onChange={(e) => setOverrideReason(e.target.value)}
-                                        className="w-full bg-gray-900/50 border border-gray-700 p-4 rounded-2xl outline-none focus:border-red-500/50 text-sm font-bold transition-all appearance-none"
-                                        required
-                                    >
-                                        <option value="">Select Reason...</option>
-                                        <option value="Physical Verification Success">Physical Identity Confirmed</option>
-                                        <option value="Device Failure">Device Hardware Failure</option>
-                                        <option value="Expired Session Override">Expired Session Override</option>
-                                    </select>
-                                </div>
-                                <button 
-                                    type="submit"
-                                    className="w-full bg-red-600 hover:bg-red-700 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-widest transition-all shadow-lg shadow-red-900/40"
-                                >
-                                    Force Authorization
-                                </button>
-                            </form>
-                        ) : (
-                            <button 
-                                onClick={() => setShowOverride(true)}
-                                className="w-full border-2 border-dashed border-gray-700 text-gray-600 py-8 rounded-[2rem] hover:bg-gray-800/50 hover:border-gray-600 hover:text-gray-400 transition-all group"
-                            >
-                                <Unlock size={24} className="mx-auto mb-2 opacity-20 group-hover:opacity-100 transition-all" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Enter Override Protocol</span>
-                            </button>
-                        )}
-                    </div>
-                    
-                    <div className="bg-emerald-950/20 border border-emerald-500/10 rounded-[3rem] p-8 shadow-xl">
-                        <div className="flex items-center gap-3 mb-4">
-                            <Activity className="text-emerald-500" size={20} />
-                            <h2 className="text-lg font-black text-white uppercase tracking-tight">Status Insight</h2>
-                        </div>
-                        <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest leading-loose">
-                            Last Scan: {dashboardStats?.scans?.latestResult || 'NONE'} <br/>
-                            Scanner Latency: 42ms <br/>
-                            Neural Integrity: 100%
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            <style jsx>{`
-                @keyframes scan {
-                    0% { transform: translateY(-100%); }
-                    100% { transform: translateY(400%); }
-                }
-                .animate-scan {
-                    animation: scan 3s linear infinite;
-                }
-            `}</style>
-            </div>
             </main>
-            </div>
         </div>
     );
 };
-
 
 export default Scanner;

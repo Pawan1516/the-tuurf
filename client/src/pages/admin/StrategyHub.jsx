@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -9,6 +9,7 @@ import {
     TrendingUp,
     Zap,
     Users,
+    Globe,
     ShieldCheck,
     BarChart3,
     Cpu,
@@ -16,11 +17,20 @@ import {
     LineChart,
     School,
     Code,
-    ExternalLink
+    ExternalLink,
+    BrainCircuit,
+    Sparkles,
+    Workflow,
+    Microscope,
+    RefreshCcw,
+    Layers,
+    ChevronRight,
+    CircleDot,
+    Database,
+    Clock
 } from 'lucide-react';
 import AuthContext from '../../context/AuthContext';
-import { adminAPI } from '../../api/client';
-import MobileNav from '../../components/MobileNav';
+import { adminAPI, aiAPI } from '../../api/client';
 import AdminSidebar from '../../components/AdminSidebar';
 
 const StrategyHub = () => {
@@ -31,240 +41,383 @@ const StrategyHub = () => {
     const [hubReport, setHubReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
-    const navItems = [
-        { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/admin/operations', label: 'Operations HUB', icon: Zap },
-        { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-        { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-        { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
-        { to: '/admin/users', label: 'User Control', icon: Users },
-        { to: '/admin/report', label: 'Intelligence', icon: PieChart },
-        { to: '/admin/strategy', label: 'Strategy HUB', icon: Target },
-        { to: '/admin/settings', label: 'Settings', icon: LineChart }
-    ];
+    const fetchAll = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const [settingsRes, hubRes] = await Promise.all([
+                adminAPI.getSettings(),
+                aiAPI.getExpertHub()
+            ]);
 
-    useEffect(() => {
-        const fetchAll = async () => {
-            try {
-                setLoading(true);
-                const [settingsRes, hubRes] = await Promise.all([
-                    adminAPI.getSettings(),
-                    adminAPI.getExpertHub()
-                ]);
-
-                if (settingsRes.data?.success) {
-                    setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
-                }
-
-                if (hubRes.data?.success) {
-                    console.log('DEBUG: Expert Hub Report Received:', hubRes.data.report);
-                    setHubReport(hubRes.data.report);
-                } else {
-                    setError('The AI Strategy engine is currently recalibrating. Please try again in a few moments.');
-                }
-            } catch (err) {
-                console.error('Expert Hub fetch error:', err);
-                setError(err.response?.data?.message || 'Connection to the AI Intelligence Node was interrupted.');
-            } finally {
-                setLoading(false);
+            if (settingsRes.data?.success) {
+                setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
             }
-        };
-        fetchAll();
+
+            if (hubRes.data?.success) {
+                setHubReport(hubRes.data.report);
+            } else {
+                setError('The AI Strategy engine is currently recalibrating.');
+            }
+        } catch (err) {
+            console.error('Expert Hub fetch error:', err);
+            setError(err.response?.data?.message || 'Connection to the AI Intelligence Node was interrupted.');
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
+    useEffect(() => {
+        fetchAll();
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, [fetchAll]);
+
     const experts = [
-        { id: 'ai_specialist', label: 'AI Specialist', icon: Cpu, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-        { id: 'ai_analyst', label: 'AI Analyst', icon: Target, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-        { id: 'ai_prediction', label: 'AI Prediction', icon: LineChart, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-        { id: 'business_analyst', label: 'Business Analyst', icon: BarChart3, color: 'text-blue-400', bg: 'bg-blue-400/10' }
+        { id: 'ai_specialist', label: 'AI Specialist', icon: BrainCircuit, color: 'text-emerald-600', bg: 'bg-blue-50' },
+        { id: 'ai_analyst', label: 'AI Analyst', icon: Sparkles, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { id: 'ai_prediction', label: 'AI Prediction', icon: Workflow, color: 'text-emerald-600', bg: 'bg-indigo-50' },
+        { id: 'business_analyst', label: 'Business Expert', icon: Microscope, color: 'text-slate-900', bg: 'bg-slate-100' }
     ];
 
     const renderExpertPanel = (id, reportData) => {
         const expert = experts.find(e => e.id === id);
         if (!reportData) return (
-            <div className="p-20 text-center">
+            <div className="p-32 text-center bg-white rounded-[4rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-20 opacity-[0.01] text-slate-900 pointer-events-none">
+                    <BrainCircuit size={300} />
+                </div>
                 {error ? (
-                    <div className="space-y-6">
-                        <p className="text-red-400 text-xs font-black uppercase tracking-widest">{error}</p>
+                    <div className="space-y-8 relative z-10">
+                        <div className="w-24 h-24 bg-rose-50 text-rose-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-sm border border-rose-100">
+                           <Zap size={40} className="animate-pulse" />
+                        </div>
+                        <h4 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter">Synthesis Interrupt</h4>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-600 italic max-w-sm mx-auto">{error}</p>
                         <button
-                            onClick={() => window.location.reload()}
-                            className="bg-emerald-600 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-all"
+                            onClick={fetchAll}
+                            className="bg-slate-950 text-white px-12 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-2xl italic"
                         >
-                            Retry Synthesis
+                            Retry Neural Synthesis
                         </button>
                     </div>
                 ) : (
-                    <div className="animate-pulse">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synthesizing {expert.label} Report...</p>
+                    <div className="flex flex-col items-center gap-8 relative z-10">
+                        <div className="relative">
+                            <div className="w-24 h-24 border-4 border-blue-50 border-t-emerald-600 rounded-full animate-spin"></div>
+                            <expert.icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Synthesizing {expert.label} Intelligence Registry...</p>
                     </div>
                 )}
             </div>
         );
+        // Special rendering for AI Specialist to display structured live-match facts
+        if (id === 'ai_specialist') {
+            const specialist = reportData || {};
+            const business = hubReport?.businessAnalyst || {};
+            return (
+                <div className="space-y-8 animate-fade-up">
+                    <div className="bg-slate-950 rounded-[4rem] p-16 border border-white/5 shadow-2xl relative overflow-hidden group">
+                        <div className="relative z-10 flex flex-col gap-8">
+                            <div className="flex items-center gap-6">
+                                <div className={`p-6 rounded-[2rem] bg-white/5 border border-white/10 text-white shadow-2xl backdrop-blur-md`}>
+                                    <expert.icon size={48} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-3 italic">AI Specialist</p>
+                                    <h3 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none">{specialist?.status || 'Verified Strategy Intel'}</h3>
+                                    <p className="text-[10px] text-slate-400 mt-1">Live Data • {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                                </div>
+                            </div>
+
+                            <div className="p-10 bg-white/5 border border-white/5 rounded-[2rem]">
+                                <div className="text-slate-200 space-y-3">
+                                    <div>
+                                        <div className="text-[12px] font-black uppercase text-slate-400 tracking-wider">Current Score</div>
+                                        <div className="text-lg font-medium italic">{specialist?.currentScore || formatReportContent(specialist)}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-[12px] font-black uppercase text-slate-400 tracking-wider">Top Scorer</div>
+                                        <div className="text-lg font-medium italic">{specialist?.topScorer || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+                                    <p className="text-xs font-black text-slate-400 uppercase">Total Revenue</p>
+                                    <p className="text-2xl font-black text-white">{business?.totalRevenue ? `₹${business.totalRevenue.toLocaleString()}` : '₹0'}</p>
+                                </div>
+                                <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+                                    <p className="text-xs font-black text-slate-400 uppercase">Peak Time</p>
+                                    <p className="text-2xl font-black text-white">{business?.peakTime || 'N/A'}</p>
+                                </div>
+                                <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+                                    <p className="text-xs font-black text-slate-400 uppercase">Weekly Growth</p>
+                                    <p className="text-2xl font-black text-white">{business?.weeklyGrowth ? `${business.weeklyGrowth}%` : 'N/A'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         return (
-            <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
-                <div className="bg-slate-900 rounded-[2.5rem] p-10 border border-white/5 shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform group-hover:rotate-0 duration-1000">
-                        <expert.icon size={250} />
-                    </div>
-                    <div className="flex items-center gap-4 mb-10 relative z-10">
-                        <div className={`p-4 rounded-2xl ${expert.bg} ${expert.color} shadow-lg`}>
-                            <expert.icon size={32} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-1">{expert.label} Command</p>
-                            <h3 className="text-3xl font-black text-white tracking-tighter uppercase">{reportData.status || 'Live Intel'}</h3>
-                        </div>
+            <div className="space-y-12 animate-fade-up">
+                <div className="bg-slate-950 rounded-[4rem] p-16 border border-white/5 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-600/5 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3 group-hover:bg-emerald-600/10 transition-all duration-[2000ms]"></div>
+                    <div className="absolute -bottom-24 -left-24 opacity-[0.03] group-hover:rotate-12 transition-all duration-[3000ms]">
+                        <expert.icon size={400} className="text-white" />
                     </div>
 
-                    <div className="relative z-10 max-w-4xl">
-                        <div className="p-8 md:p-12 bg-white/5 border border-white/10 rounded-[2rem] backdrop-blur-md">
-                            <p className="text-lg md:text-xl font-medium text-slate-200 leading-relaxed italic font-serif">
-                                "{reportData.report || reportData}"
-                            </p>
-                            <div className="mt-10 pt-10 border-t border-white/10 flex flex-wrap gap-4">
-                                <div className="px-5 py-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-                                    <ShieldCheck size={14} /> Synchronized
+                    <div className="relative z-10 flex flex-col gap-12">
+                        <div className="flex items-center gap-8">
+                            <div className={`p-6 rounded-[2rem] bg-white/5 border border-white/10 text-white shadow-2xl backdrop-blur-md`}>
+                                <expert.icon size={48} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-3 italic">Intelligence Node Output</p>
+                                <h3 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none">{reportData.status || 'Verified Strategy Intel'}</h3>
+                            </div>
+                        </div>
+
+                        <div className="max-w-6xl">
+                            <div className="p-14 bg-white/5 border border-white/5 rounded-[3.5rem] backdrop-blur-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 p-8 opacity-[0.02] text-white">
+                                    <Sparkles size={100} />
                                 </div>
-                                <div className="px-5 py-2.5 bg-purple-500/10 rounded-xl border border-purple-500/20 text-[10px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Zap size={14} /> Platform Priority
+                                <div className="text-2xl md:text-3xl font-medium text-slate-200 leading-relaxed italic font-serif relative z-10">
+                                    "{formatReportContent(reportData)}"
+                                </div>
+                                <div className="mt-14 pt-14 border-t border-white/5 flex flex-wrap gap-8 relative z-10">
+                                    <div className="px-8 py-3.5 bg-emerald-600/10 rounded-2xl border border-emerald-500/20 text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-3 italic">
+                                        <ShieldCheck size={18} /> Neural Synchronization Active
+                                    </div>
+                                    <div className="px-8 py-3.5 bg-white/5 rounded-2xl border border-white/10 text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-3 italic">
+                                        <Zap size={18} /> Model Precision: Nominal
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-6 mt-8">
-                    <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-slate-200/40">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Strategic Impact</p>
-                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="w-[85%] h-full bg-emerald-500 rounded-full transition-all duration-1000"></div>
-                        </div>
-                        <p className="text-xs font-black text-slate-900 mt-4 uppercase">85% Optimization Yield</p>
-                    </div>
-                    <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-slate-200/40">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Data Confidence</p>
-                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="w-[92%] h-full bg-purple-500 rounded-full transition-all duration-1000"></div>
-                        </div>
-                        <p className="text-xs font-black text-slate-900 mt-4 uppercase">92.4% Precision Index</p>
-                    </div>
-                    <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-slate-200/40">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Implementation Risk</p>
-                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="w-[15%] h-full bg-blue-500 rounded-full transition-all duration-1000"></div>
-                        </div>
-                        <p className="text-xs font-black text-slate-900 mt-4 uppercase">Low Entropy Factor</p>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <ImpactMetric label="Operational Optimization" value="85%" color="bg-emerald-600" />
+                    <ImpactMetric label="Neural Precision Index" value="92.4%" color="bg-emerald-600" />
+                    <ImpactMetric label="Implementation Velocity" value="Extreme" color="bg-slate-900" />
                 </div>
             </div>
         );
     };
 
-    const renderHeader = () => (
-        <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-2xl shadow-slate-200/20 mb-8 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-emerald-900 group-hover:rotate-12 transition-all"><School size={240} /></div>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-100 w-fit">
-                        <School size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Institute of Aeronautical Engineering (IARE)</span>
-                    </div>
-                    <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">{settings.TURF_NAME} <span className="text-emerald-500">Intelligence Node</span></h2>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-lg">
-                            <Code size={12} className="text-emerald-400" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Devs:</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest"> K.Pavan Kumar</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg text-slate-500">
-                            <Calendar size={12} />
-                            <span className="text-[10px] font-black uppercase tracking-widest"></span>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex flex-col items-end gap-4">
-                    <div className="text-right">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">System Model</p>
-                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Gemini 2.0 Flash Active</p>
-                    </div>
-                </div>
+    if (loading && !hubReport) return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+            <div className="relative">
+                <div className="w-24 h-24 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
+                <BrainCircuit className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
             </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Initializing Strategy Synthesis Registry...</p>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-950">
-            <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} />
+        <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+            <AdminSidebar user={user} logout={logout} />
 
-            <div className="flex flex-1">
-                <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
-
-                <main className="flex-1 overflow-y-auto relative pb-24">
-                    <header className="bg-white/80 backdrop-blur-md px-10 h-24 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
-                        <div className="flex flex-col">
-                            <h2 className="text-2xl font-black text-gray-900 tracking-tighter uppercase leading-none">Strategy & Expert HUB</h2>
-                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Real-Time Platform Intelligence</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="px-5 py-2.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Turf Strategy Active</span>
-                            </div>
-                        </div>
-                    </header>
-
-                    <div className="p-10 space-y-10">
-                        {renderHeader()}
-
-                        {/* EXPERT SELECTOR */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                            {experts.map(expert => (
-                                <button
-                                    key={expert.id}
-                                    onClick={() => setActiveExpert(expert.id)}
-                                    className={`p-8 rounded-[2.5rem] border-2 transition-all group relative overflow-hidden flex flex-col gap-6 ${activeExpert === expert.id
-                                        ? `bg-slate-950 border-slate-950 shadow-2xl shadow-slate-900/20 scale-[1.02]`
-                                        : `bg-white border-transparent hover:border-${expert.color.split('-')[1]}-200 shadow-xl shadow-slate-200/40`}`}
-                                >
-                                    <div className={`${expert.bg} ${expert.color} w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg`}>
-                                        <expert.icon size={28} />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${activeExpert === expert.id ? 'text-slate-500' : 'text-slate-400'}`}>Perspective</p>
-                                        <h4 className={`text-sm font-black uppercase tracking-widest mt-1 ${activeExpert === expert.id ? 'text-white' : 'text-slate-900'}`}>{expert.label}</h4>
-                                    </div>
-                                    {activeExpert === expert.id && (
-                                        <div className="absolute top-6 right-6">
-                                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
-                                        </div>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* CONTENT AREA */}
-                        <div className="mt-12 min-h-[400px]">
-                            {loading ? (
-                                <div className="flex flex-col items-center justify-center py-24 gap-4">
-                                    <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-                                    <p className="text-xs font-black uppercase tracking-widest text-slate-400">Consulting Expert Hub Intel...</p>
-                                </div>
-                            ) : (
-                                renderExpertPanel(activeExpert, hubReport ? hubReport[(() => {
-                                    if (activeExpert === 'ai_specialist') return 'aiSpecialist';
-                                    if (activeExpert === 'ai_analyst') return 'aiAnalyst';
-                                    if (activeExpert === 'ai_prediction') return 'aiPrediction';
-                                    return 'businessAnalyst';
-                                })()] : null)
-                            )}
+            <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+                {/* BI Style Top Bar */}
+                <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        <div>
+                            <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                                <Target className="text-emerald-600" size={26} /> 
+                                Strategy Hub <span className="text-slate-400">/ Intelligence Node</span>
+                            </h1>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Strategic Operations v2.0-Alpha</p>
                         </div>
                     </div>
-                </main>
-            </div>
+
+                    <div className="flex items-center gap-6">
+                        <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+                            <div className="px-4 py-1.5 border-r border-slate-200">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
+                                <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                            </div>
+                            <div className="px-4 py-1.5">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Model Synthesis Status</p>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase">Synchronized</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4 bg-slate-100 p-2 rounded-xl border border-slate-200">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-lg">
+                                <Sparkles size={16} />
+                            </div>
+                            <div className="flex flex-col pr-4">
+                               <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">AI Engine</span>
+                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-900 italic">Gemini Flash-v2</span>
+                            </div>
+                        </div>
+                        <button onClick={fetchAll} className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-blue-700 transition-all">
+                            <RefreshCcw size={20} />
+                        </button>
+                    </div>
+                </header>
+
+                <div className="max-w-[1600px] mx-auto p-10 space-y-12">
+                    
+                    {/* Strategy KPI Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                        {[
+                            { label: 'Intelligence Nodes', value: experts.length, icon: <BrainCircuit className="text-emerald-500" /> },
+                            { label: 'Strategic Reach', value: 'Global', icon: <Globe className="text-emerald-500" /> },
+                            { label: 'Optimization Index', value: 'High', icon: <TrendingUp className="text-emerald-500" /> },
+                            { label: 'Data Latency', value: '14ms', icon: <Activity className="text-slate-500" /> }
+                        ].map((kpi, idx) => (
+                            <div key={idx} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-2xl transition-all group overflow-hidden relative">
+                                <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform duration-700">
+                                    {kpi.icon}
+                                </div>
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-blue-50 transition-colors">
+                                        {kpi.icon}
+                                    </div>
+                                </div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{kpi.label}</p>
+                                <h3 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter tabular-nums">{kpi.value}</h3>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* EXPERT SELECTOR */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                        {experts.map(expert => (
+                            <button
+                                key={expert.id}
+                                onClick={() => setActiveExpert(expert.id)}
+                                className={`p-10 rounded-[3.5rem] border-4 transition-all group relative overflow-hidden flex flex-col gap-10 ${activeExpert === expert.id
+                                    ? `bg-slate-950 border-slate-950 shadow-2xl shadow-slate-950/20 -translate-y-2`
+                                    : `bg-white border-transparent hover:border-blue-100 shadow-sm border border-slate-200`}`}
+                            >
+                                <div className={`${expert.bg} ${expert.color} w-16 h-16 rounded-[1.5rem] flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg relative z-10`}>
+                                    <expert.icon size={32} />
+                                </div>
+                                <div className="text-left relative z-10">
+                                    <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${activeExpert === expert.id ? 'text-slate-500' : 'text-slate-400'}`}>Perspective Node</p>
+                                    <h4 className={`text-sm font-black uppercase tracking-widest mt-2 ${activeExpert === expert.id ? 'text-white' : 'text-slate-900'} italic`}>{expert.label}</h4>
+                                </div>
+                                {activeExpert === expert.id && (
+                                    <div className="absolute top-8 right-8">
+                                        <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></div>
+                                    </div>
+                                )}
+                                <div className="absolute -right-4 -bottom-4 opacity-[0.02] text-slate-900 group-hover:scale-150 transition-transform duration-[3000ms]">
+                                    <expert.icon size={120} />
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* CONTENT AREA */}
+                    <div className="min-h-[600px]">
+                        {renderExpertPanel(activeExpert, hubReport ? hubReport[(() => {
+                            if (activeExpert === 'ai_specialist') return 'aiSpecialist';
+                            if (activeExpert === 'ai_analyst') return 'aiAnalyst';
+                            if (activeExpert === 'ai_prediction') return 'aiPrediction';
+                            return 'businessAnalyst';
+                        })()] : null)}
+                    </div>
+
+                    {/* Credits / Footer */}
+                    <div className="flex flex-col md:flex-row items-center justify-between p-12 bg-white rounded-[4rem] border border-slate-200 shadow-sm group overflow-hidden relative">
+                       <div className="absolute top-0 left-0 p-12 opacity-[0.01] text-slate-900 pointer-events-none">
+                            <Layers size={300} />
+                       </div>
+                       <div className="flex items-center gap-8 relative z-10">
+                          <div className="bg-slate-950 text-white p-6 rounded-[1.8rem] shadow-2xl">
+                             <Code size={32} />
+                          </div>
+                          <div>
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic mb-1">Architectural Lead Registry</p>
+                             <h4 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">Pawan Kumar <span className="text-emerald-600">/ IARE Core</span></h4>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-10 mt-10 md:mt-0 relative z-10">
+                          <div className="text-right">
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic mb-1">Neural Entropy</p>
+                             <p className="text-lg font-black text-emerald-600 uppercase italic flex items-center gap-3">
+                                <CircleDot size={14} className="animate-pulse" /> Stable
+                             </p>
+                          </div>
+                          <div className="w-px h-12 bg-slate-200"></div>
+                          <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 flex items-center gap-4 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                             <Database size={24} className="text-emerald-600 group-hover:text-white transition-colors" />
+                             <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-white/60 leading-none mb-1">Global Storage</p>
+                                <p className="text-xs font-black text-slate-900 uppercase italic group-hover:text-white transition-colors tabular-nums">1.4 TB / SSD</p>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                </div>
+            </main>
         </div>
     );
 };
+
+    const formatReportContent = (data) => {
+        if (!data) return 'No data available.';
+        // prefer explicit .report string
+        const content = (typeof data.report !== 'undefined') ? data.report : data;
+        if (content === null || typeof content === 'undefined') return 'No content.';
+        if (typeof content === 'string') return content;
+        if (typeof content === 'object') {
+            try {
+                // render key: value lines for small objects
+                const keys = Object.keys(content);
+                if (keys.length <= 6) {
+                    return (
+                        <div className="not-italic">
+                            {keys.map((k, i) => (
+                                <div key={i} className="mb-2">
+                                    <strong className="uppercase text-[10px] tracking-wider">{k}:</strong>{' '}
+                                    <span className="italic">{String(content[k])}</span>
+                                </div>
+                            ))}
+                        </div>
+                    );
+                }
+                return JSON.stringify(content, null, 2);
+            } catch (e) {
+                return String(content);
+            }
+        }
+        return String(content);
+    };
+
+const ImpactMetric = ({ label, value, color }) => (
+    <div className="bg-white rounded-[3.5rem] p-12 border border-slate-200 shadow-sm group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-8 opacity-[0.01] text-slate-900">
+            <TrendingUp size={150} />
+        </div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-10 italic relative z-10">{label}</p>
+        <div className="flex items-end justify-between gap-6 relative z-10">
+           <h4 className="text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none tabular-nums">{value}</h4>
+           <div className="p-4 bg-slate-50 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+              <TrendingUp size={24} />
+           </div>
+        </div>
+        <div className="w-full h-2 bg-slate-50 rounded-full overflow-hidden mt-10 border border-slate-100 p-0.5">
+            <div className={`h-full ${color} rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(37,99,235,0.4)]`} style={{ width: value.includes('%') ? value : '100%' }}></div>
+        </div>
+    </div>
+);
 
 export default StrategyHub;

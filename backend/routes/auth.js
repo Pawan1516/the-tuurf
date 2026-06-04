@@ -12,9 +12,14 @@ const QRService = require('../services/qrService');
 
 const { sendOTPEmail } = require('../services/email');
 const OTP = require('../models/OTP');
+const Session = require('../models/Session');
+const { generateTokens, rotateRefreshToken } = require('../services/authService');
+const cookieParser = require('cookie-parser');
+const securityLogger = require('../utils/securityLogger');
+const { authLimiter } = require('../middleware/security');
 
 // @route   POST /api/auth/send-register-otp
-router.post('/send-register-otp', async (req, res) => {
+router.post('/send-register-otp', authLimiter, async (req, res) => {
     try {
         const { email } = req.body;
         console.log('📡 [REQUISITION] Starting Enrollment OTP for:', email);
@@ -48,7 +53,7 @@ router.post('/send-register-otp', async (req, res) => {
 });
 
 // @route   POST /api/auth/register-verify
-router.post('/register-verify', async (req, res) => {
+router.post('/register-verify', authLimiter, async (req, res) => {
     try {
         const { name, email, phone, password, otp } = req.body;
         
@@ -76,14 +81,20 @@ router.post('/register-verify', async (req, res) => {
         }
         await user.save();
 
-        // 4. Issue JWT
-        const payload = { id: user._id, role: user.role };
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '14d' }, (jwtErr, token) => {
-            if (jwtErr) {
-                console.error('🔥 [REGISTER] JWT sign error:', jwtErr);
-                return res.status(500).json({ success: false, message: 'Session creation failed.' });
-            }
-            res.json({ success: true, token, user: { id: user._id, email: user.email, name: user.name, role: user.role } });
+        // 4. Issue Enterprise Tokens
+        const { accessToken, refreshToken } = await generateTokens(user, user.role, req);
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.json({ 
+            success: true, 
+            token: accessToken, 
+            user: { id: user._id, email: user.email, name: user.name, role: user.role } 
         });
     } catch (err) {
         console.error('🔥 [REGISTER-VERIFY] Full error:', err.name, err.message, err.errors);
@@ -134,7 +145,49 @@ router.post('/resend-otp', async (req, res) => {
 });
 
 // @route   POST /api/auth/login
-router.post('/login', async (req, res) => {
+// @route   POST /api/auth/quick-login
+// 🔓 Requirement: No OTP login → only mobile number
+router.post('/quick-login', authLimiter, async (req, res) => {
+    try {
+        const { phone, name } = req.body;
+        if (!phone) return res.status(400).json({ success: false, message: 'Mobile number required.' });
+
+        const cleanPhone = phone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+        let user = await User.findOne({ phone: cleanPhone });
+
+        if (!user) {
+            // Store user name + mobile in DB
+            user = new User({
+                name: name || `Player_${cleanPhone.slice(-4)}`,
+                phone: cleanPhone,
+                password: crypto.randomBytes(16).toString('hex'), // Secure random fallback
+                role: 'PLAYER',
+                isVerified: true
+            });
+            await user.save();
+        }
+
+        const { accessToken, refreshToken } = await generateTokens(user, user.role, req);
+        
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({ 
+            success: true, 
+            token: accessToken, 
+            user: { id: user._id, name: user.name, role: user.role } 
+        });
+    } catch (err) {
+        console.error('Quick Login Error:', err);
+        res.status(500).json({ success: false, message: 'Direct access failure.' });
+    }
+});
+
+router.post('/login', authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
         const identifier = email; // email field can be email or phone
@@ -182,13 +235,49 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Identity verification pending.' });
         }
 
-        const isMatch = await user.matchPassword(password);
-        if (!isMatch) {
-            return res.status(401).json({ success: false, message: 'Access key mismatch.' });
+        if (user.isLocked) {
+            securityLogger('AUTH_LOCKOUT', { email: user.email, phone: user.phone, ip: req.ip });
+            return res.status(403).json({ success: false, message: 'Account temporarily locked due to multiple failed attempts. Please try again in 15 minutes.' });
         }
 
+        // --- ADMIN HIGH-SECURE PROTOCOL ---
+        if (role === 'admin') {
+            const adminKey = req.body.admin_key || req.headers['x-admin-key'];
+            const masterKey = process.env.ADMIN_MASTER_KEY || 'TURF_PRO_2026_SECURE'; // Hard fallback for initial setup
+            // If an adminKey is provided, validate it; otherwise, allow login without it (fallback for development)
+            if (adminKey && adminKey !== masterKey) {
+                await user.incLoginAttempts();
+                securityLogger('ADMIN_AUTH_KEY_FAIL', { email: user.email, ip: req.ip });
+                return res.status(401).json({ 
+                    success: false, 
+                    message: 'Administrative clearance failed: Invalid Master Key.' 
+                });
+            }
+        }
+
+        const isMatch = await user.matchPassword(password);
+        if (!isMatch) {
+            await user.incLoginAttempts();
+            const updatedUser = await user.constructor.findById(user._id);
+            const remaining = Math.max(0, 5 - updatedUser.loginAttempts);
+            
+            securityLogger('AUTH_FAILURE', { email: user.email, phone: user.phone, ip: req.ip, attempts: updatedUser.loginAttempts });
+            
+            let message = 'Access key mismatch.';
+            if (remaining > 0) {
+                message += ` ${remaining} attempts remaining before account lockout.`;
+            } else {
+                message = 'Account locked due to too many failed attempts. Please try again in 15 minutes.';
+            }
+            
+            return res.status(401).json({ success: false, message });
+        }
+
+        // Reset login attempts on success
+        await user.updateOne({ $set: { loginAttempts: 0 }, $unset: { lockUntil: 1 } });
+        
         const finalRole = user.role || role;
-        const payload = { id: user._id, role: finalRole };
+        securityLogger('AUTH_SUCCESS', { userId: user._id, role: finalRole, ip: req.ip });
 
         // --- Auto-link bookings on login ---
         if (finalRole === 'PLAYER' && (user.phone || user.mobileNumber)) {
@@ -230,20 +319,26 @@ router.post('/login', async (req, res) => {
             }
         }
         
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '14d' }, (err, token) => {
-            if (err) throw err;
-            res.json({ 
-                success: true, 
-                token, 
-                user: { 
-                    id: user._id, 
-                    email: user.email, 
-                    name: user.name, 
-                    phone: user.phone, 
-                    role: finalRole, 
-                    isPremium: user.isPremium 
-                } 
-            });
+        const { accessToken, refreshToken } = await generateTokens(user, finalRole, req);
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.json({ 
+            success: true, 
+            token: accessToken, 
+            user: { 
+                id: user._id, 
+                email: user.email, 
+                name: user.name, 
+                phone: user.phone, 
+                role: finalRole, 
+                isPremium: user.isPremium 
+            } 
         });
     } catch (err) {
         console.error('Login error:', err);
@@ -251,8 +346,8 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// @route   POST /api/auth/send-otp
-router.post('/send-otp', async (req, res) => {
+// @route   POST /api/auth/send-login-otp
+router.post('/send-login-otp', authLimiter, async (req, res) => {
     try {
         const { phone } = req.body;
         if (!phone) return res.status(400).json({ success: false, message: 'Phone required.' });
@@ -493,20 +588,26 @@ router.post('/google', async (req, res) => {
             }
         }
 
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
-            if (err) throw err;
-            res.json({ 
-                success: true, 
-                token, 
-                role: userRole, 
-                user: { 
-                    id: user._id, 
-                    name: user.name, 
-                    email: user.email, 
-                    phone: user.phone,
-                    role: userRole
-                } 
-            });
+        const { accessToken, refreshToken } = await generateTokens(user, userRole, req);
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.json({ 
+            success: true, 
+            token: accessToken, 
+            role: userRole, 
+            user: { 
+                id: user._id, 
+                name: user.name, 
+                email: user.email, 
+                phone: user.phone,
+                role: userRole
+            } 
         });
     } catch (err) {
         console.error('Google login error:', err);
@@ -523,16 +624,37 @@ router.get('/profile', verifyToken, async (req, res) => {
         if (!user) { user = await Worker.findById(userId).select('-password').lean(); }
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
         
-        // Sync premium status based on trial/expiry
-        const currentPremium = user.checkPremiumStatus();
-        if (user.isPremium !== currentPremium) {
-            user.isPremium = currentPremium;
-            await user.save();
+        // Sync premium status based on trial/expiry (PLAYER only)
+        if (typeof user.checkPremiumStatus === 'function') {
+            const currentPremium = user.checkPremiumStatus();
+            if (user.isPremium !== currentPremium) {
+                user.isPremium = currentPremium;
+                await user.save();
+            }
         }
 
         res.json({ success: true, user });
     } catch (err) {
+        console.error('[AUTH PROFILE ERROR]', err && err.stack ? err.stack : err);
         res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Development-only: debug profile (bypass auth) to aid local UI testing
+router.get('/profile/debug', async (req, res) => {
+    if (process.env.NODE_ENV !== 'development') return res.status(404).json({ success: false, message: 'Not found' });
+    try {
+        const sample = {
+            id: '000000000000000000000000',
+            email: 'dev@theturf.local',
+            name: 'Local Dev',
+            role: 'admin',
+            isPremium: false
+        };
+        res.json({ success: true, user: sample });
+    } catch (err) {
+        console.error('[AUTH DEBUG ERROR]', err && err.stack ? err.stack : err);
+        res.status(500).json({ success: false, message: 'Debug profile failed.' });
     }
 });
 
@@ -610,6 +732,60 @@ router.post('/update-fcm-token', verifyToken, async (req, res) => {
         res.json({ success: true, message: 'FCM Token updated' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// @route   POST /api/auth/refresh
+router.post('/refresh', async (req, res) => {
+    const rfToken = req.cookies.refreshToken;
+    if (!rfToken) {
+        return res.status(401).json({ success: false, message: 'No refresh token provided.' });
+    }
+
+    try {
+        const { accessToken, refreshToken } = await rotateRefreshToken(rfToken, req);
+        securityLogger('TOKEN_REFRESH', { ip: req.ip });
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({ success: true, token: accessToken });
+    } catch (err) {
+        securityLogger('REFRESH_FAILURE', { message: err.message, ip: req.ip });
+        if (err.message === 'REUSE_DETECTED') {
+            // Potential theft - clear all sessions for safety if we had user context
+            return res.status(403).json({ success: false, message: 'Security breach detected. Please login again.' });
+        }
+        res.status(401).json({ success: false, message: 'Session expired.' });
+    }
+});
+
+// @route   POST /api/auth/logout
+router.post('/logout', async (req, res) => {
+    try {
+        const rfToken = req.cookies.refreshToken;
+        if (rfToken) {
+            await Session.findOneAndUpdate({ refreshToken: rfToken }, { isValid: false });
+        }
+        res.clearCookie('refreshToken');
+        res.json({ success: true, message: 'Logged out successfully.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Logout failure.' });
+    }
+});
+
+// @route   POST /api/auth/logout-all
+router.post('/logout-all', verifyToken, async (req, res) => {
+    try {
+        await Session.updateMany({ userId: req.user.id }, { isValid: false });
+        res.clearCookie('refreshToken');
+        res.json({ success: true, message: 'All sessions terminated.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Global logout failure.' });
     }
 });
 

@@ -113,7 +113,7 @@ const SuccessPage = () => {
                     icon: <CheckCircle size={48} className="text-emerald-400" />,
                     title: 'Booking Confirmed',
                     subtitle: 'Your slot has been secured successfully',
-                    headerBg: 'bg-emerald-900',
+                    headerBg: 'bg-slate-950',
                     badgeBg: 'bg-emerald-500/10',
                     badgeBorder: 'border-emerald-500/20',
                     dotColor: 'bg-emerald-500',
@@ -142,19 +142,19 @@ const SuccessPage = () => {
                 };
             case 'hold':
                 return {
-                    icon: <AlertCircle size={48} className="text-blue-400" />,
+                    icon: <AlertCircle size={48} className="text-emerald-400" />,
                     title: 'Booking On Hold',
                     subtitle: 'Under review by admin',
                     headerBg: 'bg-blue-900',
-                    badgeBg: 'bg-blue-500/10',
-                    badgeBorder: 'border-blue-500/20',
-                    dotColor: 'bg-blue-500',
-                    dotShadow: 'shadow-blue-500/50',
+                    badgeBg: 'bg-emerald-500/10',
+                    badgeBorder: 'border-emerald-500/20',
+                    dotColor: 'bg-emerald-500',
+                    dotShadow: 'shadow-emerald-500/50',
                     statusText: 'ON HOLD',
-                    statusColor: 'text-blue-400',
+                    statusColor: 'text-emerald-400',
                     slotLabel: 'HOLD',
                     slotBg: 'bg-blue-50',
-                    slotColor: 'text-blue-600'
+                    slotColor: 'text-emerald-600'
                 };
             default: // pending
                 return {
@@ -181,7 +181,7 @@ const SuccessPage = () => {
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center py-10 md:py-20 px-4 md:px-6">
             <div className="max-w-xl w-full">
-                <div className="bg-white rounded-[2.5rem] md:rounded-[4rem] shadow-2xl shadow-emerald-950/5 border border-gray-100 overflow-hidden relative transition-all hover:shadow-emerald-950/10">
+                <div className="bg-white rounded-[2.5rem] md:rounded-[4rem] shadow-2xl shadow-black/5 border border-gray-100 overflow-hidden relative transition-all hover:shadow-black/10">
 
                     {/* Status Header */}
                     <div className={`${config.headerBg} p-10 md:p-16 text-center text-white relative`}>
@@ -238,7 +238,7 @@ const SuccessPage = () => {
 
                                 {/* Step 2: On Hold / Under Review */}
                                 <div className="flex flex-col items-center gap-1.5 md:gap-2 flex-1">
-                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center ${liveStatus === 'hold' ? 'bg-blue-500 text-white animate-pulse' : ['confirmed', 'rejected'].includes(liveStatus) ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center ${liveStatus === 'hold' ? 'bg-emerald-500 text-white animate-pulse' : ['confirmed', 'rejected'].includes(liveStatus) ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
                                         <AlertCircle size={18} />
                                     </div>
                                     <span className="text-[6px] md:text-[8px] font-black uppercase tracking-widest text-gray-500">Review</span>
@@ -344,13 +344,13 @@ const SuccessPage = () => {
                         </div>
 
                         {/* WhatsApp Notification */}
-                        <div className="bg-emerald-900 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] flex items-start gap-4 md:gap-6 shadow-2xl shadow-emerald-950/20 relative group">
+                        <div className="bg-slate-950 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] flex items-start gap-4 md:gap-6 shadow-2xl shadow-black/20 relative group">
                             <div className="bg-emerald-400/10 p-3 md:p-4 rounded-xl md:rounded-2xl text-emerald-400 border border-emerald-400/20 shadow-inner group-hover:scale-110 transition-transform">
                                 <Zap size={24} className="fill-emerald-400" />
                             </div>
                             <div className="space-y-1 md:space-y-2">
                                 <h4 className="font-black text-white text-[9px] md:text-[10px] uppercase tracking-[0.2em] md:tracking-[0.3em]">Notification Active</h4>
-                                <p className="text-emerald-100/60 text-[10px] md:text-xs font-medium leading-relaxed">
+                                <p className="text-blue-100/60 text-[10px] md:text-xs font-medium leading-relaxed">
                                     Updates transmitted to <span className="text-white font-black">+91 {booking.userPhone}</span> via WhatsApp.
                                 </p>
                             </div>
@@ -359,7 +359,7 @@ const SuccessPage = () => {
                         {liveStatus === 'confirmed' && (
                             <button
                                 onClick={() => setShowReceipt(true)}
-                                className="w-full bg-emerald-50 text-emerald-700 font-black py-4 rounded-xl md:rounded-[2rem] border border-emerald-100 transition-all hover:bg-emerald-100 active:scale-95 flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em]"
+                                className="w-full bg-blue-50 text-blue-700 font-black py-4 rounded-xl md:rounded-[2rem] border border-blue-100 transition-all hover:bg-blue-100 active:scale-95 flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em]"
                             >
                                 <FileText size={16} /> View Digital Receipt
                             </button>
@@ -387,3 +387,6 @@ const SuccessPage = () => {
 };
 
 export default SuccessPage;
+
+
+

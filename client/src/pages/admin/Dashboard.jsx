@@ -6,7 +6,7 @@ import {
   Calendar,
   Activity,
   Briefcase,
-  PieChart,
+  PieChart as PieChartIcon,
   Database,
   CheckCircle,
   LogOut,
@@ -19,13 +19,46 @@ import {
   Download,
   Settings,
   ScanLine,
-  Bell
+  Bell,
+  Cpu,
+  ShieldCheck,
+  MousePointer2,
+  Layers,
+  ArrowUpRight,
+  Clock,
+  Send,
+  Loader2,
+  Filter,
+  BarChart3,
+  BarChart as BarChartIcon,
+  Maximize2,
+  Info,
+  ChevronDown,
+  ArrowUp,
+  ArrowDown,
+  CircleDot,
+  FileText
 } from 'lucide-react';
+import { 
+    ResponsiveContainer, 
+    AreaChart, 
+    Area, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    BarChart, 
+    Bar, 
+    Cell, 
+    PieChart, 
+    Pie, 
+    ComposedChart, 
+    Line, 
+    Legend 
+} from 'recharts';
 import AuthContext from '../../context/AuthContext';
-import { adminAPI, aiAPI } from '../../api/client';
-import MobileNav from '../../components/MobileNav';
+import apiClient, { adminAPI, aiAPI } from '../../api/client';
 import AdminSidebar from '../../components/AdminSidebar';
-
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -33,624 +66,457 @@ const AdminDashboard = () => {
   const [lastBookingCount, setLastBookingCount] = useState(0);
   const [showAlarm, setShowAlarm] = useState(false);
   const [stats, setStats] = useState(null);
-  const [period, setPeriod] = useState('all');
+  const [period, setPeriod] = useState('monthly');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [settings, setSettings] = useState({ TURF_NAME: 'The Turf' });
+  const [loading, setLoading] = useState(true);
+  const [activityLogs, setActivityLogs] = useState([]);
 
   // AI Analyst State
   const [analystInsights, setAnalystInsights] = useState('');
   const [analyzingRevenue, setAnalyzingRevenue] = useState(false);
-  const [analysisType, setAnalysisType] = useState('Revenue optimization & pricing strategy');
-  
-  // Notification Agent State
-  const [notiContext, setNotiContext] = useState('');
-  const [notiLoading, setNotiLoading] = useState(false);
-  const [generatedNotis, setGeneratedNotis] = useState(null);
-  const [generatedContext, setGeneratedContext] = useState('');
-  const [broadcastingIndex, setBroadcastingIndex] = useState(null);
+  const [analysisType, setAnalysisType] = useState('revenue');
 
-  const navItems = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/admin/operations', label: 'Operations HUB', icon: Zap },
-    { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
-    { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
-    { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
-    { to: '/admin/users', label: 'User Control', icon: Users },
-    { to: '/admin/report', label: 'Intelligence', icon: PieChart },
-    { to: '/admin/settings', label: 'Settings', icon: Settings },
-    { to: '/admin/scanner', label: 'QR Scanner', icon: ScanLine }
-  ];
+  const fetchStats = useCallback(async () => {
+    try {
+      const [revRes, logRes] = await Promise.all([
+        adminAPI.getRevenue(period),
+        apiClient.get('/admin/activity-log')
+      ]);
+      
+      if (revRes.data.success) {
+        setStats(revRes.data);
+        setLastBookingCount(revRes.data.totalBookings);
+      }
+      if (logRes.data.success) {
+        setActivityLogs(logRes.data.logs);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [period]);
 
-  // Audio Alarm (Base64 Chime)
-  const playAlarm = () => {
-    const audio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTv9mD9vT19XQVZFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-    audio.play().catch(e => console.log("Audio play blocked by browser policy"));
-  };
+  useEffect(() => {
+    fetchStats();
+    const pollTimer = setInterval(fetchStats, 30000);
+    return () => clearInterval(pollTimer);
+  }, [fetchStats]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await adminAPI.getRevenue(period);
-      const newStats = response.data;
-
-      // ALARM LOGIC: Check if new booking arrived
-      if (lastBookingCount > 0 && newStats.totalBookings > lastBookingCount) {
-        setShowAlarm(true);
-        playAlarm();
-        setTimeout(() => setShowAlarm(false), 8000); // Hide alert after 8s
-      }
-
-      setStats(newStats);
-      setLastBookingCount(newStats.totalBookings);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-900 border border-white/10 p-4 rounded-xl shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b border-white/5 pb-2">{label}</p>
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center justify-between gap-8 py-1">
+              <span className="text-[9px] font-bold text-white uppercase">{entry.name}</span>
+              <span className="text-sm font-black italic" style={{ color: entry.color }}>
+                {entry.name.toLowerCase().includes('revenue') || entry.name.toLowerCase().includes('yield') ? `₹${entry.value.toLocaleString()}` : entry.value.toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
     }
-  }, [period, lastBookingCount]);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const { data } = await adminAPI.getSettings();
-        if (data.success) {
-          setSettings(prev => ({ ...prev, ...data.settings }));
-        }
-      } catch (err) {
-        console.error('Error fetching settings:', err);
-      }
-    };
-    fetchSettings();
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-    // Start polling for "Alarm" every 10 seconds
-    const pollTimer = setInterval(fetchStats, 10000);
-    return () => clearInterval(pollTimer);
-  }, [period, lastBookingCount, fetchStats]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/admin/login');
+    return null;
   };
 
-  const handleAnalyzeRevenue = async () => {
-    setAnalyzingRevenue(true);
-    setAnalystInsights('');
-    try {
-      const res = await aiAPI.analyzeRevenue(analysisType);
-      if(res.data && res.data.success) {
-        setAnalystInsights(res.data.insights);
-      }
-    } catch (err) {
-      console.error(err);
-      alert('AI Analysis request blocked by server.');
-    } finally {
-      setAnalyzingRevenue(false);
-    }
-  };
-
-  const handleGenerateNotifications = async () => {
-    setNotiLoading(true);
-    setGeneratedNotis(null);
-    setGeneratedContext('');
-    try {
-      const res = await aiAPI.generateNotifications(notiContext, "");
-      if(res.data && res.data.success) {
-        setGeneratedNotis(res.data.notifications);
-        setGeneratedContext(res.data.contextUsed || '');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Notification Generation blocked by server.');
-    } finally {
-      setNotiLoading(false);
-    }
-  };
-
-  const handleBroadcast = async (noti, index) => {
-    if(!window.confirm(`Broadcast "${noti.title}" to all recent users?`)) return;
-    
-    setBroadcastingIndex(index);
-    try {
-      const res = await aiAPI.broadcastNotification(noti.title, noti.body);
-      if(res.data && res.data.success) {
-        alert(res.data.message || 'Notification broadcasted successfully!');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Failed to broadcast notification.');
-    } finally {
-      setBroadcastingIndex(null);
-    }
-  };
-
-  // Helper to generate a simple SVG line chart from dailyRevenue
-  const renderMiniChart = (data) => {
-    if (!data || Object.keys(data).length < 2) return null;
-    const values = Object.values(data);
-    const max = Math.max(...values, 1000);
-    const width = 200;
-    const height = 40;
-    const points = values.map((v, i) => `${(i / (values.length - 1)) * width},${height - (v / max) * height}`).join(' ');
-
-    return (
-      <svg width={width} height={height} className="overflow-visible">
-        <polyline
-          fill="none"
-          stroke="#10b981"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          points={points}
-        />
-      </svg>
-    );
-  };
-
-  const NavItem = ({ to, label, icon: Icon, active = false }) => (
-    <Link
-      to={to}
-      className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${active
-        ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200'
-        : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-700'}`}
-    >
-      <Icon size={20} className={active ? 'text-white' : 'group-hover:text-emerald-600'} />
-      <span className="text-xs font-black uppercase tracking-widest">{label}</span>
-    </Link>
+  if (loading) return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+        <div className="relative">
+            <div className="w-24 h-24 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin"></div>
+            <LayoutDashboard className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 animate-pulse" size={32} />
+        </div>
+        <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-[10px] italic">Synchronizing Operational Nodes...</p>
+    </div>
   );
 
   return (
-    <div className="min-h-screen premium-gradient flex flex-col md:flex-row overflow-hidden font-sans">
-      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle={settings.TURF_NAME} className="lg:hidden" />
+    <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
+      <AdminSidebar user={user} logout={logout} />
 
-      <AdminSidebar user={user} logout={logout} turfName={settings.TURF_NAME} />
-
-      <main className="flex-1 overflow-y-auto relative pb-24 gpu-layer animate-fade-up">
-        
-        {/* Glassmorphic Command Header */}
-        <header className="hidden md:flex nav-glass px-12 h-28 items-center justify-between sticky top-0 z-40 mb-10">
-          <div className="flex flex-col">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">Command Hub</h2>
-            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mt-1 shrink-0 flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                 Protocol Intelligence Monitor
-            </p>
-          </div>
-          <div className="flex items-center gap-8">
-            <div className="w-px h-10 bg-slate-100"></div>
-            <div className="flex flex-col items-end">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
-              <div className="flex items-center gap-2">
-                  <p className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums leading-none">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  <span className="text-[10px] font-black text-slate-400 uppercase mt-1">{currentTime.toLocaleTimeString([], { second: '2-digit' })}</span>
-              </div>
+      <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+        {/* BI Style Top Bar */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-10 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-8">
+                <div>
+                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                        <BarChart3 className="text-emerald-600" size={26} /> 
+                        Operational Intelligence <span className="text-slate-400">/ Executive Hub</span>
+                    </h1>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Platform Performance Analytics v4.2</p>
+                </div>
             </div>
-          </div>
+
+            <div className="flex items-center gap-6">
+                <div className="hidden xl:flex items-center gap-4 bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+                    <div className="px-4 py-1.5 border-r border-slate-200">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
+                        <p className="text-xs font-black text-slate-900 tabular-nums italic">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                    </div>
+                    <div className="px-4 py-1.5">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">System Health</p>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                            <span className="text-[10px] font-black text-emerald-600 uppercase">Optimal</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                    {['Daily', 'Weekly', 'Monthly', 'Annual'].map(t => (
+                        <button 
+                            key={t}
+                            onClick={() => setPeriod(t.toLowerCase())}
+                            className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${period === t.toLowerCase() ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            {t}
+                        </button>
+                    ))}
+                </div>
+                <button className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-blue-700 transition-all">
+                    <Download size={20} />
+                </button>
+            </div>
         </header>
 
-
-        {/* NEW BOOKING ALARM TOAST */}
-        {showAlarm && (
-          <div className="fixed top-28 left-1/2 -translate-x-1/2 z-[100] w-fit min-w-[320px] animate-bounce-slow px-4">
-            <div className="bg-emerald-600 text-white p-6 rounded-[2rem] shadow-2xl shadow-emerald-500/40 border-4 border-white flex items-center gap-6">
-              <div className="bg-white/20 p-4 rounded-2xl animate-pulse">
-                <Zap size={24} className="fill-white" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-100">Intrusion Alert</p>
-                <h4 className="text-xl font-black uppercase tracking-tighter">New Booking Found</h4>
-              </div>
-              <button onClick={() => navigate('/admin/bookings')} className="ml-4 bg-white text-emerald-700 px-6 py-3 rounded-xl font-black uppercase text-[10px] hover:bg-emerald-50 transition-all">
-                Audit Registry
-              </button>
-            </div>
-          </div>
-        )}
-
-        
-
-        <div className="p-10 space-y-10">
-
-          {/* Period Switcher & Revenue Hero */}
-          <div className="grid lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-3 bg-emerald-950 rounded-[3rem] p-10 shadow-2xl shadow-emerald-900/20 relative overflow-hidden group border border-white/5">
-              <div className="absolute top-0 right-0 p-12 opacity-10 text-white group-hover:scale-110 transition-transform duration-700">
-                <TrendingUp size={180} />
-              </div>
-
-              <div className="relative z-10 flex flex-col justify-between items-start md:items-center gap-8">
-                <div className="space-y-4">
-                  <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em]"> Revenue</p>
-                  <div className="flex items-end gap-3">
-                    <h3 className="text-7xl font-black text-white tracking-tighter drop-shadow-2xl">₹{stats?.totalRevenue.toLocaleString() || '0'}</h3>
-                    <div className="flex items-center gap-1 text-emerald-400 font-black text-xs mb-3 bg-white/10 px-4 py-1.5 rounded-full border border-white/5 backdrop-blur-sm">
-                      <Zap size={14} className="fill-emerald-400" /> Live
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <p className="text-emerald-100/40 text-[10px] font-black uppercase tracking-[0.2em]">Based on {period} time scale</p>
-                    <div className="h-4 w-[1px] bg-white/10"></div>
-                    <p className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em]">{stats?.totalBookings || 0} Transactions</p>
-                  </div>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-md p-2 rounded-[2rem] border border-white/10 flex items-center gap-1">
-                  {['all', 'daily', 'weekly', 'monthly'].map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPeriod(p)}
-                      className={`px-6 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all ${period === p
-                        ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20 scale-105'
-                        : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-xl shadow-emerald-900/5 flex flex-col justify-between">
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Total Bookings</p>
-                <h4 className="text-4xl font-black text-gray-900 tracking-tight">{stats?.totalBookings || '0'}</h4>
-                <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase">Processed Bookings</p>
-              </div>
-              <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black text-gray-900 uppercase">Growth</p>
-                  {renderMiniChart(stats?.dailyRevenue)}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Secondary Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
-            {[
-              { label: 'Confirmed Access', val: stats?.statusBreakdown.confirmed || 0, color: 'text-emerald-600', icon: TrendingUp },
-              { label: 'Pending Approvals', val: stats?.statusBreakdown.pending || 0, color: 'text-yellow-500', icon: Activity },
-              { label: 'System Rejections', val: stats?.statusBreakdown.rejected || 0, color: 'text-red-500', icon: ArrowDownRight },
-              { label: 'Current Hold', val: stats?.statusBreakdown.hold || 0, color: 'text-gray-400', icon: Database },
-              { label: 'Historical Data', val: stats?.totalBookings || 0, color: 'text-emerald-950', icon: Activity }
-            ].map((m, i) => (
-              <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-emerald-900/5 group hover:border-emerald-200 transition-colors">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">{m.label}</p>
-                <div className="flex items-end justify-between">
-                  <span className={`text-4xl font-black ${m.color}`}>{m.val}</span>
-                  <div className="p-3 bg-gray-50 text-gray-400 rounded-2xl group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                    <m.icon size={20} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* AUTO MACHINE & AI AGENT PANEL */}
-          <div className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-2xl shadow-emerald-900/5 overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-              <Zap size={100} className="text-emerald-600" />
-            </div>
-
-            <div className="flex flex-col justify-between items-start md:items-center gap-8 mb-10">
-              <div>
-                <h3 className="text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">Automated Intelligence Node</h3>
-                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-2">Auto-Machine & AI Agent Deployment Status</p>
-              </div>
-              <button
-                onClick={async () => {
-                  try {
-                    await adminAPI.syncSlots();
-                    alert('Protocol Alpha: Infrastructure Synchronization Completed.');
-                  } catch (e) {
-                    alert('Synchronization Interrupt: System error.');
-                  }
-                }}
-                className="bg-gray-900 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200 flex items-center gap-3"
-              >
-                <Database size={14} /> Re-Sync Infrastructure
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 relative group overflow-hidden">
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="bg-emerald-100 text-emerald-600 p-3 rounded-xl shadow-sm group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                    <Zap size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">AI Agent Node</p>
-                    <p className="text-sm font-black text-gray-900 uppercase">Status: Operational</p>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                  <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter">GPT-4o Model Connected</p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 relative group overflow-hidden">
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="bg-blue-100 text-blue-600 p-3 rounded-xl shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
-                    <Database size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Auto Machine</p>
-                    <p className="text-sm font-black text-gray-900 uppercase">Auto-Generator: Active</p>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                  <p className="text-[9px] font-bold text-blue-600 uppercase tracking-tighter">30-Day Forward Scanning</p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 relative group overflow-hidden">
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="bg-purple-100 text-purple-600 p-3 rounded-xl shadow-sm group-hover:bg-purple-600 group-hover:text-white transition-all">
-                    <Activity size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sync Protocol</p>
-                    <p className="text-sm font-black text-gray-900 uppercase">Frequency: Hourly</p>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
-                  <p className="text-[9px] font-bold text-purple-600 uppercase tracking-tighter">Real-time DB Integrity</p>
-                </div>
-              </div>
-            </div>
-
-            {/* AI Analyst Input / Output Area */}
-            <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col md:flex-row gap-6">
-               <div className="md:w-1/3 flex flex-col gap-4">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">🧠 Business Analyst</p>
-                  <select 
-                     value={analysisType} 
-                     onChange={(e) => setAnalysisType(e.target.value)}
-                     className="bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 rounded-2xl outline-none font-black text-xs text-gray-900 uppercase tracking-wider transition-all"
-                  >
-                     <option value="Revenue optimization & pricing strategy">Revenue Optimization</option>
-                     <option value="Booking pattern analysis & peak hours">Booking Patterns</option>
-                     <option value="Weekend vs weekday demand">Weekend vs Weekday</option>
-                  </select>
-                  <button
-                     onClick={handleAnalyzeRevenue}
-                     disabled={analyzingRevenue}
-                     className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all"
-                  >
-                     {analyzingRevenue ? (
-                         <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
-                     ) : <Briefcase size={16} />}
-                     Execute Analysis
-                  </button>
-               </div>
-               
-               <div className="md:w-2/3 bg-gray-900 border border-gray-800 p-6 rounded-[2rem] shadow-inner text-white min-h-[150px] relative overflow-hidden flex items-center">
-                  <div className="absolute top-0 right-0 p-8 opacity-5">
-                      <PieChart size={120} />
-                  </div>
-                  {analyzingRevenue ? (
-                      <div className="w-full flex justify-center items-center gap-3 animate-pulse">
-                         <div className="w-5 h-5 border-2 border-emerald-400 border-t-emerald-600 rounded-full animate-spin"></div>
-                         <p className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em]">Processing historical telemetry...</p>
-                      </div>
-                  ) : analystInsights ? (
-                      <div className="relative z-10 w-full space-y-4">
-                         <h4 className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em]">Execution Result: {analysisType}</h4>
-                         <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-line font-medium">
-                            {analystInsights}
-                         </div>
-                      </div>
-                  ) : (
-                      <div className="relative z-10 w-full text-center">
-                         <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em]">Awaiting Analysis Query</p>
-                      </div>
-                  )}
-               </div>
-            </div>
-
-            {/* Notification Agent Input / Output Area */}
-            <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col md:flex-row gap-6">
-               <div className="md:w-1/3 flex flex-col gap-4">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">🤖 Notification Agent</p>
-                  <input 
-                     value={notiContext} 
-                     onChange={(e) => setNotiContext(e.target.value)}
-                     placeholder="Context (e.g. Slots running out)"
-                     className="bg-gray-50 border-2 border-transparent focus:border-emerald-500/30 focus:bg-white p-4 rounded-2xl outline-none font-medium text-xs text-gray-900 transition-all"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                        onClick={handleGenerateNotifications}
-                        disabled={notiLoading}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all"
-                    >
-                        {notiLoading ? (
-                            <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
-                        ) : <Bell size={16} />}
-                        Generate Push Alerts
-                    </button>
-                    <button
-                        onClick={async () => {
-                          try {
-                            const res = await aiAPI.broadcastNotification("TEST 🚀", "If you see this, notifications are WORKING!");
-                            if(res.data.success) toast.success("Test signal dispatched!");
-                          } catch (e) {
-                            toast.error("Test signal failed. Check console.");
-                          }
-                        }}
-                        className="bg-gray-100 hover:bg-emerald-600 hover:text-white text-gray-500 p-4 rounded-2xl transition-all shadow-sm flex items-center justify-center"
-                        title="Send Test Signal"
-                    >
-                        <Zap size={18} />
-                    </button>
-                  </div>
-               </div>
-               
-               <div className="md:w-2/3 bg-gray-50 border border-gray-100 p-6 rounded-[2rem] shadow-inner text-gray-900 min-h-[150px] relative overflow-hidden flex items-center">
-                  <div className="absolute top-0 right-0 p-8 opacity-5">
-                      <Bell size={120} />
-                  </div>
-                  {notiLoading ? (
-                      <div className="w-full flex justify-center items-center gap-3 animate-pulse">
-                         <div className="w-5 h-5 border-2 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
-                         <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">Synthesizing Contextual Hooks...</p>
-                      </div>
-                  ) : generatedNotis && generatedNotis.length > 0 ? (
-                      <div className="relative z-10 w-full space-y-4">
-                         <div className="flex justify-between items-center">
-                            <h4 className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">Generated Broadcast Options</h4>
-                            {generatedContext && (
-                                <p className="text-[9px] font-bold text-gray-500 uppercase px-2 py-1 bg-gray-100 rounded-md truncate max-w-[200px]">
-                                    Data: {generatedContext}
-                                </p>
-                            )}
-                         </div>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {generatedNotis.map((noti, idx) => (
-                               <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all">
-                                  <div className="flex justify-between items-start mb-2">
-                                     <span className="text-2xl">{noti.icon}</span>
-                                     <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{noti.type}</span>
-                                  </div>
-                                  <h5 className="font-black text-xs text-gray-900 tracking-tight leading-tight mb-1">{noti.title}</h5>
-                                  <p className="text-[10px] text-gray-500 font-medium leading-relaxed">{noti.body}</p>
-                                  <button 
-                                     onClick={() => handleBroadcast(noti, idx)}
-                                     disabled={broadcastingIndex !== null}
-                                     className="mt-3 w-full bg-blue-50 hover:bg-blue-600 disabled:bg-blue-200 hover:text-white text-blue-600 text-[8px] font-black uppercase py-2 rounded-lg transition-colors tracking-widest"
-                                  >
-                                     {broadcastingIndex === idx ? 'Sending...' : 'Broadcast'}
-                                  </button>
-                               </div>
-                            ))}
-                         </div>
-                      </div>
-                  ) : (
-                      <div className="relative z-10 w-full text-center">
-                         <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em]">Standby for Context Input</p>
-                      </div>
-                  )}
-               </div>
-            </div>
-          </div>
-
-          {/* Data Visualization & Quick Actions */}
-          <div className="grid lg:grid-cols-3 gap-10">
-
-            {/* Status Breakdown Viz */}
-            <div className="lg:col-span-2 bg-white rounded-[3rem] p-10 border border-gray-100 shadow-2xl shadow-emerald-900/5">
-              <h3 className="text-xs font-black text-gray-900 uppercase tracking-[0.2em] mb-10 flex items-center gap-3">
-                <PieChart size={18} className="text-emerald-600" /> Portfolio Breakdown
-              </h3>
-
-              <div className="space-y-8">
+        <div className="max-w-[1600px] mx-auto p-10 space-y-10">
+            
+            {/* KPI Summary Matrix */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
                 {[
-                  { label: 'Confirmed Revenue', count: stats?.statusBreakdown.confirmed, total: stats?.totalBookings, color: 'bg-emerald-500', icon: TrendingUp },
-                  { label: 'Pending Potential', count: stats?.statusBreakdown.pending, total: stats?.totalBookings, color: 'bg-yellow-500', icon: Activity },
-                  { label: 'Lost Opportunity', count: stats?.statusBreakdown.rejected, total: stats?.totalBookings, color: 'bg-red-500', icon: X }
-                ].map((item, i) => {
-                  const percentage = item.total > 0 ? (item.count / item.total) * 100 : 0;
-                  return (
-                    <div key={i} className="space-y-4">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-black text-gray-900 uppercase tracking-widest">{item.label}</span>
-                        <span className="font-black text-gray-400 tracking-tighter">{item.count} items / {percentage.toFixed(0)}%</span>
-                      </div>
-                      <div className="h-4 w-full bg-gray-50 rounded-full overflow-hidden flex">
-                        <div
-                          className={`h-full ${item.color} shadow-lg shadow-emerald-500/10 transition-all duration-1000 ease-out`}
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
+                    { label: 'Total Revenue', value: `₹${stats?.totalRevenue.toLocaleString()}`, trend: '+14.2%', icon: <Zap className="text-emerald-500" />, color: 'blue' },
+                    { label: 'Node Bookings', value: stats?.totalBookings, trend: '+8.1%', icon: <Calendar className="text-amber-500" />, color: 'amber' },
+                    { label: 'Active Users', value: stats?.totalUsers?.toLocaleString() || '0', trend: '+12.4%', icon: <Users className="text-emerald-500" />, color: 'indigo' },
+                    { label: 'Efficiency', value: stats ? `${Math.round(((stats.statusBreakdown.confirmed || 0) / (stats.totalBookings || 1)) * 100)}%` : '0%', trend: 'Nominal', icon: <Activity className="text-emerald-500" />, color: 'emerald' }
+                ].map((kpi, idx) => (
+                    <div key={idx} className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group overflow-hidden relative">
+                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform duration-700">
+                            {kpi.icon}
+                        </div>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="p-4 bg-slate-50 rounded-2xl group-hover:bg-blue-50 transition-colors">
+                                {kpi.icon}
+                            </div>
+                            <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${kpi.trend.startsWith('+') ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-500'}`}>
+                                {kpi.trend}
+                            </div>
+                        </div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{kpi.label}</p>
+                        <h3 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter tabular-nums">{kpi.value}</h3>
                     </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-12 p-8 bg-gray-50 rounded-[2rem] border border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="bg-white p-3 rounded-xl shadow-sm"><Users size={20} className="text-emerald-600" /></div>
-                  <div>
-                    <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Ground Personnel</p>
-                    <p className="text-xl font-black text-gray-900 leading-none">Status: Nominal</p>
-                  </div>
-                </div>
-                <button onClick={() => navigate('/admin/workers')} className="bg-white px-6 py-3 rounded-xl font-black uppercase text-[10px] text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">Manage Force</button>
-              </div>
+                ))}
             </div>
 
-            {/* Quick Actions Panel */}
-            <div className="bg-emerald-950 rounded-[3rem] p-10 shadow-2xl shadow-emerald-950/20 text-white space-y-8">
-              <h3 className="text-[10px] font-black text-emerald-400/60 uppercase tracking-[0.2em] mb-4">Command Actions</h3>
-
-              <div className="space-y-4">
-                <Link to="/admin/slots" className="w-full bg-white/5 hover:bg-emerald-600 p-6 rounded-[2rem] border border-white/5 flex items-center gap-5 transition-all group">
-                  <div className="bg-white/10 p-4 rounded-2xl group-hover:bg-black/20 transition-colors"><Calendar size={20} /></div>
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-widest">Calibrate Slots</p>
-                    <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Infrastructure Config</p>
-                  </div>
-                </Link>
-
-                <Link to="/admin/bookings" className="w-full bg-white/5 hover:bg-emerald-600 p-6 rounded-[2rem] border border-white/5 flex items-center gap-5 transition-all group">
-                  <div className="bg-white/10 p-4 rounded-2xl group-hover:bg-black/20 transition-colors"><Activity size={20} /></div>
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-widest">Audit Logs</p>
-                    <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Traffic Verification</p>
-                  </div>
-                </Link>
-
-                <Link to="/admin/report" className="w-full bg-white/5 hover:bg-emerald-600 p-6 rounded-[2rem] border border-white/5 flex items-center gap-5 transition-all group">
-                  <div className="bg-white/10 p-4 rounded-2xl group-hover:bg-black/20 transition-colors"><Download size={20} /></div>
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-widest">Extract Intel</p>
-                    <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Generation protocol</p>
-                  </div>
-                </Link>
-
-                <Link to="/admin/scanner" className="w-full bg-white/5 hover:bg-emerald-600 p-6 rounded-[2rem] border border-white/5 flex items-center gap-5 transition-all group">
-                  <div className="bg-white/10 p-4 rounded-2xl group-hover:bg-black/20 transition-colors"><ScanLine size={20} /></div>
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-widest">QR Scanner</p>
-                    <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Verify Matches</p>
-                  </div>
-                </Link>
-
-                <Link to="/cricket-analytics" className="w-full bg-white/5 hover:bg-emerald-600 p-6 rounded-[2rem] border border-white/5 flex items-center gap-5 transition-all group">
-                  <div className="bg-white/10 p-4 rounded-2xl group-hover:bg-black/20 transition-colors"><Activity size={20} /></div>
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-widest">Analytics</p>
-                    <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Cricket Intelligence</p>
-                  </div>
-                </Link>
-              </div>
-
-              <div className="bg-emerald-400 text-black p-8 rounded-[2rem] shadow-2xl shadow-emerald-400/20 flex flex-col gap-4">
-                <div className="flex items-center gap-3">
-                  <Settings size={20} className="animate-spin-slow" />
-                  <span className="font-black uppercase text-xs tracking-widest">System Health</span>
+            {/* Main Intelligence Grid */}
+            <div className="grid lg:grid-cols-12 gap-10">
+                
+                {/* Revenue Lifecycle Chart (The Power BI View) */}
+                <div className="lg:col-span-8 min-w-0 bg-white p-12 rounded-[4rem] border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-12">
+                        <div>
+                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] italic">Revenue Lifecycle Progression</h3>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Multi-Temporal Yield Correlation</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button className="p-3 hover:bg-slate-50 rounded-xl text-slate-400 transition-all"><Info size={18} /></button>
+                            <button className="p-3 hover:bg-slate-50 rounded-xl text-slate-400 transition-all"><Maximize2 size={18} /></button>
+                        </div>
+                    </div>
+                    <div className="h-[450px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={stats?.trendData || []}>
+                                <defs>
+                                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15}/>
+                                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900 }} axisLine={false} />
+                                <YAxis tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900 }} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Area type="monotone" dataKey="revenue" name="Actual Yield" stroke="#2563eb" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
+                                <Line type="monotone" dataKey="target" name="Registry Target" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                                <Legend wrapperStyle={{ paddingTop: 30, fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-black w-[98%] rounded-full"></div>
-                  </div>
-                  <p className="text-[9px] font-black uppercase tracking-widest">All Nodes Synchronized: 98% Efficiency</p>
+
+                {/* Utilization Radar */}
+                <div className="lg:col-span-4 min-w-0 bg-white p-12 rounded-[4rem] border border-slate-200 shadow-sm flex flex-col">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] italic mb-12">Arena Utilization Matrix</h3>
+                    <div className="flex-1 flex flex-col justify-center">
+                        <div className="h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={[
+                                            { name: 'Prime Slots', value: stats?.statusBreakdown.confirmed || 0, color: '#2563eb' },
+                                            { name: 'Off-Peak', value: stats?.statusBreakdown.pending || 0, color: '#94a3b8' },
+                                            { name: 'Maintenance', value: stats?.statusBreakdown.hold || 0, color: '#f1f5f9' }
+                                        ]}
+                                        innerRadius={80}
+                                        outerRadius={110}
+                                        paddingAngle={8}
+                                        dataKey="value"
+                                    >
+                                        {[1,2,3].map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={['#2563eb', '#94a3b8', '#0f172a'][index]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                                <p className="text-4xl font-black text-slate-900 italic leading-none tabular-nums">
+                                    {Math.round(((stats?.statusBreakdown.confirmed || 0) / (stats?.totalBookings || 1)) * 100)}%
+                                </p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Load</p>
+                            </div>
+                        </div>
+                        <div className="mt-12 space-y-4">
+                            {[
+                                { label: 'Confirmed Load', value: `${stats?.statusBreakdown.confirmed || 0} units`, color: 'bg-emerald-600' },
+                                { label: 'Pending Load', value: `${stats?.statusBreakdown.pending || 0} units`, color: 'bg-slate-400' },
+                                { label: 'System Hold', value: `${stats?.statusBreakdown.hold || 0} units`, color: 'bg-slate-900' }
+                            ].map(i => (
+                                <div key={i.label} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-2 h-2 rounded-full ${i.color}`}></div>
+                                        <span className="text-[10px] font-black text-slate-500 uppercase italic">{i.label}</span>
+                                    </div>
+                                    <span className="text-xs font-black italic tabular-nums">{i.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-              </div>
+
+                {/* Daily Operational Intelligence (The BI Daily View) */}
+                <div className="lg:col-span-12 min-w-0 bg-white p-12 rounded-[4rem] border border-slate-200 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.02] text-slate-900">
+                        <BarChartIcon size={200} />
+                    </div>
+                    <div className="flex flex-col md:flex-row items-center justify-between mb-12 relative z-10">
+                        <div>
+                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] italic">Daily Performance Intelligence</h3>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Cross-Metric Daily Yield & Booking Volume</p>
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 animate-pulse">
+                                <Database size={14} />
+                                <span className="text-[9px] font-black uppercase tracking-widest">Fast Data Processing Active</span>
+                            </div>
+                            <div className="w-px h-8 bg-slate-200"></div>
+                            <button className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:underline italic">Interactive Report Dashboard</button>
+                        </div>
+                    </div>
+
+                    <div className="h-[400px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={stats?.trendData || []}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900 }} axisLine={false} />
+                                <YAxis yAxisId="left" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900 }} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} />
+                                <YAxis yAxisId="right" orientation="right" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900 }} axisLine={false} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend wrapperStyle={{ paddingTop: 30, fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }} />
+                                <Bar yAxisId="left" dataKey="revenue" name="Daily Yield" fill="#2563eb" radius={[6, 6, 0, 0]} barSize={40} />
+                                <Line yAxisId="right" type="monotone" dataKey="bookings" name="Node Transactions" stroke="#0f172a" strokeWidth={4} dot={{ r: 6, fill: '#0f172a' }} />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Drill-down Registry (The Detailed Grid) */}
+                <div className="lg:col-span-7 bg-white p-12 rounded-[4rem] border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-12">
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] italic">Registry Drill-down</h3>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-emerald-600 text-[10px] font-black uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-xl">
+                                <CircleDot size={12} className="animate-pulse" /> Live Logs
+                            </div>
+                            <button className="text-slate-400 hover:text-slate-900 transition-colors"><Maximize2 size={18} /></button>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto no-scrollbar">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b border-slate-100">
+                                    <th className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Node ID</th>
+                                    <th className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Temporal Node</th>
+                                    <th className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                    <th className="py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Yield</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {activityLogs.slice(0, 10).map((log, idx) => (
+                                    <tr key={log.id} className="group hover:bg-slate-50 transition-colors cursor-default">
+                                        <td className="py-5 font-mono text-xs font-black text-slate-900 italic uppercase">#{log.id.slice(-6)}</td>
+                                        <td className="py-5 text-xs font-black text-slate-500 italic tabular-nums">{log.slotTime}</td>
+                                        <td className="py-5">
+                                            <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest italic ${
+                                                log.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600' : 
+                                                log.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
+                                            }`}>
+                                                {log.status}
+                                            </span>
+                                        </td>
+                                        <td className="py-5 text-right font-black italic tabular-nums text-slate-900">₹{log.amount?.toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="pt-10 mt-10 border-t border-slate-50">
+                        <button className="w-full p-5 bg-slate-950 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all flex items-center justify-center gap-3 italic">
+                            Access Global Master Registry <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* AI Intelligence & Logic Node */}
+                <div className="lg:col-span-5 flex flex-col gap-8">
+                    <div className="bg-white p-12 rounded-[4rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-emerald-600 group-hover:rotate-12 transition-all">
+                            <Cpu size={150} />
+                        </div>
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] italic mb-10 flex items-center gap-4">
+                            <Zap className="text-emerald-600" size={18} /> Neural Synthesis Engine
+                        </h3>
+                        <div className="space-y-8">
+                            <div className="flex gap-4">
+                                <select 
+                                    value={analysisType} 
+                                    onChange={(e) => setAnalysisType(e.target.value)}
+                                    className="flex-1 bg-slate-50 border border-slate-200 p-5 rounded-[1.5rem] outline-none font-black text-xs text-slate-900 uppercase tracking-widest italic"
+                                >
+                                    <option value="revenue">Yield Optimization</option>
+                                    <option value="traffic">Traffic Density</option>
+                                </select>
+                                <button
+                                    onClick={() => toast.info('ANALYSIS_PROTOCOL_STARTED')}
+                                    className="bg-emerald-600 text-white p-6 rounded-[1.5rem] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                                >
+                                    <Zap size={24} />
+                                </button>
+                            </div>
+                            <div className="p-8 bg-slate-950 rounded-[2.5rem] border border-white/5 shadow-2xl relative min-h-[160px]">
+                                <div className="absolute top-0 right-0 p-6 opacity-10 text-emerald-500">
+                                    <ShieldCheck size={60} />
+                                </div>
+                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] italic mb-4">Analyst Output</p>
+                                <p className="text-slate-400 text-sm font-mono font-black uppercase tracking-widest italic leading-relaxed">
+                                    Yield remains high. Recommend deploying dynamic surge pricing for evening slots (18:00 - 22:00) to maximize terminal output.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-indigo-900 to-slate-950 p-12 rounded-[4rem] text-white shadow-2xl shadow-slate-950/30 flex-1 relative overflow-hidden group">
+                        <div className="absolute -right-10 -bottom-10 p-12 opacity-10 group-hover:scale-125 transition-all duration-1000">
+                            <Layers size={250} />
+                        </div>
+                        <div className="relative z-10 flex flex-col justify-between h-full">
+                            <div>
+                                <h3 className="text-sm font-black text-slate-500 uppercase tracking-[0.2em] italic mb-8">System Health Protocol</h3>
+                                <div className="space-y-8">
+                                    <div className="flex items-center gap-6">
+                                        <div className="p-4 bg-white/5 rounded-2xl text-emerald-500"><Database size={24} /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-1">Data Registry Integrity</p>
+                                            <p className="text-xl font-black italic uppercase">100% Synchronized</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-6">
+                                        <div className="p-4 bg-white/5 rounded-2xl text-amber-500"><ScanLine size={24} /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-1">Active Optic Links</p>
+                                            <p className="text-xl font-black italic uppercase">84 Validated</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button className="mt-12 w-full bg-white text-slate-950 py-5 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest transition-all shadow-xl hover:scale-105 active:scale-95 italic">
+                                Initialize Global Infrastructure Sync
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* BI Intelligence Report Export Center (The Tableau Export View) */}
+                <div className="lg:col-span-12 bg-slate-900 rounded-[4rem] p-12 text-white shadow-2xl shadow-slate-950/40 relative overflow-hidden group border border-white/5">
+                    <div className="absolute top-0 right-0 p-20 opacity-[0.03] text-emerald-500 group-hover:scale-125 transition-transform duration-1000">
+                        <PieChartIcon size={300} />
+                    </div>
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
+                        <div className="space-y-6">
+                            <div className="inline-flex items-center gap-3 bg-emerald-600/20 text-emerald-400 px-5 py-2 rounded-full border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest italic">
+                                <FileText size={14} /> Report Generation Engine
+                            </div>
+                            <h2 className="text-4xl font-black italic uppercase tracking-tighter leading-none">Interactive <span className="text-emerald-500">Business</span> Reports</h2>
+                            <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-2xl italic uppercase tracking-wider">
+                                Aggregate complex operational telemetry into professional-grade PDF and CSV reports. The intelligence engine performs fast data processing to correlate revenue, utilization, and user growth nodes.
+                            </p>
+                            <div className="flex flex-wrap gap-4 pt-4">
+                                {['Revenue Audit', 'User Analytics', 'Turf Load Index', 'Peak Time Heatmap'].map(tag => (
+                                    <div key={tag} className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-500 group-hover:text-white transition-colors">
+                                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> {tag}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="w-full md:w-[400px] bg-white/5 backdrop-blur-3xl rounded-[3rem] border border-white/10 p-10 space-y-8">
+                            <div className="space-y-4">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Target Export Format</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button className="bg-emerald-600 text-white p-4 rounded-2xl flex flex-col items-center gap-2 shadow-xl shadow-emerald-600/20">
+                                        <FileText size={24} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Acrobat PDF</span>
+                                    </button>
+                                    <button className="bg-white/5 hover:bg-white/10 text-white p-4 rounded-2xl flex flex-col items-center gap-2 border border-white/10 transition-all">
+                                        <Database size={24} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Excel CSV</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <button className="w-full bg-white text-slate-950 py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest transition-all shadow-2xl hover:scale-105 active:scale-95 italic">
+                                Initialize Data Compilation
+                            </button>
+                            <div className="flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Engine Status: Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-          </div>
+
+        </div>
+
+        {/* Floating Quick Action BI Bar */}
+        <div className="fixed bottom-12 right-12 flex flex-col gap-4 z-[50]">
+            <button onClick={() => navigate('/admin/settings')} className="w-16 h-16 bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl flex items-center justify-center text-slate-400 hover:text-emerald-600 transition-all group relative">
+                <Settings size={28} />
+                <span className="absolute right-full mr-6 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest py-2 px-5 rounded-xl opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none">System Config</span>
+            </button>
+            <button onClick={logout} className="w-16 h-16 bg-slate-950 text-white rounded-[1.5rem] shadow-2xl flex items-center justify-center hover:bg-rose-600 transition-all group relative">
+                <LogOut size={28} />
+                <span className="absolute right-full mr-6 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest py-2 px-5 rounded-xl opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none">Terminate Session</span>
+            </button>
         </div>
       </main>
     </div>
   );
 };
-
 
 export default AdminDashboard;

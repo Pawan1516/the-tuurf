@@ -1,336 +1,377 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, Shield, CheckCircle2, Star, BadgeCheck, MessageCircle } from 'lucide-react';
+import {
+  X, Trophy, Shield, CheckCircle2, Star, BadgeCheck, MessageCircle,
+  QrCode, Download, Share2, ChevronRight, Zap, BarChart2, Users, Clock,
+  AlertCircle, RefreshCw, Swords, ChevronLeft, Layout, Sparkles, Fingerprint, Phone, UserPlus
+} from 'lucide-react';
 import apiClient from '../api/client';
 import { toast } from 'react-toastify';
 
-const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
-    const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState('QUICK'); // Default to QUICK for instant CricHeroes flow
-    const [formats, setFormats] = useState([]);
-    const [formData, setFormData] = useState({
-        title: '',
-        team_a: '',
-        team_b: '',
-        format: 'T10',
-        overs: 10,
-        teamSize: 10,
-        team_a_name: '',
-        team_b_name: '',
-        team_a_players: [{ name: '', mobile: '', role: 'Batsman', is_captain: true, is_wk: false, is_linked: false, profile: null }],
-        team_b_players: [{ name: '', mobile: '', role: 'Batsman', is_captain: true, is_wk: false, is_linked: false, profile: null }]
-    });
+// ── Shared UI Components for the "Clean" Look
+const CleanModalContainer = ({ children, className = "" }) => (
+  <div className={`relative bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden flex flex-col ${className}`}>
+    {children}
+  </div>
+);
 
-    useEffect(() => {
-        if (isOpen) {
-            setMode('QUICK'); // Always open on Quick Match tab
-            fetchInitialData();
-        }
-    }, [isOpen]);
+// ── Step 8: Player Registration (No OTP)
+const PlayerRegistrationNode = ({ onNext, teamLabel }) => {
+  const [mobile, setMobile] = useState('');
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const fetchInitialData = async () => {
-        try {
-            const [, , formatRes] = await Promise.all([
-                apiClient.get('/teams'),
-                apiClient.get('/teams'),
-                apiClient.get('/formats')
-            ]);
-            setFormats(formatRes.data.formats || []);
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        }
-    };
+  const handleRegister = async () => {
+    if (mobile.length !== 10) return toast.error('Enter a valid 10-digit mobile number.');
+    setLoading(true);
+    try {
+      const res = await apiClient.post('/players/register-no-otp', { mobile, name });
+      if (res.data.success) {
+        toast.success(res.data.message);
+        onNext(res.data.user);
+        setMobile(''); setName('');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Registration failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleMobileLookup = async (team, index, mobile) => {
-        if (!/^\d{10}$/.test(mobile)) return;
-
-        try {
-            const res = await apiClient.post('/players/lookup-mobile', { mobile });
-
-            if (res.data.found) {
-                setFormData(prev => {
-                    const listField = team === 'a' ? 'team_a_players' : 'team_b_players';
-                    const newList = prev[listField].map((p, i) => i === index ? {
-                        ...p,
-                        profile: res.data.user,
-                        is_linked: true,
-                        name: p.name || res.data.user.name
-                    } : p);
-                    return { ...prev, [listField]: newList };
-                });
-                toast.info(`Player Identified: ${res.data.user.name}`);
-            } else {
-                setFormData(prev => {
-                    const listField = team === 'a' ? 'team_a_players' : 'team_b_players';
-                    const newList = prev[listField].map((p, i) => i === index ? { ...p, is_linked: false, profile: null } : p);
-                    return { ...prev, [listField]: newList };
-                });
-            }
-        } catch (error) {
-            console.error('Lookup failed:', error);
-        }
-    };
-
-    const addPlayer = (team) => {
-        const listField = team === 'a' ? 'team_a_players' : 'team_b_players';
-        setFormData({
-            ...formData,
-            [listField]: [...formData[listField], { name: '', mobile: '', role: 'Batsman', is_captain: false, is_wk: false, is_linked: false, profile: null }]
-        });
-    };
-
-    const updatePlayer = (team, index, field, value) => {
-        setFormData(prev => {
-            const listField = team === 'a' ? 'team_a_players' : 'team_b_players';
-            // Deep clone the array elements
-            const newList = prev[listField].map(p => ({ ...p }));
-            
-            if (field === 'is_captain' && value === true) {
-                newList.forEach((p, idx) => p.is_captain = idx === index);
-            } else if (field === 'is_wk' && value === true) {
-                newList.forEach((p, idx) => p.is_wk = idx === index);
-            } else {
-                newList[index][field] = value;
-            }
-
-            return { ...prev, [listField]: newList };
-        });
-
-        if (field === 'mobile' && value.length === 10) {
-            handleMobileLookup(team, index, value);
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-
-        try {
-            let res;
-            if (mode === 'REGISTERED') {
-                res = await apiClient.post('/matches/from-booking', {
-                    booking_id: booking._id,
-                    title: formData.title || `${formData.team_a_name} vs ${formData.team_b_name}`,
-                    format: formData.format,
-                    team_a: { team_id: formData.team_a },
-                    team_b: { team_id: formData.team_b }
-                });
-            } else {
-                res = await apiClient.post('/matches/quick/create', {
-                    booking_id: booking._id,
-                    format: formData.format,
-                    overs: formData.overs,
-                    team_a: {
-                        name: formData.team_a_name,
-                        players: formData.team_a_players.map((p, i) => ({
-                            display_name: p.name,
-                            input: p.mobile || p.name,
-                            input_type: p.mobile ? 'MOBILE' : 'NAME',
-                            role: p.role,
-                            is_captain: p.is_captain,
-                            is_wk: p.is_wk,
-                            batting_position: i + 1
-                        }))
-                    },
-                    team_b: {
-                        name: formData.team_b_name,
-                        players: formData.team_b_players.map((p, i) => ({
-                            display_name: p.name,
-                            input: p.mobile || p.name,
-                            input_type: p.mobile ? 'MOBILE' : 'NAME',
-                            role: p.role,
-                            is_captain: p.is_captain,
-                            is_wk: p.is_wk,
-                            batting_position: i + 1
-                        }))
-                    }
-                });
-            }
-
-            if (res.data.success || res.status === 201) {
-                toast.success('Match Manifested! All Players Notified.');
-                onSuccess(res.data.match || { _id: res.data.match_id });
-                onClose();
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Manifestation failure.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md" onClick={onClose}></div>
-            
-            <div className="relative bg-white w-full max-w-4xl max-h-[95vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
-                {/* Header */}
-                <div className="bg-gray-950 p-6 flex justify-between items-center shrink-0">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-emerald-600 p-3 rounded-2xl text-white shadow-xl shadow-emerald-900/40">
-                            <Trophy size={20} />
-                        </div>
-                        <div>
-                            <h2 className="text-white text-lg font-black uppercase tracking-tight leading-none">CricHeroes Deployment</h2>
-                            <div className="flex items-center gap-2 mt-1.5">
-                                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest px-3 py-1 bg-white/10 rounded-full">THE TURF V2.6 REGISTRY</p>
-                                {booking?._id && (
-                                    <p className="text-[9px] font-black text-white/70 uppercase tracking-widest">
-                                        #{(booking.receiptId || booking._id?.slice(-6))?.toUpperCase()}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-all">
-                        <X size={18} />
-                    </button>
-                </div>
-
-                {/* Mode Selector — QUICK MATCH first */}
-                <div className="flex bg-gray-100 p-2 shrink-0">
-                    <button onClick={() => setMode('QUICK')} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'QUICK' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400'}`}>Quick Match</button>
-                    <button onClick={() => setMode('REGISTERED')} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'REGISTERED' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400'}`}>Registered Teams</button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 custom-scrollbar bg-gray-50/50">
-                    <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 block text-center">Squad Configuration / Players Per Side</label>
-                        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                            {[3, 5, 6, 10, 15, 20].map(o => (
-                                <button
-                                    key={o}
-                                    type="button"
-                                    onClick={() => setFormData({...formData, teamSize: o})}
-                                    className={`py-6 rounded-2xl border-2 font-black text-base transition-all ${formData.teamSize === o ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100' : 'bg-white border-gray-50 text-gray-300 hover:border-emerald-100'}`}
-                                >
-                                    {o}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {mode === 'QUICK' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* Team A */}
-                        <div className="space-y-6">
-                            <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-sm font-black">A</div>
-                                    <input placeholder="Team A Name..." className="bg-transparent text-lg font-black uppercase text-gray-900 outline-none w-full" value={formData.team_a_name} onChange={(e) => setFormData({...formData, team_a_name: e.target.value})} />
-                                </div>
-                                <div className="space-y-3">
-                                    {formData.team_a_players.map((p, i) => (
-                                        <div key={i} className="flex flex-col gap-2 p-5 bg-gray-50 rounded-3xl border border-gray-100 group transition-all hover:bg-white hover:border-blue-200">
-                                            <div className="flex items-center gap-4">
-                                                <div className="text-[9px] font-black text-gray-300 w-4">{i + 1}</div>
-                                                <div className="flex-1 grid grid-cols-2 gap-4">
-                                                    <div className="space-y-1">
-                                                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Mobile No.</label>
-                                                        <input placeholder="88888 88888" value={p.mobile} onChange={(e) => updatePlayer('a', i, 'mobile', e.target.value)} className="w-full bg-transparent text-xs font-black outline-none border-b border-gray-200 focus:border-blue-500 pb-1" maxLength={10} />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Player Name</label>
-                                                        <input placeholder="Enter Name" value={p.name} onChange={(e) => updatePlayer('a', i, 'name', e.target.value)} className="w-full bg-transparent text-xs font-bold outline-none border-b border-gray-200 focus:border-blue-500 pb-1" />
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <button type="button" onClick={() => updatePlayer('a', i, 'is_captain', !p.is_captain)} className={`p-2 rounded-xl transition-all ${p.is_captain ? 'bg-orange-100 text-orange-600' : 'bg-white text-gray-300 hover:text-orange-400'}`} title="Captain"><Star size={14} fill={p.is_captain ? 'currentColor' : 'none'} /></button>
-                                                    <button type="button" onClick={() => updatePlayer('a', i, 'is_wk', !p.is_wk)} className={`p-2 rounded-xl transition-all ${p.is_wk ? 'bg-sky-100 text-sky-600' : 'bg-white text-gray-300 hover:text-sky-400'}`} title="Wicketkeeper"><Shield size={14} /></button>
-                                                </div>
-                                            </div>
-                                            {p.is_linked && p.profile && (
-                                                <div className="flex items-center justify-between pl-7 pr-2">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <BadgeCheck size={12} className="text-blue-500" />
-                                                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Linked: {p.profile.username}</span>
-                                                    </div>
-                                                    <span className="text-[8px] font-bold text-gray-400">Avg: {p.profile.stats?.batting?.average || 0} • SR: {p.profile.stats?.batting?.strike_rate || 0}</span>
-                                                </div>
-                                            )}
-                                            {!p.is_linked && p.mobile.length === 10 && (
-                                                <div className="flex items-center gap-1.5 pl-7">
-                                                    <MessageCircle size={10} className="text-orange-400" />
-                                                    <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest italic leading-none">Will invite via SMS</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                    <button type="button" onClick={() => addPlayer('a')} className="w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-[9px] font-black text-gray-400 uppercase tracking-widest hover:border-blue-500 hover:text-blue-500 transition-all">+ Add Player</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Team B */}
-                        <div className="space-y-6">
-                            <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-10 h-10 bg-red-600 rounded-2xl flex items-center justify-center text-white text-sm font-black">B</div>
-                                    <input placeholder="Team B Name..." className="bg-transparent text-lg font-black uppercase text-gray-900 outline-none w-full" value={formData.team_b_name} onChange={(e) => setFormData({...formData, team_b_name: e.target.value})} />
-                                </div>
-                                <div className="space-y-3">
-                                    {formData.team_b_players.map((p, i) => (
-                                        <div key={i} className="flex flex-col gap-2 p-5 bg-gray-50 rounded-3xl border border-gray-100 group transition-all hover:bg-white hover:border-red-200">
-                                            <div className="flex items-center gap-4">
-                                                <div className="text-[9px] font-black text-gray-300 w-4">{i + 1}</div>
-                                                <div className="flex-1 grid grid-cols-2 gap-4">
-                                                    <div className="space-y-1">
-                                                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Mobile No.</label>
-                                                        <input placeholder="88888 88888" value={p.mobile} onChange={(e) => updatePlayer('b', i, 'mobile', e.target.value)} className="w-full bg-transparent text-xs font-black outline-none border-b border-gray-200 focus:border-red-500 pb-1" maxLength={10} />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Player Name</label>
-                                                        <input placeholder="Enter Name" value={p.name} onChange={(e) => updatePlayer('b', i, 'name', e.target.value)} className="w-full bg-transparent text-xs font-bold outline-none border-b border-gray-200 focus:border-red-500 pb-1" />
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <button type="button" onClick={() => updatePlayer('b', i, 'is_captain', !p.is_captain)} className={`p-2 rounded-xl transition-all ${p.is_captain ? 'bg-orange-100 text-orange-600' : 'bg-white text-gray-300 hover:text-orange-400'}`} title="Captain"><Star size={14} fill={p.is_captain ? 'currentColor' : 'none'} /></button>
-                                                    <button type="button" onClick={() => updatePlayer('b', i, 'is_wk', !p.is_wk)} className={`p-2 rounded-xl transition-all ${p.is_wk ? 'bg-sky-100 text-sky-600' : 'bg-white text-gray-300 hover:text-sky-400'}`} title="Wicketkeeper"><Shield size={14} /></button>
-                                                </div>
-                                            </div>
-                                            {p.is_linked && p.profile && (
-                                                <div className="flex items-center justify-between pl-7 pr-2">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <BadgeCheck size={12} className="text-blue-500" />
-                                                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Linked: {p.profile.username}</span>
-                                                    </div>
-                                                    <span className="text-[8px] font-bold text-gray-400">Avg: {p.profile.stats?.batting?.average || 0} • SR: {p.profile.stats?.batting?.strike_rate || 0}</span>
-                                                </div>
-                                            )}
-                                            {!p.is_linked && p.mobile.length === 10 && (
-                                                <div className="flex items-center gap-1.5 pl-7">
-                                                    <MessageCircle size={10} className="text-orange-400" />
-                                                    <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest italic leading-none">Will invite via SMS</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                    <button type="button" onClick={() => addPlayer('b')} className="w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-[9px] font-black text-gray-400 uppercase tracking-widest hover:border-red-500 hover:text-red-500 transition-all">+ Add Player</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    )}
-                </form>
-
-                <div className="p-8 bg-white border-t border-gray-100 flex items-center justify-between shrink-0">
-                    <div className="hidden md:block">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selected Format</p>
-                        <p className="text-xl font-black text-emerald-600 uppercase">{formData.overs} Overs Blitz</p>
-                    </div>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        className="w-full md:w-80 bg-gray-950 hover:bg-black text-white py-6 rounded-[2.5rem] font-black uppercase text-[10px] tracking-[0.4em] flex items-center justify-center gap-4 transition-all shadow-2xl disabled:opacity-50"
-                    >
-                        {loading ? 'Initializing...' : 'CREATE MATCH MATRIX'}
-                        <CheckCircle2 size={18} className="text-emerald-400" />
-                    </button>
-                </div>
-            </div>
+  return (
+    <div className="p-8 md:p-10 space-y-8 animate-in slide-in-from-right-8 duration-500 h-full flex flex-col justify-center">
+      <div className="space-y-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-emerald-600">
+          <UserPlus size={14} />
+          <span className="text-xs font-semibold tracking-wide uppercase">Player Registration</span>
         </div>
-    );
+        <h3 className="text-3xl font-bold text-slate-800 leading-tight">
+          Add Player to <span className="text-emerald-600">Team {teamLabel}</span>
+        </h3>
+        <p className="text-sm font-medium text-slate-500">Quick identity fetch via mobile number</p>
+      </div>
+
+      <div className="space-y-5">
+        <div className="relative">
+          <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 peer-focus:text-emerald-600 transition-colors" size={20} />
+          <input 
+            autoFocus
+            type="tel"
+            placeholder="Enter 10-digit mobile"
+            className="peer w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-lg font-semibold text-slate-800 placeholder:text-slate-400 outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-sm"
+            value={mobile}
+            onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+          />
+        </div>
+        <div className="relative">
+          <Layout className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 peer-focus:text-emerald-600 transition-colors" size={20} />
+          <input 
+            placeholder="Player name (Optional)"
+            className="peer w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-lg font-semibold text-slate-800 placeholder:text-slate-400 outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-sm"
+            value={name}
+            onChange={e => setName(e.target.value)}
+          />
+        </div>
+        <button 
+          onClick={handleRegister}
+          disabled={loading || mobile.length < 10}
+          className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+        >
+          {loading ? <RefreshCw className="animate-spin w-5 h-5" /> : <ChevronRight className="w-5 h-5" />} FETCH PLAYER
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Step 12: QR Deployment (Pending Step 13 Admin Scan)
+const QRDeploymentNode = ({ match, qrCode, onGoToScoring }) => (
+    <div className="flex flex-col h-full animate-in zoom-in-95 duration-500">
+      <div className="flex-1 p-8 md:p-12 flex flex-col items-center justify-center text-center space-y-6">
+        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-2 text-emerald-600 shadow-sm">
+          <Shield size={32} />
+        </div>
+        
+        <div className="space-y-2">
+          <h3 className="text-3xl font-bold text-slate-800 leading-tight">Admin <span className="text-emerald-600">Verification</span></h3>
+          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Mandatory Approval Sequence</p>
+        </div>
+
+        <div className="relative p-6 bg-white rounded-3xl shadow-xl border border-slate-100 flex flex-col items-center">
+          <img src={qrCode} alt="Match QR" className="w-48 h-48 md:w-56 md:h-56 object-contain" />
+          <div className="mt-6 px-4 py-1.5 bg-slate-50 rounded-full border border-slate-100">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">ID: {match?._id?.slice(-8)}</p>
+          </div>
+        </div>
+
+        <div className="w-full max-w-sm bg-amber-50 rounded-2xl p-5 flex items-start gap-4 text-left border border-amber-200">
+          <AlertCircle size={24} className="text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs font-medium text-amber-900 leading-relaxed">Admin must scan this token at reception to transition match status to "APPROVED". Scoring remains locked until verification.</p>
+        </div>
+      </div>
+
+      <div className="p-6 bg-slate-50 border-t border-slate-100">
+        <button onClick={onGoToScoring} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all">
+          Awaiting Approval: Enter Dashboard <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+);
+
+const MatchCreationModal = ({ isOpen, onClose, booking, onSuccess }) => {
+  const [step, setStep] = useState(0); // 0: Format, 1: Team A Selection, 2: Team B Selection, 3: Match Details, 4: QR
+  const [loading, setLoading] = useState(false);
+  const [createdMatch, setCreatedMatch] = useState(null);
+  const [qrCode, setQrCode] = useState(null);
+
+  const [formData, setFormData] = useState({
+    name: 'Weekend Warriors League',
+    overs: 10,
+    location: 'The Turf Node 01',
+    team_a_name: '',
+    team_b_name: '',
+    team_a_players: [],
+    team_b_players: [],
+  });
+
+  const addPlayerToTeam = (user, team) => {
+    const listField = `team_${team}_players`;
+    if (formData[listField].some(p => p.phone === user.phone)) return toast.warn('Duplicate player detected.');
+    if (formData[listField].length >= 11) return toast.warn('Team capacity reached (Max 11).');
+    
+    setFormData(prev => ({
+      ...prev,
+      [listField]: [...prev[listField], user]
+    }));
+    toast.success(`${user.name} added to Team ${team.toUpperCase()}`);
+  };
+
+  const handleMatchDeploy = async () => {
+    if (!formData.team_a_name || !formData.team_b_name) return toast.error('Both teams require a name.');
+    if (formData.team_a_players.length === 0 || formData.team_b_players.length === 0) return toast.error('Teams require at least 1 player.');
+
+    setLoading(true);
+    try {
+      const res = await apiClient.post('/matches/quick/create', {
+        title: formData.name,
+        location: formData.location,
+        overs: formData.overs,
+        format: `T${formData.overs}`,
+        status: 'Pending',
+        team_a: {
+          name: formData.team_a_name,
+          players: formData.team_a_players.map((p, i) => ({
+            display_name: p.name,
+            input: p.phone,
+            input_type: 'MOBILE',
+            user_id: p._id,
+            is_captain: i === 0
+          }))
+        },
+        team_b: {
+          name: formData.team_b_name,
+          players: formData.team_b_players.map((p, i) => ({
+            display_name: p.name,
+            input: p.phone,
+            input_type: 'MOBILE',
+            user_id: p._id,
+            is_captain: i === 0
+          }))
+        }
+      });
+
+      if (res.data.success) {
+        setCreatedMatch(res.data.match);
+        setQrCode(res.data.qr_code);
+        setStep(4);
+        toast.success('Match Created (Pending Approval)');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Deployment failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-6 sm:p-8">
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      
+      <CleanModalContainer className="w-full max-w-4xl max-h-[90vh] h-full shadow-2xl">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white z-10 shrink-0">
+          <div className="flex items-center gap-3">
+             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Step {step + 8} of 12</span>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+             <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white">
+          {step === 0 && (
+             <div className="p-8 md:p-12 space-y-10 max-w-2xl mx-auto">
+                <div className="space-y-3 text-center">
+                  <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto text-emerald-600 mb-6 shadow-sm">
+                    <Trophy size={32} />
+                  </div>
+                  <h3 className="text-4xl font-bold text-slate-800 leading-tight">Match <span className="text-emerald-600">Setup</span></h3>
+                  <p className="text-base font-medium text-slate-500">Initialize the match parameters</p>
+                </div>
+                
+                <div className="space-y-8 mt-8">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Match Title</label>
+                    <input 
+                      placeholder="Enter match name..." 
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-lg font-semibold text-slate-800 placeholder:text-slate-400 outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-sm" 
+                      value={formData.name} 
+                      onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Match Format (Overs)</label>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[5, 10, 20].map(o => (
+                        <button 
+                          key={o} 
+                          onClick={() => setFormData(p => ({ ...p, overs: o }))} 
+                          className={`py-4 rounded-2xl font-bold text-lg transition-all border-2 ${formData.overs === o ? 'border-emerald-600 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'}`}
+                        >
+                          {o} Overs
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="pt-4">
+                    <button onClick={() => setStep(1)} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 hover:bg-slate-800 hover:-translate-y-0.5 active:translate-y-0 transition-all">
+                      CONTINUE TO TEAMS <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+             </div>
+          )}
+
+          {(step === 1 || step === 2) && (
+            <div className="flex h-full flex-col md:flex-row relative min-h-[500px]">
+              <div className="flex-1 flex flex-col border-r border-slate-100 relative md:pb-24 pb-20">
+                <div className="p-8 pb-4 border-b border-slate-50">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Team {step === 1 ? 'A' : 'B'} Name</label>
+                  <input 
+                    placeholder={`Enter Team ${step === 1 ? 'A' : 'B'} Name`} 
+                    className="w-full bg-white border-b-2 border-slate-200 py-3 text-2xl font-bold text-slate-800 placeholder:text-slate-300 outline-none focus:border-emerald-600 transition-colors"
+                    value={step === 1 ? formData.team_a_name : formData.team_b_name}
+                    onChange={e => setFormData(p => ({ ...p, [step === 1 ? 'team_a_name' : 'team_b_name']: e.target.value }))}
+                  />
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <PlayerRegistrationNode teamLabel={step === 1 ? 'A' : 'B'} onNext={(user) => addPlayerToTeam(user, step === 1 ? 'a' : 'b')} />
+                </div>
+              </div>
+              
+              <div className="w-full md:w-[340px] bg-slate-50 flex flex-col h-64 md:h-auto shrink-0 border-t md:border-t-0 border-slate-100 md:pb-24 pb-20">
+                <div className="p-6 border-b border-slate-200 bg-white/50">
+                  <h4 className="text-sm font-bold text-slate-800 flex items-center justify-between">
+                    Team {step === 1 ? 'A' : 'B'} Roster
+                    <span className="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md">{formData[step === 1 ? 'team_a_players' : 'team_b_players'].length}/11</span>
+                  </h4>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                  {formData[step === 1 ? 'team_a_players' : 'team_b_players'].map((p, i) => (
+                    <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center shadow-sm animate-in fade-in slide-in-from-left-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                          {i+1}
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800 truncate max-w-[120px]">{p.name || 'Unknown'}</span>
+                      </div>
+                      <span className="text-xs font-medium text-slate-500">{p.phone}</span>
+                    </div>
+                  ))}
+                  {formData[step === 1 ? 'team_a_players' : 'team_b_players'].length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 py-10 opacity-70">
+                      <Users size={32} className="mb-3 text-slate-300" />
+                      <p className="text-sm font-medium">Roster is empty</p>
+                      <p className="text-xs mt-1 text-slate-400">Add players using the form</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Bar - Fixed to bottom */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-slate-100 flex justify-between gap-4 z-10 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+                <button onClick={() => setStep(step - 1)} className="px-6 py-4 bg-white border-2 border-slate-200 text-slate-600 rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center hover:bg-slate-50 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                  <ChevronLeft className="w-5 h-5 mr-1" /> BACK
+                </button>
+                <button onClick={() => step === 1 ? setStep(2) : setStep(3)} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                  NEXT STEP <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="p-8 md:p-12 space-y-10 flex flex-col items-center justify-center h-full text-center max-w-2xl mx-auto">
+               <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-emerald-600 mb-2 shadow-sm">
+                 <Swords size={36} strokeWidth={1.5} />
+               </div>
+               
+               <div className="space-y-3">
+                 <h3 className="text-3xl font-bold text-slate-800 leading-tight">Review <span className="text-emerald-600">Deployment</span></h3>
+                 <p className="text-sm font-medium text-slate-500">Verify match details before creation</p>
+               </div>
+               
+               <div className="w-full bg-white border border-slate-200 rounded-3xl p-6 shadow-sm mb-6 text-left">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Match Name</p>
+                      <p className="text-lg font-bold text-slate-800 mt-1">{formData.name || 'Unnamed Match'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Format</p>
+                      <p className="text-lg font-bold text-slate-800 mt-1">{formData.overs} Overs</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-6 relative">
+                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-100 -translate-x-1/2"></div>
+                    <div className="pr-4">
+                      <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wider mb-2">Team A</p>
+                      <p className="text-base font-bold text-slate-800 truncate">{formData.team_a_name || 'Team A'}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Users size={14} className="text-slate-400" />
+                        <p className="text-sm font-medium text-slate-600">{formData.team_a_players.length} Players</p>
+                      </div>
+                    </div>
+                    <div className="pl-4">
+                      <p className="text-xs font-semibold text-rose-500 uppercase tracking-wider mb-2">Team B</p>
+                      <p className="text-base font-bold text-slate-800 truncate">{formData.team_b_name || 'Team B'}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Users size={14} className="text-slate-400" />
+                        <p className="text-sm font-medium text-slate-600">{formData.team_b_players.length} Players</p>
+                      </div>
+                    </div>
+                  </div>
+               </div>
+
+               <div className="flex w-full gap-4 pt-4">
+                 <button onClick={() => setStep(2)} className="px-6 py-4 bg-white border-2 border-slate-200 text-slate-600 rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center hover:bg-slate-50 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                   <ChevronLeft className="w-5 h-5" />
+                 </button>
+                 <button onClick={handleMatchDeploy} disabled={loading} className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:hover:translate-y-0">
+                   {loading ? <RefreshCw className="animate-spin w-5 h-5" /> : <Zap size={18} fill="white" />} DEPLOY MATCH
+                 </button>
+               </div>
+            </div>
+          )}
+
+          {step === 4 && <QRDeploymentNode match={createdMatch} qrCode={qrCode} onGoToScoring={() => { onSuccess(createdMatch); onClose(); }} />}
+        </div>
+      </CleanModalContainer>
+    </div>
+  );
 };
 
 export default MatchCreationModal;

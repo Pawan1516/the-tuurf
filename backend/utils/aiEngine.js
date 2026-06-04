@@ -59,13 +59,39 @@ exports.calculateWinProbability = (match, currentInnings) => {
     return finalProb;
 };
 
+exports.calculateProjectedScore = (match, currentInnings) => {
+    const formatOvers = match.format === 'T20' ? 20 : (match.format === 'T10' ? 10 : (match.format === 'ODI' ? 50 : (match.live_data?.formatOvers || 20)));
+    const totalBalls = formatOvers * 6;
+    const { runs, overNum, ballInOver } = currentInnings;
+    const ballsBowled = overNum * 6 + ballInOver;
+    
+    if (ballsBowled === 0) return 0;
+    return Math.round((runs / ballsBowled) * totalBalls);
+};
+
+exports.calculateAISnapshot = (match, currentInnings) => {
+    const winProb = exports.calculateWinProbability(match, currentInnings);
+    const projected = exports.calculateProjectedScore(match, currentInnings);
+    
+    // Aggregate ball history from all innings for momentum
+    const allBalls = (match.innings || []).reduce((acc, inn) => acc.concat(inn.ball_history || []), []);
+    const last5Balls = allBalls.slice(-5);
+    const momentum = exports.calculateMomentumScore(last5Balls);
+
+    return {
+        winProb,
+        projectedScore: projected,
+        momentum
+    };
+};
+
 exports.calculateMomentumScore = (last5Balls) => {
     // Momentum = Runs in last 5 balls / wickets in last 5 balls
     if (!last5Balls || last5Balls.length === 0) return 50;
     
     let score = 50;
     last5Balls.forEach(b => {
-        score += (b.runs * 2);
+        score += ((b.runs || 0) * 2);
         if (b.is_wicket) score -= 30;
     });
 
@@ -76,19 +102,21 @@ exports.calculateMomentumScore = (last5Balls) => {
  * Generates a text-based summary of the match for AI Reports
  */
 exports.generateMatchReport = (match) => {
-    const { team_a, team_b, result, ball_history } = match;
+    const { team_a, team_b, result } = match;
+    const allBalls = (match.innings || []).reduce((acc, inn) => acc.concat(inn.ball_history || []), []);
+    
     const winner = result?.winner?.name || result?.winner || "Undecided";
-    const totalRuns = ball_history.reduce((sum, b) => sum + b.runs, 0);
-    const totalWickets = ball_history.filter(b => b.is_wicket).length;
+    const totalRuns = allBalls.reduce((sum, b) => sum + (b.runs || 0), 0);
+    const totalWickets = allBalls.filter(b => b.is_wicket).length;
 
     // Identifying key turning point (ball with highest win prob shift)
     let maxShift = 0;
     let turningPointBall = null;
-    for (let i = 1; i < ball_history.length; i++) {
-        const shift = Math.abs((ball_history[i].win_prob || 50) - (ball_history[i-1].win_prob || 50));
+    for (let i = 1; i < allBalls.length; i++) {
+        const shift = Math.abs((allBalls[i].win_prob || 50) - (allBalls[i-1].win_prob || 50));
         if (shift > maxShift) {
             maxShift = shift;
-            turningPointBall = ball_history[i];
+            turningPointBall = allBalls[i];
         }
     }
 

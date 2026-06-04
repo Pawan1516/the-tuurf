@@ -40,12 +40,6 @@ const PaymentPage = () => {
                     setSettings(prev => ({ ...prev, ...settingsRes.data.settings }));
                 }
                 
-                // Load Razorpay script
-                const script = document.createElement('script');
-                script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-                script.async = true;
-                document.body.appendChild(script);
-                
                 setLoading(false);
             } catch (err) {
                 console.error('Error fetching data:', err);
@@ -119,7 +113,7 @@ const PaymentPage = () => {
                     contact: booking?.userPhone || ''
                 },
                 theme: {
-                    color: '#059669' // Emerald-600
+                    color: '#2563EB' // emerald-600
                 },
                 modal: {
                     ondismiss: () => {
@@ -178,7 +172,7 @@ const PaymentPage = () => {
 
     if (loading) return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6">
-            <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+            <div className="w-12 h-12 border-4 border-blue-100 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Loading Transmission Interface...</p>
         </div>
     );
@@ -191,13 +185,13 @@ const PaymentPage = () => {
                     onClick={() => navigate('/')}
                     className="mb-8 flex items-center gap-3 text-gray-400 hover:text-emerald-600 transition-all group"
                 >
-                    <div className="bg-white p-2 rounded-lg border border-gray-100 group-hover:border-emerald-200 shadow-sm transition-all">
+                    <div className="bg-white p-2 rounded-lg border border-gray-100 group-hover:border-blue-200 shadow-sm transition-all">
                         <ArrowLeft size={16} />
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Cancel Transaction</span>
                 </button>
 
-                <div className="bg-white rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl shadow-emerald-950/[0.03] overflow-hidden border border-gray-100">
+                <div className="bg-white rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl shadow-black/[0.03] overflow-hidden border border-gray-100">
                     <div className="p-8 md:p-12 text-center border-b border-gray-100 bg-[#0F172A] text-white relative">
                         <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
                             <div className="absolute top-[-50px] left-[-50px] w-64 h-64 bg-emerald-500 rounded-full blur-[100px]"></div>
@@ -262,7 +256,7 @@ const PaymentPage = () => {
                                     </div>
                                     <div className="pt-6 border-t border-gray-200 flex justify-between items-end">
                                         <div className="flex flex-col gap-1">
-                                            <span className={`font-black uppercase text-[10px] md:text-xs tracking-widest ${booking?.paymentType === 'full' ? 'text-emerald-700' : 'text-gray-900'}`}>
+                                            <span className={`font-black uppercase text-[10px] md:text-xs tracking-widest ${booking?.paymentType === 'full' ? 'text-blue-700' : 'text-gray-900'}`}>
                                                 {booking?.paymentType === 'full' ? 'Full Settlement' : 'Confirmation Advance'}
                                             </span>
                                             <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none">
@@ -279,14 +273,14 @@ const PaymentPage = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <button
                                         onClick={() => setPaymentMethod('razorpay')}
-                                        className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col items-center gap-3 text-center ${paymentMethod === 'razorpay' ? 'border-emerald-600 bg-emerald-50/50' : 'border-gray-50 bg-gray-50/50 grayscale opacity-60'}`}
+                                        className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col items-center gap-3 text-center ${paymentMethod === 'razorpay' ? 'border-emerald-600 bg-blue-50/50' : 'border-gray-50 bg-gray-50/50 grayscale opacity-60'}`}
                                     >
                                         <CreditCard size={24} className={paymentMethod === 'razorpay' ? 'text-emerald-600' : 'text-gray-400'} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Online / UPI</span>
                                     </button>
                                     <button
                                         onClick={() => setPaymentMethod('manual')}
-                                        className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col items-center gap-3 text-center ${paymentMethod === 'manual' ? 'border-emerald-600 bg-emerald-50/50' : 'border-gray-50 bg-gray-50/50 grayscale opacity-60'}`}
+                                        className={`p-6 rounded-[1.5rem] border-2 transition-all flex flex-col items-center gap-3 text-center ${paymentMethod === 'manual' ? 'border-emerald-600 bg-blue-50/50' : 'border-gray-50 bg-gray-50/50 grayscale opacity-60'}`}
                                     >
                                         <QrCode size={24} className={paymentMethod === 'manual' ? 'text-emerald-600' : 'text-gray-400'} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Scanner / UTR</span>
@@ -295,7 +289,7 @@ const PaymentPage = () => {
 
                                 {paymentMethod === 'razorpay' ? (
                                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        <div className="bg-emerald-50/30 p-8 rounded-[2rem] border border-emerald-100/50 flex flex-col items-center text-center gap-4">
+                                        <div className="bg-blue-50/30 p-8 rounded-[2rem] border border-blue-100/50 flex flex-col items-center text-center gap-4">
                                             <div className="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center text-white shadow-xl shadow-emerald-600/20">
                                                 <ShieldCheck size={32} />
                                             </div>
@@ -307,7 +301,7 @@ const PaymentPage = () => {
                                         <button
                                             onClick={handleRazorpayPayment}
                                             disabled={isProcessing}
-                                            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 text-white font-black py-7 rounded-[2rem] shadow-2xl shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 group overflow-hidden relative"
+                                            className="w-full bg-emerald-600 hover:bg-blue-700 disabled:bg-gray-200 text-white font-black py-7 rounded-[2rem] shadow-2xl shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 group overflow-hidden relative"
                                         >
                                             {isProcessing ? (
                                                 <>
@@ -325,7 +319,7 @@ const PaymentPage = () => {
                                 ) : (
                                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         <div className="flex flex-col items-center">
-                                            <div className="bg-white p-8 rounded-[2.5rem] border-2 border-emerald-50 inline-block shadow-2xl shadow-emerald-900/5 relative group">
+                                            <div className="bg-white p-8 rounded-[2.5rem] border-2 border-blue-50 inline-block shadow-2xl shadow-slate-950/5 relative group">
                                                 <div className="absolute inset-0 bg-emerald-500/5 scale-0 group-hover:scale-100 transition-transform duration-500 rounded-[2.5rem]"></div>
                                                 <img
                                                     src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=${settings.UPI_ID}&pn=${encodeURIComponent(settings.TURF_NAME)}&am=${booking?.amount}&cu=INR`}
@@ -360,7 +354,7 @@ const PaymentPage = () => {
                                             <button
                                                 type="submit"
                                                 disabled={isProcessing}
-                                                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 text-white font-black py-7 rounded-[2rem] shadow-2xl shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 group overflow-hidden relative"
+                                                className="w-full bg-emerald-600 hover:bg-blue-700 disabled:bg-gray-200 text-white font-black py-7 rounded-[2rem] shadow-2xl shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 group overflow-hidden relative"
                                             >
                                                 {isProcessing ? (
                                                     <>
@@ -396,3 +390,6 @@ const PaymentPage = () => {
 };
 
 export default PaymentPage;
+
+
+

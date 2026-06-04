@@ -32,7 +32,7 @@ router.post('/', verifyToken, async (req, res) => {
             leader_id,
             invite: {
                 code: inviteCode,
-                link: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/join/team/${inviteCode}`
+                link: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/join/team/${inviteCode}`
             },
             members: [{
                 user_id: leader_id,

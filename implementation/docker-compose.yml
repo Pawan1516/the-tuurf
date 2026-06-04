@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:6
+    container_name: turf-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - turf-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: turf-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - turf-network
+
+  # Backend API
+  api:
+    build: ./backend
+    container_name: turf-api
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      NODE_ENV: development
+      MONGODB_URI: mongodb://admin:password@mongodb:27017/theturf?authSource=admin
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-secret-key
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - turf-network
+    volumes:
+      - ./backend/src:/app/src
+
+  # Frontend
+  frontend:
+    build: ./frontend
+    container_name: turf-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:5000
+      REACT_APP_SOCKET_URL: http://localhost:5000
+    depends_on:
+      - api
+    networks:
+      - turf-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  turf-network:
+    driver: bridge

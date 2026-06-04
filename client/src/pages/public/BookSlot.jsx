@@ -104,7 +104,7 @@ const BookSlot = () => {
         <div className="container mx-auto px-4 py-4">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
+            className="flex items-center text-emerald-600 hover:text-blue-800 font-medium"
           >
             <ArrowLeft size={20} className="mr-2" />
             Back
@@ -117,7 +117,7 @@ const BookSlot = () => {
           <h1 className="text-3xl font-bold text-gray-800 mb-6">Book Your Slot</h1>
 
           {/* Slot Info */}
-          <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6">
+          <div className="bg-blue-50 border-l-4 border-emerald-600 p-4 mb-6">
             <h3 className="font-semibold text-gray-800 mb-2">Slot Details</h3>
             <p className="text-gray-700">
               <span className="font-medium">Date:</span> {slotDate}
@@ -128,7 +128,7 @@ const BookSlot = () => {
             <p className="text-gray-700">
               <span className="font-medium">Total Amount:</span> ₹{amount}
             </p>
-            <p className="text-emerald-700 font-bold">
+            <p className="text-blue-700 font-bold">
               <span className="font-bold">Advance for Confirmation (40%):</span> ₹{Math.ceil(amount * 0.4)}
             </p>
           </div>
@@ -172,23 +172,23 @@ const BookSlot = () => {
               <label className="form-label font-bold text-gray-700">Choose Payment Method *</label>
 
               <div
-                className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentOption === 'advance' ? 'border-blue-600 bg-blue-50' : 'border-gray-100 hover:border-gray-200'}`}
+                className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentOption === 'advance' ? 'border-emerald-600 bg-blue-50' : 'border-gray-100 hover:border-gray-200'}`}
                 onClick={() => setPaymentOption('advance')}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentOption === 'advance' ? 'border-blue-600' : 'border-gray-300'}`}>
-                    {paymentOption === 'advance' && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>}
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentOption === 'advance' ? 'border-emerald-600' : 'border-gray-300'}`}>
+                    {paymentOption === 'advance' && <div className="w-2.5 h-2.5 bg-emerald-600 rounded-full"></div>}
                   </div>
                   <div>
                     <p className="font-bold text-gray-900">Pay Advance (40%)</p>
                     <p className="text-xs text-gray-500">Confirm your slot now</p>
                   </div>
                 </div>
-                <p className="font-black text-blue-600">₹{Math.ceil(amount * 0.4)}</p>
+                <p className="font-black text-emerald-600">₹{Math.ceil(amount * 0.4)}</p>
               </div>
 
               <div
-                className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentOption === 'full' ? 'border-emerald-600 bg-emerald-50' : 'border-gray-100 hover:border-gray-200'}`}
+                className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentOption === 'full' ? 'border-emerald-600 bg-blue-50' : 'border-gray-100 hover:border-gray-200'}`}
                 onClick={() => setPaymentOption('full')}
               >
                 <div className="flex items-center gap-3">
@@ -223,3 +223,6 @@ const BookSlot = () => {
 };
 
 export default BookSlot;
+
+
+

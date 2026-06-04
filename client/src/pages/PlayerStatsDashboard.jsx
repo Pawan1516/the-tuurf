@@ -125,7 +125,7 @@ const PlayerStatsDashboard = () => {
             {/* Glassmorphism Header */}
             <header className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 px-6 py-6 md:px-12 flex justify-between items-center">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
                         <Trophy size={24} className="text-white" />
                     </div>
                     <div>
@@ -282,3 +282,6 @@ const PlayerStatsDashboard = () => {
 };
 
 export default PlayerStatsDashboard;
+
+
+

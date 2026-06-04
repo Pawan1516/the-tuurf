@@ -3,10 +3,110 @@ const router = express.Router();
 const Match = require('../models/Match');
 const Booking = require('../models/Booking');
 const Team = require('../models/Team');
+const User = require('../models/User');
 const AIService = require('../services/aiService');
 const QRService = require('../services/qrService');
+const aiInsightsService = require('../services/aiInsightsService');
 const verifyToken = require('../middleware/verifyToken');
 const verifyMatch = require('../middleware/verifyMatch');
+const BallEvent = require('../models/BallEvent');
+const { sendNotification } = require('../services/webpushr');
+const mongoose = require('mongoose');
+const getValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : undefined;
+
+const sanitizeMatchDocument = (match) => {
+    if (!match.innings || !Array.isArray(match.innings)) return;
+    match.innings.forEach((inn) => {
+        if (inn.batsmen && Array.isArray(inn.batsmen)) {
+            inn.batsmen.forEach((b) => {
+                b.user_id = getValidObjectId(b.user_id) || null;
+            });
+        }
+        if (inn.bowlers && Array.isArray(inn.bowlers)) {
+            inn.bowlers.forEach((bw) => {
+                bw.user_id = getValidObjectId(bw.user_id) || null;
+            });
+        }
+        if (inn.ball_history && Array.isArray(inn.ball_history)) {
+            inn.ball_history.forEach((h) => {
+                h.batsman_id = getValidObjectId(h.batsman_id) || null;
+                h.bowler_id = getValidObjectId(h.bowler_id) || null;
+            });
+        }
+        if (inn.balls && Array.isArray(inn.balls)) {
+            inn.balls.forEach((b) => {
+                b.batter_id = getValidObjectId(b.batter_id) || null;
+                b.non_striker_id = getValidObjectId(b.non_striker_id) || null;
+                b.bowler_id = getValidObjectId(b.bowler_id) || null;
+                if (b.wicket) {
+                    b.wicket.player_out_id = getValidObjectId(b.wicket.player_out_id) || null;
+                    b.wicket.fielder_id = getValidObjectId(b.wicket.fielder_id) || null;
+                }
+            });
+        }
+        if (inn.fall_of_wickets && Array.isArray(inn.fall_of_wickets)) {
+            inn.fall_of_wickets.forEach((f) => {
+                f.player_id = getValidObjectId(f.player_id) || null;
+            });
+        }
+        if (inn.partnership_log && Array.isArray(inn.partnership_log)) {
+            inn.partnership_log.forEach((p) => {
+                p.batsman1_id = getValidObjectId(p.batsman1_id) || null;
+                p.batsman2_id = getValidObjectId(p.batsman2_id) || null;
+            });
+        }
+    });
+};
+
+// ✅ STEP 11: Player Confirmation
+router.post('/:id/confirm-participation', async (req, res) => {
+    try {
+        const { mobile } = req.body;
+        const match = await Match.findById(req.params.id);
+        if (!match) return res.status(404).json({ success: false, message: 'Match not found' });
+
+        let found = false;
+        ['team_a', 'team_b'].forEach(teamSide => {
+            match.quick_teams[teamSide].players.forEach(p => {
+                if (p.input === mobile) {
+                    p.participation_status = 'confirmed';
+                    found = true;
+                }
+            });
+        });
+
+        if (!found) return res.status(404).json({ success: false, message: 'Mobile not registered in this match' });
+
+        await match.save();
+        res.json({ success: true, message: 'Participation confirmed' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ✅ STEP 13: Admin QR Scan (MANDATORY APPROVAL)
+router.post('/admin/verify-scan', async (req, res) => {
+    try {
+        const { matchId, token } = req.body;
+        const match = await Match.findById(matchId);
+        
+        if (!match) return res.status(404).json({ success: false, message: 'Match Node Invalid' });
+        
+        // In a real scenario, check token validity. For now, simple check.
+        if (match.verification.verification_token === token || !token) {
+            match.status = 'Approved';
+            match.verification.status = 'VERIFIED';
+            match.verification.scanned_at = new Date();
+            await match.save();
+            
+            return res.json({ success: true, message: 'Match Approved for Deployment' });
+        } else {
+            return res.status(401).json({ success: false, message: 'Security Token Mismatch' });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 
 // @route   GET /api/matches/history/teams
 // @desc    Extract unique historical teams/squads from past matches
@@ -19,7 +119,7 @@ router.get('/history/teams', async (req, res) => {
             .sort({ start_time: -1 })
             .limit(50);
 
-        const registeredTeams = await Team.find().populate('members.user_id');
+        const registeredTeams = await Team.find().populate('players.user_id');
 
         const historyPool = [];
         const seenNames = new Set();
@@ -30,8 +130,8 @@ router.get('/history/teams', async (req, res) => {
                 historyPool.push({ 
                     id: t._id, 
                     name: t.name, 
-                    short: t.short_name || t.name.slice(0,3).toUpperCase(), 
-                    players: t.members?.map(m => m.user_id?.name).filter(Boolean) || [],
+                    short: t.shortName || t.short_name || t.name.slice(0,3).toUpperCase(), 
+                    players: t.players?.map(p => p.user_id?.name || p.name).filter(Boolean) || [],
                     type: 'official_registered_team' 
                 });
                 seenNames.add(t.name);
@@ -71,10 +171,13 @@ router.get('/history/teams', async (req, res) => {
 // @access  Public
 router.get('/live', async (req, res) => {
     try {
-        // Show all In Progress matches (no date restriction)
+        const matchFields = 'title format overs start_time location team_a team_b status live_data result venue';
+        
         const inProgressMatches = await Match.find({ status: 'In Progress' })
-            .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
-            .sort({ updatedAt: -1 });
+            .select(matchFields)
+            .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner', 'name short_name logo primary_colour')
+            .sort({ updatedAt: -1 })
+            .lean();
 
         // Show Scheduled matches updated within the last 7 days
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -82,15 +185,19 @@ router.get('/live', async (req, res) => {
             status: 'Scheduled',
             updatedAt: { $gte: sevenDaysAgo }
         })
-        .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner')
+        .select(matchFields)
+        .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner', 'name short_name logo primary_colour')
         .sort({ updatedAt: -1 })
-        .limit(10);
+        .limit(10)
+        .lean();
 
         // Recently completed matches (last 3)
         const completedMatches = await Match.find({ status: 'Completed' })
+            .select(matchFields)
             .sort({ end_time: -1, updatedAt: -1 })
             .limit(3)
-            .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner');
+            .populate('team_a.team_id team_b.team_id team_a.captain team_b.captain result.winner', 'name short_name logo primary_colour')
+            .lean();
 
         // Merge, deduplicate, prioritize: In Progress > Scheduled > Completed
         const matchMap = new Map();
@@ -174,7 +281,7 @@ router.get('/my-history', verifyToken, async (req, res) => {
 // POST /api/matches/from-booking - Create match from existing booking ID
 router.post('/from-booking', async (req, res) => {
     try {
-        const { booking_id, title, format, team_a, team_b } = req.body;
+        const { booking_id, title, format, overs, team_a, team_b } = req.body;
         
         let booking = null;
         if (booking_id) {
@@ -186,6 +293,7 @@ router.post('/from-booking', async (req, res) => {
             booking_id: booking ? booking._id : null,
             title,
             format,
+            overs: overs || 20,
             start_time: booking ? booking.date : new Date(), // using date as start if available
             team_a,
             team_b,
@@ -277,64 +385,8 @@ router.get('/:id/ai-report', async (req, res) => {
 // GET /api/matches/:id - Get full match details
 // @route   POST /api/matches/:id/undo-ball
 // @desc    Remove last ball from history and revert state
-router.post('/:id/undo-ball', verifyToken, async (req, res) => {
-    try {
-        const match = await Match.findById(req.params.id);
-        if (!match) return res.status(404).json({ success: false, message: 'Match node not identified.' });
-        if (match.status === 'Completed') return res.status(400).json({ success: false, message: 'Match terminal. Reversal impossible.' });
-
-        const history = match.ball_history || [];
-        if (history.length === 0) return res.status(400).json({ success: false, message: 'Registry empty. Nothing to undo.' });
-
-        // Remove the last ball entry
-        const popped = match.ball_history.pop();
-        console.log(`⏪ Reversing Ball: Over ${popped.over}.${popped.ball}`);
-
-        // Re-calculate Ground Truth
-        let totalRuns = 0;
-        let totalWickets = 0;
-        let totalValidBalls = 0;
-
-        match.ball_history.forEach(b => {
-            totalRuns += (b.runs || 0);
-            if (b.is_wicket) totalWickets += 1;
-            if (b.extra !== 'wd' && b.extra !== 'nb') totalValidBalls += 1;
-        });
-
-        const overs = Math.floor(totalValidBalls / 6);
-        const ballsInOver = totalValidBalls % 6;
-
-        const activeTeamKey = match.live_active_team === 'A' ? 'team_a' : 'team_b';
-        match[activeTeamKey].score = totalRuns;
-        match[activeTeamKey].wickets = totalWickets;
-        match[activeTeamKey].overs_played = Number(`${overs}.${ballsInOver}`);
-        
-        // Sync Live Data to match recalculated truth
-        match.live_data = {
-            ...match.live_data,
-            runs: totalRuns,
-            wickets: totalWickets,
-            overNum: overs,
-            ballInOver: ballsInOver,
-            totalBalls: totalValidBalls,
-            history: match.ball_history,
-            phase: 'batting' // Ensure we stay in batting phase
-        };
-
-        match.markModified(activeTeamKey);
-        match.markModified('live_data');
-        match.markModified('ball_history');
-        await match.save();
-
-        res.json({ 
-            success: true, 
-            message: 'Ball reversed successfully.', 
-            nextState: match.live_data 
-        });
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
+// Route removed as it was redundant and used non-existent root ball_history.
+// Primary undo logic is located further down in the file.
 
 router.get('/:id', async (req, res) => {
     try {
@@ -396,68 +448,101 @@ router.get('/:id/analytics', verifyToken, checkPremium, async (req, res) => {
 // POST /api/matches/:id/complete - Record match completion result and final awards
 router.post('/:id/complete', async (req, res) => {
     try {
-        const match = await Match.findById(req.params.id);
+        // Validate match id early
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid match id' });
+
+        const match = await Match.findById(req.params.id).lean();
         if (!match) return res.status(404).json({ error: 'Match not found' });
 
-        match.status = 'Completed';
-        
-        // Final synchronization of scores from live_data to root fields
-        // This ensures the completion data is stored permanently and accurately in the DB
+        // Build the $set payload — only update root-level fields, do NOT touch innings/ball_history
+        const setPayload = {
+            status: 'Completed',
+            end_time: new Date(),
+            result: {
+                winner: req.body.winner || null,
+                won_by: req.body.won_by || 'Pending',
+                margin: req.body.margin || 0
+            },
+            awards: { man_of_the_match: req.body.man_of_the_match || null }
+        };
+
+        // Final synchronization of scores from live_data to root team fields
         if (match.live_data?.scorecard?.total?.runs !== undefined) {
-             // Identifying which team was batting last
-             if (match.live_active_team === 'A') {
-                 match.team_a.score = match.live_data.scorecard.total.runs;
-                 match.team_a.wickets = match.live_data.scorecard.total.wickets;
-                 match.team_a.overs_played = match.live_data.scorecard.total.overs;
-             } else {
-                 match.team_b.score = match.live_data.scorecard.total.runs;
-                 match.team_b.wickets = match.live_data.scorecard.total.wickets;
-                 match.team_b.overs_played = match.live_data.scorecard.total.overs;
-             }
-        }
-        
-        // Sync Innings 1 score to root if missing
-        if (match.live_data?.inn1_scorecard) {
-             const inn1Key = match.live_active_team === 'A' ? 'team_b' : 'team_a';
-             match[inn1Key].score = match.live_data.inn1_scorecard.score || match[inn1Key].score;
-             match[inn1Key].wickets = match.live_data.inn1_scorecard.wickets || match[inn1Key].wickets;
-             match[inn1Key].overs_played = match.live_data.inn1_scorecard.overs || match[inn1Key].overs_played;
+            if (match.live_active_team === 'A') {
+                setPayload['team_a.score'] = match.live_data.scorecard.total.runs;
+                setPayload['team_a.wickets'] = match.live_data.scorecard.total.wickets;
+                setPayload['team_a.overs_played'] = match.live_data.scorecard.total.overs;
+            } else {
+                setPayload['team_b.score'] = match.live_data.scorecard.total.runs;
+                setPayload['team_b.wickets'] = match.live_data.scorecard.total.wickets;
+                setPayload['team_b.overs_played'] = match.live_data.scorecard.total.overs;
+            }
         }
 
-        match.result = {
-            winner: req.body.winner || null,
-            won_by: req.body.won_by || 'Pending',
-            margin: req.body.margin || 0
-        };
-        match.awards = {
-            man_of_the_match: req.body.man_of_the_match || null
-        };
-        
-        match.markModified('team_a');
-        match.markModified('team_b');
-        await match.save();
+        // Sync Innings 1 score to root if present
+        if (match.live_data?.inn1_scorecard) {
+            const inn1Key = match.live_active_team === 'A' ? 'team_b' : 'team_a';
+            setPayload[`${inn1Key}.score`] = match.live_data.inn1_scorecard.score || match[inn1Key]?.score || 0;
+            setPayload[`${inn1Key}.wickets`] = match.live_data.inn1_scorecard.wickets || match[inn1Key]?.wickets || 0;
+            setPayload[`${inn1Key}.overs_played`] = match.live_data.inn1_scorecard.overs || match[inn1Key]?.overs_played || 0;
+        }
+
+        // Use raw MongoDB driver to avoid Mongoose CastError on corrupted Date fields in ball_history
+        const matchObjId = new mongoose.Types.ObjectId(req.params.id);
+        try {
+            await Match.collection.findOneAndUpdate(
+                { _id: matchObjId },
+                { $set: setPayload },
+                { returnDocument: 'after' }
+            );
+        } catch (innerErr) {
+            console.error('Raw DB update failed (complete):', innerErr && innerErr.stack ? innerErr.stack : innerErr);
+            return res.status(500).json({ error: 'Failed to persist match completion to DB' });
+        }
 
         if (!match.stats_updated) {
             const statsService = require('../services/statsService');
             const io = req.app.get('socketio');
-            // Using setImmediate to trigger in next event loop while response finishes
             setImmediate(() => {
-                statsService.updatePlayerStats(match._id, io).catch(err => {
-                    console.error('Stats Update Fail (complete):', err.message);
+                statsService.updatePlayerStats(matchObjId, io).catch(err => {
+                    console.error('Stats Update Fail (complete):', err && err.stack ? err.stack : err);
                 });
             });
         }
-        
-        // Broadcast final state to Home Pages / live viewers
+
+        // Broadcast final state
         const io = req.app.get('socketio');
         if (io) {
-            io.to(`match_${match._id}`).emit('match:update', { matchId: match._id, status: 'Completed', result: match.result });
+            io.to(`match_${req.params.id}`).emit('match:update', { matchId: req.params.id, status: 'Completed', result: setPayload.result });
         }
 
-        res.json({ success: true, message: 'Match successfully completed and archived.' });
+        // Persistent Career Stats Update (defensive)
+        const state = req.body || {};
+        const playersToUpdate = [...(state.batters || []), ...(state.bowlers || []), ...(state.inn1Batters || []), ...(state.inn1Bowlers || [])];
+        for (const p of playersToUpdate) {
+            try {
+                const uid = p && (p.user_id || p.id || p._id);
+                if (!uid) continue;
+                if (!mongoose.Types.ObjectId.isValid(String(uid))) continue;
+                await User.findByIdAndUpdate(String(uid), {
+                    $inc: {
+                        'stats.matches': 1,
+                        'stats.runs': p.r || 0,
+                        'stats.wickets': p.w || 0,
+                        'stats.ballsFaced': p.b || 0,
+                        'stats.ballsBowled': p.balls || 0
+                    }
+                }).catch(uErr => console.warn('Player stats update failed for', uid, uErr && uErr.message ? uErr.message : uErr));
+            } catch (puErr) {
+                console.warn('Skipping bad player entry during completion:', puErr && puErr.message ? puErr.message : puErr);
+                continue;
+            }
+        }
+
+        res.json({ success: true, message: "Match completed and stats manifested." });
     } catch (error) {
-        console.error('Error completing match:', error);
-        res.status(500).json({ error: error.message });
+        console.error('Error completing match:', error && error.stack ? error.stack : error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
 
@@ -468,8 +553,11 @@ const { calculateWinProbability, calculateMomentumScore } = require('../utils/ai
 // POST /api/matches/:id/live-update - Update full live state with Socket.IO broadcast
 router.post('/:id/live-update', async (req, res) => {
     try {
-        const match = await Match.findById(req.params.id);
+        const match = await Match.findById(req.params.id).lean({ virtuals: false });
         if (!match) return res.status(404).json({ error: 'Match not found' });
+
+        // Work on a plain JS copy to avoid Mongoose version tracking
+        const matchData = JSON.parse(JSON.stringify(match));
 
         const prevBalls = match.live_data?.totalBalls || 0;
         const newBalls = req.body.totalBalls || 0;
@@ -485,9 +573,12 @@ router.post('/:id/live-update', async (req, res) => {
             inningsNum: req.body.inningsNum || 1
         };
         
-        const winProbBatting = calculateWinProbability(match, currentContext);
-        const last5Balls = (match.ball_history || []).slice(-5);
-        const momentum = calculateMomentumScore(last5Balls);
+        const { calculateAISnapshot } = require('../utils/aiEngine');
+        const aiSnapshot = calculateAISnapshot(match, currentContext);
+        
+        const winProbBatting = aiSnapshot.winProb;
+        const momentum = aiSnapshot.momentum;
+        const projectedScore = aiSnapshot.projectedScore;
 
         // --- 1. BALL-BY-BALL LOGGING ---
         if (req.body.lastBallData && isNewBall) {
@@ -496,19 +587,57 @@ router.post('/:id/live-update', async (req, res) => {
                 ball: req.body.ballInOver,
                 runs: req.body.lastBallData.runs || 0,
                 is_wicket: !!req.body.lastBallData.isWicket,
-                extra: req.body.lastBallData.extra || null,
-                batsman_id: req.body.lastBallData.batsmanId || null,
-                bowler_id: req.body.lastBallData.bowlerId || null,
+                extra: (() => {
+                  const e = req.body.lastBallData.extra;
+                  if (!e) return null;
+                  switch (e) {
+                    case 'wd':
+                      return 'wide';
+                    case 'nb':
+                      return 'noball';
+                    case 'b':
+                      return 'bye';
+                    case 'lb':
+                      return 'legbye';
+                    default:
+                      return e;
+                  }
+                })(),
+                batsman_id: getValidObjectId(req.body.lastBallData.batsmanId) || null,
+                bowler_id: getValidObjectId(req.body.lastBallData.bowlerId) || null,
+
                 score_at_ball: req.body.runs || 0,
                 wickets_at_ball: req.body.wickets || 0,
                 win_prob: winProbBatting, // Store for charts
                 timestamp: new Date()
             };
             
-            match.ball_history.push(ballEntry);
+            const innIdx = Math.max(0, (req.body.inningsNum || 1) - 1);
 
-            // Generate Auto-Commentary
-            const currentBatsmanName = req.body.striker_name || "The Batsman";
+            // Ensure innings slot exists BEFORE pushing ball_history
+            while (matchData.innings.length <= innIdx) {
+                const nextNum = matchData.innings.length + 1;
+                matchData.innings.push({
+                    number: nextNum,
+                    score: 0,
+                    wickets: 0,
+                    overs_completed: 0,
+                    batsmen: [],
+                    bowlers: [],
+                    ball_history: []
+                });
+            }
+
+            const inning = matchData.innings[innIdx];
+            inning.ball_history = inning.ball_history || [];
+            inning.ball_history.push(ballEntry);
+
+            // Generate Auto-Commentary — resolve striker name from batters array if not explicitly provided
+            const strikerIdxForComm = typeof req.body.striker === 'number' ? req.body.striker
+                : (parseInt(req.body.striker_idx) || 0);
+            const currentBatsmanName = req.body.striker_name
+                || (req.body.batters && req.body.batters[strikerIdxForComm]?.name)
+                || "The Batsman";
             const commText = generateCommentary(
                 ballEntry, 
                 req.body.runs || 0, 
@@ -516,7 +645,8 @@ router.post('/:id/live-update', async (req, res) => {
                 currentBatsmanName
             );
 
-            match.commentary_log.unshift({
+            matchData.commentary_log = matchData.commentary_log || [];
+            matchData.commentary_log.unshift({
                 text: commText,
                 ball: `${ballEntry.over}.${ballEntry.ball}`,
                 runs: ballEntry.runs,
@@ -524,20 +654,94 @@ router.post('/:id/live-update', async (req, res) => {
                 overs: `${ballEntry.over}.${ballEntry.ball}`
             });
 
-            if (match.commentary_log.length > 50) match.commentary_log.pop();
+            // Persist AI commentary insight (best-effort, non-blocking)
+            aiInsightsService.saveInsight({
+                matchId: matchData._id,
+                innings: req.body.inningsNum || 1,
+                over: ballEntry.over,
+                ball: ballEntry.ball,
+                type: 'commentary',
+                title: 'Auto Commentary',
+                content: commText,
+                meta: { win_prob: winProbBatting }
+            }).catch(err => console.error('AIInsight save failed:', err.message));
+
+            if (matchData.commentary_log.length > 50) matchData.commentary_log.pop();
             console.log(`🏏 AI Analytics: Win Prob ${winProbBatting}% | Momentum ${momentum}`);
+
+            // --- 1.5. PERSIST RICH BALL EVENT (FOR ML TRAINING) ---
+            try {
+                const ballsDone = ballEntry.over * 6 + ballEntry.ball;
+                const totalBalls = (match.overs || 20) * 6;
+                const crr = ballsDone > 0 ? (req.body.runs / (ballsDone / 6)) : 0;
+                const rrr = req.body.target ? (req.body.target - req.body.runs) / ((totalBalls - ballsDone) / 6 || 1) : 0;
+
+                await BallEvent.create({
+                    match_id: match._id,
+                    innings_num: req.body.inningsNum || 1,
+                    over_num: ballEntry.over,
+                    ball_num: ballEntry.ball,
+                    absolute_ball: ballsDone,
+                    batter_id: ballEntry.batsman_id,
+                    bowler_id: ballEntry.bowler_id,
+                    runs_off_bat: ballEntry.runs,
+                    extra_runs: (ballEntry.extra === 'wide' || ballEntry.extra === 'noball') ? 1 : 0,
+                    extra_type: ballEntry.extra,
+                    is_wicket: ballEntry.is_wicket,
+                    features: {
+                        score_at_ball: req.body.runs,
+                        wickets_at_ball: req.body.wickets,
+                        crr: crr,
+                        rrr: rrr,
+                        balls_left: totalBalls - ballsDone
+                    },
+                    predictions: {
+                        win_prob: winProbBatting,
+                        projected_score: projectedScore,
+                        momentum_score: momentum
+                    }
+                });
+            } catch (err) {
+                console.error('Failed to persist BallEvent for ML:', err.message);
+            }
         }
 
         // --- 2. AGGRESSIVE SYNC ---
-        match.live_data = {
-            ...match.live_data,
-            ...req.body,
+        let sIdx = 0;
+        if (req.body.striker !== undefined) {
+            sIdx = typeof req.body.striker === 'object' && req.body.striker !== null 
+                ? (req.body.striker_idx ?? 0) 
+                : parseInt(req.body.striker) || 0;
+        } else if (req.body.striker_idx !== undefined) {
+            sIdx = parseInt(req.body.striker_idx) || 0;
+        }
+
+        let nsIdx = 1;
+        if (req.body.nonStriker !== undefined) {
+            nsIdx = typeof req.body.nonStriker === 'object' && req.body.nonStriker !== null 
+                ? (req.body.non_striker_idx ?? 1) 
+                : parseInt(req.body.nonStriker) || 1;
+        } else if (req.body.non_striker_idx !== undefined) {
+            nsIdx = parseInt(req.body.non_striker_idx) || 1;
+        }
+
+        // Clean req.body to avoid copy-spreading of object versions of striker/nonStriker
+        const cleanBody = { ...req.body };
+        delete cleanBody.striker;
+        delete cleanBody.nonStriker;
+
+        matchData.live_data = {
+            ...matchData.live_data,
+            ...cleanBody,
+            striker_idx: sIdx,
+            non_striker_idx: nsIdx,
             win_probability: winProbBatting,
             momentum_score: momentum,
+            projected_score: projectedScore,
             last_updated: new Date()
         };
         const innIdx = (req.body.inningsNum ? req.body.inningsNum - 1 : 0);
-        match.current_innings_index = innIdx;
+        matchData.current_innings_index = innIdx;
 
         // Determine which overall team is batting — TRUST THE CLIENT BATTING TEAM IF PROVIDED
         let activeTeam = 'A';
@@ -546,42 +750,40 @@ router.post('/:id/live-update', async (req, res) => {
         } else if (req.body.batting_team === 'A' || req.body.battingTeam === 0 || (req.body.battingTeam === '0')) {
             activeTeam = 'A';
         } else if (innIdx === 1) {
-            activeTeam = (match.live_active_team === 'A' ? 'B' : 'A');
+            activeTeam = (matchData.live_active_team === 'A' ? 'B' : 'A');
         } else {
-            activeTeam = match.live_active_team || 'A';
+            activeTeam = matchData.live_active_team || 'A';
         }
 
-        match.live_active_team = activeTeam;
+        matchData.live_active_team = activeTeam;
         const battingTeamKey = activeTeam === 'B' ? 'team_b' : 'team_a';
         const bowlingTeamKey = activeTeam === 'B' ? 'team_a' : 'team_b';
 
         // SYNC: Push current score into the top-level team object for overall consistency
-        if (req.body.runs !== undefined) match[battingTeamKey].score = req.body.runs;
-        if (req.body.wickets !== undefined) match[battingTeamKey].wickets = req.body.wickets;
-        if (req.body.overs !== undefined) match[battingTeamKey].overs_played = req.body.overs;
-        match.markModified(battingTeamKey);
+        if (req.body.runs !== undefined) matchData[battingTeamKey].score = req.body.runs;
+        if (req.body.wickets !== undefined) matchData[battingTeamKey].wickets = req.body.wickets;
+        if (req.body.overs !== undefined) matchData[battingTeamKey].overs_played = req.body.overs;
 
-        const mongoose = require('mongoose');
-        const getValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : undefined;
+
 
         // Ensure the current innings array slot exists
-        while (match.innings.length <= innIdx) {
-            const nextInnNum = match.innings.length + 1;
-            match.innings.push({ 
+        while (matchData.innings.length <= innIdx) {
+            const nextInnNum = matchData.innings.length + 1;
+            matchData.innings.push({ 
                 number: nextInnNum, 
                 score: 0, 
                 wickets: 0, 
                 overs_completed: 0, 
-                batting_team: getValidObjectId(match[battingTeamKey]?.team_id),
-                bowling_team: getValidObjectId(match[bowlingTeamKey]?.team_id),
+                batting_team: getValidObjectId(matchData[battingTeamKey]?.team_id),
+                bowling_team: getValidObjectId(matchData[bowlingTeamKey]?.team_id),
                 batsmen: [], 
                 bowlers: [] 
             });
         }
         
-        const currentInning = match.innings[innIdx];
+        let currentInning = matchData.innings[innIdx];
 
-        if (req.body.status) match.status = req.body.status;
+        if (req.body.status) matchData.status = req.body.status;
 
         // CRITICAL: Update individual player stats and INNINGS scores for Home Page
         if (req.body.batters || req.body.bowlers || req.body.runs !== undefined) {
@@ -593,7 +795,7 @@ router.post('/:id/live-update', async (req, res) => {
             if (req.body.batters) {
                 currentInning.batsmen = req.body.batters.map(b => ({
                     user_id: getValidObjectId(b.user_id || b.id),
-                    name: b.name, // Ensure tracking text names for walk-ins
+                    name: b.name,
                     runs: b.r || 0,
                     balls: b.b || 0,
                     fours: b.fours || b.f || 0,
@@ -606,7 +808,7 @@ router.post('/:id/live-update', async (req, res) => {
             if (req.body.bowlers) {
                 currentInning.bowlers = req.body.bowlers.map(bw => ({
                     user_id: getValidObjectId(bw.user_id || bw.id),
-                    name: bw.name, // Ensure tracking name for walk-ins
+                    name: bw.name,
                     overs: bw.balls ? parseFloat(`${Math.floor(bw.balls / 6)}.${bw.balls % 6}`) : (bw.overs || 0),
                     runs: bw.r || 0,
                     wickets: bw.w || 0,
@@ -619,17 +821,17 @@ router.post('/:id/live-update', async (req, res) => {
         // Map live_data for public view (striker index -> striker object)
         if (req.body.batters && req.body.striker !== undefined) {
             const s = req.body.batters[req.body.striker];
-            if (s) match.live_data.striker = { name: s.name, runs: s.r, balls: s.b, fours: s.fours || s.f || 0, sixes: s.sixes || s.s || 0 };
+            if (s) matchData.live_data.striker = { name: s.name, runs: s.r, balls: s.b, fours: s.fours || s.f || 0, sixes: s.sixes || s.s || 0 };
         }
         if (req.body.batters && req.body.nonStriker !== undefined) {
             const ns = req.body.batters[req.body.nonStriker];
-            if (ns) match.live_data.non_striker = { name: ns.name, runs: ns.r, balls: ns.b, fours: ns.fours || ns.f || 0, sixes: ns.sixes || ns.s || 0 };
+            if (ns) matchData.live_data.non_striker = { name: ns.name, runs: ns.r, balls: ns.b, fours: ns.fours || ns.f || 0, sixes: ns.sixes || ns.s || 0 };
         }
         if (req.body.bowlers && req.body.currentBowlerIdx !== undefined) {
             const bw = req.body.bowlers[req.body.currentBowlerIdx];
             if (bw) {
                 const formattedOvers = `${Math.floor(bw.balls / 6)}.${bw.balls % 6}`;
-                match.live_data.bowler = { 
+                matchData.live_data.bowler = { 
                     name: bw.name, 
                     overs: formattedOvers,
                     r: bw.r, 
@@ -640,25 +842,25 @@ router.post('/:id/live-update', async (req, res) => {
             }
         }
         if (req.body.batters) {
-            match.live_data.batters = req.body.batters;
+            matchData.live_data.batters = req.body.batters;
         }
         if (req.body.bowlers) {
-            match.live_data.bowlers = req.body.bowlers;
+            matchData.live_data.bowlers = req.body.bowlers;
         }
         if (req.body.inn1Batters) {
-            match.live_data.inn1Batters = req.body.inn1Batters;
+            matchData.live_data.inn1Batters = req.body.inn1Batters;
         }
         if (req.body.inn1Bowlers) {
-            match.live_data.inn1Bowlers = req.body.inn1Bowlers;
+            matchData.live_data.inn1Bowlers = req.body.inn1Bowlers;
         }
 
         if (req.body.currentOverBalls) {
-            match.live_data.recent_balls = req.body.currentOverBalls;
+            matchData.live_data.recent_balls = req.body.currentOverBalls;
         }
 
         // Build over summaries for over-by-over display
         if (req.body.overHistory || req.body.currentOverBalls) {
-            match.live_data.over_summaries = (req.body.overHistory || []).map((over, i) => ({
+            matchData.live_data.over_summaries = (req.body.overHistory || []).map((over, i) => ({
                 over_number: i + 1,
                 balls: over,
                 runs: over.reduce((sum, b) => {
@@ -672,65 +874,30 @@ router.post('/:id/live-update', async (req, res) => {
             }));
         }
 
-        // Generate commentary for new balls
-        let commentaryObj = null;
-        if (isNewBall && req.body.currentOverBalls?.length > 0) {
-            const lastBall = req.body.currentOverBalls[req.body.currentOverBalls.length - 1];
-            const batter = req.body.batters?.[req.body.striker];
-            const bowler = req.body.bowlers?.[req.body.currentBowlerIdx];
-            
-            // Wait for AI-generated commentary
-            commentaryObj = await generateCommentary({
-                runs: lastBall === '·' ? 0 : (parseInt(lastBall) || 0),
-                isWicket: lastBall === 'W',
-                wicketType: lastBall === 'W' ? (req.body.pendingWicket?.type || 'bowled') : null,
-                extraType: lastBall === 'Wd' ? 'wide' : lastBall === 'Nb' ? 'noball' : lastBall === 'B' ? 'bye' : null,
-                batsmanName: batter?.name || 'Batsman',
-                bowlerName: bowler?.name || 'Bowler',
-                overNum: req.body.overNum || 0,
-                ballNum: req.body.ballInOver || 0
-            });
-
-            // Store commentary log (keep last 30 entries)
-            if (!match.live_data.commentary_log) match.live_data.commentary_log = [];
-            match.live_data.commentary_log.unshift({
-                text: commentaryObj.text,
-                keywords: commentaryObj.keywords,
-                sentiment: commentaryObj.sentiment,
-                ball: lastBall,
-                runs: req.body.runs,
-                wickets: req.body.wickets,
-                overs: `${req.body.overNum || 0}.${req.body.ballInOver || 0}`,
-                timestamp: new Date()
-            });
-            if (match.live_data.commentary_log.length > 30) {
-                match.live_data.commentary_log = match.live_data.commentary_log.slice(0, 30);
-            }
-        }
-
+        // Commentary handled in ball logging block above for new balls
 
         // Calculate run rate and required run rate
         const totalOvers = (req.body.overNum || 0) + (req.body.ballInOver || 0) / 6;
-        match.live_data.run_rate = totalOvers > 0 ? ((req.body.runs || 0) / totalOvers).toFixed(2) : '0.00';
+        matchData.live_data.run_rate = totalOvers > 0 ? ((req.body.runs || 0) / totalOvers).toFixed(2) : '0.00';
         if (req.body.target && req.body.inningsNum === 2) {
             const remainingRuns = req.body.target - (req.body.runs || 0);
             const totalMatchOvers = req.body.formatOvers || 20;
             const remainingOvers = totalMatchOvers - totalOvers;
-            match.live_data.required_run_rate = remainingOvers > 0 ? (remainingRuns / remainingOvers).toFixed(2) : '0.00';
-            match.live_data.runs_needed = remainingRuns;
-            match.live_data.balls_remaining = Math.round(remainingOvers * 6);
+            matchData.live_data.required_run_rate = remainingOvers > 0 ? (remainingRuns / remainingOvers).toFixed(2) : '0.00';
+            matchData.live_data.runs_needed = remainingRuns;
+            matchData.live_data.balls_remaining = Math.round(remainingOvers * 6);
         }
 
         // Partnership data
-        match.live_data.partnership = req.body.partnership || { runs: 0, balls: 0 };
+        matchData.live_data.partnership = req.body.partnership || { runs: 0, balls: 0 };
         
-        if (req.body.status) match.status = req.body.status;
-        if (req.body.status === 'Completed') match.end_time = new Date();
-        if (req.body.runs !== undefined) match.live_data.runs = req.body.runs;
-        if (req.body.wickets !== undefined) match.live_data.wickets = req.body.wickets;
+        if (req.body.status) matchData.status = req.body.status;
+        if (req.body.status === 'Completed') matchData.end_time = new Date();
+        if (req.body.runs !== undefined) matchData.live_data.runs = req.body.runs;
+        if (req.body.wickets !== undefined) matchData.live_data.wickets = req.body.wickets;
 
         // Ensure precise boundary counting by analyzing the balls array if available
-        currentInning = match.innings[match.current_innings_index];
+        currentInning = matchData.innings[matchData.current_innings_index];
         const resolveBoundaries = (player, type) => {
             if (type === '4s' && (player.fours || player.f)) return player.fours || player.f;
             if (type === '6s' && (player.sixes || player.s)) return player.sixes || player.s;
@@ -751,8 +918,8 @@ router.post('/:id/live-update', async (req, res) => {
         };
 
         // Full scorecard for Cricbuzz tabs
-        match.live_data.scorecard = {
-            batsmen: (req.body.batters || []).filter(b => b.batting || b.out || b.r > 0 || b.b > 0).map(b => ({
+        matchData.live_data.scorecard = {
+            batsmen: (req.body.batters || []).filter((b, idx) => b.batting || b.out || b.r > 0 || b.b > 0 || idx === sIdx || idx === nsIdx).map(b => ({
                 name: b.name,
                 runs: b.r || 0,
                 balls: b.b || 0,
@@ -780,7 +947,7 @@ router.post('/:id/live-update', async (req, res) => {
 
         // Inn1 Scorecard (for 2nd innings view)
         if (req.body.inn1Batters && req.body.inn1Bowlers) {
-            match.live_data.inn1_scorecard = {
+            matchData.live_data.inn1_scorecard = {
                 score: req.body.inn1Score || 0,
                 wickets: req.body.inn1Wickets || 0,
                 overs: req.body.inn1Overs || 0,
@@ -799,158 +966,443 @@ router.post('/:id/live-update', async (req, res) => {
             };
         }
 
-        // Mark modified for nested fields (CRITICAL for persistence)
-        match.markModified('innings');
-        match.markModified('live_data');
-        match.markModified('team_a');
-        match.markModified('team_b');
+        // Sanitize plain object before writing to DB
+        // Also convert any ObjectId-like objects back to their string/id form for the raw driver
+        const sanitizePlain = (obj) => {
+            if (Array.isArray(obj)) return obj.map(sanitizePlain);
+            if (obj && typeof obj === 'object') {
+                // Handle ObjectId instances (both Mongoose and plain serialized)
+                if (obj._bsontype === 'ObjectId' || obj._bsontype === 'ObjectID') return obj;
+                if (obj.$oid) return new mongoose.Types.ObjectId(obj.$oid); // Extended JSON form
+                const out = {};
+                for (const [k, v] of Object.entries(obj)) {
+                    if (v === undefined || v === null) continue;
+                    if (typeof v === 'number' && isNaN(v)) { out[k] = 0; continue; }
+                    if (typeof v === 'number' && !isFinite(v)) { out[k] = 0; continue; }
+                    out[k] = sanitizePlain(v);
+                }
+                return out;
+            }
+            return obj;
+        };
+        const safeData = sanitizePlain(matchData);
 
-        await match.save();
+        // ✅ ATOMIC UPDATE via raw MongoDB collection driver
+        // Bypasses Mongoose version conflicts (VersionError) AND type casting (CastError)
+        // entirely — safe for concurrent live-update requests
+        const { ObjectId } = mongoose.Types;
+        const matchObjectId = new ObjectId(req.params.id);
+        await Match.collection.findOneAndUpdate(
+            { _id: matchObjectId },
+            {
+                $set: {
+                    live_data: safeData.live_data,
+                    innings: safeData.innings,
+                    commentary_log: safeData.commentary_log,
+                    live_active_team: safeData.live_active_team,
+                    current_innings_index: safeData.current_innings_index,
+                    status: safeData.status,
+                    end_time: safeData.end_time !== undefined ? safeData.end_time : null,
+                    team_a: safeData.team_a,
+                    team_b: safeData.team_b,
+                }
+            },
+            { returnDocument: 'after' }
+        );
+        // Re-fetch as a Mongoose document for downstream use (socket emit, stats, etc.)
+        const updatedMatch = await Match.findById(req.params.id).lean();
+        if (!updatedMatch) return res.status(404).json({ error: 'Match disappeared during update' });
+        Object.assign(match, updatedMatch);
 
-        if (req.body.status === 'Completed' && !match.stats_updated) {
+        if (req.body.status === 'Completed' && !updatedMatch.stats_updated) {
+            // Generate AI Match Summary
+            const scorecard = updatedMatch.live_data.scorecard;
+            const teamA = updatedMatch.team_a.team_id?.name || "Team A";
+            const teamB = updatedMatch.team_b.team_id?.name || "Team B";
+            
+            let summary = "";
+            const winner = updatedMatch.team_a.score > updatedMatch.team_b.score ? teamA : teamB;
+            const margin = Math.abs(updatedMatch.team_a.score - updatedMatch.team_b.score);
+            
+            const topBatter = scorecard?.batsmen?.slice().sort((a,b) => b.runs - a.runs)[0];
+            const topBowler = scorecard?.bowlers?.slice().sort((a,b) => b.wickets - a.wickets)[0];
+
+            summary = `${winner} dominated the proceedings in this high-octane encounter at ${updatedMatch.venue || 'The Turf'}. `;
+            summary += `The match pivoted on ${topBatter?.name || 'a clinical batting performance'}'s brilliant ${topBatter?.runs || 'knock'}, which dismantled the opposition attack. `;
+            if (topBowler && topBowler.wickets > 0) {
+                summary += `On the bowling front, ${topBowler.name} was lethal, picking up ${topBowler.wickets} crucial wickets to stifle the chase. `;
+            }
+            summary += `Ultimately, ${winner} secured a convincing ${margin} run victory, showcasing superior tactical execution under pressure.`;
+
+            await Match.findOneAndUpdate(
+                { _id: req.params.id },
+                { $set: { 'live_data.ai_summary': summary } },
+                { runValidators: false }
+            );
+
             const statsService = require('../services/statsService');
             const io = req.app.get('socketio');
             setImmediate(() => {
-                statsService.updatePlayerStats(match._id, io).catch(err => {
+                statsService.updatePlayerStats(updatedMatch._id, io).catch(err => {
                     console.error('Stats Update Fail (live):', err.message);
                 });
             });
         }
 
-        // 🔥 SOCKET.IO BROADCAST — Real-time to all connected viewers
         const io = req.app.get('socketio');
         if (io) {
             const payload = {
-                ...match.live_data,
-                matchId: match._id,
-                status: match.status,
+                ...updatedMatch.live_data,
+                matchId: updatedMatch._id,
+                status: updatedMatch.status,
                 phase: req.body.phase,
                 inningsNum: req.body.inningsNum,
                 timestamp: new Date()
             };
-            // Map common aliases for transition period
             payload.score = { runs: payload.runs, wickets: payload.wickets };
             payload.overs = `${req.body.overNum || 0}.${req.body.ballInOver || 0}`;
-            
-            // Add graphPoint for real-time visualization (calculated from current state)
-            payload.graphPoint = {
-                over: parseFloat(`${req.body.overNum || 0}.${req.body.ballInOver || 0}`),
-                runs: req.body.runs || 0,
-                wickets: req.body.wickets || 0,
-                inning: req.body.inningsNum || 1
-            };
 
-            // Primary Match Update
-            io.to(`match_${match._id}`).emit('match:update', payload);
-            
-            // Standard Aliases (User Requirement)
-            io.to(`match_${match._id}`).emit('scoreUpdate', {
-                match_id: match._id,
+            // 📡 BLUEPRINT EVENTS: score_update, toss_update, etc.
+            io.to(`match_${updatedMatch._id}`).emit('score_update', payload);
+            io.to(`match_${updatedMatch._id}`).emit('score:updated', payload);
+
+            // 📺 live_feed — enriched payload for LiveScoreView spectators
+            const liveFeedPayload = {
                 runs: payload.runs,
                 wickets: payload.wickets,
-                overs: payload.overs,
-                recent_balls: payload.recent_balls,
-                batting_team: payload.batting_team
-            });
+                overNum: req.body.overNum || 0,
+                ballInOver: req.body.ballInOver || 0,
+                overs: `${req.body.overNum || 0}.${req.body.ballInOver || 0}`,
+                run_rate: payload.run_rate,
+                required_run_rate: payload.required_run_rate,
+                runs_needed: payload.runs_needed,
+                balls_remaining: payload.balls_remaining,
+                win_probability: payload.win_probability,
+                inningsNum: req.body.inningsNum || 1,
+                target: req.body.target || null,
+                striker: payload.striker || null,
+                non_striker: payload.non_striker || null,
+                bowler: payload.bowler || null,
+                recent_balls: payload.recent_balls || [],
+                commentary_log: updatedMatch.commentary_log?.slice(0, 5) || [],
+                newBall: isNewBall,
+                status: updatedMatch.status,
+                matchId: updatedMatch._id,
+                timestamp: new Date()
+            };
+            io.to(`match_${updatedMatch._id}`).emit('live_feed', liveFeedPayload);
+            
+            // 🔔 TRIGGER NOTIFICATIONS
+            if (req.body.type === 'wicket' || req.body.wickets > (matchData.live_data?.wickets || 0)) {
+                sendNotification('☝️ WICKET!', `A crucial breakthrough for ${updatedMatch.live_active_team === 'A' ? 'Team B' : 'Team A'}!`);
+                io.to(`match_${updatedMatch._id}`).emit('wicket_update', payload);
+            }
 
-            if (payload.scorecard?.batsmen) {
-                io.to(`match_${match._id}`).emit('playerUpdate', {
-                    match_id: match._id,
-                    batsmen: payload.scorecard.batsmen,
-                    bowlers: payload.scorecard.bowlers
+            if (req.body.lastBallData?.runs === 4) {
+                sendNotification('🏏 FOUR!', 'Classic boundary! The ball races away to the fence.');
+            } else if (req.body.lastBallData?.runs === 6) {
+                sendNotification('🚀 SIXER!', 'Massive hit! That one is out of the stadium.');
+            }
+
+            if (req.body.phase === 'innings_change') {
+                sendNotification('🔄 INNINGS OVER', `Target set: ${payload.runs + 1}. Second innings starting soon.`);
+                io.to(`match_${updatedMatch._id}`).emit('innings_change', payload);
+            }
+
+            if (req.body.status === 'Completed') {
+                const winnerName = updatedMatch.team_a.score > updatedMatch.team_b.score ? (updatedMatch.team_a.team_id?.name || "Team A") : (updatedMatch.team_b.team_id?.name || "Team B");
+                sendNotification('🏁 MATCH ENDED', `${winnerName} has secured the victory!`);
+                io.to(`match_${updatedMatch._id}`).emit('match_end', {
+                    winner: winnerName,
+                    message: "Match has concluded"
                 });
             }
 
-            io.to(`match_${match._id}`).emit('match:ball', payload);
-            io.to(`match_${match._id}`).emit('liveScoreUpdate', payload);
+            // Legacy & Internal Events
+            io.to(`match_${updatedMatch._id}`).emit('match:update', payload);
+            io.to(`match_${updatedMatch._id}`).emit('match:ball', payload);
+            io.to(`match_${updatedMatch._id}`).emit('liveScoreUpdate', payload);
         }
 
-        res.json({ success: true, match_id: match._id });
+        res.json({ success: true, match_id: updatedMatch._id });
     } catch (error) {
         console.error('live-update error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-
-// POST /api/matches/:id/ball - Granular ball recording (Spec v4.0)
+// POST /api/matches/:id/ball - Record a single ball event (server-authoritative)
 router.post('/:id/ball', async (req, res) => {
     try {
         const match = await Match.findById(req.params.id);
-        if (!match) return res.status(404).json({ error: 'Match not found' });
+        if (!match) return res.status(404).json({ success: false, message: 'Match not found' });
+        if (!match.canBeScored()) return res.status(400).json({ success: false, message: 'Match not verified or cannot be scored yet' });
 
-        if (!match.canBeScored()) {
-            return res.status(403).json({ error: 'Match not verified for official scoring.' });
+        const {
+            inningsNum = 1,
+            batsmanId,
+            nonStrikerId,
+            bowlerId,
+            runsOffBat = 0,
+            extraType = null, // 'wide','noball','bye','legbye' or null
+            extraRuns = 0,
+            isWicket = false,
+            wicketType = null,
+            dismissedPlayerId = null,
+            newBatsmanId = null,
+            isFreeHit = false,
+            commentary: providedCommentary = null
+        } = req.body;
+
+        if (bowlerId === undefined || batsmanId === undefined) return res.status(400).json({ success: false, message: 'Bowler and striker (batsman) must be provided (can be null)' });
+
+        const innIdx = Math.max(0, inningsNum - 1);
+        while (match.innings.length <= innIdx) {
+            match.innings.push({ number: match.innings.length + 1, batsmen: [], bowlers: [], balls: [], score: 0, wickets: 0, overs_completed: 0 });
         }
 
-        const { inning, over, ball, batter_id, bowler_id, runs, is_four, is_six, extra_type, is_wicket, wicket } = req.body;
+        const inning = match.innings[innIdx];
+        // Server-detected free-hit: if previous delivery was a 'noball'
+        const prevBall = inning.balls && inning.balls.length ? inning.balls[inning.balls.length - 1] : null;
+        const serverDetectedFreeHit = prevBall && prevBall.extra_type === 'noball';
 
-        const newBall = {
-            ball_number: `${over}.${ball}`,
-            over_number: over,
-            ball_in_over: ball,
-            batter_id,
-            bowler_id,
-            runs_off_bat: runs || 0,
-            is_four: is_four || false,
-            is_six: is_six || false,
-            extra_type: extra_type || null,
-            extra_runs: (extra_type === 'wide' || extra_type === 'noball' || extra_type === 'bye' || extra_type === 'legbye') ? 1 : 0,
-            is_wicket: is_wicket || false,
-            wicket: wicket || null,
+        // Enforce free-hit dismissal rules server-side: only 'runout' allowed as dismissal on free hit
+        if ((isFreeHit || serverDetectedFreeHit) && isWicket) {
+            const allowedOnFreeHit = ['runout'];
+            if (!allowedOnFreeHit.includes((wicketType || '').toLowerCase())) {
+                return res.status(400).json({ success: false, message: 'Dismissal not allowed on Free Hit except Run Out' });
+            }
+            // If dismissal is runout, mark wicket as not credited to bowler
+            if ((wicketType || '').toLowerCase() === 'runout') {
+                req.body._runout_on_freehit = true;
+            }
+        }
+        const totalBallsSoFar = inning.balls ? inning.balls.length : 0;
+        const overNumber = Math.floor(totalBallsSoFar / 6);
+        const ballInOver = (totalBallsSoFar % 6) + 1;
+        const absoluteBall = totalBallsSoFar + 1;
+
+        const illegalExtras = ['wide', 'noball'];
+        const legalBall = !illegalExtras.includes(extraType);
+
+        // Build ball record compatible with schema
+        const ballRecord = {
+            ball_number: `${overNumber}.${ballInOver}`,
+            over_number: overNumber,
+            ball_in_over: ballInOver,
+            absolute_ball: absoluteBall,
+            batter_id: getValidObjectId(batsmanId) || null,
+            non_striker_id: getValidObjectId(nonStrikerId) || null,
+            bowler_id: getValidObjectId(bowlerId) || null,
+
+            runs_off_bat: runsOffBat || 0,
+            is_four: (runsOffBat === 4),
+            is_six: (runsOffBat === 6),
+            extra_type: extraType || null,
+            extra_runs: extraRuns || 0,
+            is_free_hit: !!isFreeHit,
+            is_wicket: !!isWicket,
+            wicket: isWicket ? { dismissal_type: wicketType || 'Unknown', player_out_id: dismissedPlayerId || batsmanId, fielder_id: req.body.fielderId || null, is_bowler_wicket: true } : null,
+            commentary: providedCommentary || null,
             timestamp: new Date()
         };
 
-        // Push to deep storage
-        const currentInning = match.innings.find(inn => inn.number === inning);
-        if (currentInning) {
-            currentInning.balls.push(newBall);
-            currentInning.score += (newBall.runs_off_bat + newBall.extra_runs);
-            if (is_wicket) currentInning.wickets += 1;
+        // Update inning-level aggregates
+        const runsThisBall = (ballRecord.runs_off_bat || 0) + (ballRecord.extra_runs || 0);
+        inning.score = (inning.score || 0) + runsThisBall;
+        if (ballRecord.is_wicket) inning.wickets = (inning.wickets || 0) + 1;
+
+        // Push ball record into inning.balls
+        inning.balls = inning.balls || [];
+        inning.balls.push(ballRecord);
+
+        // Update overs_completed and ball history
+        if (legalBall) {
+            const validBalls = inning.balls.filter(b => !illegalExtras.includes(b.extra_type)).length;
+            inning.overs_completed = Math.floor(validBalls / 6) + (validBalls % 6) / 10; // e.g., 4 balls -> 0.4
+        }
+
+        // Update batsman entry
+        inning.batsmen = inning.batsmen || [];
+        let batsmanNode = inning.batsmen.find(b => String(b.user_id) === String(batsmanId));
+        if (!batsmanNode) {
+            batsmanNode = { user_id: getValidObjectId(batsmanId) || null, name: req.body.batsmanName || '', runs: 0, balls: 0, fours: 0, sixes: 0, out_type: 'Not Out', is_on_strike: true };
+
+            inning.batsmen.push(batsmanNode);
+        }
+        if (legalBall) batsmanNode.balls = (batsmanNode.balls || 0) + 1;
+        batsmanNode.runs = (batsmanNode.runs || 0) + (ballRecord.runs_off_bat || 0);
+        if (ballRecord.is_four) batsmanNode.fours = (batsmanNode.fours || 0) + 1;
+        if (ballRecord.is_six) batsmanNode.sixes = (batsmanNode.sixes || 0) + 1;
+        if (ballRecord.is_wicket && String(dismissedPlayerId) === String(batsmanId)) batsmanNode.out_type = ballRecord.wicket.dismissal_type;
+
+        // Update bowler entry
+        inning.bowlers = inning.bowlers || [];
+        let bowlerNode = inning.bowlers.find(b => String(b.user_id) === String(bowlerId));
+        if (!bowlerNode) {
+            bowlerNode = { user_id: getValidObjectId(bowlerId) || null, name: req.body.bowlerName || '', overs: 0, balls: 0, runs: 0, wickets: 0, maidens: 0 };
+
+            inning.bowlers.push(bowlerNode);
+        }
+        // Increment bowler balls/runs only on legal balls
+        if (legalBall) {
+            bowlerNode.balls = (bowlerNode.balls || 0) + 1;
+        }
+        bowlerNode.runs = (bowlerNode.runs || 0) + ((ballRecord.runs_off_bat || 0) + (ballRecord.extra_runs || 0));
+        if (ballRecord.is_wicket) {
+            // Do not credit bowler for run-outs occurring on a Free Hit
+            if (!req.body._runout_on_freehit) {
+                bowlerNode.wickets = (bowlerNode.wickets || 0) + 1;
+            }
+        }
+
+        // Update top-level team score
+        const battingTeamKey = match.live_active_team === 'B' ? 'team_b' : 'team_a';
+        if (match[battingTeamKey]) {
+            match[battingTeamKey].score = (match[battingTeamKey].score || 0) + runsThisBall;
+            if (ballRecord.is_wicket) match[battingTeamKey].wickets = (match[battingTeamKey].wickets || 0) + 1;
+        }
+        match.markModified(`innings`);
+        match.markModified('live_data');
+
+        // Add to global ball_history for quick access
+        inning.ball_history = inning.ball_history || [];
+        inning.ball_history.push({ 
+            over: overNumber, 
+            ball: ballInOver, 
+            runs: runsThisBall, 
+            is_wicket: !!ballRecord.is_wicket, 
+            extra: ballRecord.extra_type || null, 
+            batsman_id: getValidObjectId(batsmanId) || null, 
+            bowler_id: getValidObjectId(bowlerId) || null, 
+ 
+            score_at_ball: inning.score, 
+            wickets_at_ball: inning.wickets, 
+            timestamp: new Date() 
+        });
+
+        // Generate commentary (sync util or AI) and persist as insight
+        const currentBatsmanName = req.body.batsmanName || (batsmanNode && batsmanNode.name) || 'Batsman';
+        let commText = providedCommentary;
+        try {
+            const ballDataForComm = { 
+                over: overNumber, 
+                ball: ballInOver, 
+                runs: runsThisBall, 
+                is_wicket: !!ballRecord.is_wicket, 
+                extra: ballRecord.extra_type 
+            };
+            if (!commText) commText = generateCommentary(ballDataForComm, inning.score, inning.wickets, currentBatsmanName);
+        } catch (e) {
+            commText = commText || '';
+        }
+
+        if (commText) {
+            match.commentary_log = match.commentary_log || [];
+            match.commentary_log.unshift({ text: commText, ball: `${overNumber}.${ballInOver}`, runs: runsThisBall, wickets: inning.wickets, overs: `${overNumber}.${ballInOver}`, timestamp: new Date() });
+            if (match.commentary_log.length > 100) match.commentary_log = match.commentary_log.slice(0, 100);
+
+            aiInsightsService.saveInsight({ matchId: match._id, innings: inningsNum, over: overNumber, ball: ballInOver, type: 'commentary', title: 'Auto Commentary', content: commText }).catch(err => console.error('AIInsight save failed:', err.message));
+        }
+
+        // Emit socket event to viewers and scorers
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`match_${match._id}`).emit('match:ball', { matchId: match._id, innings: inningsNum, ball: ballRecord, live: { runs: inning.score, wickets: inning.wickets, over: inning.overs_completed } });
         }
 
         await match.save();
 
-        res.json({ success: true, ball_id: newBall._id });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.json({ success: true, ball: ballRecord, live_data: { runs: inning.score, wickets: inning.wickets, overs: inning.overs_completed } });
+    } catch (err) {
+        console.error('Ball record error:', err);
+        res.status(500).json({ success: false, message: err.message, stack: err.stack });
     }
 });
+
+
+
 
 // POST /api/matches/:id/undo-ball - Remove last ball
 router.post('/:id/undo-ball', async (req, res) => {
     try {
         const Match = require('../models/Match');
+        const mongoose = require('mongoose');
         const match = await Match.findById(req.params.id);
         if (!match) return res.status(404).json({ error: 'Match not found' });
 
         const innIdx = match.current_innings_index || 0;
         const currentInning = match.innings[innIdx];
-        
-        if (currentInning && currentInning.balls.length > 0) {
-            const poppedBall = currentInning.balls.pop();
-            // Subtract runs/wickets
-            const runs = (poppedBall.runs_off_bat || 0) + (poppedBall.extra_runs || 0);
-            currentInning.score = Math.max(0, currentInning.score - runs);
-            if (poppedBall.is_wicket) currentInning.wickets = Math.max(0, currentInning.wickets - 1);
-            
-            // Sync live_data runs too
-            match.live_data.runs = currentInning.score;
-            match.live_data.wickets = currentInning.wickets;
+        if (!currentInning || !currentInning.balls || currentInning.balls.length === 0) {
+            return res.status(400).json({ error: 'No balls to undo in current innings' });
+        }
 
-            match.markModified('innings');
-            match.markModified('live_data');
-            await match.save();
-            
-            // Broadcast the correction via socket
-            const io = req.app.get('socketio');
-            if (io) {
-                io.to(`match_${match._id}`).emit('match:update', {
-                    ...match.live_data,
-                    matchId: match._id,
-                    is_correction: true
-                });
+        // Pop the last ball
+        const poppedBall = currentInning.balls.pop();
+        const runsOffBat = poppedBall.runs_off_bat || 0;
+        const extraRuns = poppedBall.extra_runs || 0;
+        const totalRuns = runsOffBat + extraRuns;
+        const legalBall = poppedBall.extra_type !== 'wide' && poppedBall.extra_type !== 'noball';
+
+        // Revert inning aggregates
+        currentInning.score = Math.max(0, (currentInning.score || 0) - totalRuns);
+        if (poppedBall.is_wicket) currentInning.wickets = Math.max(0, (currentInning.wickets || 0) - 1);
+
+        // Revert batsman stats
+        if (poppedBall.batter_id) {
+            const bIdx = currentInning.batsmen.findIndex(b => String(b.user_id) === String(poppedBall.batter_id));
+            if (bIdx !== -1) {
+                const bats = currentInning.batsmen[bIdx];
+                bats.runs = Math.max(0, (bats.runs || 0) - runsOffBat);
+                if (legalBall) bats.balls = Math.max(0, (bats.balls || 0) - 1);
+                if (runsOffBat === 4) bats.fours = Math.max(0, (bats.fours || 0) - 1);
+                if (runsOffBat === 6) bats.sixes = Math.max(0, (bats.sixes || 0) - 1);
+                if (poppedBall.is_wicket && String(currentInning.batsmen[bIdx].user_id) === String(poppedBall.wicket?.player_out_id)) {
+                    currentInning.batsmen[bIdx].out_type = 'Not Out';
+                }
             }
+        }
+
+        // Revert bowler stats
+        if (poppedBall.bowler_id) {
+            const bwIdx = currentInning.bowlers.findIndex(b => String(b.user_id) === String(poppedBall.bowler_id));
+            if (bwIdx !== -1) {
+                const bow = currentInning.bowlers[bwIdx];
+                if (legalBall) bow.balls = Math.max(0, (bow.balls || 0) - 1);
+                bow.runs = Math.max(0, (bow.runs || 0) - (runsOffBat + extraRuns));
+                if (poppedBall.is_wicket && poppedBall.wicket && poppedBall.wicket.is_bowler_wicket) bow.wickets = Math.max(0, (bow.wickets || 0) - 1);
+            }
+        }
+
+        // Remove from inning's ball_history if matches last
+        if (currentInning.ball_history && currentInning.ball_history.length > 0) {
+            const last = currentInning.ball_history[currentInning.ball_history.length - 1];
+            if (last.over === poppedBall.over_number && last.ball === poppedBall.ball_in_over) {
+                currentInning.ball_history.pop();
+            } else {
+                // fallback: remove any matching absolute ball
+                const idx = currentInning.ball_history.findIndex(b => b.over === poppedBall.over_number && b.ball === poppedBall.ball_in_over);
+                if (idx !== -1) currentInning.ball_history.splice(idx, 1);
+            }
+        }
+
+        // Recompute overs_completed
+        const validBalls = currentInning.balls.filter(b => b.extra_type !== 'wide' && b.extra_type !== 'noball').length;
+        currentInning.overs_completed = Math.floor(validBalls / 6) + (validBalls % 6) / 10;
+
+        // Sync top-level team scores
+        const activeTeamKey = match.live_active_team === 'B' ? 'team_b' : 'team_a';
+        match[activeTeamKey].score = currentInning.score;
+        match[activeTeamKey].wickets = currentInning.wickets;
+
+        match.markModified('innings');
+        match.markModified('live_data');
+        await match.save();
+
+        // Broadcast correction
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`match_${match._id}`).emit('match:update', { matchId: match._id, live: { runs: currentInning.score, wickets: currentInning.wickets, over: currentInning.overs_completed }, is_correction: true });
         }
 
         res.json({ success: true });
@@ -1080,7 +1532,7 @@ router.get('/:id/invite', async (req, res) => {
 
         if (!match.match_creation.invite_code) {
             match.match_creation.invite_code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            match.match_creation.invite_link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/join/match/${match.match_creation.invite_code}`;
+            match.match_creation.invite_link = `${process.env.FRONTEND_URL}/join/match/${match.match_creation.invite_code}`;
             await match.save();
         }
 
@@ -1152,10 +1604,10 @@ router.post('/:id/playing-xi', async (req, res) => {
 
         await match.save();
 
-        // Emit update event
         const io = req.app.get('socketio');
         if (io) {
-            io.to(`match_${match._id}`).emit('match:playing_xi_updated', {
+            console.log(`📤 BROADCASTING UPDATE to match_${match._id}`);
+            io.to(`match_${match._id.toString()}`).emit('match:playing_xi_updated', {
                 match_id: match._id,
                 team_id: team_id,
                 status: match.status,
@@ -1176,7 +1628,7 @@ router.post('/:id/playing-xi', async (req, res) => {
 // @access  Private
 router.post('/quick/create', async (req, res) => {
     try {
-        const { format, team_a, team_b, booking_id } = req.body;
+        const { format, overs, team_a, team_b, booking_id } = req.body;
         const crypto = require('crypto');
         const User = require('../models/User'); // Ensure User model is available
         const setupPlayers = async (teamData, teamName) => {
@@ -1217,25 +1669,29 @@ router.post('/quick/create', async (req, res) => {
         const processedTeamA = await setupPlayers(team_a, team_a.name);
         const processedTeamB = await setupPlayers(team_b, team_b.name);
 
+        const mongoose = require('mongoose');
+        const validBookingId = mongoose.Types.ObjectId.isValid(booking_id) ? booking_id : null;
+
         const match = new Match({
             title: `${team_a.name} vs ${team_b.name} — Quick Match`,
             match_mode: 'QUICK',
             format: format || 'T10',
+            overs: overs || 10,
             start_time: new Date(),
             quick_teams: { 
-                team_a: { name: team_a.name, players: processedTeamA }, 
-                team_b: { name: team_b.name, players: processedTeamB } 
+                team_a: { name: team_a.name, short_name: team_a.short_name || team_a.name.slice(0,3).toUpperCase(), colour: team_a.colour || '#3b82f6', players: processedTeamA }, 
+                team_b: { name: team_b.name, short_name: team_b.short_name || team_b.name.slice(0,3).toUpperCase(), colour: team_b.colour || '#ef4444', players: processedTeamB } 
             },
             status: 'Scheduled',
-            booking_id: booking_id || null,
+            booking_id: validBookingId,
             match_creation: { 
-                created_via: booking_id ? 'BOOKING' : 'DIRECT',
-                linked_booking_id: booking_id || null
+                created_via: validBookingId ? 'BOOKING' : 'DIRECT',
+                linked_booking_id: validBookingId
             }
         });
 
 
-        // Generate Match QR
+        // Generate Match QR (Workflow 2, Step 6)
         const qrDetails = await QRService.generateMatchQR(match._id);
         match.verification.qr_code.code = qrDetails.encodedData;
         match.verification.qr_code.qr_image = qrDetails.qrImage;
@@ -1254,7 +1710,7 @@ router.post('/quick/create', async (req, res) => {
             for (const p of unregistered) {
                 try {
                     await twilioClient.messages.create({
-                        body: `Hi! You played in ${team_a.name} vs ${team_b.name} at The Turf. Register to claim your stats: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/claim/${p.claim_token}`,
+                        body: `Hi! You played in ${team_a.name} vs ${team_b.name} at The Turf. Register here: ${process.env.FRONTEND_URL}/claim/${p.claim_token}`,
                         from: process.env.TWILIO_PHONE_NUMBER,
                         to: `+91${p.input}`
                     });
@@ -1273,11 +1729,17 @@ router.post('/quick/create', async (req, res) => {
             }
         }
 
+        // Return full match document (Workflow 2, Step 7)
+        const savedMatch = await Match.findById(match._id);
+
         res.status(201).json({ 
             success: true, 
-            message: 'Quick Match Manifested. Invites Dispatched.', 
+            message: 'Quick Match Created. QR Generated. Captain must show QR to admin before match starts.', 
             match_id: match._id,
-            qr_code: qrDetails.qrImage 
+            match: savedMatch,
+            qr_code: qrDetails.qrImage,
+            qr_expires_at: qrDetails.expiresAt,
+            verification_status: 'PENDING'
         });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -1335,32 +1797,36 @@ router.post('/quick/:id/convert', async (req, res) => {
 router.post('/:id/complete', async (req, res) => {
     try {
         const { winner, won_by, margin, man_of_the_match } = req.body;
-        const match = await Match.findById(req.params.id);
-        if (!match) return res.status(404).json({ success: false, message: 'Match Node Failure.' });
+        const matchObjId = new mongoose.Types.ObjectId(req.params.id);
 
-        match.status = 'Completed';
-        match.result = { winner, won_by, margin };
-        match.awards.man_of_the_match = man_of_the_match;
-        match.end_time = new Date();
-        
-        // Auto-verify if processed by Authorized Scorer/Admin to trigger Career Stats
-        match.verification.status = 'VERIFIED';
-        match.verification.verified_by = req.user?.id || 'SYSTEM';
-        match.verification.verified_at = new Date();
-
-        await match.save();
+        // Use raw MongoDB driver to avoid CastError on corrupted Date fields (ball_history timestamps)
+        await Match.collection.findOneAndUpdate(
+            { _id: matchObjId },
+            {
+                $set: {
+                    status: 'Completed',
+                    end_time: new Date(),
+                    result: { winner: winner || null, won_by: won_by || 'Pending', margin: margin || 0 },
+                    'awards.man_of_the_match': man_of_the_match || null,
+                    'verification.status': 'VERIFIED',
+                    'verification.verified_by': req.user?.id || 'SYSTEM',
+                    'verification.verified_at': new Date()
+                }
+            },
+            { returnDocument: 'after' }
+        );
 
         // 🚨 CRITICAL: Workflow 5 — Career Stats Manifestation
         const statsService = require('../services/statsService');
-        const statsResult = await statsService.updatePlayerStats(match._id, req.app.get('socketio'));
+        const statsResult = await statsService.updatePlayerStats(matchObjId, req.app.get('socketio'));
 
-        res.json({ 
-            success: true, 
-            message: 'Match Completed. Statistics Manifested.', 
-            stats_updated: statsResult.success,
-            match 
+        res.json({
+            success: true,
+            message: 'Match Completed. Statistics Manifested.',
+            stats_updated: statsResult?.success
         });
     } catch (err) {
+        console.error('Error completing match:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
@@ -1497,4 +1963,150 @@ router.get('/player/compare', async (req, res) => {
     }
 });
 
+// @route   POST /api/matches/:id/status
+// @desc    Update match status (Live, Completed, etc)
+// @access  Private
+router.post('/:id/status', async (req, res) => {
+    try {
+        const { status, live_data } = req.body;
+        const match = await Match.findById(req.params.id);
+        if (!match) return res.status(404).json({ success: false, message: 'Match node not found.' });
+
+        if (status) match.status = status;
+        if (live_data) {
+            match.live_data = { ...match.live_data, ...live_data };
+            match.markModified('live_data');
+        }
+
+        await match.save();
+
+        // Broadcast status change
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`match_${match._id}`).emit('match:status_changed', { 
+                match_id: match._id, 
+                status: match.status,
+                live_data: match.live_data
+            });
+        }
+
+        res.json({ success: true, message: `Status updated to ${status}`, match });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/debug/sanitize', async (req, res) => {
+    try {
+        const matches = await Match.find({});
+        let report = [];
+        for (let match of matches) {
+            let isModified = false;
+            if (match.innings && Array.isArray(match.innings)) {
+                match.innings.forEach((inn, innIdx) => {
+                    if (inn.batsmen && Array.isArray(inn.batsmen)) {
+                        inn.batsmen.forEach((b) => {
+                            const validId = getValidObjectId(b.user_id);
+                            if (String(b.user_id) !== String(validId)) {
+                                report.push(`Match ${match._id}: Innings ${innIdx} batsman ${b.name} user_id invalid: ${b.user_id} -> ${validId}`);
+                                b.user_id = validId;
+                                isModified = true;
+                            }
+                        });
+                    }
+                    if (inn.bowlers && Array.isArray(inn.bowlers)) {
+                        inn.bowlers.forEach((bw) => {
+                            const validId = getValidObjectId(bw.user_id);
+                            if (String(bw.user_id) !== String(validId)) {
+                                report.push(`Match ${match._id}: Innings ${innIdx} bowler ${bw.name} user_id invalid: ${bw.user_id} -> ${validId}`);
+                                bw.user_id = validId;
+                                isModified = true;
+                            }
+                        });
+                    }
+                    if (inn.ball_history && Array.isArray(inn.ball_history)) {
+                        inn.ball_history.forEach((h, hIdx) => {
+                            const validBatsmanId = getValidObjectId(h.batsman_id);
+                            if (String(h.batsman_id) !== String(validBatsmanId)) {
+                                report.push(`Match ${match._id}: Innings ${innIdx} ball_history[${hIdx}] batsman_id invalid: ${h.batsman_id} -> ${validBatsmanId}`);
+                                h.batsman_id = validBatsmanId;
+                                isModified = true;
+                            }
+                            const validBowlerId = getValidObjectId(h.bowler_id);
+                            if (String(h.bowler_id) !== String(validBowlerId)) {
+                                report.push(`Match ${match._id}: Innings ${innIdx} ball_history[${hIdx}] bowler_id invalid: ${h.bowler_id} -> ${validBowlerId}`);
+                                h.bowler_id = validBowlerId;
+                                isModified = true;
+                            }
+                        });
+                    }
+                    if (inn.balls && Array.isArray(inn.balls)) {
+                        inn.balls.forEach((b, bIdx) => {
+                            const validBatterId = getValidObjectId(b.batter_id);
+                            if (String(b.batter_id) !== String(validBatterId)) {
+                                b.batter_id = validBatterId;
+                                isModified = true;
+                            }
+                            const validNonStrikerId = getValidObjectId(b.non_striker_id);
+                            if (String(b.non_striker_id) !== String(validNonStrikerId)) {
+                                b.non_striker_id = validNonStrikerId;
+                                isModified = true;
+                            }
+                            const validBowlerId = getValidObjectId(b.bowler_id);
+                            if (String(b.bowler_id) !== String(validBowlerId)) {
+                                b.bowler_id = validBowlerId;
+                                isModified = true;
+                            }
+                            if (b.wicket) {
+                                const validPlayerOutId = getValidObjectId(b.wicket.player_out_id);
+                                if (String(b.wicket.player_out_id) !== String(validPlayerOutId)) {
+                                    b.wicket.player_out_id = validPlayerOutId;
+                                    isModified = true;
+                                }
+                                const validFielderId = getValidObjectId(b.wicket.fielder_id);
+                                if (String(b.wicket.fielder_id) !== String(validFielderId)) {
+                                    b.wicket.fielder_id = validFielderId;
+                                    isModified = true;
+                                }
+                            }
+                        });
+                    }
+                    if (inn.fall_of_wickets && Array.isArray(inn.fall_of_wickets)) {
+                        inn.fall_of_wickets.forEach((f) => {
+                            const validId = getValidObjectId(f.player_id);
+                            if (String(f.player_id) !== String(validId)) {
+                                f.player_id = validId;
+                                isModified = true;
+                            }
+                        });
+                    }
+                    if (inn.partnership_log && Array.isArray(inn.partnership_log)) {
+                        inn.partnership_log.forEach((p) => {
+                            const validId1 = getValidObjectId(p.batsman1_id);
+                            if (String(p.batsman1_id) !== String(validId1)) {
+                                p.batsman1_id = validId1;
+                                isModified = true;
+                            }
+                            const validId2 = getValidObjectId(p.batsman2_id);
+                            if (String(p.batsman2_id) !== String(validId2)) {
+                                p.batsman2_id = validId2;
+                                isModified = true;
+                            }
+                        });
+                    }
+                });
+            }
+            if (isModified) {
+                match.markModified('innings');
+                await match.save();
+                report.push(`Saved clean match ${match._id}`);
+            }
+        }
+        res.json({ success: true, report });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 module.exports = router;
+

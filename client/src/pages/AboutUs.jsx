@@ -61,39 +61,39 @@ export default function AboutUs() {
     }, []);
 
     if (loading) return (
-        <div className="min-h-screen bg-[#020617] flex items-center justify-center">
-            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+        <div className="min-h-screen premium-gradient flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-600 rounded-full animate-spin"></div>
         </div>
     );
 
     const { hero, features, stats } = config || {};
 
     return (
-        <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-emerald-500/30 selection:text-white">
+        <div className="min-h-screen premium-gradient text-slate-600 font-sans selection:bg-emerald-500/30 selection:text-blue-900">
             
             {/* 1. HERO SECTION */}
             <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-[#020617] to-[#020617]"></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[500px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/20 via-white to-white"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[500px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none"></div>
                 
                 <div className="max-w-7xl mx-auto relative z-10 text-center">
                     <FadeInSection>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest mb-8">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-emerald-600 text-xs font-black uppercase tracking-widest mb-8 shadow-sm">
                             <Zap size={14} className="animate-pulse" /> {hero?.welcome || 'Welcome to the Future of Sports'}
                         </div>
-                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter mb-6 leading-[1.1]">
+                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-slate-900 tracking-tighter mb-6 leading-[1.1] italic uppercase">
                             {hero?.title?.split('.')[0] || 'Play Smart'}. <br className="md:hidden" />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500">{hero?.title?.split('.')[1] || 'Book Instantly.'}</span> <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-600">{hero?.title?.split('.')[1] || 'Book Instantly.'}</span> <br />
                             {hero?.subtitle || 'Compete Better.'}
                         </h1>
-                        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 font-medium tracking-wide">
+                        <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto mb-12 font-bold tracking-wide uppercase italic">
                             {hero?.description || 'The Turf is an AI-powered sports arena ecosystem. We eliminate booking friction and elevate your match-day experience with real-time stats and automation.'}
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Link to="/#booking" className="w-full sm:w-auto px-8 py-4 bg-emerald-500 text-[#020617] rounded-full font-black uppercase tracking-widest text-sm hover:bg-emerald-400 active:scale-95 transition-all shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)]">
+                            <Link to="/#booking" className="w-full sm:w-auto px-8 py-4 bg-emerald-600 text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-xl shadow-emerald-500/20">
                                 Book Your Slot
                             </Link>
-                            <a href="#features" className="w-full sm:w-auto px-8 py-4 bg-white/5 text-white border border-white/10 rounded-full font-black uppercase tracking-widest text-sm hover:bg-white/10 active:scale-95 transition-all">
+                            <a href="#features" className="w-full sm:w-auto px-8 py-4 bg-white text-emerald-600 border border-blue-100 rounded-full font-black uppercase tracking-widest text-sm hover:bg-blue-50 active:scale-95 transition-all shadow-sm">
                                 Explore Platform
                             </a>
                         </div>
@@ -102,16 +102,16 @@ export default function AboutUs() {
             </section>
 
             {/* 2. PROBLEM VS SOLUTION */}
-            <section className="py-24 px-6 bg-[#0B1120] relative">
+            <section className="py-24 px-6 bg-slate-50/50 relative">
                 <div className="max-w-7xl mx-auto">
                     <FadeInSection>
                         <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-stretch">
                             {/* The Old Way */}
-                            <div className="bg-rose-950/20 border border-rose-900/30 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden group">
+                            <div className="bg-rose-50 border border-rose-100 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden group shadow-sm">
                                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                                    <Smartphone size={100} />
+                                    <Smartphone size={100} className="text-rose-600" />
                                 </div>
-                                <h3 className="text-sm font-black text-rose-500 uppercase tracking-[0.2em] mb-8">The Old Way</h3>
+                                <h3 className="text-sm font-black text-rose-600 uppercase tracking-[0.2em] mb-8">The Old Way</h3>
                                 <div className="space-y-6">
                                     {[
                                         "Endless phone calls & WhatsApp texts",
@@ -119,20 +119,20 @@ export default function AboutUs() {
                                         "No real-time availability checking",
                                         "Zero player stats or match history"
                                     ].map((text, i) => (
-                                        <div key={i} className="flex items-start gap-4 text-rose-200">
-                                            <AlertTriangle className="text-rose-500 shrink-0 mt-0.5" size={20} />
-                                            <p className="font-medium text-lg leading-tight">{text}</p>
+                                        <div key={i} className="flex items-start gap-4 text-rose-900">
+                                            <AlertTriangle className="text-rose-600 shrink-0 mt-0.5" size={20} />
+                                            <p className="font-bold text-lg leading-tight uppercase italic">{text}</p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
                             {/* The Smart Way */}
-                            <div className="bg-gradient-to-br from-emerald-900/40 to-teal-900/40 border border-emerald-500/30 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden group shadow-[0_0_60px_-15px_rgba(16,185,129,0.2)]">
+                            <div className="bg-gradient-to-br from-emerald-600 to-emerald-600 border border-emerald-400 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden group shadow-2xl shadow-emerald-500/20 text-white">
                                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                                    <Zap size={100} />
+                                    <Zap size={100} className="text-white" />
                                 </div>
-                                <h3 className="text-sm font-black text-emerald-400 uppercase tracking-[0.2em] mb-8">The Smart Arena</h3>
+                                <h3 className="text-sm font-black text-blue-100 uppercase tracking-[0.2em] mb-8">The Smart Arena</h3>
                                 <div className="space-y-6">
                                     {[
                                         "Tap & book slots instantly, 24/7",
@@ -140,9 +140,9 @@ export default function AboutUs() {
                                         "AI CricBot answers queries instantly",
                                         "Live scoring networks & leaderboards"
                                     ].map((text, i) => (
-                                        <div key={i} className="flex items-start gap-4 text-emerald-50">
-                                            <CheckCircle2 className="text-emerald-400 shrink-0 mt-0.5" size={20} />
-                                            <p className="font-bold text-lg leading-tight">{text}</p>
+                                        <div key={i} className="flex items-start gap-4 text-white">
+                                            <CheckCircle2 className="text-blue-200 shrink-0 mt-0.5" size={20} />
+                                            <p className="font-black text-lg leading-tight uppercase italic">{text}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -157,8 +157,8 @@ export default function AboutUs() {
                 <div className="max-w-7xl mx-auto">
                     <FadeInSection>
                         <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4">Core Technology</h2>
-                            <p className="text-slate-400 max-w-2xl mx-auto text-lg">Next-generation infrastructure designed to put athletes first.</p>
+                            <h2 className="text-3xl md:text-5xl font-black text-slate-900 uppercase tracking-tighter mb-4 italic">Core Technology</h2>
+                            <p className="text-slate-500 max-w-2xl mx-auto text-lg font-bold uppercase tracking-widest">Next-generation infrastructure designed to put athletes first.</p>
                         </div>
                         
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -171,12 +171,12 @@ export default function AboutUs() {
                                 { title: "Secure Payments", icon: <CreditCard size={32} />, desc: "Frictionless embedded checkouts handling splits and refunds." }
                             ]).map((feat, i) => (
                                 <FadeInSection key={i} delay={i * 100}>
-                                    <div className="h-full bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-3xl p-8 hover:bg-slate-800 hover:border-emerald-500/30 transition-all group">
-                                        <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-emerald-400 mb-6 group-hover:scale-110 group-hover:bg-emerald-500/10 transition-transform">
+                                    <div className="h-full bg-white/60 backdrop-blur-lg border border-slate-100 rounded-3xl p-8 hover:bg-white hover:border-emerald-500/30 transition-all group shadow-xl shadow-blue-900/[0.02]">
+                                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 border border-blue-100">
                                             {feat.icon || <Zap size={32} />}
                                         </div>
-                                        <h3 className="text-xl font-black text-white uppercase tracking-tight mb-3">{feat.title}</h3>
-                                        <p className="text-slate-400 leading-relaxed text-sm">{feat.desc}</p>
+                                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-3 italic">{feat.title}</h3>
+                                        <p className="text-slate-500 leading-relaxed text-sm font-medium">{feat.desc}</p>
                                     </div>
                                 </FadeInSection>
                             ))}
@@ -186,19 +186,19 @@ export default function AboutUs() {
             </section>
 
             {/* 6. AI POWER SECTION */}
-            <section className="py-24 px-6 bg-[#030712] relative overflow-hidden border-y border-emerald-900/30">
-                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 bg-cyan-600/10 blur-[100px] rounded-full"></div>
+            <section className="py-24 px-6 bg-slate-50 relative overflow-hidden border-y border-slate-200">
+                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 bg-emerald-500/5 blur-[100px] rounded-full"></div>
                 <div className="max-w-7xl mx-auto">
                     <FadeInSection>
                         <div className="grid lg:grid-cols-2 gap-16 items-center">
                             <div className="space-y-8">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-950 border border-cyan-800 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20">
                                     <Network size={14} /> Cognitive Infrastructure
                                 </div>
-                                <h2 className="text-4xl md:text-6xl font-black text-white leading-[1.1] tracking-tighter">
-                                    Powered by <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Intelligence.</span>
+                                <h2 className="text-4xl md:text-6xl font-black text-slate-900 leading-[1.1] tracking-tighter uppercase italic">
+                                    Powered by <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-600">Intelligence.</span>
                                 </h2>
-                                <p className="text-lg text-slate-400">
+                                <p className="text-lg text-slate-500 font-medium">
                                     Our platform doesn't just manage bookings; it learns from them. The built-in AI engine recommends dynamic squad compositions, handles automated customer support queries via CricBot, and provides operations analytics to the admin staff.
                                 </p>
                                 <ul className="space-y-4">
@@ -207,21 +207,21 @@ export default function AboutUs() {
                                         "Intelligent Cancellation/Refund Handling",
                                         "Business Analytics for Operations Staff"
                                     ].map((item, i) => (
-                                        <li key={i} className="flex items-center gap-4 border border-white/5 bg-white/5 py-4 px-6 rounded-2xl">
-                                            <div className="w-2 h-2 bg-cyan-500 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
-                                            <span className="font-bold text-sm tracking-wide text-slate-200">{item}</span>
+                                        <li key={i} className="flex items-center gap-4 border border-slate-100 bg-white py-4 px-6 rounded-2xl shadow-sm">
+                                            <div className="w-2 h-2 bg-emerald-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.8)]"></div>
+                                            <span className="font-black text-sm tracking-wide text-slate-700 uppercase italic">{item}</span>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                             <div className="relative">
                                 {/* Abstract AI Graphic */}
-                                <div className="aspect-square max-h-[500px] mx-auto relative border border-cyan-500/20 rounded-full flex items-center justify-center bg-cyan-950/20 backdrop-blur-xl animate-[spin_60s_linear_infinite]">
-                                    <div className="w-3/4 h-3/4 border border-blue-500/30 rounded-full flex items-center justify-center animate-[spin_40s_linear_infinite_reverse]">
-                                        <div className="w-1/2 h-1/2 border border-emerald-500/40 rounded-full bg-gradient-to-tr from-cyan-500/10 to-emerald-500/10 shadow-[inner_0_0_50px_rgba(6,182,212,0.2)]"></div>
+                                <div className="aspect-square max-h-[500px] mx-auto relative border border-emerald-500/20 rounded-full flex items-center justify-center bg-white/50 backdrop-blur-xl animate-[spin_60s_linear_infinite]">
+                                    <div className="w-3/4 h-3/4 border border-emerald-600/30 rounded-full flex items-center justify-center animate-[spin_40s_linear_infinite_reverse]">
+                                        <div className="w-1/2 h-1/2 border border-emerald-500/40 rounded-full bg-gradient-to-tr from-emerald-500/10 to-emerald-500/10 shadow-[inner_0_0_50px_rgba(37,99,235,0.1)]"></div>
                                     </div>
                                 </div>
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-400 flex items-center justify-center bg-[#030712] p-8 rounded-full border border-cyan-500/30 shadow-[0_0_60px_-10px_rgba(6,182,212,0.4)]">
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-600 flex items-center justify-center bg-white p-8 rounded-full border border-blue-100 shadow-2xl">
                                     <Bot size={64} className="animate-pulse" />
                                 </div>
                             </div>
@@ -235,8 +235,8 @@ export default function AboutUs() {
                 <div className="max-w-7xl mx-auto">
                     <FadeInSection>
                         <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4">The Turf Flow</h2>
-                            <p className="text-slate-400">Six simple steps to get you on the field.</p>
+                            <h2 className="text-3xl md:text-5xl font-black text-slate-900 uppercase tracking-tighter mb-4 italic">The Turf Flow</h2>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest">Six simple steps to get you on the field.</p>
                         </div>
                         
                         <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch">
@@ -249,12 +249,12 @@ export default function AboutUs() {
                                 { step: "6", title: "Rank", icon: <Trophy size={24} /> }
                             ].map((s, i) => (
                                 <FadeInSection key={i} delay={i * 150}>
-                                    <div className="flex-1 min-w-[120px] bg-slate-900/80 border border-slate-800 rounded-[2rem] p-6 text-center hover:-translate-y-2 transition-transform duration-300">
-                                        <div className="w-12 h-12 mx-auto bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center font-black mb-4 border border-emerald-500/20">
+                                    <div className="flex-1 min-w-[120px] bg-white border border-slate-100 rounded-[2rem] p-6 text-center hover:-translate-y-2 transition-transform duration-300 shadow-xl shadow-blue-900/[0.03]">
+                                        <div className="w-12 h-12 mx-auto bg-blue-50 text-emerald-600 rounded-full flex items-center justify-center font-black mb-4 border border-blue-100 shadow-sm">
                                             {s.step}
                                         </div>
-                                        <div className="text-slate-500 mb-2 flex justify-center">{s.icon}</div>
-                                        <h4 className="font-black uppercase tracking-widest text-[#f8fafc] text-[11px]">{s.title}</h4>
+                                        <div className="text-emerald-400 mb-2 flex justify-center">{s.icon}</div>
+                                        <h4 className="font-black uppercase tracking-widest text-slate-900 text-[11px] italic">{s.title}</h4>
                                     </div>
                                 </FadeInSection>
                             ))}
@@ -264,29 +264,29 @@ export default function AboutUs() {
             </section>
 
             {/* 7 & 8 PLAYER AND ADMIN EXPERIENCES */}
-            <section className="py-24 px-6 bg-[#0B1120] border-t border-slate-800/50">
+            <section className="py-24 px-6 bg-slate-50/50 border-t border-slate-100">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid md:grid-cols-2 gap-8">
                         <FadeInSection delay={100}>
-                            <div className="h-full bg-slate-900 border border-slate-800 rounded-[3rem] p-10 md:p-14 relative overflow-hidden">
-                                <Users size={200} className="absolute -bottom-10 -right-10 opacity-5 text-emerald-500" />
-                                <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Player Hub</h3>
-                                <p className="text-slate-400 mb-8 max-w-sm">
-                                    Every match is recorded. Track your <span className="text-white font-bold">Career Stats</span>, monitor your performance trajectory, and climb the competitive local leaderboard to earn bragging rights.
+                            <div className="h-full bg-white border border-slate-100 rounded-[3rem] p-10 md:p-14 relative overflow-hidden shadow-2xl shadow-blue-900/[0.05]">
+                                <Users size={200} className="absolute -bottom-10 -right-10 opacity-5 text-emerald-600" />
+                                <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-4 italic">Player Hub</h3>
+                                <p className="text-slate-500 mb-8 max-w-sm font-medium">
+                                    Every match is recorded. Track your <span className="text-emerald-600 font-black">Career Stats</span>, monitor your performance trajectory, and climb the competitive local leaderboard to earn bragging rights.
                                 </p>
-                                <Link to="/login" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 hover:text-emerald-300">
+                                <Link to="/login" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 hover:text-blue-700">
                                     Access Player Area <ArrowRight size={14} />
                                 </Link>
                             </div>
                         </FadeInSection>
                         <FadeInSection delay={300}>
-                            <div className="h-full bg-slate-900 border border-slate-800 rounded-[3rem] p-10 md:p-14 relative overflow-hidden">
-                                <TrendingUp size={200} className="absolute -bottom-10 -right-10 opacity-5 text-cyan-500" />
-                                <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Admin Command</h3>
-                                <p className="text-slate-400 mb-8 max-w-sm">
+                            <div className="h-full bg-white border border-slate-100 rounded-[3rem] p-10 md:p-14 relative overflow-hidden shadow-2xl shadow-indigo-900/[0.05]">
+                                <TrendingUp size={200} className="absolute -bottom-10 -right-10 opacity-5 text-emerald-600" />
+                                <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-4 italic">Admin Command</h3>
+                                <p className="text-slate-500 mb-8 max-w-sm font-medium">
                                     Manage operations with precision. The Ops Hub features real-time revenue telemetry, dynamic booking management, and AI-driven growth insights.
                                 </p>
-                                <Link to="/admin/login" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400 hover:text-cyan-300">
+                                <Link to="/admin/login" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 hover:text-indigo-700">
                                     System Access <ArrowRight size={14} />
                                 </Link>
                             </div>
@@ -299,7 +299,7 @@ export default function AboutUs() {
             <section className="py-20 px-6">
                 <div className="max-w-7xl mx-auto">
                     <FadeInSection>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-slate-800">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-slate-100">
                             {(stats || [
                                 { stat: "90%+", label: "Successful Matches" },
                                 { stat: "<200ms", label: "Real-time Sync" },
@@ -307,8 +307,8 @@ export default function AboutUs() {
                                 { stat: "100%", label: "Secure Venues" }
                             ]).map((item, i) => (
                                 <div key={i} className={`text-center pl-8 ${i === 0 ? 'pl-0 border-none' : ''}`}>
-                                    <p className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tighter">{item.stat}</p>
-                                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold">{item.label}</p>
+                                    <p className="text-4xl md:text-5xl font-black text-slate-900 mb-2 tracking-tighter italic">{item.stat}</p>
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">{item.label}</p>
                                 </div>
                             ))}
                         </div>
@@ -318,14 +318,14 @@ export default function AboutUs() {
 
             {/* 10. FINAL CTA */}
             <section className="py-32 px-6 text-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-emerald-900/10"></div>
+                <div className="absolute inset-0 bg-emerald-600/5"></div>
                 <div className="max-w-3xl mx-auto relative z-10">
                     <FadeInSection>
-                        <h2 className="text-5xl md:text-7xl font-black text-white uppercase tracking-tighter mb-6 leading-none">
+                        <h2 className="text-5xl md:text-7xl font-black text-slate-900 uppercase tracking-tighter mb-6 leading-none italic">
                             Ready to take <br/>the field?
                         </h2>
-                        <p className="text-xl text-slate-400 mb-10">Start playing today and elevate your game.</p>
-                        <Link to="/" className="inline-block px-12 py-5 bg-gradient-to-r from-emerald-500 to-teal-400 text-black text-lg rounded-full font-black uppercase tracking-widest shadow-[0_20px_40px_-10px_rgba(16,185,129,0.5)] hover:scale-105 active:scale-95 transition-all">
+                        <p className="text-xl text-slate-500 mb-10 font-bold uppercase tracking-widest">Start playing today and elevate your game.</p>
+                        <Link to="/" className="inline-block px-12 py-5 bg-emerald-600 text-white text-lg rounded-full font-black uppercase tracking-widest shadow-2xl shadow-emerald-500/30 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all">
                             Book Your Slot Now
                         </Link>
                     </FadeInSection>
@@ -335,3 +335,6 @@ export default function AboutUs() {
         </div>
     );
 }
+
+
+

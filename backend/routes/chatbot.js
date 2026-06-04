@@ -1,151 +1,120 @@
 const express = require('express');
 const router = express.Router();
-const { processCricBotCommand } = require('../services/aiAgent');
-const Slot = require('../models/Slot');
-const { createBookingEntry } = require('../services/bookingService');
+const Booking = require('../models/Booking');
+const Match = require('../models/Match');
 
 /**
  * @route   POST /api/chatbot
- * @desc    Public Chatbot for customers
+ * @desc    Local NLP-based chatbot (no external API) fetching real MongoDB data
  * @access  Public
  */
 router.post('/', async (req, res) => {
-    console.log('🤖 Chatbot Request Received:', req.body.message);
     try {
-        const { message, context = {} } = req.body;
-        if (!message) return res.status(400).json({ success: false, message: 'Message is required' });
+        console.log('🤖 NLP Chatbot Request Received:', req.body.message);
+        const { message } = req.body;
+        if (!message) return res.status(400).json({ success: false, reply: 'Message is required' });
 
-        // Fetch context: Free slots for the next 7 days (Only if DB is connected)
-        console.log('⏳ Checking DB connectivity for context...');
-        let freeSlots = [];
-        const mongoose = require('mongoose');
-        if (mongoose.connection.readyState === 1) {
-            try {
-                const formatDate = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-                const startDateStr = formatDate(new Date());
-                const endDateStr = formatDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+        const text = message.toLowerCase();
 
-                const dStart = new Date();
-                const dEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        // Data fetching
+        const bookings = await Booking.find({ bookingStatus: 'confirmed' });
+        const matches = await Match.find();
 
-                freeSlots = await Slot.find({
-                    date: {
-                        $gte: new Date(Date.UTC(dStart.getFullYear(), dStart.getMonth(), dStart.getDate())),
-                        $lte: new Date(Date.UTC(dEnd.getFullYear(), dEnd.getMonth(), dEnd.getDate(), 23, 59, 59, 999))
-                    },
-                    status: 'free'
-                }).sort({ date: 1, startTime: 1 }).limit(20).lean().maxTimeMS(2000);
-                console.log(`✅ Found ${freeSlots.length} free slots for context.`);
-            } catch (dbError) {
-                console.warn('⚠️ Slot fetch error (skipping context):', dbError.message);
+        // NLP INTENT DETECTION
+
+        // 1. TODAY INTENT (Advanced NLP)
+        if (text.includes("today")) {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const todayBookings = bookings.filter(b => new Date(b.createdAt) >= today);
+            
+            if (text.includes("booking")) {
+                return res.json({ reply: `There are ${todayBookings.length} bookings today.` });
             }
-        } else {
-            console.warn('⚠️ DB not connected (readyState: ' + mongoose.connection.readyState + '). Skipping slot context.');
+            if (text.includes("revenue")) {
+                const todayRev = todayBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+                return res.json({ reply: `Today's revenue is ₹${todayRev.toLocaleString()}` });
+            }
         }
 
-        // Process using CricBot System Prompt
-        console.log('🧠 Processing command with CricBot AI...');
-        const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-
-        const aiResponse = await processCricBotCommand(message, {
-            availableSlots: freeSlots,
-            platform: 'chatbot',
-            ...context
-        }, userIp);
-
-        if (!aiResponse) {
-            console.error('❌ AI Response was null');
-            return res.status(500).json({ success: false, message: 'CricBot is currently offline. Please try again later.' });
-        }
-
-        // Create explicit confirmation response with payment details
-        if (aiResponse.type === 'BOOKING_CONFIRMED') {
-            const { generateUPIQRCode } = require('../services/payment');
-            const bookingInfo = aiResponse.bookingInfo;
-            const amount = bookingInfo.amount || 500;
-            const qrResult = await generateUPIQRCode(amount, bookingInfo.bookingId);
-
+        // 2. TOTAL BOOKINGS INTENT
+        if (text.includes("booking")) {
             return res.json({
-                success: true,
-                reply: aiResponse.reply,
-                type: 'BOOKING_CONFIRMED',
-                bookingId: bookingInfo.bookingId,
-                amount: amount,
-                paymentData: qrResult.success ? {
-                    qrCode: qrResult.qrCodeDataUrl,
-                    upiLink: qrResult.upiLink
-                } : null
+                reply: `Total confirmed bookings processed: ${bookings.length}`
             });
         }
 
-        // Handle automated booking creation if AI detected full details
-        if (aiResponse.type === 'CHATBOT_BOOKING' || aiResponse.type === 'MANUAL_BOOKING') {
-            try {
-                const { name, phone, date, startTime, duration } = aiResponse.data;
-
-                // Calculate end time and amount
-                const hoursToAdd = duration.includes('2') ? 2 : 1;
-                const [h, m] = startTime.split(':').map(Number);
-                const endH = h + hoursToAdd;
-                const endTime = `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-
-                let amount = 0;
-                const priceDay = parseInt(process.env.PRICE_DAY) || 1000;
-                const priceNight = parseInt(process.env.PRICE_NIGHT) || 1200;
-                const priceWeekendDay = parseInt(process.env.PRICE_WEEKEND_DAY) || 1000;
-                const priceWeekendNight = parseInt(process.env.PRICE_WEEKEND_NIGHT) || 1400;
-                const transHour = parseInt(process.env.PRICE_TRANSITION_HOUR) || 18;
-
-                const bookingDate = new Date(date);
-                const isWeekend = bookingDate.getDay() === 0 || bookingDate.getDay() === 6;
-
-                const getPrice = (hour) => {
-                    const isDay = hour < transHour;
-                    return isWeekend ? (isDay ? priceWeekendDay : priceWeekendNight) : (isDay ? priceDay : priceNight);
-                };
-
-                if (hoursToAdd === 1) {
-                    amount = getPrice(h);
-                } else {
-                    amount = getPrice(h) + getPrice(h + 1);
-                }
-
-                const booking = await createBookingEntry({
-                    userName: name,
-                    userPhone: phone,
-                    amount,
-                    date,
-                    startTime,
-                    endTime,
-                    platform: 'chatbot' // Created as PENDING
-                });
-
-                console.log('✅ Pending Booking Created via Chatbot:', booking._id);
-
-                return res.json({
-                    success: true,
-                    reply: aiResponse.reply,
-                    type: 'BOOKING_INITIATED',
-                    bookingId: booking._id
-                });
-            } catch (err) {
-                console.error('❌ Failed to create pending booking:', err.message);
-                // Fallback to chat response if booking creation fails (e.g. overlap)
-            }
+        // 3. REVENUE INTENT
+        if (text.includes("revenue")) {
+            const total = bookings.reduce(
+                (sum, b) => sum + (b.amount || 0), 0
+            );
+            return res.json({
+                reply: `Total generated revenue is ₹${total.toLocaleString()}`
+            });
         }
 
-        // Chatbot doesn't handle MANUAL_BOOKING directly for users (it should guide them to book)
-        // But if the AI returns a booking flow response, we just return the reply.
-        console.log('✅ AI Response received:', aiResponse.type);
-        res.json({
-            success: true,
-            reply: aiResponse.reply,
-            type: aiResponse.type
+        // 4. TOP TURF INTENT
+        if (text.includes("turf")) {
+            const turfCount = {};
+            bookings.forEach(b => {
+                const tName = b.turfLocation || 'Default Turf';
+                turfCount[tName] = (turfCount[tName] || 0) + 1;
+            });
+
+            if (Object.keys(turfCount).length === 0) {
+                return res.json({ reply: "No turf data available yet." });
+            }
+
+            const topTurf = Object.keys(turfCount).reduce((a, b) =>
+                turfCount[a] > turfCount[b] ? a : b
+            );
+
+            return res.json({
+                reply: `The most popular turf right now is ${topTurf}`
+            });
+        }
+
+        // 5. TOP PLAYER INTENT (Advanced NLP)
+        if (text.includes("player") || text.includes("top scorer")) {
+            // Calculate highest runs across matches
+            let topPlayer = "N/A";
+            let maxRuns = -1;
+            
+            matches.forEach(m => {
+                const players = [...(m.team_a?.players || []), ...(m.team_b?.players || [])];
+                players.forEach(p => {
+                    const runs = p.batting?.runs || 0;
+                    if (runs > maxRuns) {
+                        maxRuns = runs;
+                        topPlayer = p.name;
+                    }
+                });
+            });
+
+            if (maxRuns >= 0) {
+                return res.json({ reply: `The top scorer across our database is ${topPlayer} with ${maxRuns} runs.` });
+            }
+            return res.json({ reply: "No player stats are available yet." });
+        }
+
+        // 6. MATCH SCORE INTENT
+        if (text.includes("score") || text.includes("match")) {
+            const liveMatch = matches.find(m => m.status === 'LIVE' || m.status === 'IN_PROGRESS');
+            if (liveMatch) {
+                return res.json({ reply: `There is a live match ongoing! Current overs: ${liveMatch.live_data?.overs || 0}. Check the live dashboard for real-time scores.` });
+            }
+            return res.json({ reply: `We have ${matches.length} matches registered in the system. None are live right now.` });
+        }
+
+        // DEFAULT FALLBACK
+        return res.json({
+            reply: "I am your local NLP assistant. Please ask me about bookings, revenue, top turf, matches, or top players!"
         });
 
     } catch (error) {
         console.error('❌ Chatbot Error:', error);
-        res.status(500).json({ success: false, message: 'Internal Server Error', error: error.message });
+        res.status(500).json({ success: false, reply: 'Internal Server Error processing NLP.' });
     }
 });
 

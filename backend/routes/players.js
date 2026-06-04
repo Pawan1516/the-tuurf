@@ -111,6 +111,59 @@ router.post('/resolve', verifyToken, async (req, res) => {
     }
 });
 
+// ✅ STEP 8: Player Registration (No OTP)
+router.post('/register-no-otp', async (req, res) => {
+    try {
+        const { mobile, name } = req.body;
+        if (!mobile) return res.status(400).json({ success: false, message: 'Mobile number required' });
+
+        // Search for existing user
+        let user = await User.findOne({ 
+            $or: [{ phone: mobile }, { mobileNumber: mobile }] 
+        });
+
+        if (user) {
+            return res.json({ 
+                success: true, 
+                message: 'Player retrieved from Registry', 
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    phone: user.phone,
+                    stats: user.stats
+                }
+            });
+        }
+
+        // Create new player profile (No OTP)
+        user = await User.create({
+            name: name || `Player_${mobile.slice(-4)}`,
+            phone: mobile,
+            mobileNumber: mobile,
+            password: `Turf_${mobile.slice(-4)}`, // Auto-generated default password
+            role: 'PLAYER',
+            isVerified: true, // Auto-verified for this flow
+            stats: {
+                batting: { matches: 0, runs: 0 },
+                bowling: { matches: 0, wickets: 0 }
+            }
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'New Player Node Registered (No OTP)',
+            user: {
+                _id: user._id,
+                name: user.name,
+                phone: user.phone,
+                stats: user.stats
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // @route   POST /api/players/lookup-mobile
 // @desc    Lookup player by mobile (Addendum v2.6)
 router.post('/lookup-mobile', verifyToken, async (req, res) => {

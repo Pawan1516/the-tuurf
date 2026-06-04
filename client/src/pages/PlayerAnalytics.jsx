@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import AuthContext from '../context/AuthContext';
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+const COLORS = ['#3B82F6', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const PlayerAnalytics = () => {
   const { user: currentUser, loading: authLoading } = useContext(AuthContext);
@@ -108,11 +108,11 @@ const PlayerAnalytics = () => {
         {/* Header & Search */}
         <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
           <div className="animate-in fade-in slide-in-from-left duration-700">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-600">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-500 to-purple-600">
               Player Intel Hub
             </h1>
             <p className="text-slate-400 mt-2 text-sm md:text-base font-bold flex items-center gap-3">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]"></span>
+              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#3B82F6]"></span>
               Professional Comparison & Predictive Analysis
             </p>
           </div>
@@ -204,7 +204,7 @@ const PlayerAnalytics = () => {
 
               {/* VS Animation */}
               <div className="flex flex-col items-center justify-center gap-4">
-                 <div className="w-20 h-20 bg-gradient-to-tr from-emerald-500 to-blue-500 rounded-full flex items-center justify-center relative">
+                 <div className="w-20 h-20 bg-gradient-to-tr from-emerald-500 to-emerald-500 rounded-full flex items-center justify-center relative">
                     <div className="absolute inset-0 bg-white/20 rounded-full animate-ping"></div>
                     <span className="text-3xl font-black italic tracking-tighter text-slate-900 relative z-10">VS</span>
                  </div>
@@ -217,30 +217,30 @@ const PlayerAnalytics = () => {
               </div>
 
               {/* Player 2 */}
-              <div className="bg-slate-900/50 rounded-[3rem] p-8 border-2 border-blue-500/20 shadow-2xl relative overflow-hidden group">
-                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
+              <div className="bg-slate-900/50 rounded-[3rem] p-8 border-2 border-emerald-500/20 shadow-2xl relative overflow-hidden group">
+                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
                  <div className="relative z-10 flex flex-col items-center text-center">
-                    <div className="w-24 h-24 bg-blue-500/20 rounded-[2rem] border-4 border-blue-500/30 overflow-hidden flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+                    <div className="w-24 h-24 bg-emerald-500/20 rounded-[2rem] border-4 border-emerald-500/30 overflow-hidden flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
                       {comparisonData.player2.image ? (
                            <img src={comparisonData.player2.image} alt={comparisonData.player2.name} className="w-full h-full object-cover" />
                         ) : (
-                           <User size={48} className="text-blue-500" />
+                           <User size={48} className="text-emerald-500" />
                         )}
                     </div>
                     <h3 className="text-2xl font-black uppercase tracking-tighter">{comparisonData.player2.name}</h3>
-                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mt-1">{comparisonData.player2.role}</p>
+                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mt-1">{comparisonData.player2.role}</p>
                     <div className="mt-4 flex items-center justify-center gap-3">
-                        <div className="px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20 flex items-center gap-1.5">
+                        <div className="px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
                             <Zap size={10} className="text-yellow-400 fill-yellow-400" />
-                            <span className="text-[10px] font-black text-blue-400">4s: {selectedOpponent?.stats?.batting?.fours || 0}</span>
+                            <span className="text-[10px] font-black text-emerald-400">4s: {selectedOpponent?.stats?.batting?.fours || 0}</span>
                         </div>
-                        <div className="px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20 flex items-center gap-1.5">
-                            <Zap size={10} className="text-blue-400 fill-blue-400" />
-                            <span className="text-[10px] font-black text-blue-400">6s: {selectedOpponent?.stats?.batting?.sixes || 0}</span>
+                        <div className="px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
+                            <Zap size={10} className="text-emerald-400 fill-emerald-400" />
+                            <span className="text-[10px] font-black text-emerald-400">6s: {selectedOpponent?.stats?.batting?.sixes || 0}</span>
                         </div>
                     </div>
-                    <div className="mt-3 flex items-center gap-2 bg-blue-500/10 px-4 py-1.5 rounded-full border border-blue-500/20">
-                       <p className="text-[10px] font-bold text-blue-400 font-mono tracking-widest">{comparisonData.player2.phone}</p>
+                    <div className="mt-3 flex items-center gap-2 bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/20">
+                       <p className="text-[10px] font-bold text-emerald-400 font-mono tracking-widest">{comparisonData.player2.phone}</p>
                     </div>
                  </div>
               </div>
@@ -263,7 +263,7 @@ const PlayerAnalytics = () => {
                               contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '20px', padding: '16px' }}
                            />
                            <Legend iconType="circle" />
-                           <Bar dataKey="p1" name={comparisonData.player1.name} fill="#10b981" radius={[8, 8, 0, 0]} />
+                           <Bar dataKey="p1" name={comparisonData.player1.name} fill="#3B82F6" radius={[8, 8, 0, 0]} />
                            <Bar dataKey="p2" name={comparisonData.player2.name} fill="#3b82f6" radius={[8, 8, 0, 0]} />
                         </BarChart>
                      </ResponsiveContainer>
@@ -273,7 +273,7 @@ const PlayerAnalytics = () => {
                {/* RADAR CHART SECTION */}
                <div className="bg-[#131b2f] rounded-[2.5rem] p-8 border border-white/5 shadow-2xl">
                   <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-10 flex items-center gap-2">
-                     <Activity className="text-blue-500" size={16} /> Skill Matrix Coverage
+                     <Activity className="text-emerald-500" size={16} /> Skill Matrix Coverage
                   </h3>
                   <div className="h-80">
                      <ResponsiveContainer width="100%" height="100%">
@@ -281,7 +281,7 @@ const PlayerAnalytics = () => {
                            <PolarGrid stroke="#1e293b" />
                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: '900' }} />
                            <PolarRadiusAxis angle={30} domain={[0, 150]} stroke="#1e293b" tick={false} />
-                           <Radar name={comparisonData.player1.name} dataKey="p1" stroke="#10b981" fill="#10b981" fillOpacity={0.5} />
+                           <Radar name={comparisonData.player1.name} dataKey="p1" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.5} />
                            <Radar name={comparisonData.player2.name} dataKey="p2" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.5} />
                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '20px' }} />
                            <Legend iconType="circle" />
@@ -299,7 +299,7 @@ const PlayerAnalytics = () => {
                   <p className="font-black text-white uppercase">{comparisonData.insights.betterStriker}</p>
                </div>
                <div className="bg-slate-900/30 p-6 rounded-[2rem] border border-white/5 flex flex-col items-center text-center">
-                  <Flame className="text-blue-500 mb-3" size={24} />
+                  <Flame className="text-emerald-500 mb-3" size={24} />
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Best Bowler</p>
                   <p className="font-black text-white uppercase">{comparisonData.insights.bestBowler}</p>
                </div>
@@ -341,15 +341,15 @@ const PlayerAnalytics = () => {
                       <AreaChart data={(playerData?.batting?.strikeRateProgression || []).map((d) => ({ match: d.date || 'Recent', runs: d.runs || 0 }))}>
                         <defs>
                           <linearGradient id="colorBat" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                         <XAxis dataKey="match" stroke="#64748b" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: '900' }} />
                         <YAxis stroke="#64748b" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
                         <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px' }} />
-                        <Area type="monotone" dataKey="runs" name="Runs" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorBat)" connectNulls={true} />
+                        <Area type="monotone" dataKey="runs" name="Runs" stroke="#3B82F6" strokeWidth={4} fillOpacity={1} fill="url(#colorBat)" connectNulls={true} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -359,7 +359,7 @@ const PlayerAnalytics = () => {
                <div className="bg-[#131b2f] rounded-[2.5rem] p-8 border border-white/5 shadow-2xl overflow-hidden">
                   <div className="flex justify-between items-center mb-8">
                      <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Activity className="text-blue-500" size={16} /> Recent Bowling Force
+                        <Activity className="text-emerald-500" size={16} /> Recent Bowling Force
                      </h3>
                   </div>
                   <div className="h-64">
@@ -440,7 +440,7 @@ const PlayerAnalytics = () => {
                             stroke="none"
                           >
                             <Cell fill="#ef4444" />
-                            <Cell fill="#10b981" />
+                            <Cell fill="#3B82F6" />
                           </Pie>
                         </PieChart>
                       </ResponsiveContainer>
@@ -469,3 +469,6 @@ const PlayerAnalytics = () => {
 
 // Internal standard Recharts Label usage is within the components above.
 export default PlayerAnalytics;
+
+
+
