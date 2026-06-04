@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Swords, Database, Trophy, ChevronLeft, ChevronRight, Activity, TrendingUp, BarChart as BarChartIcon, Target, PieChart as PieChartIcon } from 'lucide-react';
-import { matchesAPI } from '../api/client';
+import { matchesAPI, SOCKET_URL as API_SOCKET_URL } from '../api/client';
 import io from 'socket.io-client';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, BarChart, Bar, Cell, PieChart, Pie, Legend } from 'recharts';
 
@@ -12,9 +12,7 @@ const PlayerProfile = () => {
     const [recentMatches, setRecentMatches] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const SOCKET_URL = process.env.NODE_ENV === 'production' 
-        ? 'https://the-tuurf-ufkd.onrender.com' 
-        : 'http://localhost:5001';
+    const SOCKET_URL = API_SOCKET_URL;
 
     const fetchPlayerProfile = async () => {
         try {

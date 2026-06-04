@@ -4,15 +4,14 @@ import AuthContext from '../context/AuthContext';
 import { useMatchFlow } from '../context/MatchFlowContext';
 import apiClient from '../api/client';
 import io from 'socket.io-client';
+import { SOCKET_URL as API_SOCKET_URL } from '../api/client';
 import { 
   Undo2, RefreshCw, AlertTriangle, Swords, Target, 
   TrendingUp, Play, Award, HelpCircle, CheckCircle, ChevronRight, X 
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-const SOCKET_URL = process.env.NODE_ENV === 'production'
-  ? 'https://the-tuurf-ufkd.onrender.com'
-  : 'http://localhost:5001';
+const SOCKET_URL = API_SOCKET_URL;
 
 /* ─── Premium Glassmorphism styling tokens ─── */
 const styles = {

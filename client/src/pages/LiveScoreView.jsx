@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
-import apiClient from '../api/client';
+import apiClient, { SOCKET_URL as API_SOCKET_URL } from '../api/client';
 import {
     Trophy, Share2, BarChart3,
     Zap, Target, TrendingUp, WifiOff, ArrowLeft, Star,
@@ -18,9 +18,7 @@ import CricBotWidget from '../components/CricBotWidget';
 import PostTossSetup from '../components/PostTossSetup';
 import ScoringPanel from '../components/ScoringPanel';
 
-const SOCKET_URL = process.env.NODE_ENV === 'production'
-    ? 'https://the-tuurf-ufkd.onrender.com'
-    : 'http://localhost:5001';
+const SOCKET_URL = API_SOCKET_URL;
 
 /* ─── Design tokens ─────────────────────────────────────────────── */
 const styles = {

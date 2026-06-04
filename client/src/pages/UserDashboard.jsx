@@ -50,6 +50,7 @@ import {
     Pie
 } from 'recharts';
 import io from 'socket.io-client';
+import { SOCKET_URL as API_SOCKET_URL } from '../api/client';
 import AuthContext from '../context/AuthContext';
 import apiClient, { bookingsAPI, slotsAPI, matchesAPI, authAPI, analyticsAPI, receiptsAPI } from '../api/client';
 import MobileNav from '../components/MobileNav';
@@ -109,7 +110,7 @@ const UserDashboard = () => {
         fetchInitialData();
 
         // Socket.IO for real-time career stats updates
-        const socket = io(process.env.NODE_ENV === 'production' ? 'https://the-tuurf-ufkd.onrender.com' : 'http://localhost:5001');
+        const socket = io(API_SOCKET_URL);
         
         if (user?._id) {
             socket.emit('join_profile', user._id);

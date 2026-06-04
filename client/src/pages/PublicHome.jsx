@@ -8,6 +8,7 @@ import {
   ChevronLeft, CircleDot, Flame, Wind, Sparkles, BarChart2
 } from 'lucide-react';
 import io from 'socket.io-client';
+import { SOCKET_URL as API_SOCKET_URL } from '../api/client';
 
 
 /* ─────────────────────────────────────────────
@@ -124,9 +125,7 @@ const getISODate = (date = new Date()) =>
    MAIN COMPONENT
 ═══════════════════════════════════════════════ */
 const PublicHome = () => {
-  const SOCKET_URL = process.env.NODE_ENV === 'production'
-    ? 'https://the-tuurf-ufkd.onrender.com'
-    : 'http://localhost:5001';
+  const SOCKET_URL = API_SOCKET_URL;
 
   const location = useLocation();
   const navigate = useNavigate();

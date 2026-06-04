@@ -1,7 +1,7 @@
 import axios from 'axios';
 // API configuration
 // Priority: REACT_APP_API_URL (CRA) -> NEXT_PUBLIC_API_URL (Next) -> runtime same-origin /api
-const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.origin}/api` : 'http://localhost:5001/api');
+export const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.origin}/api` : 'http://localhost:5001/api');
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -26,6 +26,9 @@ const setAccessToken = (token) => {
 
 export { setAccessToken };
 export default apiClient;
+// Export derived backend origin (without trailing /api) and socket URL helper
+export const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api$/i, '');
+export const SOCKET_URL = BACKEND_ORIGIN;
 // Request Interceptor: Attach Access Token
 apiClient.interceptors.request.use(
   (config) => {

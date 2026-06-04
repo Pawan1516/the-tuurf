@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMatchFlow } from '../context/MatchFlowContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Bot, Settings2, Calendar, Hash, Users, Trophy, ChevronRight, Zap, MapPin } from 'lucide-react';
-
-const API = (process.env.REACT_APP_API_URL || 'http://localhost:5001').replace(/\/api$/, '');
+import { BACKEND_ORIGIN as API } from '../api/client';
 
 export default function MatchCreate() {
   const { updateMatch, initMatch } = useMatchFlow();

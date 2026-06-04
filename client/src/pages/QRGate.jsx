@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle } from 'lucide-react';
 
-const API = (process.env.REACT_APP_API_URL || 'http://localhost:5001').replace(/\/api$/, '');
+import { BACKEND_ORIGIN as API } from '../api/client';
 
 export default function QRGate() {
   const { matchId } = useParams();

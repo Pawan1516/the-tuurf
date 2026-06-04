@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import LiveScore from './LiveScore';
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { MatchFlowProvider, useMatchFlow } from '../context/MatchFlowContext';
-import apiClient from '../api/client';
+import apiClient, { BACKEND_ORIGIN } from '../api/client';
 
 // Import pages
 import TossScreen from './TossScreen';
@@ -13,7 +13,7 @@ import FinishedMatches from './FinishedMatches';
 import SelectPlayers from './SelectPlayers';
 import ScoringDashboard from './ScoringDashboard';
 
-const API = (process.env.REACT_APP_API_URL || 'http://localhost:5001').replace(/\/api$/, '');
+const API = BACKEND_ORIGIN;
 
 function MatchFlowContent() {
   const {
