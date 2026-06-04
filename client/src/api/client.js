@@ -1,7 +1,10 @@
 import axios from 'axios';
 // API configuration
 // Priority: REACT_APP_API_URL (CRA) -> NEXT_PUBLIC_API_URL (Next) -> runtime same-origin /api
-export const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.origin}/api` : 'http://localhost:5001/api');
+// Prefer runtime browser origin when available to avoid baking localhost during build
+export const API_BASE_URL = (typeof window !== 'undefined')
+  ? (window.__THE_TURF_API_URL || `${window.location.origin}/api`)
+  : (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api');
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

@@ -1,7 +1,9 @@
 import { io } from 'socket.io-client';
 
-// Derive backend URL from env or runtime origin. Remove trailing '/api' if present.
-const rawApi = process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.origin}/api` : 'http://localhost:5001/api');
+// Derive backend URL at runtime. Prefer browser origin (or runtime override) to avoid baking localhost at build time.
+const rawApi = (typeof window !== 'undefined')
+  ? (window.__THE_TURF_API_URL || `${window.location.origin}/api`)
+  : (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api');
 const SOCKET_URL = rawApi.replace(/\/api\/?$/, '');
 
 const socket = io(SOCKET_URL, {
