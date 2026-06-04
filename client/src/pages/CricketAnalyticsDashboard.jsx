@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
+import { connectSocket, disconnectSocket } from '../utils/socketClient';
 import AuthContext from '../context/AuthContext';
 import {
   BarChart, Bar, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -27,6 +28,7 @@ export default function CricketAnalyticsDashboard() {
   const [last5MatchData, setLast5MatchData] = useState([]);
   const [liveDataPoints, setLiveDataPoints] = useState([]);
   const [distributionData, setDistributionData] = useState(null);
+    const [showUpgrade, setShowUpgrade] = useState(false);
   const [activeMatchId, setActiveMatchId] = useState(null);
   const [insights, setInsights] = useState(null);
   const [cumulativeRuns, setCumulativeRuns] = useState(0);
@@ -39,7 +41,7 @@ export default function CricketAnalyticsDashboard() {
   useEffect(() => {
     if (!currentUser?._id) return;
 
-    const fetchAnalytics = async () => {
+        const fetchAnalytics = async () => {
       try {
         const [statsRes, last5Res, liveRes, distRes] = await Promise.all([
           axios.get(`/api/analytics/player/${currentUser._id}/stats`),
@@ -60,15 +62,18 @@ export default function CricketAnalyticsDashboard() {
               setCumulativeRuns(liveRes.data.liveData[liveRes.data.liveData.length - 1].runs);
             }
         }
-      } catch (error) {
-        console.error("Failed to load analytics: ", error);
+            } catch (error) {
+                console.error("Failed to load analytics: ", error);
+                if (error?.response?.status === 403 || (error?.message && String(error.message).toLowerCase().includes('pro_required'))) {
+                    setShowUpgrade(true);
+                }
       }
     };
     fetchAnalytics();
   }, [currentUser]);
 
   useEffect(() => {
-    const socket = io(process.env.NODE_ENV === 'production' ? 'https://the-tuurf-ufkd.onrender.com' : 'http://localhost:5001');
+    const socket = connectSocket();
 
     if (activeMatchId) {
         socket.emit('join_match', activeMatchId);
@@ -89,7 +94,7 @@ export default function CricketAnalyticsDashboard() {
         setCumulativeRuns(newPoint.runs);
     });
 
-    return () => socket.disconnect();
+        return () => disconnectSocket();
   }, [activeMatchId]);
 
   const CustomWicketDot = (props) => {
@@ -169,7 +174,18 @@ export default function CricketAnalyticsDashboard() {
             </div>
         </header>
 
-        <div className="max-w-[1600px] mx-auto p-10 space-y-12">
+                <div className="max-w-[1600px] mx-auto p-10 space-y-12">
+                        {showUpgrade && (
+                            <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl flex items-center justify-between">
+                                <div>
+                                    <strong className="font-black uppercase">Analytics PRO</strong>
+                                    <p className="text-sm text-amber-700 mt-1">This feature is available for PRO subscribers only. Upgrade to access live insights.</p>
+                                </div>
+                                <div>
+                                    <a href="/pricing" className="bg-amber-600 text-white px-4 py-2 rounded-lg font-black uppercase">Upgrade</a>
+                                </div>
+                            </div>
+                        )}
             
             {/* Live Match Registry */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">

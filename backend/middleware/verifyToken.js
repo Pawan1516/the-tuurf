@@ -1,11 +1,19 @@
 const jwt = require('jsonwebtoken');
 const Session = require('../models/Session');
+const crypto = require('crypto');
 
 const verifyToken = async (req, res, next) => {
     const authHeader = req.header('Authorization');
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
+        // Log origin and UA to help debug mobile vs desktop differences
+        console.warn('[verifyToken] Missing token for request', {
+            path: req.originalUrl,
+            origin: req.headers.origin || req.headers.host,
+            ip: req.ip || req.connection.remoteAddress,
+            ua: req.headers['user-agent']
+        });
         return res.status(401).json({ 
             success: false, 
             message: 'Session missing. Please login again.',
@@ -57,7 +65,21 @@ const verifyToken = async (req, res, next) => {
         req.sessionId = session._id;
         next();
     } catch (err) {
+        // Compute a fingerprint for the token (sha256) for safe comparison (do not log raw token)
+        let tokenFingerprint = 'UNKNOWN';
+        try {
+            tokenFingerprint = crypto.createHash('sha256').update(token || '').digest('hex');
+        } catch (e) {
+            // ignore
+        }
+
         console.error('verifyToken middleware error:', err && err.stack ? err.stack : err);
+        console.warn('[verifyToken] token fingerprint:', tokenFingerprint, {
+            path: req.originalUrl,
+            origin: req.headers.origin || req.headers.host,
+            ip: req.ip || req.connection.remoteAddress,
+            ua: req.headers['user-agent']
+        });
         let message = 'Invalid Session';
         let code = 'INVALID_TOKEN';
 

@@ -47,6 +47,8 @@ const receiptRoutes = require('./routes/receipts');
 const agMatchRoutes = require('./routes/agMatch');
 const agChatbotRoutes = require('./routes/agChatbot');
 const seedSettings = require('./utils/settingsSeeder');
+const verifyToken = require('./middleware/verifyToken');
+const requirePro = require('./middleware/requirePro');
 
 // Database Connection with auto-reconnect
 const connectDB = async () => {
@@ -134,12 +136,76 @@ const allowedOrigins = [
   "http://localhost:5173" // Vite default
 ].filter(Boolean);
 
+// Build a runtime list of allowed origins for socket.io (supports comma-separated env)
+const corsAllowed = (process.env.CORS_ORIGINS || `${process.env.FRONTEND_URL || ''},${process.env.CLIENT_URL || ''}`)
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean)
+  .concat(["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]);
+
+const jwt = require('jsonwebtoken');
+const User = require('./models/User');
+const crypto = require('crypto');
+
+// Debug: print a fingerprint of the JWT secret so we can verify deployed vs local
+try {
+  const secretPresent = !!process.env.JWT_SECRET;
+  const fingerprint = secretPresent ? crypto.createHash('sha256').update(process.env.JWT_SECRET).digest('hex') : 'NOT_SET';
+  console.log('🔐 JWT_SECRET present:', secretPresent ? 'yes' : 'no');
+  console.log('🔐 JWT secret fingerprint (sha256):', fingerprint);
+} catch (e) {
+  console.warn('🔐 Unable to compute JWT secret fingerprint:', e && e.message);
+}
+
+// Socket.io CORS already configured above in io creation
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", process.env.FRONTEND_URL, process.env.CLIENT_URL].filter(Boolean),
+    origin: (origin, callback) => {
+      // allow non-browser clients (no origin) and allowed origins
+      if (!origin) return callback(null, true);
+      if (corsAllowed.indexOf(origin) !== -1) return callback(null, true);
+      // deny others
+      return callback(new Error('CORS origin denied'), false);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"]
+  }
+});
+
+// --- Socket authentication + Pro gating ---
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token || (socket.handshake.headers && (socket.handshake.headers.authorization || socket.handshake.headers.Authorization)) || null;
+    let raw = null;
+    if (!token) return next(); // allow anonymous sockets where allowed
+
+    if (typeof token === 'string' && token.startsWith('Bearer ')) raw = token.split(' ')[1];
+    else raw = token;
+
+    if (!raw) return next(new Error('unauthenticated'));
+
+    if (!process.env.JWT_SECRET) return next(new Error('server_misconfigured'));
+
+    const decoded = jwt.verify(raw, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) return next(new Error('unauthenticated'));
+
+    // attach user document
+    socket.user = user;
+
+    // If this connection is intended for Pro-only features, validate subscription now.
+    // We'll deny connection with 'pro_required' error when not subscribed.
+    const wantsPro = socket.handshake.query && socket.handshake.query.pro === '1';
+    if (wantsPro) {
+      const isPro = (user.subscription && user.subscription.isPremium) || user.checkPremiumStatus();
+      if (!isPro) return next(new Error('pro_required'));
+    }
+
+    return next();
+  } catch (err) {
+    console.error('Socket auth error:', err && err.stack ? err.stack : err);
+    return next(err);
   }
 });
 
@@ -308,7 +374,7 @@ app.use('/api/formats', formatRoutes);
 app.use('/api/turfs', turfRoutes);
 app.use('/api/matchmaking', matchmakingRoutes);
 app.use('/api/receipts', receiptRoutes);
-app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/analytics', verifyToken, requirePro, require('./routes/analytics'));
 app.use('/api/ag-match', agMatchRoutes);
 app.use('/api/ag-chat', agChatbotRoutes);
 // Serve React frontend in production

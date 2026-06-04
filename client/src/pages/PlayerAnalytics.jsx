@@ -19,6 +19,7 @@ const PlayerAnalytics = () => {
   const [playerData, setPlayerData] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedOpponent, setSelectedOpponent] = useState(null);
@@ -44,6 +45,9 @@ const PlayerAnalytics = () => {
       }
     } catch (error) {
       console.error("Error fetching analytics data:", error);
+      if (error?.response?.status === 403 || (error?.message && String(error.message).toLowerCase().includes('pro_required'))) {
+        setShowUpgrade(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -96,6 +100,18 @@ const PlayerAnalytics = () => {
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-white rounded-full animate-spin"></div>
           <p className="text-emerald-500 font-black uppercase tracking-widest text-xs">Syncing Performance Data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showUpgrade) {
+    return (
+      <div className="min-h-screen bg-[#0a0f1c] text-white flex items-center justify-center">
+        <div className="bg-amber-50 text-amber-800 p-8 rounded-2xl shadow-2xl max-w-xl text-center">
+          <h2 className="text-2xl font-black uppercase mb-2">Analytics PRO</h2>
+          <p className="mb-6">This analytics feature is available only to PRO subscribers. Upgrade to continue.</p>
+          <a href="/pricing" className="bg-amber-600 text-white px-6 py-3 rounded-full font-black uppercase">Upgrade to PRO</a>
         </div>
       </div>
     );
