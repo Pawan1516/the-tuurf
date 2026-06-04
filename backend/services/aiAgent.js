@@ -4,7 +4,9 @@ dotenv.config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { checkAvailability, bookSlot, getFreeSlots, getBookedSlots, cancelBooking, rescheduleBooking, initiateHandoff, getPricingInfo, lockSlot } = require('./bookingTools');
 const AIService = require('./aiService');
-const natural = require('natural');
+// Use lightweight sentiment analyzer compatible with CommonJS
+const Sentiment = require('sentiment');
+const sentiment = new Sentiment();
 const Match = require('../models/Match');
 const Setting = require('../models/Setting');
 
@@ -497,20 +499,21 @@ const aiSessions = {};
  * Intelligent NLP Analysis helper
  */
 const analyzeInputNLP = (text) => {
-  const tokenizer = new natural.WordTokenizer();
-  const tokens = tokenizer.tokenize(text.toLowerCase());
-  
-  const analyzer = new natural.SentimentAnalyzer('English', natural.PorterStemmer, 'afinn');
-  const score = analyzer.getSentiment(tokens);
-  
-  // Tagging keywords related to frustration
-  const negativeKeywords = ['angry', 'bad', 'worst', 'stupid', 'hate', 'terrible', 'useless', 'waiting'];
-  const isFrustrated = tokens.some(t => negativeKeywords.includes(t)) || score < -1.5;
+  const clean = (text || '').toString().toLowerCase();
+  const tokens = clean.split(/\W+/).filter(Boolean);
 
-  return { 
-    sentiment: score, 
-    isFrustrated, 
-    keywords: tokens.filter(t => t.length > 5) 
+  // Use sentiment package which is CommonJS-friendly
+  const result = sentiment.analyze(clean);
+  const score = typeof result.score === 'number' ? result.score : 0;
+
+  // Tagging keywords related to frustration
+  const negativeKeywords = ['angry', 'bad', 'worst', 'stupid', 'hate', 'terrible', 'useless', 'waiting', 'frustrat', 'annoy'];
+  const isFrustrated = tokens.some(t => negativeKeywords.some(k => t.includes(k))) || score < -1.5;
+
+  return {
+    sentiment: score,
+    isFrustrated,
+    keywords: tokens.filter(t => t.length > 5)
   };
 };
 
