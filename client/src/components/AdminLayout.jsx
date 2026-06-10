@@ -10,7 +10,7 @@ const AdminLayout = ({ children, title = 'Admin', subtitle = '' }) => {
   return (
     <div className="min-h-screen bg-[#F1F5F9] flex font-sans selection:bg-emerald-600/20">
       <AdminSidebar user={user} logout={logout} mobileOpen={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
-      <main className="flex-1 overflow-y-auto pb-24 relative custom-scrollbar">
+      <main className="flex-1 overflow-y-auto pb-32 lg:pb-24 relative custom-scrollbar">
         <header className="bg-white border-b border-slate-200 sticky top-0 z-[40] px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-4 min-w-0">
             <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-2 mr-2 bg-slate-50 rounded-md">

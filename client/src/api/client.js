@@ -237,6 +237,9 @@ export const aiAPI = {
   generateNotifications: (context, matchInfo) => apiClient.post('/ai/generate-notifications', { context, matchInfo }),
   broadcastNotification: (title, body) => apiClient.post('/ai/broadcast-notification', { title, body }),
   getExpertHub: () => apiClient.get('/ai/expert-hub'),
+  getMasterPrompt: (name) => apiClient.get('/ai/master-prompt', { params: { name } }),
+  executeAgent: ({ agentName, promptName, input }) => apiClient.post('/ai/execute-agent', { agentName, promptName, input }),
+  getAgentStatus: (jobId) => apiClient.get(`/ai/agent-status/${jobId}`),
 };
 
 // Turfs APIs

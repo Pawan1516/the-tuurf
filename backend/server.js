@@ -50,9 +50,15 @@ const seedSettings = require('./utils/settingsSeeder');
 const verifyToken = require('./middleware/verifyToken');
 const requirePro = require('./middleware/requirePro');
 
+// ── AI Platform routes
+const aiPlatformRoutes = require('./routes/aiPlatform');
+const voiceRoutes      = require('./routes/voice');
+
 // Database Connection with auto-reconnect
+let mongoServer = null;
+
 const connectDB = async () => {
-  const uri = process.env.MONGODB_URI;
+  let uri = process.env.MONGODB_URI;
   if (!uri) {
     console.error('❌ MONGODB_URI is not set in .env');
     return;
@@ -64,11 +70,11 @@ const connectDB = async () => {
     console.log('🔄 Initializing system-wide database connection...');
     // Connection Event Handlers
     mongoose.connection.on('connected', () => {
-      console.log('✅ [DATABASE] Mongoose connected to MongoDB Atlas');
+      console.log('✅ [DATABASE] Mongoose connected to MongoDB');
     });
 
     mongoose.connection.on('error', (err) => {
-      console.error('❌ [DATABASE] Mongoose connection error:', err);
+      console.error('❌ [DATABASE] Mongoose connection error:', err.message);
     });
 
     mongoose.connection.on('disconnected', () => {
@@ -76,25 +82,47 @@ const connectDB = async () => {
     });
 
     await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 20000,
+      serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 60000,
-      connectTimeoutMS: 20000,
+      connectTimeoutMS: 5000,
       heartbeatFrequencyMS: 10000,
       retryWrites: true,
       w: 'majority'
     });
     
-    console.log('🛡️ [DATABASE] Secure tunnel established to identity cluster.');
+    console.log('🛡️ [DATABASE] Connected successfully.');
     
     // Seed and generate in the background
     seedSettings().catch(e => console.error('Seed settings error:', e));
     const { autoGenerateSlots } = require('./utils/slotGenerator');
     autoGenerateSlots(30).catch(e => console.error('Slot generation error:', e));
   } catch (err) {
-    console.error('❌ Cluster Synchronization Critical Error:', err.message);
-    console.log('💡 Diagnostics: Verify Atlas Whitelist (0.0.0.0/0) and Credentials');
-    console.log('🔄 Re-syncing in 10s...');
-    setTimeout(connectDB, 10000);
+    // If localhost MongoDB fails, try mongodb-memory-server
+    if (uri.includes('localhost') && !mongoServer) {
+      console.warn('⚠️ Local MongoDB not available, starting in-memory MongoDB for development...');
+      try {
+        const { MongoMemoryServer } = require('mongodb-memory-server');
+        mongoServer = await MongoMemoryServer.create();
+        const memoryUri = mongoServer.getUri();
+        console.log('✅ In-memory MongoDB started');
+        
+        // Reconnect with in-memory URI
+        setTimeout(() => {
+          process.env.MONGODB_URI = memoryUri;
+          connectDB().catch(e => console.error('Failed to connect to memory server:', e));
+        }, 1000);
+      } catch (memErr) {
+        console.error('❌ Failed to start memory MongoDB:', memErr.message);
+        console.log('💡 Please install MongoDB locally or configure MongoDB Atlas in .env');
+        console.log('🔄 Re-syncing in 10s...');
+        setTimeout(connectDB, 10000);
+      }
+    } else {
+      console.error('❌ Database Connection Error:', err.message);
+      console.log('💡 Diagnostics: Verify MongoDB Atlas Whitelist (0.0.0.0/0) and Credentials');
+      console.log('🔄 Re-syncing in 10s...');
+      setTimeout(connectDB, 10000);
+    }
   }
 };
 
@@ -103,6 +131,20 @@ mongoose.connection.on('reconnected', () => {
 });
 
 connectDB();
+
+// ── Auto-Logout Feature: Initialize session cleanup job ────────────────────
+// Run cleanup every 30 minutes to remove expired sessions
+const sessionService = require('./services/sessionService');
+setInterval(async () => {
+  try {
+    const cleaned = await sessionService.cleanupExpiredSessions();
+    if (cleaned > 0) {
+      console.log(`✅ Session cleanup completed: ${cleaned} expired sessions removed`);
+    }
+  } catch (error) {
+    console.error('❌ Session cleanup error:', error.message);
+  }
+}, 30 * 60 * 1000); // Run every 30 minutes
 
 
 const app = express();
@@ -355,8 +397,14 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Mount original routes
 const pageConfigRoutes = require('./routes/pageConfig');
+const activityTracker = require('./middleware/activityTracker');
+
 app.use('/api/config', pageConfigRoutes);
 app.use('/api/auth', authRoutes);
+
+// Apply activity tracker middleware to protected routes (after auth)
+// This will update session activity on every authenticated request
+app.use('/api', verifyToken, activityTracker);
 app.use('/api/slots', slotRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
@@ -377,6 +425,10 @@ app.use('/api/receipts', receiptRoutes);
 app.use('/api/analytics', verifyToken, requirePro, require('./routes/analytics'));
 app.use('/api/ag-match', agMatchRoutes);
 app.use('/api/ag-chat', agChatbotRoutes);
+
+// ── AI Platform & Voice routes ────────────────────────────────────────────
+app.use('/api/ai-platform', aiPlatformRoutes);
+app.use('/api/voice',       voiceRoutes);
 // Serve React frontend in production
 const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
 app.use(express.static(clientBuildPath));
@@ -404,7 +456,19 @@ app.get('/api/optimizer/status', (req, res) => {
 });
 
 // Twilio Client
-const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const hasValidTwilioCredentials = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_ACCOUNT_SID.startsWith('AC') && process.env.TWILIO_AUTH_TOKEN;
+let twilioClient = null;
+if (hasValidTwilioCredentials) {
+  try {
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    console.log('🚀 Twilio Client initialized in server startup');
+  } catch (err) {
+    console.warn('⚠️ Twilio Client initialization failed:', err.message || err);
+    twilioClient = null;
+  }
+} else {
+  console.warn('⚠️ Twilio Client disabled: invalid or missing TWILIO_ACCOUNT_SID/AUTH_TOKEN');
+}
 const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
 const ownerPhone = process.env.OWNER_WHATSAPP || process.env.ADMIN_PHONE || '';
 
@@ -595,6 +659,80 @@ server.listen(PORT, () => {
   }, 60 * 60 * 1000); // Every 60 minutes
 
   console.log('🤖 Booking Optimizer: Scheduled (every 60 min)');
+
+  // ─── AI Platform Initialization ───────────────────────────────────────────
+  setTimeout(async () => {
+    try {
+      // Initialize OpenAI client if key is present
+      let openaiClient = null;
+      if (process.env.OPENAI_API_KEY) {
+        const { OpenAI } = require('openai');
+        openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        console.log('🤖 [AI Platform] OpenAI client initialized');
+      } else {
+        console.warn('⚠️ [AI Platform] OPENAI_API_KEY not set — running in degraded mode (heuristic only)');
+      }
+
+      // Wire OpenAI into all agents and engines
+      const orchestrator = require('./src/ai-platform/orchestrator/AIOrchestrator');
+      orchestrator.setOpenAIClient(openaiClient);
+
+      const KnowledgeBase = require('./src/ai-platform/knowledge/KnowledgeBase');
+      KnowledgeBase.setClient(openaiClient);
+
+      const RAGEngine = require('./src/ai-platform/knowledge/RAGEngine');
+      RAGEngine.setClient(openaiClient);
+
+      // Wire agents
+      ['SalesAgent','AnalyticsAgent','SecurityAgent','OperationsAgent','SchedulingAgent'].forEach(name => {
+        try {
+          const agent = require(`./src/ai-platform/agents/${name}`);
+          if (agent.setClient) agent.setClient(openaiClient);
+        } catch { /* skip missing agents */ }
+      });
+
+      // Register workflow templates
+      const WorkflowEngine = require('./src/ai-platform/workflows/WorkflowEngine');
+      const { registerAllTemplates } = require('./src/ai-platform/workflows/WorkflowTemplates');
+      registerAllTemplates(WorkflowEngine);
+
+      // Initialize Voice Engine if Twilio is configured
+      if (hasValidTwilioCredentials) {
+        try {
+          const VoiceEngine = require('./src/ai-platform/voice/VoiceCallEngine');
+          const voiceTwilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+          VoiceEngine.init({ orchestrator: { orchestrate: orchestrator.orchestrate }, twilioClient: voiceTwilioClient });
+          console.log('📞 [Voice Engine] Twilio Voice AI initialized');
+        } catch (err) {
+          console.warn('⚠️ [Voice Engine] Twilio Voice AI disabled due to invalid credentials:', err.message || err);
+        }
+      } else {
+        console.warn('⚠️ [Voice Engine] Twilio credentials not set — voice calls disabled');
+      }
+
+      // AI Platform Socket.IO namespace
+      const aiNamespace = io.of('/ai-platform');
+      aiNamespace.on('connection', (socket) => {
+        console.log('🤖 [AI Platform] Socket connected:', socket.id);
+        socket.on('chat', async (data) => {
+          try {
+            const result = await orchestrator.orchestrate({
+              message: data.message,
+              userId:  data.userId  || 'anonymous',
+              channel: data.channel || 'web',
+            });
+            socket.emit('reply', result);
+          } catch (err) {
+            socket.emit('reply', { success: false, reply: 'An error occurred.', intent: 'GENERAL' });
+          }
+        });
+      });
+
+      console.log('✅ [AI Platform] Fully initialized — all agents online');
+    } catch (err) {
+      console.error('❌ [AI Platform] Initialization failed:', err.message);
+    }
+  }, 5000); // 5 seconds after server start
 });
 
 // Global error handlers to aid debugging in development

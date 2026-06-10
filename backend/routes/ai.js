@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const aiService = require('../services/aiService');
+const agentRunner = require('../agents/runner');
 const Match = require('../models/Match');
 const verifyToken = require('../middleware/verifyToken');
 const roleGuard = require('../middleware/roleGuard');
@@ -111,6 +112,30 @@ router.get('/intelligence', verifyToken, async (req, res) => {
     }
 });
 
+// POST /api/ai/execute-agent
+router.post('/execute-agent', verifyToken, async (req, res) => {
+    try {
+        const { agentName, promptName, input } = req.body;
+        const jobId = await agentRunner.executeAgent({ agentName, promptName, input });
+        res.json({ success: true, jobId });
+    } catch (error) {
+        console.error('Execute agent error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET /api/ai/agent-status/:id
+router.get('/agent-status/:id', verifyToken, async (req, res) => {
+    try {
+        const job = agentRunner.getJob(req.params.id);
+        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+        res.json({ success: true, job });
+    } catch (error) {
+        console.error('Agent status error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // POST /api/ai/recommend-slot (Public/User)
 router.post('/recommend-slot', async (req, res) => {
     try {
@@ -129,4 +154,17 @@ router.post('/recommend-slot', async (req, res) => {
 });
 
 module.exports = router;
+
+// GET /api/ai/master-prompt (Admin only)
+router.get('/master-prompt', verifyToken, roleGuard(['admin']), async (req, res) => {
+    try {
+        const name = (req.query.name || 'strategy-hub').toString();
+        const prompt = await aiService.getMasterPromptByName(name);
+        if (!prompt) return res.status(500).json({ success: false, error: 'Master prompt not available.' });
+        res.json({ success: true, prompt });
+    } catch (error) {
+        console.error('Master prompt error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 

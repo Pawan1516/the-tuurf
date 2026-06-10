@@ -50,6 +50,7 @@ const AdminUsers = lazy(() => import('./pages/admin/Users'));
 const AdminScanner = lazy(() => import('./pages/admin/Scanner'));
 const StrategyHub = lazy(() => import('./pages/admin/StrategyHub'));
 const CMSHub = lazy(() => import('./pages/admin/CMSHub'));
+const AdminAgentRunner = lazy(() => import('./pages/admin/AgentRunner'));
 const UserDashboard = lazy(() => import('./pages/UserDashboard'));
 const LiveScoreView = lazy(() => import('./pages/LiveScoreView'));
 const PlayerProfile = lazy(() => import('./pages/PlayerProfile'));
@@ -432,7 +433,7 @@ function App() {
                   <Route path="/worker/report" element={<ProtectedRoute allowedRoles={['worker']}><WorkerReport /></ProtectedRoute>} />
 
                   {/* Protected: Admin */}
-                  <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
                   <Route path="/admin/operations" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><OperationsDashboard /></AdminLayout></ProtectedRoute>} />
                   <Route path="/admin/booking-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><BookingDashboard /></AdminLayout></ProtectedRoute>} />
                   <Route path="/admin/slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminSlots /></AdminLayout></ProtectedRoute>} />
@@ -446,6 +447,8 @@ function App() {
                   <Route path="/admin/scanner" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminScanner /></AdminLayout></ProtectedRoute>} />
                   <Route path="/admin/strategy" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><StrategyHub /></AdminLayout></ProtectedRoute>} />
                   <Route path="/admin/cms" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><CMSHub /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/agent-runner" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminAgentRunner /></AdminLayout></ProtectedRoute>} />
+                  {/* removed AdminDashboardV2 route */}
                   <Route path="/cricket-analytics" element={<ProtectedRoute allowedRoles={['admin']}><CricketAnalyticsDashboard /></ProtectedRoute>} />
 
                   {/* Fallback */}

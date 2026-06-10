@@ -789,4 +789,125 @@ router.post('/logout-all', verifyToken, async (req, res) => {
     }
 });
 
+// ======================== AUTO-LOGOUT FEATURE ENDPOINTS ========================
+
+const sessionService = require('../services/sessionService');
+const activityTracker = require('../middleware/activityTracker');
+
+// @route   GET /api/auth/session-status
+// @desc    Check session status and get remaining time before auto-logout
+// @access  Private
+router.get('/session-status', verifyToken, async (req, res) => {
+    try {
+        if (!req.sessionId) {
+            return res.status(401).json({
+                authenticated: false,
+                message: 'No session found'
+            });
+        }
+
+        const isValid = await sessionService.isSessionValid(req.sessionId, req.user.role);
+        const remainingTime = await sessionService.getRemainingTime(req.sessionId, req.user.role);
+        const warningTime = sessionService.getWarningTime();
+        const timeoutDuration = sessionService.getTimeoutForRole(req.user.role);
+
+        res.json({
+            success: true,
+            authenticated: isValid,
+            remainingTime,
+            warningTime,
+            timeoutDuration,
+            role: req.user.role
+        });
+    } catch (error) {
+        console.error('Session status check error:', error);
+        res.status(500).json({ success: false, message: 'Session status check failed.' });
+    }
+});
+
+// @route   POST /api/auth/keep-alive
+// @desc    Reset inactivity timer (extend session)
+// @access  Private
+router.post('/keep-alive', verifyToken, async (req, res) => {
+    try {
+        if (!req.sessionId) {
+            return res.status(401).json({ success: false, message: 'No session found.' });
+        }
+
+        const session = await sessionService.updateActivity(req.sessionId);
+        const remainingTime = await sessionService.getRemainingTime(req.sessionId, req.user.role);
+
+        if (!session) {
+            return res.status(401).json({
+                success: false,
+                message: 'Session not found or expired.',
+                code: 'SESSION_EXPIRED'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Session refreshed. Timer reset.',
+            remainingTime,
+            refreshedAt: new Date()
+        });
+    } catch (error) {
+        console.error('Keep-alive error:', error);
+        res.status(500).json({ success: false, message: 'Session refresh failed.' });
+    }
+});
+
+// @route   GET /api/auth/active-sessions
+// @desc    Get all active sessions for current user
+// @access  Private
+router.get('/active-sessions', verifyToken, async (req, res) => {
+    try {
+        const sessions = await sessionService.getActiveSessions(req.user.id);
+        
+        const sessionsInfo = sessions.map(session => ({
+            id: session._id,
+            createdAt: session.createdAt,
+            lastActivity: session.lastActivity,
+            userAgent: session.userAgent,
+            ipAddress: session.ipAddress,
+            device: session.deviceInfo || {},
+            isCurrent: session._id.toString() === req.sessionId?.toString()
+        }));
+
+        res.json({
+            success: true,
+            totalSessions: sessionsInfo.length,
+            sessions: sessionsInfo
+        });
+    } catch (error) {
+        console.error('Active sessions fetch error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch active sessions.' });
+    }
+});
+
+// @route   POST /api/auth/logout-session/:sessionId
+// @desc    Logout a specific session (useful for logout from other devices)
+// @access  Private
+router.post('/logout-session/:sessionId', verifyToken, async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        
+        // Verify the session belongs to the current user
+        const session = await Session.findOne({ _id: sessionId, userId: req.user.id });
+        if (!session) {
+            return res.status(404).json({ success: false, message: 'Session not found.' });
+        }
+
+        await sessionService.destroySession(sessionId);
+
+        res.json({
+            success: true,
+            message: 'Session terminated successfully.'
+        });
+    } catch (error) {
+        console.error('Session logout error:', error);
+        res.status(500).json({ success: false, message: 'Failed to logout session.' });
+    }
+});
+
 module.exports = router;

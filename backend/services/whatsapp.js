@@ -9,8 +9,13 @@ const fromPhone = process.env.TWILIO_WHATSAPP_FROM; // e.g., 'whatsapp:+19204826
 
 let client = null;
 if (accountSid && authToken) {
-  client = twilio(accountSid, authToken);
-  console.log('🚀 WhatsApp Service: Twilio Ready');
+  try {
+    client = twilio(accountSid, authToken);
+    console.log('🚀 WhatsApp Service: Twilio Ready');
+  } catch (err) {
+    console.warn('⚠️ WhatsApp Warning: invalid Twilio credentials, disabled Twilio provider.', err.message || err);
+    client = null;
+  }
 }
 
 // ─── Fast2SMS / Meta Cloud API Config ─────────────────────────────────────────
