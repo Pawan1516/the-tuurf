@@ -88,12 +88,14 @@ router.post('/register-verify', authLimiter, async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 60 * 60 * 1000 // 1 hour
         });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -179,12 +181,14 @@ router.post('/quick-login', authLimiter, async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 60 * 60 * 1000 // 1 hour
         });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
@@ -337,12 +341,14 @@ router.post('/login', authLimiter, async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 60 * 60 * 1000 // 1 hour
         });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -483,6 +489,7 @@ router.post('/verify-otp', async (req, res) => {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'none',
+                domain: process.env.CLIENT_URL || req.hostname,
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
             });
             res.json({ success: true, token, role: user.role, user: { id: user._id, name: user.name, phone: user.phone, role: user.role } });
@@ -519,6 +526,7 @@ router.post('/register', async (req, res) => {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'none',
+                domain: process.env.CLIENT_URL || req.hostname,
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
             });
             res.status(201).json({ success: true, token, role: user.role, user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role } });
@@ -624,12 +632,14 @@ router.post('/google', async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'none',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 60 * 60 * 1000 // 1 hour
         });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -786,12 +796,14 @@ router.post('/refresh', async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'none',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 60 * 60 * 1000 // 1 hour
         });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'none',
+            domain: process.env.CLIENT_URL || req.hostname,
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
