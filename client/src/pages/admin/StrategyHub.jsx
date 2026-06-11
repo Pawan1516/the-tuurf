@@ -42,6 +42,8 @@ const StrategyHub = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [agentResult, setAgentResult] = useState(null);
+    const [agentJob, setAgentJob] = useState(null);
 
     const fetchAll = useCallback(async () => {
         try {
@@ -74,6 +76,33 @@ const StrategyHub = () => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, [fetchAll]);
+
+    const runEnterpriseAgent = async () => {
+        try {
+            setAgentResult(null);
+            setAgentJob(null);
+            const res = await aiAPI.executeAgent({ agentName: 'executive', promptName: 'enterprise-ai', input: '' });
+            const jobId = res.data.jobId;
+            setAgentJob({ id: jobId, status: 'pending' });
+
+            // Poll status
+            let job = null;
+            for (let i = 0; i < 30; i++) {
+                await new Promise(r => setTimeout(r, 1000));
+                const st = await aiAPI.getAgentStatus(jobId);
+                job = st.data.job;
+                setAgentJob(job);
+                if (job.status === 'completed' || job.status === 'failed') break;
+            }
+
+            if (!job) return setAgentResult('No job status returned.');
+            if (job.status === 'completed') setAgentResult(job.result);
+            else setAgentResult(job.error || 'Agent failed');
+        } catch (err) {
+            console.error('Run agent error:', err);
+            setAgentResult(err.response?.data?.error || err.message || String(err));
+        }
+    };
 
     const experts = [
         { id: 'ai_specialist', label: 'AI Specialist', icon: BrainCircuit, color: 'text-emerald-600', bg: 'bg-blue-50' },

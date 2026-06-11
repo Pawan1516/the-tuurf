@@ -26,11 +26,12 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
     const location = useLocation();
 
     const menuItems = [
-        { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+    { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
         { to: '/admin/operations', label: 'Operations HUB', icon: Zap },
         { to: '/admin/slots', label: 'Slot Control', icon: Calendar },
         { to: '/admin/booked-slots', label: 'Booked Slots', icon: Box },
         { to: '/admin/bookings', label: 'Booking Log', icon: Activity },
+        { to: '/admin/tournaments', label: 'Tournaments', icon: Trophy },
         { to: '/admin/workers', label: 'Workers Team', icon: Briefcase },
         { to: '/admin/users', label: 'User Control', icon: Users },
         { to: '/admin/report', label: 'Intelligence', icon: FileText },
@@ -40,6 +41,14 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
         { to: '/admin/booking-dashboard', label: 'Booking Analytics', icon: Activity },
         { to: '/ai-hub', label: 'AI HUB', icon: Bot },
     ];
+
+    const mobileNavItems = menuItems.filter(item => [
+      '/admin/dashboard',
+      '/admin/operations',
+      '/admin/bookings',
+      '/admin/workers',
+      '/admin/settings'
+    ].includes(item.to));
 
     const handleLogout = () => {
         logout();
@@ -155,6 +164,27 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
                     </div>
                 </div>
             </div>
+
+            {/* Mobile bottom tab bar */}
+            <nav className="lg:hidden fixed inset-x-0 bottom-0 z-[60] bg-slate-950/95 border-t border-slate-800/90 backdrop-blur-xl px-4 py-3">
+                <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
+                    {mobileNavItems.map((item) => {
+                        const isActive = location.pathname === item.to;
+                        const Icon = item.icon;
+                        return (
+                            <Link
+                                key={item.to}
+                                to={item.to}
+                                onClick={onClose}
+                                className={`group flex-1 rounded-3xl px-3 py-3 text-center transition-all ${isActive ? 'bg-emerald-600 text-black shadow-[0_12px_35px_-16px_rgba(16,185,129,0.9)]' : 'bg-white/10 text-slate-200 hover:bg-white/15'}`}
+                            >
+                                <Icon size={20} className="mx-auto mb-1" />
+                                <span className="block text-[9px] font-black uppercase tracking-[0.3em] leading-none">{item.label.replace('Admin ', '').replace(' HUB', '')}</span>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </nav>
             </>
     );
 };

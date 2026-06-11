@@ -5,9 +5,10 @@ const Worker = require('../models/Worker');
 const Setting = require('../models/Setting');
 const verifyToken = require('../middleware/verifyToken');
 const roleGuard = require('../middleware/roleGuard');
+const { cacheMiddleware, clearCache } = require('../middleware/cache');
 
 // Get all slots (PUBLIC with optional date filter)
-router.get('/', async (req, res) => {
+router.get('/', cacheMiddleware(300), async (req, res) => {
   try {
     const { date } = req.query;
     let query = { status: { $ne: 'expired' } }; // Never show expired slots to public
@@ -32,7 +33,8 @@ router.get('/', async (req, res) => {
     const slots = await Slot.find(query)
       .populate('assignedWorker', 'name email')
       .sort({ startTime: 1 })
-      .maxTimeMS(2000);
+      .maxTimeMS(2000)
+      .lean();
 
     console.log(`[Slots] Database returned ${slots.length} documents for query:`, JSON.stringify(query));
 
@@ -45,9 +47,9 @@ router.get('/', async (req, res) => {
 });
 
 // GET Public Settings
-router.get('/settings', async (req, res) => {
+router.get('/settings', cacheMiddleware(300), async (req, res) => {
   try {
-    const settings = await Setting.find();
+    const settings = await Setting.find().lean();
     const config = settings.reduce((acc, s) => {
       acc[s.key] = s.value;
       return acc;
@@ -101,6 +103,7 @@ router.post('/', verifyToken, roleGuard(['admin']), async (req, res) => {
     });
 
     await slot.save();
+    clearCache('/api/slots');
     res.status(201).json({ success: true, slot });
   } catch (error) {
     console.error('Error creating slot:', error);
@@ -127,6 +130,7 @@ router.put('/:id/status', verifyToken, roleGuard(['admin']), async (req, res) =>
       return res.status(404).json({ success: false, message: 'Slot not found' });
     }
 
+    clearCache('/api/slots');
     res.json({ success: true, slot });
   } catch (error) {
     console.error('Error updating slot status:', error);
@@ -170,6 +174,7 @@ router.put('/:id/assign', verifyToken, roleGuard(['admin']), async (req, res) =>
       });
     }
 
+    clearCache('/api/slots');
     res.json({ success: true, slot });
   } catch (error) {
     console.error('Error assigning worker:', error);
@@ -186,6 +191,7 @@ router.delete('/:id', verifyToken, roleGuard(['admin']), async (req, res) => {
       return res.status(404).json({ success: false, message: 'Slot not found' });
     }
 
+    clearCache('/api/slots');
     res.json({ success: true, message: 'Slot deleted' });
   } catch (error) {
     console.error('Error deleting slot:', error);

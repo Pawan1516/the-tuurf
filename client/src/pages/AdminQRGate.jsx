@@ -357,7 +357,7 @@ export default function AdminQRGate() {
 
           {/* Continue Button */}
           <button
-            onClick={() => navigate(`/match/toss/${matchId}`)}
+            onClick={() => navigate(`/match/result/${matchId}`)}
             disabled={!isVerified}
             style={{
               width: '100%', padding: '1rem', marginTop: '1.5rem',

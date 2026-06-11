@@ -13,7 +13,8 @@ const apiClient = axios.create({
   }
 });
 
-let accessToken = localStorage.getItem('token');
+let accessToken = null;
+// Removed localStorage.getItem('token') to rely solely on httpOnly cookies and memory.
 if (accessToken) {
   apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 }
@@ -84,7 +85,6 @@ apiClient.interceptors.response.use(
         const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
         if (data.success && data.token) {
           setAccessToken(data.token);
-          localStorage.setItem('token', data.token);
           apiClient.defaults.headers.common.Authorization = `Bearer ${data.token}`;
           processQueue(null, data.token);
           return apiClient(originalRequest);
@@ -237,6 +237,9 @@ export const aiAPI = {
   generateNotifications: (context, matchInfo) => apiClient.post('/ai/generate-notifications', { context, matchInfo }),
   broadcastNotification: (title, body) => apiClient.post('/ai/broadcast-notification', { title, body }),
   getExpertHub: () => apiClient.get('/ai/expert-hub'),
+  getMasterPrompt: (name) => apiClient.get('/ai/master-prompt', { params: { name } }),
+  executeAgent: ({ agentName, promptName, input }) => apiClient.post('/ai/execute-agent', { agentName, promptName, input }),
+  getAgentStatus: (jobId) => apiClient.get(`/ai/agent-status/${jobId}`),
 };
 
 // Turfs APIs

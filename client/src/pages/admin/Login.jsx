@@ -27,7 +27,7 @@ const AdminLogin = () => {
         setLoading(true);
 
         try {
-            const result = await login('admin', email, password);
+            const result = await login(email, password);
             if (result.success) {
                 navigate('/admin/dashboard');
             } else {

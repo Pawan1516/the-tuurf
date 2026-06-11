@@ -5,6 +5,10 @@ const matchSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Booking'
     },
+    tournament: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tournament'
+    },
     title: { type: String }, // e.g. "Team A vs Team B"
     format: { type: String, enum: ['T3', 'T5', 'T6', 'T7', 'T8', 'T10', 'T12', 'T15', 'T20', '30-over', '50-over', 'Custom'] },
     overs: { type: Number, default: 20 },

@@ -50,6 +50,10 @@ const seedSettings = require('./utils/settingsSeeder');
 const verifyToken = require('./middleware/verifyToken');
 const requirePro = require('./middleware/requirePro');
 
+// ── AI Platform routes
+const aiPlatformRoutes = require('./routes/aiPlatform');
+const voiceRoutes      = require('./routes/voice');
+
 // Database Connection with auto-reconnect
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
@@ -377,6 +381,10 @@ app.use('/api/receipts', receiptRoutes);
 app.use('/api/analytics', verifyToken, requirePro, require('./routes/analytics'));
 app.use('/api/ag-match', agMatchRoutes);
 app.use('/api/ag-chat', agChatbotRoutes);
+
+// ── AI Platform & Voice routes ────────────────────────────────────────────
+app.use('/api/ai-platform', aiPlatformRoutes);
+app.use('/api/voice',       voiceRoutes);
 // Serve React frontend in production
 const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
 app.use(express.static(clientBuildPath));
@@ -595,6 +603,76 @@ server.listen(PORT, () => {
   }, 60 * 60 * 1000); // Every 60 minutes
 
   console.log('🤖 Booking Optimizer: Scheduled (every 60 min)');
+
+  // ─── AI Platform Initialization ───────────────────────────────────────────
+  setTimeout(async () => {
+    try {
+      // Initialize OpenAI client if key is present
+      let openaiClient = null;
+      if (process.env.OPENAI_API_KEY) {
+        const { OpenAI } = require('openai');
+        openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        console.log('🤖 [AI Platform] OpenAI client initialized');
+      } else {
+        console.warn('⚠️ [AI Platform] OPENAI_API_KEY not set — running in degraded mode (heuristic only)');
+      }
+
+      // Wire OpenAI into all agents and engines
+      const orchestrator = require('./src/ai-platform/orchestrator/AIOrchestrator');
+      orchestrator.setOpenAIClient(openaiClient);
+
+      const KnowledgeBase = require('./src/ai-platform/knowledge/KnowledgeBase');
+      KnowledgeBase.setClient(openaiClient);
+
+      const RAGEngine = require('./src/ai-platform/knowledge/RAGEngine');
+      RAGEngine.setClient(openaiClient);
+
+      // Wire agents
+      ['SalesAgent','AnalyticsAgent','SecurityAgent','OperationsAgent','SchedulingAgent'].forEach(name => {
+        try {
+          const agent = require(`./src/ai-platform/agents/${name}`);
+          if (agent.setClient) agent.setClient(openaiClient);
+        } catch { /* skip missing agents */ }
+      });
+
+      // Register workflow templates
+      const WorkflowEngine = require('./src/ai-platform/workflows/WorkflowEngine');
+      const { registerAllTemplates } = require('./src/ai-platform/workflows/WorkflowTemplates');
+      registerAllTemplates(WorkflowEngine);
+
+      // Initialize Voice Engine if Twilio is configured
+      if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+        const VoiceEngine = require('./src/ai-platform/voice/VoiceCallEngine');
+        const twilioClient = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        VoiceEngine.init({ orchestrator: { orchestrate: orchestrator.orchestrate }, twilioClient });
+        console.log('📞 [Voice Engine] Twilio Voice AI initialized');
+      } else {
+        console.warn('⚠️ [Voice Engine] Twilio credentials not set — voice calls disabled');
+      }
+
+      // AI Platform Socket.IO namespace
+      const aiNamespace = io.of('/ai-platform');
+      aiNamespace.on('connection', (socket) => {
+        console.log('🤖 [AI Platform] Socket connected:', socket.id);
+        socket.on('chat', async (data) => {
+          try {
+            const result = await orchestrator.orchestrate({
+              message: data.message,
+              userId:  data.userId  || 'anonymous',
+              channel: data.channel || 'web',
+            });
+            socket.emit('reply', result);
+          } catch (err) {
+            socket.emit('reply', { success: false, reply: 'An error occurred.', intent: 'GENERAL' });
+          }
+        });
+      });
+
+      console.log('✅ [AI Platform] Fully initialized — all agents online');
+    } catch (err) {
+      console.error('❌ [AI Platform] Initialization failed:', err.message);
+    }
+  }, 5000); // 5 seconds after server start
 });
 
 // Global error handlers to aid debugging in development

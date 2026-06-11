@@ -12,6 +12,7 @@ import StatsLeaderboard from './StatsLeaderboard';
 import FinishedMatches from './FinishedMatches';
 import SelectPlayers from './SelectPlayers';
 import ScoringDashboard from './ScoringDashboard';
+import AdminQRGate from './AdminQRGate';
 
 const API = BACKEND_ORIGIN;
 
@@ -23,6 +24,7 @@ function MatchFlowContent() {
     setVerificationStatus,
     updateMatch,
     setResult,
+    verificationStatus,
   } = useMatchFlow();
   
   const location = useLocation();
@@ -32,6 +34,15 @@ function MatchFlowContent() {
   const pathParts = location.pathname.split('/');
   const activePath = pathParts[2] || 'result';
   const idFromUrl = pathParts[3] && pathParts[3] !== 'subpath' ? pathParts[3] : pathParts[4] || null;
+
+  // Enforce QR Verification for result (toss), select (players), and scoring phases
+  useEffect(() => {
+    const protectedPaths = ['result', 'select', 'scoring'];
+    if (idFromUrl && protectedPaths.includes(activePath) && verificationStatus === 'PENDING') {
+      console.log('🔒 Match not verified. Redirecting to QR Gate.');
+      navigate(`/match/qr/${idFromUrl}`);
+    }
+  }, [idFromUrl, activePath, verificationStatus, navigate]);
 
   // Refresh-Resilient match data context restoration
   useEffect(() => {
@@ -131,7 +142,7 @@ function MatchFlowContent() {
             onClick={() => handleTabClick('result')}
             style={{
               ...tabItemStyle,
-              ...(isTabActive(['result']) ? tabItemActiveStyle : {})
+              ...(isTabActive(['result', 'qr']) ? tabItemActiveStyle : {})
             }}
           >
             🪙 Toss Portal
@@ -177,6 +188,8 @@ function MatchFlowContent() {
         {/* Active Child Component Viewport */}
         <div style={viewportStyle}>
           <Routes>
+            <Route path="qr/:id" element={<AdminQRGate />} />
+
             <Route path="result" element={<TossScreen />} />
             <Route path="result/:id" element={<TossScreen />} />
             

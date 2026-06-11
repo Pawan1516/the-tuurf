@@ -84,8 +84,8 @@ const TeamProfile = () => {
 
         setInviting(true);
         try {
-            const res = await apiClient.post(`/teams/${id}/players/add`, {
-                identifier: newPlayerIdentifier.trim(),
+            const res = await apiClient.post(`/teams/${id}/add-by-mobile`, {
+                mobile: newPlayerIdentifier.trim(),
                 role: newPlayerRole
             });
             if (res.data && res.data.success) {

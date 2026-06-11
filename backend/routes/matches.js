@@ -500,6 +500,46 @@ router.post('/:id/complete', async (req, res) => {
             return res.status(500).json({ error: 'Failed to persist match completion to DB' });
         }
 
+        // If part of a tournament, update points table and recalculate NRR
+        if (match.tournament) {
+            try {
+                const tournamentService = require('../services/tournamentService');
+                
+                const winnerId = req.body.winner || null;
+                const teamAId = match.team_a?.team_id;
+                const teamBId = match.team_b?.team_id;
+                
+                let loserId = null;
+                if (winnerId) {
+                    loserId = winnerId.toString() === teamAId?.toString() ? teamBId : teamAId;
+                }
+                
+                const isDraw = req.body.won_by === 'Tie' || req.body.won_by === 'Super Over';
+                const isAbandoned = match.status === 'Abandoned';
+
+                const teamARuns = setPayload['team_a.score'] ?? match.team_a?.score ?? 0;
+                const teamAOvers = setPayload['team_a.overs_played'] ?? match.team_a?.overs_played ?? 0;
+                const teamBRuns = setPayload['team_b.score'] ?? match.team_b?.score ?? 0;
+                const teamBOvers = setPayload['team_b.overs_played'] ?? match.team_b?.overs_played ?? 0;
+
+                await tournamentService.updatePointsTable(match.tournament, {
+                    winnerTeamId: winnerId,
+                    loserTeamId: loserId,
+                    isDraw,
+                    noResult: isAbandoned,
+                    teamAId,
+                    teamBId,
+                    teamARuns,
+                    teamAOvers,
+                    teamBRuns,
+                    teamBOvers
+                });
+                console.log(`📈 Points table updated for tournament ${match.tournament}`);
+            } catch (tErr) {
+                console.error('Error updating tournament points table:', tErr);
+            }
+        }
+
         if (!match.stats_updated) {
             const statsService = require('../services/statsService');
             const io = req.app.get('socketio');

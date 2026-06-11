@@ -3,6 +3,8 @@ const Booking = require('../models/Booking');
 const User = require('../models/User');
 const { OpenAI } = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const fs = require('fs');
+const path = require('path');
 
 /**
  * AI System for The Turf
@@ -376,5 +378,28 @@ aiService.getAIInsights = async function(stats) {
         };
     } catch (err) {
         return { summary: 'AI subsystem unavailable', error: err.message };
+    }
+};
+
+// Readable master prompt accessor
+aiService.getMasterPrompt = async function() {
+    return await aiService.getMasterPromptByName('strategy-hub');
+};
+
+aiService.getMasterPromptByName = async function(name) {
+    try {
+        const allowed = {
+            'strategy-hub': 'STRATEGY_HUB_MASTER_PROMPT.md',
+            'ai-agent': 'AI_AGENT_MASTER_PROMPT.md'
+        ,
+            'enterprise-ai': 'ENTERPRISE_AI_MASTER_PROMPT.md'
+        };
+        const file = allowed[name] || allowed['strategy-hub'];
+        const p = path.join(__dirname, '..', 'ai', 'prompts', file);
+        const content = await fs.promises.readFile(p, 'utf8');
+        return content;
+    } catch (err) {
+        console.error('Failed to read master prompt:', err.message);
+        return null;
     }
 };

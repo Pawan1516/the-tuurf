@@ -44,7 +44,6 @@ export const AuthProvider = ({ children }) => {
       const res = await authAPI.login(email, password, adminKey);
       if (res.data.success) {
         setAccessToken(res.data.token);
-        localStorage.setItem('token', res.data.token);
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
         localStorage.setItem('user', JSON.stringify(res.data.user));
         setUser(res.data.user);
@@ -62,7 +61,6 @@ export const AuthProvider = ({ children }) => {
       const res = await authAPI.quickLogin(mobile, name);
       if (res.data.success) {
         setAccessToken(res.data.token);
-        localStorage.setItem('token', res.data.token);
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
         localStorage.setItem('user', JSON.stringify(res.data.user));
         setUser(res.data.user);
@@ -91,7 +89,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authAPI.verifyRegistration(data);
       setAccessToken(res.data.token);
-      localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       setUser(res.data.user);
       return { success: true, user: res.data.user };
@@ -108,7 +105,6 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Remote logout failed, clearing local state.');
     } finally {
-      localStorage.removeItem('token');
       localStorage.removeItem('user');
       setAccessToken(null);
       setUser(null);

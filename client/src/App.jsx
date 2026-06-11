@@ -6,7 +6,6 @@ import { onMessageListener } from './utils/notifications';
 import AuthContext, { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MatchCreationModal from './components/MatchCreationModal';
-import TournamentDashboard from './pages/TournamentDashboard';
 import SessionManager from './components/SessionManager';
 import MobileNav from './components/MobileNav';
 import CricBotWidget from './components/CricBotWidget';
@@ -50,6 +49,7 @@ const AdminUsers = lazy(() => import('./pages/admin/Users'));
 const AdminScanner = lazy(() => import('./pages/admin/Scanner'));
 const StrategyHub = lazy(() => import('./pages/admin/StrategyHub'));
 const CMSHub = lazy(() => import('./pages/admin/CMSHub'));
+const AdminAgentRunner = lazy(() => import('./pages/admin/AgentRunner'));
 const UserDashboard = lazy(() => import('./pages/UserDashboard'));
 const LiveScoreView = lazy(() => import('./pages/LiveScoreView'));
 const PlayerProfile = lazy(() => import('./pages/PlayerProfile'));
@@ -66,6 +66,19 @@ const AIHub = lazy(() => import('./pages/AIHub'));
 const BookingDashboard = lazy(() => import('./pages/admin/BookingDashboard'));
 const TeamProfile = lazy(() => import('./pages/TeamProfile'));
 const Live3DMatch = lazy(() => import('./pages/Live3DMatch'));
+
+// Tournament pages lazy loads
+const TournamentList = lazy(() => import('./pages/tournament/TournamentList'));
+const TournamentCreate = lazy(() => import('./pages/tournament/TournamentCreate'));
+const TournamentHome = lazy(() => import('./pages/tournament/TournamentHome'));
+const TournamentAdmin = lazy(() => import('./pages/tournament/TournamentAdmin'));
+const TeamCreate = lazy(() => import('./pages/tournament/TeamCreate'));
+const TeamManagement = lazy(() => import('./pages/tournament/TeamManagement'));
+const QRJoin = lazy(() => import('./pages/tournament/QRJoin'));
+const TournamentAwards = lazy(() => import('./pages/tournament/TournamentAwards'));
+const TournamentRegister = lazy(() => import('./pages/tournament/TournamentRegister'));
+const AdminTournamentDashboard = lazy(() => import('./pages/admin/TournamentDashboard'));
+
 
 /* ─────────────────────────────────────────────
    NAV LINKS (desktop)
@@ -394,7 +407,16 @@ function App() {
                   <Route path="/" element={<WrapLayout><PublicHome /></WrapLayout>} />
                   <Route path="/home" element={<WrapLayout><PublicHome /></WrapLayout>} />
                   <Route path="/about" element={<WrapLayout><AboutUs /></WrapLayout>} />
-                  <Route path="/tournaments" element={<TournamentDashboard />} />
+                  <Route path="/tournaments" element={<WrapLayout><TournamentList /></WrapLayout>} />
+                  <Route path="/tournaments/create" element={<ProtectedRoute allowedRoles={['admin']}><WrapLayout><TournamentCreate /></WrapLayout></ProtectedRoute>} />
+                  <Route path="/tournaments/team/create" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><TeamCreate /></WrapLayout></ProtectedRoute>} />
+                  <Route path="/tournaments/:id" element={<WrapLayout><TournamentHome /></WrapLayout>} />
+                  <Route path="/tournaments/:id/admin" element={<ProtectedRoute allowedRoles={['admin']}><WrapLayout><TournamentAdmin /></WrapLayout></ProtectedRoute>} />
+                  <Route path="/tournaments/:id/teams/create" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><TeamCreate /></WrapLayout></ProtectedRoute>} />
+                  <Route path="/tournaments/:id/teams/:teamId" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><TeamManagement /></WrapLayout></ProtectedRoute>} />
+                  <Route path="/tournaments/:id/join" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><QRJoin /></WrapLayout></ProtectedRoute>} />
+                  <Route path="/tournaments/:id/awards" element={<WrapLayout><TournamentAwards /></WrapLayout>} />
+                  <Route path="/tournaments/:id/register" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><TournamentRegister /></WrapLayout></ProtectedRoute>} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
@@ -432,20 +454,25 @@ function App() {
                   <Route path="/worker/report" element={<ProtectedRoute allowedRoles={['worker']}><WorkerReport /></ProtectedRoute>} />
 
                   {/* Protected: Admin */}
-                  <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
-                  <Route path="/admin/operations" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><OperationsDashboard /></AdminLayout></ProtectedRoute>} />
-                  <Route path="/admin/booking-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><BookingDashboard /></AdminLayout></ProtectedRoute>} />
-                  <Route path="/admin/slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminSlots /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+                  {/* Pages that manage their own full layout (include AdminSidebar internally) — no AdminLayout wrapper */}
+                  <Route path="/admin/operations" element={<ProtectedRoute allowedRoles={['admin']}><OperationsDashboard /></ProtectedRoute>} />
+                  <Route path="/admin/booking-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><BookingDashboard /></ProtectedRoute>} />
                   <Route path="/admin/bookings" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookings /></ProtectedRoute>} />
                   <Route path="/admin/workers" element={<ProtectedRoute allowedRoles={['admin']}><AdminWorkers /></ProtectedRoute>} />
-                  <Route path="/admin/report" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminReport /></AdminLayout></ProtectedRoute>} />
-                  <Route path="/admin/booked-slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminBookedSlots /></AdminLayout></ProtectedRoute>} />
-                  <Route path="/admin/bookings/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminBookingDetail /></AdminLayout></ProtectedRoute>} />
-                  <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/report" element={<ProtectedRoute allowedRoles={['admin']}><AdminReport /></ProtectedRoute>} />
+                  <Route path="/admin/booked-slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookedSlots /></ProtectedRoute>} />
+                  <Route path="/admin/bookings/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminBookingDetail /></ProtectedRoute>} />
+                  <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
                   <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
-                  <Route path="/admin/scanner" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminScanner /></AdminLayout></ProtectedRoute>} />
-                  <Route path="/admin/strategy" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><StrategyHub /></AdminLayout></ProtectedRoute>} />
-                  <Route path="/admin/cms" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><CMSHub /></AdminLayout></ProtectedRoute>} />
+                  <Route path="/admin/scanner" element={<ProtectedRoute allowedRoles={['admin']}><AdminScanner /></ProtectedRoute>} />
+                  <Route path="/admin/strategy" element={<ProtectedRoute allowedRoles={['admin']}><StrategyHub /></ProtectedRoute>} />
+                  <Route path="/admin/cms" element={<ProtectedRoute allowedRoles={['admin']}><CMSHub /></ProtectedRoute>} />
+                  <Route path="/admin/slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminSlots /></ProtectedRoute>} />
+                  <Route path="/admin/tournaments" element={<ProtectedRoute allowedRoles={['admin']}><AdminTournamentDashboard /></ProtectedRoute>} />
+                  {/* Pages that do NOT have their own sidebar — keep AdminLayout wrapper */}
+                  <Route path="/admin/agent-runner" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminAgentRunner /></AdminLayout></ProtectedRoute>} />
+                  {/* removed AdminDashboardV2 route */}
                   <Route path="/cricket-analytics" element={<ProtectedRoute allowedRoles={['admin']}><CricketAnalyticsDashboard /></ProtectedRoute>} />
 
                   {/* Fallback */}

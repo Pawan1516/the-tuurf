@@ -84,10 +84,16 @@ router.post('/register-verify', authLimiter, async (req, res) => {
         // 4. Issue Enterprise Tokens
         const { accessToken, refreshToken } = await generateTokens(user, user.role, req);
 
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -169,10 +175,16 @@ router.post('/quick-login', authLimiter, async (req, res) => {
 
         const { accessToken, refreshToken } = await generateTokens(user, user.role, req);
         
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
@@ -321,10 +333,16 @@ router.post('/login', authLimiter, async (req, res) => {
         
         const { accessToken, refreshToken } = await generateTokens(user, finalRole, req);
 
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -461,6 +479,12 @@ router.post('/verify-otp', async (req, res) => {
         const payload = { id: user._id, role: user.role };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
             if (err) throw err;
+            res.cookie('accessToken', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'none',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
             res.json({ success: true, token, role: user.role, user: { id: user._id, name: user.name, phone: user.phone, role: user.role } });
         });
     } catch (err) {
@@ -491,6 +515,12 @@ router.post('/register', async (req, res) => {
         const payload = { id: user._id, role: user.role };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
             if (err) throw err;
+            res.cookie('accessToken', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'none',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
             res.status(201).json({ success: true, token, role: user.role, user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role } });
         });
     } catch (err) {
@@ -590,10 +620,16 @@ router.post('/google', async (req, res) => {
 
         const { accessToken, refreshToken } = await generateTokens(user, userRole, req);
 
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -746,10 +782,16 @@ router.post('/refresh', async (req, res) => {
         const { accessToken, refreshToken } = await rotateRefreshToken(rfToken, req);
         securityLogger('TOKEN_REFRESH', { ip: req.ip });
 
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
@@ -771,6 +813,7 @@ router.post('/logout', async (req, res) => {
         if (rfToken) {
             await Session.findOneAndUpdate({ refreshToken: rfToken }, { isValid: false });
         }
+        res.clearCookie('accessToken');
         res.clearCookie('refreshToken');
         res.json({ success: true, message: 'Logged out successfully.' });
     } catch (err) {
@@ -782,6 +825,7 @@ router.post('/logout', async (req, res) => {
 router.post('/logout-all', verifyToken, async (req, res) => {
     try {
         await Session.updateMany({ userId: req.user.id }, { isValid: false });
+        res.clearCookie('accessToken');
         res.clearCookie('refreshToken');
         res.json({ success: true, message: 'All sessions terminated.' });
     } catch (err) {

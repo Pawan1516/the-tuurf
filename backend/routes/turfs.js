@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Turf = require('../models/Turf');
 const verifyToken = require('../middleware/verifyToken');
+const { cacheMiddleware, clearCache } = require('../middleware/cache');
 
 // GET /api/turfs — List all turfs with filters
-router.get('/', async (req, res) => {
+router.get('/', cacheMiddleware(300), async (req, res) => {
   try {
     const { sport, city, minPrice, maxPrice, minRating, search, featured } = req.query;
     const query = { isActive: true };
@@ -28,7 +29,8 @@ router.get('/', async (req, res) => {
 
     const turfs = await Turf.find(query)
       .select('-reviews')
-      .sort({ isFeatured: -1, rating: -1, createdAt: -1 });
+      .sort({ isFeatured: -1, rating: -1, createdAt: -1 })
+      .lean();
 
     res.json({ success: true, turfs, count: turfs.length });
   } catch (err) {
@@ -37,9 +39,9 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/turfs/:id — Single turf details
-router.get('/:id', async (req, res) => {
+router.get('/:id', cacheMiddleware(300), async (req, res) => {
   try {
-    const turf = await Turf.findById(req.params.id).populate('reviews.user', 'name');
+    const turf = await Turf.findById(req.params.id).populate('reviews.user', 'name').lean();
     if (!turf) return res.status(404).json({ success: false, message: 'Turf not found' });
     res.json({ success: true, turf });
   } catch (err) {
@@ -51,6 +53,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', verifyToken, async (req, res) => {
   try {
     const turf = await Turf.create(req.body);
+    clearCache('/api/turfs');
     res.status(201).json({ success: true, turf });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -62,6 +65,7 @@ router.put('/:id', verifyToken, async (req, res) => {
   try {
     const turf = await Turf.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!turf) return res.status(404).json({ success: false, message: 'Turf not found' });
+    clearCache('/api/turfs');
     res.json({ success: true, turf });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -90,6 +94,7 @@ router.post('/:id/review', verifyToken, async (req, res) => {
     turf.reviewCount = turf.reviews.length;
 
     await turf.save();
+    clearCache('/api/turfs');
     res.json({ success: true, rating: turf.rating, reviewCount: turf.reviewCount });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -97,9 +102,9 @@ router.post('/:id/review', verifyToken, async (req, res) => {
 });
 
 // GET /api/turfs/:id/pricing — Get dynamic pricing for a date
-router.get('/:id/pricing', async (req, res) => {
+router.get('/:id/pricing', cacheMiddleware(300), async (req, res) => {
   try {
-    const turf = await Turf.findById(req.params.id).select('pricing openingHour closingHour');
+    const turf = await Turf.findById(req.params.id).select('pricing openingHour closingHour').lean();
     if (!turf) return res.status(404).json({ success: false, message: 'Turf not found' });
 
     const { date } = req.query;

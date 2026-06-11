@@ -4,9 +4,13 @@ const crypto = require('crypto');
 
 const verifyToken = async (req, res, next) => {
     const authHeader = req.header('Authorization');
-    const token = authHeader && authHeader.split(' ')[1];
+    let token = authHeader && authHeader.split(' ')[1];
 
-    if (!token) {
+    if ((!token || token === 'null' || token === 'undefined') && req.cookies && req.cookies.accessToken) {
+        token = req.cookies.accessToken;
+    }
+
+    if (!token || token === 'null' || token === 'undefined') {
         // Log origin and UA to help debug mobile vs desktop differences
         console.warn('[verifyToken] Missing token for request', {
             path: req.originalUrl,
