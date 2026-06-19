@@ -130,11 +130,13 @@ const Step2 = ({ data, setData }) => (
 
     <div>
       <Label required>Tournament Type</Label>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {[
           { value: 'league', label: 'League', desc: 'All teams play each other', icon: '🔄' },
           { value: 'knockout', label: 'Knockout', desc: 'Win or go home', icon: '⚔️' },
-          { value: 'league_knockout', label: 'League + Knockout', desc: 'Top teams go to knockouts', icon: '🏆' },
+          { value: 'league_knockout', label: 'League + Knockout', desc: 'Top teams qualify to playoffs', icon: '🏆' },
+          { value: 'group_playoff', label: 'Group + Playoff', desc: 'Group round robin + playoffs', icon: '⚡' },
+          { value: 'double_elimination', label: 'Double Elimination', desc: 'Winners and Losers brackets', icon: '🛡️' },
         ].map(opt => (
           <button
             key={opt.value}
@@ -159,7 +161,9 @@ const Step2 = ({ data, setData }) => (
         <Select value={data.ballType} onChange={e => setData({ ...data, ballType: e.target.value })}>
           <option value="leather">🔴 Leather Ball</option>
           <option value="tennis">🟡 Tennis Ball</option>
+          <option value="hard_tennis">🟢 Hard Tennis Ball</option>
           <option value="rubber">🟠 Rubber Ball</option>
+          <option value="tape_ball">⚪ Tape Ball</option>
           <option value="other">Other</option>
         </Select>
       </div>
@@ -197,9 +201,50 @@ const Step2 = ({ data, setData }) => (
       </div>
     </div>
 
-    {data.tournamentType === 'league_knockout' && (
+    <div className="grid grid-cols-2 gap-4">
       <div>
-        <Label>Teams Qualifying for Knockout</Label>
+        <Label>Tie-Breaker Method</Label>
+        <Select value={data.tieBreakerMethod} onChange={e => setData({ ...data, tieBreakerMethod: e.target.value })}>
+          <option value="super_over">⚡ Super Over</option>
+          <option value="bowl_out">🎯 Bowl-out</option>
+          <option value="boundary_count">🏏 Boundary Count</option>
+        </Select>
+      </div>
+      <div>
+        <Label>Reserve Days (delays)</Label>
+        <Input
+          type="number"
+          min="0"
+          value={data.reserveDays}
+          onChange={e => setData({ ...data, reserveDays: parseInt(e.target.value) || 0 })}
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <Label>Max Overs per Bowler</Label>
+        <Input
+          type="number"
+          min="1"
+          value={data.maxOversBowler}
+          onChange={e => setData({ ...data, maxOversBowler: parseInt(e.target.value) || 4 })}
+        />
+      </div>
+      <div>
+        <Label>Powerplay Overs</Label>
+        <Input
+          type="number"
+          min="0"
+          value={data.powerplayOvers}
+          onChange={e => setData({ ...data, powerplayOvers: parseInt(e.target.value) || 0 })}
+        />
+      </div>
+    </div>
+
+    {(data.tournamentType === 'league_knockout' || data.tournamentType === 'group_playoff') && (
+      <div>
+        <Label>Teams Qualifying for Playoff</Label>
         <Select value={data.leagueTopTeams} onChange={e => setData({ ...data, leagueTopTeams: parseInt(e.target.value) })}>
           {[2, 4, 8].map(n => <option key={n} value={n}>Top {n} Teams</option>)}
         </Select>
@@ -389,8 +434,12 @@ const Step5 = ({ data }) => (
         { label: 'Name', value: data.name },
         { label: 'Type', value: data.tournamentType?.replace('_', ' + ').toUpperCase() },
         { label: 'Format', value: `${data.matchFormat} (${data.oversPerMatch} overs)` },
-        { label: 'Ball', value: data.ballType },
+        { label: 'Ball', value: data.ballType?.replace('_', ' ').toUpperCase() },
         { label: 'Teams', value: data.totalTeams },
+        { label: 'Tie-Breaker', value: data.tieBreakerMethod?.replace('_', ' ').toUpperCase() },
+        { label: 'Reserve Days', value: data.reserveDays > 0 ? `${data.reserveDays} Days` : 'None' },
+        { label: 'Max Bowler Overs', value: data.maxOversBowler },
+        { label: 'Powerplay Overs', value: data.powerplayOvers },
         { label: 'Start', value: data.startDate ? new Date(data.startDate).toLocaleDateString('en-IN') : 'TBD' },
         { label: 'Entry Fee', value: data.entryFee > 0 ? `₹${data.entryFee}` : 'Free' },
         { label: 'Prize Pool', value: data.prizePool > 0 ? `₹${data.prizePool}` : 'None' },
@@ -426,6 +475,7 @@ const INITIAL_DATA = {
   banner: '',
   tournamentType: 'league',
   ballType: 'leather',
+  tieBreakerMethod: 'super_over',
   matchFormat: 'T20',
   oversPerMatch: 20,
   totalTeams: 8,
@@ -439,6 +489,9 @@ const INITIAL_DATA = {
   prizePool: 0,
   prizeDistribution: { first: 0, second: 0, third: 0 },
   visibility: 'public',
+  reserveDays: 0,
+  maxOversBowler: 4,
+  powerplayOvers: 6
 };
 
 export default function TournamentCreate() {
@@ -466,6 +519,17 @@ export default function TournamentCreate() {
         registrationEndDate: data.registrationEndDate || undefined,
         startDate: data.startDate || undefined,
         endDate: data.endDate || undefined,
+        rules: {
+          minPlayersPerTeam: 7,
+          maxPlayersPerTeam: 11,
+          playingXISize: 11,
+          substitutes: 4,
+          powerplayOvers: data.powerplayOvers || 6,
+          maxOversBowler: data.maxOversBowler || 4,
+          dls: false,
+          superOver: data.tieBreakerMethod === 'super_over',
+          bonusPoints: false
+        }
       };
       const res = await apiClient.post('/tournaments/create', payload);
       if (res.data.success) {

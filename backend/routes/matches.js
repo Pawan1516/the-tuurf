@@ -8,6 +8,7 @@ const AIService = require('../services/aiService');
 const QRService = require('../services/qrService');
 const aiInsightsService = require('../services/aiInsightsService');
 const verifyToken = require('../middleware/verifyToken');
+const llmClient = require('../services/llmClient');
 const verifyMatch = require('../middleware/verifyMatch');
 const BallEvent = require('../models/BallEvent');
 const { sendNotification } = require('../services/webpushr');
@@ -83,6 +84,50 @@ router.post('/:id/confirm-participation', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+// ─── GET MATCH BY QR CODE ─────────────────────────────────────────────
+// GET /api/matches/by-code/:matchCode
+// Public endpoint used by QR landing page when Google Lens scans match QR
+router.get('/by-code/:matchCode', async (req, res) => {
+    try {
+        const match = await Match.findOne({ qrCode: req.params.matchCode })
+            .populate('team_a.team_id', 'name shortName logo')
+            .populate('team_b.team_id', 'name shortName logo')
+            .select('matchTitle matchNumber status team_a team_b scheduledAt venue qrCode qrVerified tournament format');
+        if (!match) return res.status(404).json({ success: false, message: 'Match QR code not found' });
+        
+        const aiMessage = await generateAIMatchPreview(match);
+        res.json({ success: true, match, aiMessage });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Helper: AI match preview generator
+async function generateAIMatchPreview(match) {
+    const teamAName = match.team_a?.team_id?.name || match.quick_teams?.team_a?.name || 'Team A';
+    const teamBName = match.team_b?.team_id?.name || match.quick_teams?.team_b?.name || 'Team B';
+    const format = match.format || 'T20';
+    const status = match.status || 'Pending';
+
+    const prompt = `You are an expert cricket match analyst for "The Turf" platform.
+Generate a short, catchy 1-2 sentence preview or status update for this match.
+Context:
+- Match: ${teamAName} vs ${teamBName}
+- Format: ${format}
+- Status: ${status}
+Make it sound like a live broadcast commentary preview. Keep it under 180 characters.`;
+
+    try {
+        const reply = await llmClient.generateChat([
+            { role: 'user', content: prompt }
+        ], { maxTokens: 80 });
+        if (reply) return reply.trim();
+    } catch (err) {
+        console.warn('AI preview generation failed, using fallback:', err.message);
+    }
+    return `🏏 A thrilling ${format} encounter between ${teamAName} and ${teamBName}. Follow live ball-by-ball action here!`;
+}
 
 // ✅ STEP 13: Admin QR Scan (MANDATORY APPROVAL)
 router.post('/admin/verify-scan', async (req, res) => {
@@ -517,10 +562,18 @@ router.post('/:id/complete', async (req, res) => {
                 const isDraw = req.body.won_by === 'Tie' || req.body.won_by === 'Super Over';
                 const isAbandoned = match.status === 'Abandoned';
 
+                const matchOvers = match.overs || 20;
                 const teamARuns = setPayload['team_a.score'] ?? match.team_a?.score ?? 0;
-                const teamAOvers = setPayload['team_a.overs_played'] ?? match.team_a?.overs_played ?? 0;
                 const teamBRuns = setPayload['team_b.score'] ?? match.team_b?.score ?? 0;
-                const teamBOvers = setPayload['team_b.overs_played'] ?? match.team_b?.overs_played ?? 0;
+
+                // NRR Rule: if all-out (10 wickets), use full match overs; otherwise use actual overs faced
+                const teamAWickets = setPayload['team_a.wickets'] ?? match.team_a?.wickets ?? 0;
+                const teamBWickets = setPayload['team_b.wickets'] ?? match.team_b?.wickets ?? 0;
+                const teamAOversRaw = setPayload['team_a.overs_played'] ?? match.team_a?.overs_played ?? 0;
+                const teamBOversRaw = setPayload['team_b.overs_played'] ?? match.team_b?.overs_played ?? 0;
+                // All-out = 10 wickets fallen; treat as full allotted overs for NRR
+                const teamAOvers = teamAWickets >= 10 ? matchOvers : (teamAOversRaw || matchOvers);
+                const teamBOvers = teamBWickets >= 10 ? matchOvers : (teamBOversRaw || matchOvers);
 
                 await tournamentService.updatePointsTable(match.tournament, {
                     winnerTeamId: winnerId,
@@ -532,9 +585,16 @@ router.post('/:id/complete', async (req, res) => {
                     teamARuns,
                     teamAOvers,
                     teamBRuns,
-                    teamBOvers
+                    teamBOvers,
                 });
                 console.log(`📈 Points table updated for tournament ${match.tournament}`);
+
+                const tournamentStatsService = require('../services/tournamentStatsService');
+                setImmediate(() => {
+                    tournamentStatsService.syncMatchStatsToTournamentHistory(matchObjId.toString()).catch(e => {
+                        console.error('Error syncing match stats to tournament history:', e);
+                    });
+                });
             } catch (tErr) {
                 console.error('Error updating tournament points table:', tErr);
             }

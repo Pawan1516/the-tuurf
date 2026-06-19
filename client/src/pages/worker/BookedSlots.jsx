@@ -137,6 +137,14 @@ const WorkerBookedSlots = () => {
                                 className="bg-white border-2 border-transparent focus:border-emerald-500 p-2 md:p-3 rounded-xl outline-none transition-all font-bold text-xs md:text-sm text-gray-700 shadow-sm outline outline-1 outline-gray-200"
                             />
                         </div>
+                        {/* Mobile logout */}
+                        <button 
+                            onClick={handleLogout}
+                            className="md:hidden w-10 h-10 bg-rose-500/10 text-rose-600 border border-rose-500/20 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm shrink-0"
+                            title="Exit Terminal"
+                        >
+                            <LogOut size={16} />
+                        </button>
                     </div>
                 </header>
 

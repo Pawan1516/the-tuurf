@@ -125,6 +125,34 @@ const userSchema = new mongoose.Schema({
         role: { type: String, enum: ['Player', 'Captain', 'Vice-Captain'], default: 'Player' },
         status: { type: String, enum: ['Active', 'Inactive', 'Pending'], default: 'Active' }
     }],
+    tournamentHistory: [{
+        tournament_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Tournament' },
+        tournament_name: { type: String },
+        team_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+        team_name: { type: String },
+        season: { type: String },
+        status: { type: String, enum: ['active', 'completed'], default: 'active' },
+        result: { type: String, enum: ['winner', 'runner_up', 'semifinal', 'participated', 'eliminated'], default: 'participated' },
+        stats: {
+            matches: { type: Number, default: 0 },
+            runs: { type: Number, default: 0 },
+            balls_faced: { type: Number, default: 0 },
+            wickets: { type: Number, default: 0 },
+            overs_bowled: { type: Number, default: 0 },
+            runs_conceded: { type: Number, default: 0 },
+            catches: { type: Number, default: 0 },
+            run_outs: { type: Number, default: 0 },
+            stumpings: { type: Number, default: 0 },
+            fifties: { type: Number, default: 0 },
+            hundreds: { type: Number, default: 0 },
+            best_score: { type: Number, default: 0 },
+            best_bowling_wickets: { type: Number, default: 0 },
+            best_bowling_runs: { type: Number, default: 999 },
+            not_outs: { type: Number, default: 0 }
+        },
+        joinedAt: { type: Date, default: Date.now },
+        completedAt: { type: Date }
+    }],
     bookings: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Booking',
@@ -189,14 +217,24 @@ userSchema.methods.checkPremiumStatus = function() {
 // Normalize role to uppercase and sync mobileNumber before saving
 userSchema.pre('save', function (next) {
     if (this.phone) {
-        // Clean phone to 10 digits
-        this.phone = this.phone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+        // Clean phone to 10 digits robustly
+        const digits = this.phone.replace(/\D/g, '');
+        this.phone = (digits.length === 12 && digits.startsWith('91')) 
+            ? digits.slice(2) 
+            : (digits.length === 11 && digits.startsWith('0')) 
+                ? digits.slice(1) 
+                : digits.slice(-10);
         
         // Sync mobileNumber
         if (!this.mobileNumber) {
             this.mobileNumber = this.phone;
         } else {
-            this.mobileNumber = this.mobileNumber.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            const mobDigits = this.mobileNumber.replace(/\D/g, '');
+            this.mobileNumber = (mobDigits.length === 12 && mobDigits.startsWith('91')) 
+                ? mobDigits.slice(2) 
+                : (mobDigits.length === 11 && mobDigits.startsWith('0')) 
+                    ? mobDigits.slice(1) 
+                    : mobDigits.slice(-10);
         }
     }
 

@@ -398,26 +398,410 @@ async function getPointsTable(tournamentId) {
     
     if (!tournament) throw new Error('Tournament not found');
 
-    const table = tournament.registeredTeams
-        .filter(t => t.approvalStatus === 'approved')
-        .sort((a, b) => {
-            if (b.points !== a.points) return b.points - a.points;
-            return b.nrr - a.nrr;
-        })
-        .map((t, idx) => ({
-            position: idx + 1,
-            team: t.team_id,
-            played: t.played,
-            won: t.won,
-            lost: t.lost,
-            tied: t.tied,
-            noResult: t.noResult,
-            points: t.points,
-            nrr: t.nrr >= 0 ? `+${t.nrr.toFixed(3)}` : t.nrr.toFixed(3),
-            nrrRaw: t.nrr
-        }));
+    // Fetch all completed matches to calculate head-to-head results
+    const completedMatches = await Match.find({ tournament: tournamentId, status: 'Completed' });
 
-    return table;
+    const table = tournament.registeredTeams
+        .filter(t => t.approvalStatus === 'approved');
+
+    table.sort((a, b) => {
+        // 1. Points
+        if (b.points !== a.points) return b.points - a.points;
+
+        // 2. NRR
+        if (b.nrr !== a.nrr) return b.nrr - a.nrr;
+
+        // 3. Head-to-head
+        const aIdStr = a.team_id?._id?.toString() || a.team_id?.toString();
+        const bIdStr = b.team_id?._id?.toString() || b.team_id?.toString();
+        const matchesBetween = completedMatches.filter(m => 
+            (m.team_a?.team_id?.toString() === aIdStr && m.team_b?.team_id?.toString() === bIdStr) ||
+            (m.team_a?.team_id?.toString() === bIdStr && m.team_b?.team_id?.toString() === aIdStr)
+        );
+        let aH2HWins = 0;
+        let bH2HWins = 0;
+        for (const m of matchesBetween) {
+            if (m.winner?.toString() === aIdStr) aH2HWins++;
+            else if (m.winner?.toString() === bIdStr) bH2HWins++;
+        }
+        if (bH2HWins !== aH2HWins) return bH2HWins - aH2HWins;
+
+        // 4. Most Wins
+        if (b.won !== a.won) return b.won - a.won;
+
+        // 5. Coin toss / default fallback
+        return aIdStr.localeCompare(bIdStr);
+    });
+
+    return table.map((t, idx) => ({
+        position: idx + 1,
+        team: t.team_id,
+        played: t.played,
+        won: t.won,
+        lost: t.lost,
+        tied: t.tied,
+        noResult: t.noResult,
+        points: t.points,
+        nrr: t.nrr >= 0 ? `+${t.nrr.toFixed(3)}` : t.nrr.toFixed(3),
+        nrrRaw: t.nrr
+    }));
+}
+
+function jsonToCSV(array, headers) {
+    const headerRow = headers.map(h => `"${h.label}"`).join(',');
+    const rows = array.map(item => {
+        return headers.map(h => {
+            let val = item[h.key];
+            if (val === undefined || val === null) val = '';
+            // Escape double quotes
+            val = String(val).replace(/"/g, '""');
+            return `"${val}"`;
+        }).join(',');
+    });
+    return [headerRow, ...rows].join('\n');
+}
+
+async function generateDoubleEliminationBracket(tournamentId, seededTeamIds) {
+    const tournament = await Tournament.findById(tournamentId);
+    if (!tournament) throw new Error('Tournament not found');
+
+    const teams = seededTeamIds || tournament.registeredTeams
+        .filter(t => t.approvalStatus === 'approved')
+        .map(t => t.team_id);
+
+    if (teams.length < 4) throw new Error('Double elimination requires at least 4 approved teams');
+
+    const knockoutRounds = [];
+
+    // WB Round 1
+    const wbR1Matches = [];
+    for (let i = 0; i < teams.length; i += 2) {
+        if (i + 1 < teams.length) {
+            const match = new Match({
+                title: `${tournament.name}: WB R1 - Match ${i/2 + 1}`,
+                tournament: tournament._id,
+                team_a: { team_id: teams[i] },
+                team_b: { team_id: teams[i + 1] },
+                overs: tournament.oversPerMatch,
+                status: 'Pending',
+                knockoutRound: 'Winners Bracket Round 1',
+                isKnockout: true,
+                start_time: new Date()
+            });
+            await match.save();
+            wbR1Matches.push(match._id);
+        }
+    }
+    knockoutRounds.push({ round: 'Winners Bracket Round 1', matches: wbR1Matches });
+
+    // LB Round 1 (placeholder teams, populated as WB matches finish)
+    const lbR1Matches = [];
+    const lbCount = Math.floor(teams.length / 4);
+    for (let i = 0; i < lbCount; i++) {
+        const match = new Match({
+            title: `${tournament.name}: LB R1 - Match ${i + 1}`,
+            tournament: tournament._id,
+            overs: tournament.oversPerMatch,
+            status: 'Pending',
+            knockoutRound: 'Losers Bracket Round 1',
+            isKnockout: true,
+            start_time: new Date()
+        });
+        await match.save();
+        lbR1Matches.push(match._id);
+    }
+    knockoutRounds.push({ round: 'Losers Bracket Round 1', matches: lbR1Matches });
+
+    // Finals
+    const wbFinalMatch = new Match({
+        title: `${tournament.name}: WB Final`,
+        tournament: tournament._id,
+        overs: tournament.oversPerMatch,
+        status: 'Pending',
+        knockoutRound: 'Winners Bracket Final',
+        isKnockout: true,
+        start_time: new Date()
+    });
+    await wbFinalMatch.save();
+    knockoutRounds.push({ round: 'Winners Bracket Final', matches: [wbFinalMatch._id] });
+
+    const lbFinalMatch = new Match({
+        title: `${tournament.name}: LB Final`,
+        tournament: tournament._id,
+        overs: tournament.oversPerMatch,
+        status: 'Pending',
+        knockoutRound: 'Losers Bracket Final',
+        isKnockout: true,
+        start_time: new Date()
+    });
+    await lbFinalMatch.save();
+    knockoutRounds.push({ round: 'Losers Bracket Final', matches: [lbFinalMatch._id] });
+
+    // Grand Final
+    const grandFinalMatch = new Match({
+        title: `${tournament.name}: Grand Final`,
+        tournament: tournament._id,
+        overs: tournament.oversPerMatch,
+        status: 'Pending',
+        knockoutRound: 'Grand Final',
+        isKnockout: true,
+        start_time: new Date()
+    });
+    await grandFinalMatch.save();
+    knockoutRounds.push({ round: 'Grand Final', matches: [grandFinalMatch._id] });
+
+    tournament.knockoutRounds = knockoutRounds;
+    tournament.status = 'knockout';
+    await tournament.save();
+
+    return { rounds: knockoutRounds };
+}
+
+async function generateGroupPlayoffFixtures(tournamentId, options = {}) {
+    const tournament = await Tournament.findById(tournamentId);
+    if (!tournament) throw new Error('Tournament not found');
+
+    const approvedTeams = tournament.registeredTeams
+        .filter(t => t.approvalStatus === 'approved')
+        .map(t => t.team_id);
+
+    if (approvedTeams.length < 4) throw new Error('Group Playoff requires at least 4 approved teams');
+
+    const groupA = [];
+    const groupB = [];
+    for (let i = 0; i < approvedTeams.length; i++) {
+        if (i % 2 === 0) groupA.push(approvedTeams[i]);
+        else groupB.push(approvedTeams[i]);
+    }
+
+    const { startDate, venues = [], overs = tournament.oversPerMatch } = options;
+    const matches = [];
+    let matchNumber = 1;
+    let dateOffset = 0;
+
+    const generateGroupMatches = async (groupTeams, groupName) => {
+        for (let i = 0; i < groupTeams.length; i++) {
+            for (let j = i + 1; j < groupTeams.length; j++) {
+                const scheduledDate = startDate ? new Date(startDate.getTime() + dateOffset * 86400000) : undefined;
+                const venue = venues.length ? venues[dateOffset % venues.length] : tournament.venues[0];
+
+                const match = new Match({
+                    title: `${tournament.name}: ${groupName} - Match ${matchNumber}`,
+                    tournament: tournament._id,
+                    team_a: { team_id: groupTeams[i] },
+                    team_b: { team_id: groupTeams[j] },
+                    overs: overs,
+                    status: 'Pending',
+                    matchNumber: matchNumber,
+                    scheduledAt: scheduledDate,
+                    venue: venue?.name || '',
+                    start_time: scheduledDate || new Date()
+                });
+                await match.save();
+                matches.push(match._id);
+                matchNumber++;
+                dateOffset++;
+            }
+        }
+    };
+
+    await generateGroupMatches(groupA, 'Group A');
+    await generateGroupMatches(groupB, 'Group B');
+
+    // Create placeholder knockout matches for playoffs (SF1, SF2, Final)
+    const sf1 = new Match({
+        title: `${tournament.name}: Semifinal 1 (Group A 1st vs Group B 2nd)`,
+        tournament: tournament._id,
+        overs: overs,
+        status: 'Pending',
+        knockoutRound: 'SF',
+        isKnockout: true,
+        start_time: new Date()
+    });
+    await sf1.save();
+
+    const sf2 = new Match({
+        title: `${tournament.name}: Semifinal 2 (Group B 1st vs Group A 2nd)`,
+        tournament: tournament._id,
+        overs: overs,
+        status: 'Pending',
+        knockoutRound: 'SF',
+        isKnockout: true,
+        start_time: new Date()
+    });
+    await sf2.save();
+
+    const finalMatch = new Match({
+        title: `${tournament.name}: Final`,
+        tournament: tournament._id,
+        overs: overs,
+        status: 'Pending',
+        knockoutRound: 'F',
+        isKnockout: true,
+        start_time: new Date()
+    });
+    await finalMatch.save();
+
+    tournament.leagueMatches = matches;
+    tournament.knockoutRounds = [
+        { round: 'SF', matches: [sf1._id, sf2._id] },
+        { round: 'F', matches: [finalMatch._id] }
+    ];
+    tournament.status = 'ongoing';
+    await tournament.save();
+
+    return { leagueMatchesCreated: matches.length, matches, playoffRounds: tournament.knockoutRounds };
+}
+
+async function exportPointsTableCSV(tournamentId) {
+    const table = await getPointsTable(tournamentId);
+    const headers = [
+        { label: 'Position', key: 'position' },
+        { label: 'TeamName', key: 'teamName' },
+        { label: 'Played', key: 'played' },
+        { label: 'Won', key: 'won' },
+        { label: 'Lost', key: 'lost' },
+        { label: 'Tied', key: 'tied' },
+        { label: 'NoResult', key: 'noResult' },
+        { label: 'Points', key: 'points' },
+        { label: 'NRR', key: 'nrr' }
+    ];
+    const data = table.map(row => ({
+        position: row.position,
+        teamName: row.team?.name || 'Unknown',
+        played: row.played,
+        won: row.won,
+        lost: row.lost,
+        tied: row.tied,
+        noResult: row.noResult,
+        points: row.points,
+        nrr: row.nrr
+    }));
+    return jsonToCSV(data, headers);
+}
+
+async function exportMatchResultsCSV(tournamentId) {
+    const tournament = await Tournament.findById(tournamentId);
+    if (!tournament) throw new Error('Tournament not found');
+
+    const allMatchIds = [
+        ...tournament.leagueMatches,
+        ...tournament.knockoutRounds.flatMap(r => r.matches)
+    ];
+
+    const matches = await Match.find({ _id: { $in: allMatchIds } })
+        .populate('team_a.team_id', 'name')
+        .populate('team_b.team_id', 'name')
+        .populate('result.winner', 'name')
+        .sort({ matchNumber: 1, createdAt: 1 });
+
+    const headers = [
+        { label: 'Match No', key: 'matchNumber' },
+        { label: 'Title', key: 'title' },
+        { label: 'Team A', key: 'teamA' },
+        { label: 'Team B', key: 'teamB' },
+        { label: 'Team A Score', key: 'scoreA' },
+        { label: 'Team B Score', key: 'scoreB' },
+        { label: 'Status', key: 'status' },
+        { label: 'Winner', key: 'winner' },
+        { label: 'Won By', key: 'wonBy' },
+        { label: 'Margin', key: 'margin' }
+    ];
+
+    const data = matches.map((m, idx) => ({
+        matchNumber: m.matchNumber || idx + 1,
+        title: m.title || '',
+        teamA: m.team_a?.team_id?.name || 'Unknown',
+        teamB: m.team_b?.team_id?.name || 'Unknown',
+        scoreA: m.team_a?.score !== undefined ? `${m.team_a.score}/${m.team_a.wickets} (${m.team_a.overs_played} ov)` : '',
+        scoreB: m.team_b?.score !== undefined ? `${m.team_b.score}/${m.team_b.wickets} (${m.team_b.overs_played} ov)` : '',
+        status: m.status || 'Pending',
+        winner: m.result?.winner?.name || 'N/A',
+        wonBy: m.result?.won_by || 'N/A',
+        margin: m.result?.margin || 'N/A'
+    }));
+
+    return jsonToCSV(data, headers);
+}
+
+async function exportPlayerStatsCSV(tournamentId) {
+    const allMatchIds = [];
+    const tournament = await Tournament.findById(tournamentId);
+    if (tournament) {
+        allMatchIds.push(...tournament.leagueMatches);
+        allMatchIds.push(...tournament.knockoutRounds.flatMap(r => r.matches));
+    }
+
+    const matches = await Match.find({ 
+        _id: { $in: allMatchIds },
+        status: { $in: ['Completed', 'completed'] }
+    }).populate('team_a.team_id', 'name').populate('team_b.team_id', 'name');
+
+    const playerStats = {};
+    for (const match of matches) {
+        for (const inn of match.innings || []) {
+            const teamId = inn.batting_team?.toString();
+            const teamName = match.team_a?.team_id?._id?.toString() === teamId 
+                ? (match.team_a?.team_id?.name || 'Team A')
+                : (match.team_b?.team_id?.name || 'Team B');
+
+            for (const b of inn.batsmen || []) {
+                if (!b.user_id) continue;
+                const pid = b.user_id.toString();
+                if (!playerStats[pid]) {
+                    playerStats[pid] = {
+                        name: b.name,
+                        team: teamName,
+                        runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, runsConceded: 0, oversBowled: 0, catches: 0
+                    };
+                }
+                playerStats[pid].runs += (b.runs || 0);
+                playerStats[pid].balls += (b.balls || 0);
+                playerStats[pid].fours += (b.fours || 0);
+                playerStats[pid].sixes += (b.sixes || 0);
+            }
+
+            for (const bowler of inn.bowlers || []) {
+                if (!bowler.user_id) continue;
+                const pid = bowler.user_id.toString();
+                if (!playerStats[pid]) {
+                    playerStats[pid] = {
+                        name: bowler.name,
+                        team: teamName,
+                        runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, runsConceded: 0, oversBowled: 0, catches: 0
+                    };
+                }
+                playerStats[pid].wickets += (bowler.wickets || 0);
+                playerStats[pid].runsConceded += (bowler.runs || 0);
+                playerStats[pid].oversBowled += (bowler.overs || 0);
+            }
+
+            for (const ball of inn.balls || []) {
+                if (ball.is_wicket && ball.wicket?.dismissal_type === 'Caught' && ball.wicket?.fielder_id) {
+                    const fid = ball.wicket.fielder_id.toString();
+                    if (playerStats[fid]) {
+                        playerStats[fid].catches += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    const playersArray = Object.values(playerStats);
+    const headers = [
+        { label: 'Player Name', key: 'name' },
+        { label: 'Team', key: 'team' },
+        { label: 'Runs Scored', key: 'runs' },
+        { label: 'Balls Faced', key: 'balls' },
+        { label: 'Fours', key: 'fours' },
+        { label: 'Sixes', key: 'sixes' },
+        { label: 'Wickets', key: 'wickets' },
+        { label: 'Runs Conceded', key: 'runsConceded' },
+        { label: 'Overs Bowled', key: 'oversBowled' },
+        { label: 'Catches', key: 'catches' }
+    ];
+
+    return jsonToCSV(playersArray, headers);
 }
 
 module.exports = {
@@ -427,5 +811,10 @@ module.exports = {
     updatePointsTable,
     computeLeaderboards,
     assignAwards,
-    getPointsTable
+    getPointsTable,
+    generateDoubleEliminationBracket,
+    generateGroupPlayoffFixtures,
+    exportPointsTableCSV,
+    exportMatchResultsCSV,
+    exportPlayerStatsCSV
 };

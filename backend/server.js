@@ -6,6 +6,10 @@ const twilio = require('twilio');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// Force Node.js to use IPv4 first — fixes most Atlas connection issues
+dns.setDefaultResultOrder('ipv4first');
 
 // 🚀 global fetch is natively supported in Node 18+
 // if (!global.fetch) {
@@ -85,7 +89,8 @@ const connectDB = async () => {
       connectTimeoutMS: 20000,
       heartbeatFrequencyMS: 10000,
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
+      family: 4  // Force IPv4
     });
     
     console.log('🛡️ [DATABASE] Secure tunnel established to identity cluster.');

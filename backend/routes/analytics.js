@@ -286,12 +286,56 @@ router.get('/player/:id/stats', verifyToken, checkPremium, async (req, res) => {
 });
 
 // GET /api/analytics/player/:id/last5
-router.get('/player/:id/last5', async (req, res) => {
+router.get('/player/:id/last5', verifyToken, checkPremium, async (req, res) => {
     try {
         const history = await getPlayerMatchHistory(req.params.id, 5);
         res.json({ success: true, data: history });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Server error retrieving last 5 matches' });
+    }
+});
+
+// GET /api/analytics/match/:id/live (protected)
+router.get('/match/:id/live', verifyToken, checkPremium, async (req, res) => {
+    try {
+        const matchId = req.params.id;
+        let match;
+        if (matchId === 'latest' || !mongoose.Types.ObjectId.isValid(matchId)) {
+            match = await Match.findOne({ 
+                status: { $in: ['In Progress', 'Completed', 'Scheduled'] } 
+            }).sort({ createdAt: -1 });
+        } else {
+            match = await Match.findById(matchId);
+        }
+        if (!match) return res.status(404).json({ success: false, message: 'No active match found' });
+        const liveData = match.live_data || {};
+        const overData = (match.innings[match.current_innings_index]?.overs || []).map(o => ({
+            over: o.over_number,
+            runs: o.runs,
+            wicket: o.wickets > 0,
+            runRate: o.run_rate
+        }));
+        res.json({ success: true, liveData: overData, insights: liveData.insights || {}, matchTitle: match.title, matchId: match._id });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server error retrieving live match data' });
+    }
+});
+
+// Admin bulk stats recalculation (protected, admin only)
+router.post('/recalculate-all', verifyToken, async (req, res) => {
+    try {
+        // Simple admin check: ensure requester is admin via user role (assuming User has role field)
+        const requesterId = req.user.id; // verifyToken attaches user payload
+        const reqUser = await User.findById(requesterId);
+        if (!reqUser || !reqUser.is_admin) {
+            return res.status(403).json({ success: false, message: 'Admin privilege required' });
+        }
+        const result = await require('../services/statsService').recalculateAllStats();
+        res.json({ success: true, message: 'Recalculation started', details: result });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Failed to start recalculation' });
     }
 });
 

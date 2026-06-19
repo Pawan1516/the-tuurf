@@ -4,6 +4,7 @@ import AuthContext from '../../context/AuthContext';
 import { 
   LayoutDashboard, 
   Calendar, 
+  CalendarCheck,
   Clock, 
   CheckCircle, 
   Search, 
@@ -18,6 +19,7 @@ import {
   Zap 
 } from 'lucide-react';
 import { bookingsAPI } from '../../api/client';
+import MobileNav from '../../components/MobileNav';
 
 const WorkerDashboard = () => {
   const navigate = useNavigate();
@@ -26,6 +28,12 @@ const WorkerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  const navItems = [
+    { to: '/worker/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/worker/assigned-slots', label: 'Assigned Work', icon: CalendarCheck },
+    { to: '/worker/booked-slots', label: 'Booked Slots', icon: Calendar },
+  ];
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -66,6 +74,8 @@ const WorkerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans selection:bg-emerald-500/30">
+      <MobileNav user={user} logout={logout} navItems={navItems} dashboardTitle="The Turf" />
+
       {/* Sidebar - Pro Operations Hub */}
       <div className="hidden lg:flex w-80 bg-slate-950 flex-col border-r border-white/5 relative overflow-hidden shrink-0">
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[80px] rounded-full -mr-16 -mt-16"></div>
@@ -140,6 +150,14 @@ const WorkerDashboard = () => {
               <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20 group hover:bg-emerald-600 transition-colors cursor-pointer">
                  <Bell size={20} className="group-hover:animate-bounce-subtle" />
               </div>
+              {/* Mobile logout */}
+              <button 
+                 onClick={logout}
+                 className="lg:hidden w-12 h-12 bg-rose-500/10 text-rose-600 border border-rose-500/20 rounded-2xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm shrink-0"
+                 title="Exit Terminal"
+              >
+                 <LogOut size={20} />
+              </button>
               <div className="flex items-center gap-4 pl-4 border-l border-slate-100">
                  <div className="text-right hidden sm:block">
                     <p className="text-[10px] font-black text-slate-900 uppercase italic leading-none">{user?.name || 'Operator'}</p>

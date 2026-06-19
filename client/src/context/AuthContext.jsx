@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
-import apiClient, { authAPI, setAccessToken } from '../api/client';
+import axios from 'axios';
+import apiClient, { authAPI, setAccessToken, API_BASE_URL } from '../api/client';
 import { requestNotificationPermission } from '../utils/notifications';
 
 const AuthContext = createContext();
@@ -17,15 +18,35 @@ export const AuthProvider = ({ children }) => {
 
   // ─── Silent Refresh on Load ──────────────────────────────────────────────
   const refreshSession = useCallback(async () => {
+    if (!localStorage.getItem('user')) {
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await authAPI.getProfile(); // This will trigger interceptor which calls /refresh if needed
+      // Step 1: Silently exchange the refreshToken cookie for a new access token.
+      // Doing this explicitly first prevents the axios interceptor from firing
+      // its own /auth/refresh call during getProfile, which caused the 401 console noise.
+      const refreshRes = await axios.post(
+        `${API_BASE_URL}/auth/refresh`,
+        {},
+        { withCredentials: true }
+      );
+      if (refreshRes.data?.success && refreshRes.data?.token) {
+        setAccessToken(refreshRes.data.token);
+      } else {
+        // Refresh succeeded HTTP-wise but returned no token — treat as expired
+        throw new Error('No token in refresh response');
+      }
+
+      // Step 2: Now fetch the profile (token is in memory, no 401 expected)
+      const res = await authAPI.getProfile();
       if (res.data.success) {
         setUser(res.data.user);
         localStorage.setItem('user', JSON.stringify(res.data.user));
         requestNotificationPermission(res.data.user.id || res.data.user._id);
       }
     } catch (err) {
-      console.log('No active session found.');
+      // Refresh or profile failed — session is gone, clear state silently
       setUser(null);
       localStorage.removeItem('user');
       setAccessToken(null);

@@ -42,7 +42,8 @@ const TeamSchema = new mongoose.Schema({
     // Join System
     teamCode: { type: String, unique: true, sparse: true }, // e.g. TEAM-1025
     joinCode: { type: String, unique: true, sparse: true }, // e.g. TEAM_JOIN_1025
-    qrCode: { type: String }, // base64 data URL of QR code
+    qrCode: { type: String }, // base64 data URL of QR code (URL-based, Google Lens compatible)
+    qrUpdatedAt: { type: Date }, // when QR was last generated/refreshed
     
     // Squad (max 25)
     players: [PlayerInTeamSchema],

@@ -110,7 +110,7 @@ const UserDashboard = () => {
         fetchInitialData();
 
         // Socket.IO for real-time career stats updates
-        const socket = io(API_SOCKET_URL);
+        const socket = io(API_SOCKET_URL, { transports: ['websocket'] });
         
         if (user?._id) {
             socket.emit('join_profile', user._id);
@@ -521,6 +521,12 @@ const UserDashboard = () => {
                                                 <RefreshCw size={14} className={editLoading ? 'animate-spin' : ''} />
                                                 {editLoading ? 'Syncing...' : 'Sync Match Stats'}
                                             </button>
+                                            <button
+                                                onClick={handleLogout}
+                                                className="md:hidden inline-flex items-center gap-2 bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-700 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+                                            >
+                                                <LogOut size={14} /> Sign Out
+                                            </button>
                                         </div>
                                         {editSuccess && (
                                             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest animate-pulse">{editSuccess}</p>
@@ -811,6 +817,103 @@ const UserDashboard = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* My Tournaments Section */}
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-black text-black uppercase tracking-tight">My Tournaments</h3>
+                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest px-4 py-1.5 bg-emerald-50 rounded-full border border-emerald-100 shadow-sm">
+                                    {(profile?.tournamentHistory || []).length} Joined
+                                </span>
+                            </div>
+
+                            {(!profile?.tournamentHistory || profile.tournamentHistory.length === 0) ? (
+                                <div className="p-12 text-center bg-zinc-50 rounded-[2rem] border border-dashed border-zinc-200">
+                                    <Trophy size={32} className="mx-auto mb-4 text-slate-400" />
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No tournament records found.</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-6 sm:grid-cols-2">
+                                    {profile.tournamentHistory.map((t) => {
+                                        const isWinner = t.result === 'winner';
+                                        const isRunnerUp = t.result === 'runner_up';
+                                        const isActive = t.status === 'active';
+                                        
+                                        let badgeColor = 'bg-zinc-100 text-zinc-700 border-zinc-200';
+                                        let badgeText = 'Participated';
+                                        if (isActive) {
+                                            badgeColor = 'bg-emerald-100 text-emerald-700 border-emerald-200 animate-pulse';
+                                            badgeText = 'Ongoing';
+                                        } else if (isWinner) {
+                                            badgeColor = 'bg-amber-100 text-amber-700 border-amber-200 font-black';
+                                            badgeText = '🏆 Winner';
+                                        } else if (isRunnerUp) {
+                                            badgeColor = 'bg-slate-200 text-slate-700 border-slate-300 font-bold';
+                                            badgeText = '🥈 Runner Up';
+                                        } else if (t.result === 'semifinal') {
+                                            badgeColor = 'bg-orange-100 text-orange-700 border-orange-200';
+                                            badgeText = '🥉 Semifinalist';
+                                        }
+
+                                        return (
+                                            <div key={t._id} 
+                                                className="bg-white border border-zinc-100 p-6 rounded-[2rem] hover:border-emerald-200 hover:shadow-lg transition-all flex flex-col justify-between"
+                                            >
+                                                <div>
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Season {t.season || 'TBA'}</span>
+                                                        <span className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${badgeColor}`}>
+                                                            {badgeText}
+                                                        </span>
+                                                    </div>
+                                                    <h4 className="text-lg font-black text-black uppercase tracking-tight leading-none mb-1">
+                                                        {t.tournament_name}
+                                                    </h4>
+                                                    <p className="text-xs text-emerald-600 font-bold mb-4 uppercase tracking-wider">
+                                                        Team: {t.team_name}
+                                                    </p>
+                                                    
+                                                    {/* Tournament stats grid */}
+                                                    <div className="grid grid-cols-4 gap-2 border-t border-b border-zinc-50 py-4 mb-4">
+                                                        <div className="text-center">
+                                                            <p className="text-lg font-bebas text-black leading-none">{t.stats?.matches || 0}</p>
+                                                            <p className="text-[8px] font-black text-slate-400 uppercase">Matches</p>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-lg font-bebas text-black leading-none">{t.stats?.runs || 0}</p>
+                                                            <p className="text-[8px] font-black text-slate-400 uppercase">Runs</p>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-lg font-bebas text-black leading-none">{t.stats?.wickets || 0}</p>
+                                                            <p className="text-[8px] font-black text-slate-400 uppercase">Wickets</p>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-lg font-bebas text-black leading-none">{t.stats?.catches || 0}</p>
+                                                            <p className="text-[8px] font-black text-slate-400 uppercase">Catches</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Extra sub stats */}
+                                                    <div className="grid grid-cols-2 gap-2 text-[10px] text-zinc-500 font-bold mb-4 bg-zinc-50/50 p-3 rounded-xl">
+                                                        <div>Best Score: <span className="text-black">{t.stats?.best_score || 0}</span></div>
+                                                        <div>Best Bowl: <span className="text-black">{t.stats?.best_bowling_wickets || 0}/{t.stats?.best_bowling_runs === 999 ? 0 : t.stats?.best_bowling_runs || 0}</span></div>
+                                                        <div>50s/100s: <span className="text-black">{(t.stats?.fifties || 0)}/{(t.stats?.hundreds || 0)}</span></div>
+                                                        <div>Not Outs: <span className="text-black">{t.stats?.not_outs || 0}</span></div>
+                                                    </div>
+                                                </div>
+
+                                                <button 
+                                                    onClick={() => navigate(`/tournaments/${t.tournament_id}`)}
+                                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-black text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-xl transition-all shadow-md active:scale-95 text-center mt-2 font-black"
+                                                >
+                                                    View Tournament
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
                         {/* Recent Matches Section */}

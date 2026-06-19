@@ -10,6 +10,8 @@ const matchSchema = new mongoose.Schema({
         ref: 'Tournament'
     },
     title: { type: String }, // e.g. "Team A vs Team B"
+    isKnockout: { type: Boolean, default: false },
+    knockoutRound: { type: String }, // e.g. 'QF', 'SF', 'F', 'Double Elimination'
     format: { type: String, enum: ['T3', 'T5', 'T6', 'T7', 'T8', 'T10', 'T12', 'T15', 'T20', '30-over', '50-over', 'Custom'] },
     overs: { type: Number, default: 20 },
     start_time: { type: Date, required: true },
@@ -249,7 +251,11 @@ const matchSchema = new mongoose.Schema({
         wickets: Number,
         overs: String,
         timestamp: { type: Date, default: Date.now }
-    }]
+    }],
+    qrCode: { type: String, unique: true, sparse: true },
+    qrVerified: { type: Boolean, default: false },
+    qrGeneratedAt: { type: Date },
+    qrCodeImage: { type: String }
 }, { timestamps: true });
 
 // Indexes for fast lookup
@@ -264,6 +270,26 @@ matchSchema.methods.canBeScored = function() {
         || this.status === 'Approved'
         || this.status === 'In Progress';
 };
+
+// Pre-save hook: automatically generate unique qrCode and qrCodeImage if missing
+matchSchema.pre('save', async function(next) {
+    if (!this.qrCode) {
+        try {
+            const qrService = require('../services/qrService');
+            const matchCode = qrService.generateMatchCode();
+            this.qrCode = matchCode;
+            
+            // Generate QR Image URL (Google Lens compatible scan destination)
+            const qrImage = await qrService.generateMatchQR(this._id.toString(), matchCode);
+            this.qrCodeImage = qrImage;
+            this.qrVerified = false;
+            this.qrGeneratedAt = new Date();
+        } catch (err) {
+            console.error('Error in Match pre-save QR generation:', err.message);
+        }
+    }
+    next();
+});
 
 const Match = mongoose.model('Match', matchSchema);
 module.exports = Match;

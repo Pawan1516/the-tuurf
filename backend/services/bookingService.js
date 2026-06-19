@@ -95,8 +95,12 @@ const createBookingEntry = async ({ slotId, userName, userPhone, amount, date, s
     const slotPrice = amount || (slot ? slot.price : 1000);
     const confirmationAmount = (paymentType === 'full') ? slotPrice : Math.ceil(slotPrice * 0.4);
 
-    // [MODIFIED] Populate new fields for robust user dashboard matching
-    const cleanMobile = userPhone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+    const digits = (userPhone || '').replace(/\D/g, '');
+    const cleanMobile = (digits.length === 12 && digits.startsWith('91')) 
+        ? digits.slice(2) 
+        : (digits.length === 11 && digits.startsWith('0')) 
+            ? digits.slice(1) 
+            : digits.slice(-10);
     
     // Find turfId if possible (matching location)
     let turfId = null;

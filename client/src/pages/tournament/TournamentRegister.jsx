@@ -19,6 +19,30 @@ export default function TournamentRegister() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [eligibilityChecking, setEligibilityChecking] = useState(false);
+  const [eligibilityConflicts, setEligibilityConflicts] = useState([]);
+
+  useEffect(() => {
+    if (selectedTeam) {
+      checkTeamEligibility(selectedTeam._id);
+    } else {
+      setEligibilityConflicts([]);
+    }
+  }, [selectedTeam]);
+
+  const checkTeamEligibility = async (teamId) => {
+    try {
+      setEligibilityChecking(true);
+      const res = await apiClient.get(`/tournaments/${id}/check-player-eligibility?teamId=${teamId}`);
+      if (res.data.success) {
+        setEligibilityConflicts(res.data.conflicts || []);
+      }
+    } catch (err) {
+      console.error('Eligibility check error:', err);
+    } finally {
+      setEligibilityChecking(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -54,6 +78,11 @@ export default function TournamentRegister() {
       toast.error('Please select a team to register');
       return;
     }
+    const memberCount = selectedTeam.players?.length || 0;
+    if (memberCount < 7 || memberCount > 11) {
+      toast.error(`Team size must be between 7 and 11 members. Current team size is ${memberCount} players.`);
+      return;
+    }
     if (!agreed) {
       toast.error('Please agree to the terms and rules');
       return;
@@ -64,8 +93,13 @@ export default function TournamentRegister() {
         teamId: selectedTeam._id
       });
       if (res.data.success) {
-        toast.success('🎉 Registration submitted! Awaiting approval from the organizer.');
-        navigate(`/tournaments/${id}`);
+        if (tournament.entryFee > 0) {
+          toast.success('Registration submitted! Redirecting to payment...');
+          navigate(`/tournaments/${id}/payment?teamId=${selectedTeam._id}`);
+        } else {
+          toast.success('🎉 Registration submitted! Awaiting approval from the organizer.');
+          navigate(`/tournaments/${id}`);
+        }
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
@@ -185,7 +219,7 @@ export default function TournamentRegister() {
               <p className="font-black text-slate-400 text-sm">You don't have a team yet</p>
               <p className="text-slate-300 text-xs mt-1 mb-5">Create a team to register for tournaments</p>
               <Link
-                to="/tournaments/team/create"
+                to={`/tournaments/${id}/teams/create`}
                 className="inline-flex items-center gap-2 bg-emerald-500 text-black font-black px-5 py-2.5 rounded-xl text-xs uppercase tracking-widest"
               >
                 <Plus size={14} />
@@ -256,13 +290,50 @@ export default function TournamentRegister() {
               </div>
             </div>
 
-            {selectedTeam.players?.length < 7 && (
-              <div className="mt-4 flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-xl p-3">
-                <AlertCircle size={16} className="text-orange-500 flex-shrink-0 mt-0.5" />
-                <p className="text-[11px] font-bold text-orange-700">
-                  Your team has only {selectedTeam.players?.length || 0} player(s). 
-                  Most tournaments require at least 11 players. Add more players before the tournament starts.
+            {(selectedTeam.players?.length < 7 || selectedTeam.players?.length > 11) && (
+              <div className="mt-4 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-3">
+                <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] font-bold text-red-700">
+                  Tournament rules require team size to be between 7 and 11 members. 
+                  Your selected team currently has {selectedTeam.players?.length || 0} members. 
+                  Please update your team squad before registering.
                 </p>
+              </div>
+            )}
+
+            {eligibilityChecking && (
+              <div className="mt-4 flex items-center gap-2 text-xs text-slate-500 font-bold bg-slate-100 border border-slate-200 rounded-xl p-3">
+                <div className="w-4 h-4 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
+                <span>Checking player eligibility constraints...</span>
+              </div>
+            )}
+
+            {!eligibilityChecking && eligibilityConflicts.length > 0 && (
+              <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 flex flex-col gap-3">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-black text-red-700 text-xs uppercase tracking-wider">Player Registration Conflict</p>
+                    <p className="text-[11px] text-red-600 mt-0.5 font-bold">
+                      A player can only join one team per tournament. The following players are already registered in other teams:
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-1.5 pl-7">
+                  {eligibilityConflicts.map((c, idx) => (
+                    <div key={idx} className="text-xs font-bold text-red-800 flex items-center justify-between bg-white border border-red-100 rounded-lg px-3 py-1.5 shadow-sm">
+                      <div className="flex flex-col">
+                        <span>{c.name}</span>
+                        {c.mobile && c.mobile !== 'N/A' && (
+                          <span className="text-[10px] text-red-500 font-medium">{c.mobile}</span>
+                        )}
+                      </div>
+                      <span className="text-[9px] uppercase tracking-widest text-red-600 bg-red-50 border border-red-200/80 px-2.5 py-0.5 rounded-full font-black flex-shrink-0">
+                        In {c.teamName}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -315,7 +386,16 @@ export default function TournamentRegister() {
 
           <button
             onClick={handleRegister}
-            disabled={submitting || !selectedTeam || !agreed || tournament.status !== 'registration' || spotsLeft <= 0}
+            disabled={
+              submitting || 
+              !selectedTeam || 
+              !agreed || 
+              tournament.status !== 'registration' || 
+              spotsLeft <= 0 ||
+              eligibilityChecking ||
+              eligibilityConflicts.length > 0 ||
+              (selectedTeam.players?.length < 7 || selectedTeam.players?.length > 11)
+            }
             className="w-full mt-6 flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black py-5 rounded-2xl text-sm uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-[0.98]"
           >
             {submitting ? (

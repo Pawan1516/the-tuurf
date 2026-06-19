@@ -2,9 +2,24 @@ import axios from 'axios';
 // API configuration
 // Priority: REACT_APP_API_URL (CRA) -> NEXT_PUBLIC_API_URL (Next) -> runtime same-origin /api
 // Prefer runtime browser origin when available to avoid baking localhost during build
-export const API_BASE_URL = (typeof window !== 'undefined')
-  ? (window.__THE_TURF_API_URL || `${window.location.origin}/api`)
-  : (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api');
+export const API_BASE_URL = (() => {
+  if (typeof window !== 'undefined') {
+    if (window.__THE_TURF_API_URL) return window.__THE_TURF_API_URL;
+    
+    let envApi = process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL;
+    const isVercel = window.location.hostname.includes('vercel.app');
+    
+    if (envApi) {
+      envApi = envApi.trim().replace(/\/$/, '');
+      if (isVercel || !envApi.includes('localhost')) {
+        return envApi.endsWith('/api') ? envApi : `${envApi}/api`;
+      }
+    }
+    
+    return `${window.location.origin}/api`;
+  }
+  return process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+})();
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

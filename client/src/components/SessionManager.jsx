@@ -44,7 +44,7 @@ const SessionManager = ({ children }) => {
         setTimeLeft(300);
 
         // Don't set timers if user not logged in
-        if (!localStorage.getItem('token')) return;
+        if (!localStorage.getItem('user')) return;
 
         // Set main logout timer
         logoutTimer.current = setTimeout(() => {

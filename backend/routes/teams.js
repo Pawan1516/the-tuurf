@@ -3,6 +3,7 @@ const router = express.Router();
 const Team = require('../models/Team');
 const User = require('../models/User');
 const qrService = require('../services/qrService');
+const llmClient = require('../services/llmClient');
 
 // Middleware placeholder (use existing verifyToken if available)
 let verifyToken;
@@ -50,8 +51,8 @@ router.post('/create', verifyToken, async (req, res) => {
 
         await team.save();
 
-        // Generate QR code for team
-        const qrDataURL = await qrService.generateTeamQR(team._id.toString(), team.joinCode);
+        // Generate URL-based QR code for team (Google Lens compatible)
+        const qrDataURL = await qrService.generateTeamQR(team._id.toString(), team.joinCode, null);
         team.qrCode = qrDataURL;
         await team.save();
 
@@ -97,7 +98,12 @@ router.get('/lookup-mobile', async (req, res) => {
     try {
         const { phone } = req.query;
         if (!phone) return res.status(400).json({ success: false, message: 'Phone is required' });
-        const cleanPhone = phone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+        const digits = (phone || '').replace(/\D/g, '');
+        const cleanPhone = (digits.length === 12 && digits.startsWith('91')) 
+            ? digits.slice(2) 
+            : (digits.length === 11 && digits.startsWith('0')) 
+                ? digits.slice(1) 
+                : digits.slice(-10);
         const user = await User.findOne({ $or: [{ phone: cleanPhone }, { mobileNumber: cleanPhone }] })
             .select('name phone mobileNumber avatar cricket_profile');
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -123,12 +129,15 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// ─── GET TEAM BY JOIN CODE ───────────────────────────────────────────
+// ─── GET TEAM BY JOIN CODE (or teamCode) ────────────────────────────
 // GET /api/teams/by-code/:joinCode
+// Public endpoint used by QR landing page - no auth required
 router.get('/by-code/:joinCode', async (req, res) => {
     try {
-        const team = await Team.findOne({ joinCode: req.params.joinCode })
-            .populate('captain', 'name avatar')
+        // Support both joinCode (TEAM_JOIN_1025) and teamCode (TEAM-ID-1025)
+        const code = req.params.joinCode;
+        const team = await Team.findOne({ $or: [{ joinCode: code }, { teamCode: code }] })
+            .populate('captain', 'name avatar phone')
             .select('-qrCode -pendingRequests');
         if (!team) return res.status(404).json({ success: false, message: 'Invalid join code' });
         res.json({ success: true, team });
@@ -136,6 +145,88 @@ router.get('/by-code/:joinCode', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+// ─── PUBLIC QR JOIN INFO ─────────────────────────────────────────────
+// GET /api/teams/qr-info/:joinCode
+// Used by the public QR landing page - returns team info + AI welcome message
+router.get('/qr-info/:joinCode', async (req, res) => {
+    try {
+        const code = req.params.joinCode;
+        const team = await Team.findOne({ $or: [{ joinCode: code }, { teamCode: code }] })
+            .populate('captain', 'name avatar')
+            .select('name shortName city logo primaryColor captain players stats joinCode teamCode qrCode');
+        if (!team) return res.status(404).json({ success: false, message: 'Team not found. Check your QR code.' });
+
+        // Self-heal: generate QR code if missing
+        if (!team.qrCode) {
+            team.qrCode = await qrService.generateTeamQR(team._id.toString(), team.joinCode, null);
+            await team.save();
+        }
+
+        // Return team info with AI-powered welcome context
+        const playerCount = team.players?.length || 0;
+        const spotsLeft = 25 - playerCount;
+        const winRate = team.stats?.matches > 0
+            ? Math.round((team.stats.wins / team.stats.matches) * 100)
+            : 0;
+
+        const aiMessage = await generateAIWelcome(team, playerCount, spotsLeft, winRate);
+
+        res.json({
+            success: true,
+            team: {
+                _id: team._id,
+                name: team.name,
+                shortName: team.shortName,
+                city: team.city,
+                logo: team.logo,
+                primaryColor: team.primaryColor,
+                captain: team.captain,
+                playerCount,
+                spotsLeft,
+                joinCode: team.joinCode,
+                teamCode: team.teamCode,
+                stats: team.stats,
+                winRate
+            },
+            aiMessage
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Helper: AI-powered welcome message for QR join landing
+async function generateAIWelcome(team, playerCount, spotsLeft, winRate) {
+    const prompt = `You are a charismatic cricket club manager and team recruiter for "The Turf" platform.
+Generate a short, engaging, 1-2 sentence welcome message inviting players to join the team "${team.name}" (based in ${team.city || 'local city'}).
+Context:
+- Team Name: ${team.name}
+- Captain: ${team.captain?.name || 'our captain'}
+- Players in squad: ${playerCount}/25
+- Spots remaining: ${spotsLeft}
+- Team Win Rate: ${winRate}%
+Make it sound premium, competitive, and welcoming. Do not use generic placeholders. Keep it under 180 characters.`;
+
+    try {
+        const reply = await llmClient.generateChat([
+            { role: 'user', content: prompt }
+        ], { maxTokens: 80 });
+        if (reply) return reply.trim();
+    } catch (err) {
+        console.warn('AI welcome generation failed, using fallback:', err.message);
+    }
+
+    const msgs = [
+        `🏏 Welcome to ${team.name}! We're ${playerCount} strong with ${spotsLeft} spots remaining.`,
+        `⚡ ${team.name} is on fire! Win rate: ${winRate}%. Join the winning squad!`,
+        `🌟 ${team.name} is looking for elite players. ${spotsLeft} spots left — claim yours now!`,
+        `🔥 The ${team.name} squad needs you! ${playerCount} warriors. ${spotsLeft} spots open.`
+    ];
+    if (winRate >= 70) return `🏆 ${team.name} is a powerhouse with ${winRate}% win rate! ${spotsLeft} spots left. Don't miss out!`;
+    if (playerCount >= 20) return `⚡ ${team.name} is almost full! Only ${spotsLeft} spots remaining. Join now!`;
+    return msgs[Math.floor(Math.random() * msgs.length)];
+}
 
 // ─── REQUEST TO JOIN TEAM (via QR or join code) ──────────────────────
 // POST /api/teams/:id/request-join
@@ -295,16 +386,26 @@ router.delete('/:id/players/:userId', verifyToken, async (req, res) => {
 
 // ─── REGENERATE QR CODE ──────────────────────────────────────────────
 // POST /api/teams/:id/regenerate-qr
+// Generates URL-based QR that Google Lens can scan and directly open the site
 router.post('/:id/regenerate-qr', verifyToken, async (req, res) => {
     try {
         const team = await Team.findById(req.params.id);
         if (!team) return res.status(404).json({ success: false, message: 'Not found' });
 
-        const qrDataURL = await qrService.generateTeamQR(team._id.toString(), team.joinCode);
+        const { tournamentId } = req.query;
+        const qrDataURL = await qrService.generateTeamQR(team._id.toString(), team.joinCode, tournamentId || null);
         team.qrCode = qrDataURL;
+        team.qrUpdatedAt = new Date();
         await team.save();
 
-        res.json({ success: true, qrCode: qrDataURL, joinCode: team.joinCode });
+        res.json({
+            success: true,
+            qrCode: qrDataURL,
+            joinCode: team.joinCode,
+            teamCode: team.teamCode,
+            joinUrl: `${qrService.FRONTEND_URL}/join/team/${team.joinCode}`,
+            updatedAt: team.qrUpdatedAt
+        });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
@@ -331,31 +432,45 @@ router.put('/:id', verifyToken, async (req, res) => {
 router.post('/:id/add-by-mobile', verifyToken, async (req, res) => {
     try {
         const { mobile, role, jerseyNumber } = req.body;
-        if (!mobile) return res.status(400).json({ success: false, message: 'Mobile number is required' });
+        if (!mobile) return res.status(400).json({ success: false, message: 'Identifier is required' });
 
-        // Clean mobile to 10 digits
-        const cleanMobile = mobile.replace(/\D/g, '').replace(/^91/, '').slice(-10);
-        if (cleanMobile.length !== 10) {
-            return res.status(400).json({ success: false, message: 'Enter a valid 10-digit mobile number' });
+        let user;
+        let cleanMobile = '';
+
+        if (mobile.startsWith('@')) {
+            const searchName = mobile.slice(1).trim();
+            user = await User.findOne({ name: { $regex: new RegExp(`^${searchName}$`, 'i') } })
+                .select('name phone mobileNumber avatar cricket_profile');
+            
+            if (!user) {
+                return res.status(404).json({ success: false, message: `No player found with username @${searchName}.` });
+            }
+            cleanMobile = user.phone || user.mobileNumber || '';
+        } else {
+            // Clean mobile to 10 digits robustly
+            const digits = (mobile || '').replace(/\D/g, '');
+            cleanMobile = (digits.length === 12 && digits.startsWith('91')) 
+                ? digits.slice(2) 
+                : (digits.length === 11 && digits.startsWith('0')) 
+                    ? digits.slice(1) 
+                    : digits.slice(-10);
+            if (cleanMobile.length !== 10) {
+                return res.status(400).json({ success: false, message: 'Enter a valid 10-digit mobile number or @username' });
+            }
+
+            user = await User.findOne({ $or: [{ phone: cleanMobile }, { mobileNumber: cleanMobile }] })
+                .select('name phone mobileNumber avatar cricket_profile');
+
+            if (!user) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'No player found with this mobile number. Ask them to register on the app first.' 
+                });
+            }
         }
 
         const team = await Team.findById(req.params.id);
         if (!team) return res.status(404).json({ success: false, message: 'Team not found' });
-
-        if (team.players.length >= 25) {
-            return res.status(400).json({ success: false, message: 'Team is full (max 25 players)' });
-        }
-
-        // Find user by phone or mobileNumber
-        const user = await User.findOne({ $or: [{ phone: cleanMobile }, { mobileNumber: cleanMobile }] })
-            .select('name phone mobileNumber avatar cricket_profile');
-
-        if (!user) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'No player found with this mobile number. Ask them to register on the app first.' 
-            });
-        }
 
         // Check already a team member
         const isMember = team.players.some(p => p.user_id?.toString() === user._id.toString());
@@ -393,44 +508,225 @@ router.post('/join/:code', verifyToken, async (req, res) => {
 // ─── ADD PLAYER (Legacy endpoint) ──────────────────────────────────────
 // POST /api/teams/:id/players/add
 router.post('/:id/players/add', verifyToken, async (req, res) => {
-    // Reuse add-by-mobile logic
-    const { mobile, role, jerseyNumber } = req.body;
-    if (!mobile) return res.status(400).json({ success: false, message: 'Mobile number is required' });
+    try {
+        const { mobile, role, jerseyNumber } = req.body;
+        if (!mobile) return res.status(400).json({ success: false, message: 'Identifier is required' });
 
-    const cleanMobile = mobile.replace(/\D/g, '').replace(/^91/, '').slice(-10);
-    if (cleanMobile.length !== 10) {
-        return res.status(400).json({ success: false, message: 'Enter a valid 10-digit mobile number' });
+        let user;
+        let cleanMobile = '';
+
+        if (mobile.startsWith('@')) {
+            const searchName = mobile.slice(1).trim();
+            user = await User.findOne({ name: { $regex: new RegExp(`^${searchName}$`, 'i') } })
+                .select('name phone mobileNumber avatar cricket_profile');
+            
+            if (!user) {
+                return res.status(404).json({ success: false, message: `No player found with username @${searchName}.` });
+            }
+            cleanMobile = user.phone || user.mobileNumber || '';
+        } else {
+            const digits = (mobile || '').replace(/\D/g, '');
+            cleanMobile = (digits.length === 12 && digits.startsWith('91')) 
+                ? digits.slice(2) 
+                : (digits.length === 11 && digits.startsWith('0')) 
+                    ? digits.slice(1) 
+                    : digits.slice(-10);
+            if (cleanMobile.length !== 10) {
+                return res.status(400).json({ success: false, message: 'Enter a valid 10-digit mobile number or @username' });
+            }
+
+            user = await User.findOne({ $or: [{ phone: cleanMobile }, { mobileNumber: cleanMobile }] })
+                .select('name phone mobileNumber avatar cricket_profile');
+
+            if (!user) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'No player found with this mobile number. Ask them to register on the app first.' 
+                });
+            }
+        }
+
+        const team = await Team.findById(req.params.id);
+        if (!team) return res.status(404).json({ success: false, message: 'Team not found' });
+
+        if (team.players.length >= 25) {
+            return res.status(400).json({ success: false, message: 'Team is full (max 25 players)' });
+        }
+
+        const isMember = team.players.some(p => p.user_id?.toString() === user._id.toString());
+        if (isMember) return res.status(400).json({ success: false, message: 'Player is already in the squad' });
+
+        team.players.push({
+            user_id: user._id,
+            name: user.name,
+            mobile: cleanMobile,
+            role: role || 'All-rounder',
+            jerseyNumber: jerseyNumber || undefined,
+            status: 'active',
+            joinedAt: new Date()
+        });
+
+        await team.save();
+        res.json({ success: true, message: `${user.name} added to squad!`, player: { name: user.name, mobile: cleanMobile, role } });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
+});
 
-    const team = await Team.findById(req.params.id);
-    if (!team) return res.status(404).json({ success: false, message: 'Team not found' });
 
-    if (team.players.length >= 25) {
-        return res.status(400).json({ success: false, message: 'Team is full (max 25 players)' });
+// ─── MIDDLEWARE: require ADMIN role ──────────────────────────────────
+const requireAdmin = (req, res, next) => {
+    const role = (req.user?.role || '').toUpperCase();
+    if (role !== 'ADMIN') {
+        return res.status(403).json({ success: false, message: 'Admin access required.' });
     }
+    next();
+};
 
-    const user = await User.findOne({ $or: [{ phone: cleanMobile }, { mobileNumber: cleanMobile }] })
-        .select('name phone mobileNumber avatar cricket_profile');
+// ─── MIDDLEWARE: require team OWNER or ADMIN ─────────────────────────
+const requireOwnerOrAdmin = async (req, res, next) => {
+    try {
+        const role = (req.user?.role || '').toUpperCase();
+        if (role === 'ADMIN') return next(); // Admins bypass ownership check
 
-    if (!user) {
-        return res.status(404).json({ success: false, message: 'No player found with this mobile number. Ask them to register on the app first.' });
+        const team = await Team.findById(req.params.id).select('captain createdBy');
+        if (!team) return res.status(404).json({ success: false, message: 'Team not found' });
+
+        const userId = req.user?.id;
+        const isOwner =
+            team.captain?.toString() === userId ||
+            team.createdBy?.toString() === userId;
+
+        if (!isOwner) {
+            return res.status(403).json({ success: false, message: 'Only the team owner or admin can perform this action.' });
+        }
+        next();
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
+};
 
-    const isMember = team.players.some(p => p.user_id?.toString() === user._id.toString());
-    if (isMember) return res.status(400).json({ success: false, message: 'Player is already in the squad' });
+// ─── ADMIN: LIST ALL TEAMS ───────────────────────────────────────────
+// GET /api/teams/admin/all
+router.get('/admin/all', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { search, limit = 50, page = 1 } = req.query;
+        const filter = {};
+        if (search) filter.name = new RegExp(search, 'i');
 
-    team.players.push({
-        user_id: user._id,
-        name: user.name,
-        mobile: cleanMobile,
-        role: role || 'All-rounder',
-        jerseyNumber: jerseyNumber || undefined,
-        status: 'active',
-        joinedAt: new Date()
-    });
+        const teams = await Team.find(filter)
+            .populate('captain', 'name phone avatar')
+            .populate('createdBy', 'name phone')
+            .select('name shortName city logo primaryColor captain createdBy players stats teamCode joinCode createdAt')
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .skip((parseInt(page) - 1) * parseInt(limit));
 
-    await team.save();
-    res.json({ success: true, message: `${user.name} added to squad!`, player: { name: user.name, mobile: cleanMobile, role } });
+        const total = await Team.countDocuments(filter);
+        const totalPlayers = teams.reduce((sum, t) => sum + (t.players?.length || 0), 0);
+
+        res.json({ success: true, teams, total, totalPlayers });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ─── ADMIN: DELETE ANY TEAM ──────────────────────────────────────────
+// DELETE /api/teams/admin/:id
+router.delete('/admin/:id', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const team = await Team.findById(req.params.id);
+        if (!team) return res.status(404).json({ success: false, message: 'Team not found' });
+
+        const teamName = team.name;
+        await Team.findByIdAndDelete(req.params.id);
+
+        console.log(`[ADMIN] Team "${teamName}" deleted by admin ${req.user?.id}`);
+        res.json({ success: true, message: `Team "${teamName}" has been permanently deleted.` });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ─── ADMIN: DELETE ANY PLAYER FROM ANY TEAM ─────────────────────────
+// DELETE /api/teams/admin/:id/players/:userId
+router.delete('/admin/:id/players/:userId', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const team = await Team.findById(req.params.id);
+        if (!team) return res.status(404).json({ success: false, message: 'Team not found' });
+
+        const before = team.players.length;
+        team.players = team.players.filter(p => p.user_id?.toString() !== req.params.userId);
+
+        if (team.players.length === before) {
+            return res.status(404).json({ success: false, message: 'Player not found in this team' });
+        }
+
+        await team.save();
+        console.log(`[ADMIN] Player ${req.params.userId} removed from team ${req.params.id} by admin ${req.user?.id}`);
+        res.json({ success: true, message: 'Player removed from squad by admin.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ─── OWNER OR ADMIN: REMOVE PLAYER (enhanced existing) ───────────────
+// DELETE /api/teams/:id/players/remove/:userId
+// This is an enhanced version that enforces owner or admin check
+router.delete('/:id/players/remove/:userId', verifyToken, requireOwnerOrAdmin, async (req, res) => {
+    try {
+        const team = await Team.findById(req.params.id);
+        if (!team) return res.status(404).json({ success: false, message: 'Team not found' });
+
+        const before = team.players.length;
+        team.players = team.players.filter(p => p.user_id?.toString() !== req.params.userId);
+
+        if (team.players.length === before) {
+            return res.status(404).json({ success: false, message: 'Player not found in this team' });
+        }
+
+        await team.save();
+        res.json({ success: true, message: 'Player removed from squad.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ─── OWNER: GET TEAM QR CODE ──────────────────────────────────────────
+// GET /api/teams/:id/qr-code
+router.get('/:id/qr-code', verifyToken, async (req, res) => {
+    try {
+        const team = await Team.findById(req.params.id).select('captain createdBy qrCode joinCode teamCode name');
+        if (!team) return res.status(404).json({ success: false, message: 'Team not found' });
+
+        // Allow owner or admin
+        const role = (req.user?.role || '').toUpperCase();
+        const userId = req.user?.id;
+        const isOwner = team.captain?.toString() === userId || team.createdBy?.toString() === userId;
+
+        if (role !== 'ADMIN' && !isOwner) {
+            return res.status(403).json({ success: false, message: 'Only the team owner or admin can view the QR code.' });
+        }
+
+        // Self-heal: generate QR if missing
+        if (!team.qrCode) {
+            const qrDataURL = await qrService.generateTeamQR(team._id.toString(), team.joinCode, null);
+            team.qrCode = qrDataURL;
+            team.qrUpdatedAt = new Date();
+            await team.save();
+        }
+
+        res.json({
+            success: true,
+            qrCode: team.qrCode,
+            joinCode: team.joinCode,
+            teamCode: team.teamCode,
+            joinUrl: `${qrService.FRONTEND_URL}/join/team/${team.joinCode}`
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
 });
 
 module.exports = router;
+

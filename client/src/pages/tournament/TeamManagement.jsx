@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Users, CheckCircle2, XCircle, Shield, Star, QrCode, Copy, Phone,
   UserPlus, Settings, Trophy, ChevronDown, Zap, AlertCircle, User,
-  Search, Plus, Hash
+  Search, Plus, Hash, RefreshCw, Download, ExternalLink, Sparkles, Link2
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import { toast } from 'react-toastify';
@@ -18,6 +18,9 @@ export default function TeamManagement() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('squad');
   const [copied, setCopied] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
+  const [qrRefreshing, setQrRefreshing] = useState(false);
+  const [aiWelcome, setAiWelcome] = useState('');
 
   // Add-by-Mobile state
   const [addMobile, setAddMobile] = useState('');
@@ -82,6 +85,52 @@ export default function TeamManagement() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const copyJoinUrl = () => {
+    const url = `${window.location.origin}/join/team/${team?.joinCode}`;
+    navigator.clipboard.writeText(url);
+    setUrlCopied(true);
+    setTimeout(() => setUrlCopied(false), 2000);
+    toast.success('Join URL copied! Share it with players.');
+  };
+
+  const downloadQR = () => {
+    if (!team?.qrCode) return;
+    const a = document.createElement('a');
+    a.href = team.qrCode;
+    a.download = `${team.name?.replace(/\s+/g, '_')}_QR.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast.success('QR code downloaded!');
+  };
+
+  const regenerateQR = async () => {
+    setQrRefreshing(true);
+    try {
+      const res = await apiClient.post(`/teams/${id}/regenerate-qr`);
+      if (res.data.success) {
+        toast.success('QR code refreshed! ✨');
+        fetchTeam();
+      }
+    } catch {
+      toast.error('Failed to regenerate QR');
+    } finally {
+      setQrRefreshing(false);
+    }
+  };
+
+  // Fetch AI welcome message for this team
+  const fetchAiWelcome = useCallback(async () => {
+    try {
+      const res = await apiClient.get(`/teams/qr-info/${team?.joinCode}`);
+      if (res.data.aiMessage) setAiWelcome(res.data.aiMessage);
+    } catch {}
+  }, [team?.joinCode]);
+
+  useEffect(() => {
+    if (team?.joinCode) fetchAiWelcome();
+  }, [team?.joinCode]);
 
   const lookupByMobile = async (phone) => {
     const clean = phone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
@@ -188,12 +237,32 @@ export default function TeamManagement() {
 
       {/* QR Code section */}
       {team.qrCode && (
-        <div className="bg-white border-b border-black/8 px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center gap-6">
-            <img src={team.qrCode} alt="QR" className="w-20 h-20 rounded-xl border border-black/10" />
-            <div>
-              <p className="text-sm font-black text-black">Share QR to invite players</p>
-              <p className="text-[10px] text-slate-400 font-bold mt-1">Players scan this to request joining your team</p>
+        <div className="bg-gradient-to-r from-emerald-900/30 to-slate-900/30 border-b border-emerald-500/20 px-6 py-5">
+          <div className="max-w-4xl mx-auto flex items-center gap-5">
+            <div className="relative group cursor-pointer" onClick={() => setActiveTab('qr')}>
+              <img src={team.qrCode} alt="QR" className="w-20 h-20 rounded-xl border-2 border-emerald-500/30 group-hover:border-emerald-400 transition-colors" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-xl flex items-center justify-center transition-opacity">
+                <ExternalLink size={18} className="text-white" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-black text-sm mb-1">Scan QR to Join Team</p>
+              <p className="text-emerald-400/70 text-[10px] font-bold mb-2">Google Lens compatible · Opens directly in browser</p>
+              {aiWelcome && (
+                <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
+                  <Sparkles size={11} className="text-emerald-400 flex-shrink-0" />
+                  <p className="text-emerald-200 text-[11px] font-medium">{aiWelcome}</p>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <button onClick={copyJoinUrl} className="flex items-center gap-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 font-black px-3 py-2 rounded-xl text-[10px] uppercase tracking-widest transition-all">
+                {urlCopied ? <CheckCircle2 size={12} /> : <Link2 size={12} />}
+                {urlCopied ? 'Copied!' : 'Copy Link'}
+              </button>
+              <button onClick={downloadQR} className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 font-black px-3 py-2 rounded-xl text-[10px] uppercase tracking-widest transition-all">
+                <Download size={12} /> Download
+              </button>
             </div>
           </div>
         </div>
@@ -458,49 +527,112 @@ export default function TeamManagement() {
 
         {/* QR Tab */}
         {activeTab === 'qr' && (
-          <div className="bg-white border border-black/8 rounded-2xl p-8 text-center">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-6">Team QR Code</p>
-            {team.qrCode ? (
-              <>
-                <div className="bg-white border-2 border-black/10 rounded-2xl p-6 inline-block mb-6">
-                  <img src={team.qrCode} alt="QR" className="w-48 h-48" />
-                </div>
-                <div className="space-y-3 max-w-xs mx-auto">
-                  <div className="bg-black/3 rounded-xl p-4">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Team Code</p>
-                    <p className="font-black text-black text-lg">{team.teamCode}</p>
-                  </div>
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Join Code</p>
-                    <div className="flex items-center justify-between">
-                      <p className="font-black text-emerald-700 text-lg">{team.joinCode}</p>
-                      <button onClick={copyJoinCode} className={`transition-colors ${copied ? 'text-emerald-500' : 'text-emerald-400 hover:text-emerald-600'}`}>
-                        {copied ? <CheckCircle2 size={18} /> : <Copy size={18} />}
-                      </button>
+          <div className="space-y-5">
+            {/* QR Code Display */}
+            <div className="bg-gradient-to-br from-emerald-950 to-slate-900 border border-emerald-500/20 rounded-3xl p-8">
+              <p className="text-[9px] font-black text-emerald-400/50 uppercase tracking-[0.4em] mb-6 text-center">Google Lens Compatible QR Code</p>
+              {team.qrCode ? (
+                <>
+                  {/* QR + AI Message */}
+                  {aiWelcome && (
+                    <div className="flex items-start gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3 mb-6">
+                      <Sparkles size={14} className="text-emerald-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-emerald-200 text-xs font-medium">{aiWelcome}</p>
+                    </div>
+                  )}
+
+                  {/* QR Code Image */}
+                  <div className="flex justify-center mb-6">
+                    <div className="bg-white p-4 rounded-2xl shadow-2xl shadow-emerald-500/20 border-2 border-emerald-500/30">
+                      <img src={team.qrCode} alt="Team QR" className="w-52 h-52" />
                     </div>
                   </div>
+
+                  {/* Join URL */}
+                  <div className="bg-black/30 border border-white/10 rounded-xl px-4 py-3 mb-4">
+                    <p className="text-[9px] text-slate-400 uppercase tracking-widest font-black mb-1">Scan URL (Google Lens Opens This)</p>
+                    <p className="text-emerald-400 text-xs font-bold break-all">
+                      {window.location.origin}/join/team/{team.joinCode}
+                    </p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-3 gap-2 mb-5">
+                    <button
+                      onClick={copyJoinUrl}
+                      className="flex flex-col items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 font-black py-3 rounded-xl text-[9px] uppercase tracking-widest transition-all"
+                    >
+                      {urlCopied ? <CheckCircle2 size={16} /> : <Link2 size={16} />}
+                      {urlCopied ? 'Copied!' : 'Copy Link'}
+                    </button>
+                    <button
+                      onClick={downloadQR}
+                      className="flex flex-col items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 font-black py-3 rounded-xl text-[9px] uppercase tracking-widest transition-all"
+                    >
+                      <Download size={16} /> Download
+                    </button>
+                    <button
+                      onClick={regenerateQR}
+                      disabled={qrRefreshing}
+                      className="flex flex-col items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 font-black py-3 rounded-xl text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
+                    >
+                      <RefreshCw size={16} className={qrRefreshing ? 'animate-spin' : ''} />
+                      {qrRefreshing ? 'Refreshing' : 'Refresh QR'}
+                    </button>
+                  </div>
+
+                  {/* Join Code */}
+                  <div className="space-y-3">
+                    <div className="bg-black/30 border border-white/10 rounded-xl px-4 py-3">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Team Code</p>
+                      <p className="font-black text-white text-base">{team.teamCode}</p>
+                    </div>
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[9px] font-black text-emerald-400/60 uppercase tracking-widest mb-1">Join Code</p>
+                          <p className="font-black text-emerald-300 text-base tracking-widest">{team.joinCode}</p>
+                        </div>
+                        <button onClick={copyJoinCode} className={`transition-colors ${copied ? 'text-emerald-400' : 'text-emerald-600 hover:text-emerald-400'}`}>
+                          {copied ? <CheckCircle2 size={20} /> : <Copy size={20} />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* How to scan */}
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 mt-4">
+                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-2">How Players Join via QR</p>
+                    <ol className="space-y-1">
+                      {[
+                        'Open Google Lens or any QR scanner app',
+                        'Point camera at this QR code',
+                        'Lens auto-opens The Turf website',
+                        'Player fills their name & role, sends request',
+                        'You approve/reject in the Requests tab'
+                      ].map((step, i) => (
+                        <li key={i} className="flex items-start gap-2 text-[10px] text-slate-400 font-medium">
+                          <span className="bg-emerald-500/20 text-emerald-400 rounded-full w-4 h-4 flex items-center justify-center font-black text-[8px] flex-shrink-0 mt-0.5">{i + 1}</span>
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <QrCode size={48} className="text-slate-600 mx-auto mb-4" />
+                  <p className="text-slate-400 font-bold mb-4">QR not generated yet</p>
+                  <button
+                    onClick={regenerateQR}
+                    disabled={qrRefreshing}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-black font-black px-6 py-3 rounded-xl uppercase tracking-widest text-xs transition-all"
+                  >
+                    {qrRefreshing ? 'Generating...' : 'Generate QR Code'}
+                  </button>
                 </div>
-                <p className="text-[10px] text-slate-400 font-bold mt-6">
-                  Players can scan this QR to request joining your team. You'll see their requests in the Requests tab.
-                </p>
-              </>
-            ) : (
-              <div>
-                <AlertCircle size={40} className="text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-400 font-bold">QR not generated yet</p>
-                <button
-                  onClick={async () => {
-                    try {
-                      const res = await apiClient.post(`/teams/${id}/regenerate-qr`);
-                      if (res.data.success) { toast.success('QR regenerated!'); fetchTeam(); }
-                    } catch {}
-                  }}
-                  className="mt-4 bg-emerald-500 text-black font-black px-6 py-2 rounded-xl uppercase tracking-widest text-xs"
-                >
-                  Generate QR
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>

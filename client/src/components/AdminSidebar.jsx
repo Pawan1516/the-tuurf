@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { 
     LayoutDashboard, 
@@ -18,12 +18,27 @@ import {
     Trophy,
     Shield,
     Globe,
-    Bot
+    Bot,
+    Menu
 } from 'lucide-react';
 
 const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false, onClose = () => {} }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [isOpen, setIsOpen] = useState(mobileOpen);
+
+    useEffect(() => {
+        setIsOpen(mobileOpen);
+    }, [mobileOpen]);
+
+    const handleClose = () => {
+        setIsOpen(false);
+        if (onClose) onClose();
+    };
+
+    const handleOpen = () => {
+        setIsOpen(true);
+    };
 
     const menuItems = [
     { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -127,9 +142,9 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
             </aside>
 
             {/* Mobile Drawer */}
-            <div className={`lg:hidden fixed inset-0 z-[60] ${mobileOpen ? 'block' : 'hidden'}`} role="dialog" aria-modal="true">
-                <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-                <div className={`absolute left-0 top-0 bottom-0 w-full sm:w-80 bg-white/98 backdrop-blur-lg border-r border-white/5 shadow-xl transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform`} aria-label="Admin menu"> 
+            <div className={`lg:hidden fixed inset-0 z-[60] ${isOpen ? 'block' : 'hidden'}`} role="dialog" aria-modal="true">
+                <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
+                <div className={`absolute left-0 top-0 bottom-0 w-full sm:w-80 bg-white/98 backdrop-blur-lg border-r border-white/5 shadow-xl transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform`} aria-label="Admin menu"> 
                     <div className="p-4 border-b border-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <img src="/logo.png" alt="Logo" className="h-8" />
@@ -138,9 +153,9 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
                                 <p className="text-xs text-slate-400">Admin Terminal</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-2 rounded-lg bg-slate-100"><ChevronRight size={18} /></button>
+                        <button onClick={handleClose} className="p-2 rounded-lg bg-slate-100"><ChevronRight size={18} /></button>
                     </div>
-                    <div className="p-4 overflow-y-auto h-full">
+                    <div className="p-4 overflow-y-auto h-full pb-32">
                         <div className="mb-4 p-4 bg-white rounded-xl border shadow-sm">
                             <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.3em] mb-2">Command Access</p>
                             <h3 className="font-black text-sm">{user?.name || 'God Mode'}</h3>
@@ -149,7 +164,7 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
                             const isActive = location.pathname === item.to;
                             const Icon = item.icon;
                             return (
-                                <Link key={item.to} to={item.to} onClick={onClose} className={`w-full flex items-center justify-between px-4 py-4 rounded-lg mb-2 transition-all ${isActive ? 'bg-emerald-600 text-black' : 'text-zinc-600 hover:bg-slate-50'}`}>
+                                <Link key={item.to} to={item.to} onClick={handleClose} className={`w-full flex items-center justify-between px-4 py-4 rounded-lg mb-2 transition-all ${isActive ? 'bg-emerald-600 text-black' : 'text-zinc-600 hover:bg-slate-50'}`}>
                                     <div className="flex items-center gap-3">
                                         <Icon size={20} />
                                         <span className="text-base font-black uppercase tracking-wide">{item.label}</span>
@@ -159,8 +174,8 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
                             );
                         })}
                     </div>
-                    <div className="p-4 border-t">
-                        <button onClick={() => { onClose(); handleLogout(); }} className="w-full p-3 rounded-lg bg-red-600 text-white font-black">Logout</button>
+                    <div className="p-4 border-t absolute bottom-0 inset-x-0 bg-white border-white/5">
+                        <button onClick={() => { handleClose(); handleLogout(); }} className="w-full p-3 rounded-lg bg-red-600 text-white font-black">Logout</button>
                     </div>
                 </div>
             </div>
@@ -175,7 +190,7 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
                             <Link
                                 key={item.to}
                                 to={item.to}
-                                onClick={onClose}
+                                onClick={handleClose}
                                 className={`group flex-1 rounded-3xl px-3 py-3 text-center transition-all ${isActive ? 'bg-emerald-600 text-black shadow-[0_12px_35px_-16px_rgba(16,185,129,0.9)]' : 'bg-white/10 text-slate-200 hover:bg-white/15'}`}
                             >
                                 <Icon size={20} className="mx-auto mb-1" />
@@ -183,6 +198,13 @@ const AdminSidebar = ({ user, logout, turfName = "The Turf", mobileOpen = false,
                             </Link>
                         );
                     })}
+                    <button
+                        onClick={handleOpen}
+                        className="group flex-1 rounded-3xl px-3 py-3 text-center transition-all bg-white/10 text-slate-200 hover:bg-white/15"
+                    >
+                        <Menu size={20} className="mx-auto mb-1" />
+                        <span className="block text-[9px] font-black uppercase tracking-[0.3em] leading-none">Menu</span>
+                    </button>
                 </div>
             </nav>
             </>

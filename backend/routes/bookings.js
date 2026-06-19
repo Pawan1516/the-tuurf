@@ -188,7 +188,12 @@ router.post('/', async (req, res) => {
     const confirmationAmount = paymentType === 'full' ? slotPrice : Math.ceil(slotPrice * 0.4);
 
     // Create booking object
-    const finalMobileClean = finalMobile.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+    const digits = (finalMobile || '').replace(/\D/g, '');
+    const finalMobileClean = (digits.length === 12 && digits.startsWith('91')) 
+        ? digits.slice(2) 
+        : (digits.length === 11 && digits.startsWith('0')) 
+            ? digits.slice(1) 
+            : digits.slice(-10);
 
     // Try to find Turf object for turfId linkage
     let turfId = null;
@@ -358,7 +363,12 @@ router.get('/my-bookings', verifyToken, async (req, res) => {
 
     // Use both identifiers: userId and mobileNumber
     const userMobile = user.mobileNumber || user.phone;
-    const cleanMobile = userMobile ? userMobile.replace(/\D/g, '').replace(/^91/, '').slice(-10) : null;
+    const digits = (userMobile || '').replace(/\D/g, '');
+    const cleanMobile = userMobile ? ((digits.length === 12 && digits.startsWith('91')) 
+        ? digits.slice(2) 
+        : (digits.length === 11 && digits.startsWith('0')) 
+            ? digits.slice(1) 
+            : digits.slice(-10)) : null;
     
     console.log(`[DEBUG] User Identifiers - ID: ${authUserId}, Mobile: ${cleanMobile}`);
 
@@ -534,8 +544,12 @@ router.put('/:id/status', verifyToken, roleGuard(['admin', 'worker']), async (re
     // Auto-link if needed
     if (!booking.userId || !booking.user) {
         try {
-            const User = require('../models/User');
-            const cleanPhone = booking.userPhone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            const digits = (booking.userPhone || '').replace(/\D/g, '');
+            const cleanPhone = (digits.length === 12 && digits.startsWith('91')) 
+                ? digits.slice(2) 
+                : (digits.length === 11 && digits.startsWith('0')) 
+                    ? digits.slice(1) 
+                    : digits.slice(-10);
             const matchedUser = await User.findOne({ phone: cleanPhone });
             if (matchedUser) {
                 booking.userId = matchedUser._id;
@@ -696,8 +710,12 @@ router.put('/:id/payment', verifyToken, roleGuard(['worker', 'admin']), async (r
       // Auto-link if needed
       if (!bookingRec.userId || !bookingRec.user) {
         try {
-            const User = require('../models/User');
-            const cleanPhone = bookingRec.userPhone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            const digits = (bookingRec.userPhone || '').replace(/\D/g, '');
+            const cleanPhone = (digits.length === 12 && digits.startsWith('91')) 
+                ? digits.slice(2) 
+                : (digits.length === 11 && digits.startsWith('0')) 
+                    ? digits.slice(1) 
+                    : digits.slice(-10);
             const matchedUser = await User.findOne({ phone: cleanPhone });
             if (matchedUser) {
                 updateData.userId = matchedUser._id;

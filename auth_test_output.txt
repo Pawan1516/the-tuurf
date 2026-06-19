@@ -1,0 +1,3 @@
+﻿Register failed: The remote server returned an error: (400) Bad Request.
+Login failed: The remote server returned an error: (401) Unauthorized.
+Profile request failed: The remote server returned an error: (401) Unauthorized.

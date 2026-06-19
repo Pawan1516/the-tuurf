@@ -20,6 +20,8 @@ const RegisteredTeamSchema = new mongoose.Schema({
     approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     paymentStatus: { type: String, enum: ['pending', 'paid', 'refunded'], default: 'pending' },
     paymentId: { type: String },
+    razorpayOrderId: { type: String },
+    razorpaySignature: { type: String },
     points: { type: Number, default: 0 },
     played: { type: Number, default: 0 },
     won: { type: Number, default: 0 },
@@ -65,12 +67,16 @@ const TournamentSchema = new mongoose.Schema({
     organizerName: { type: String },
     
     // Format
-    tournamentType: { type: String, enum: ['league', 'knockout', 'league_knockout'], default: 'league' },
-    ballType: { type: String, enum: ['leather', 'tennis', 'rubber', 'other'], default: 'leather' },
+    tournamentType: { type: String, enum: ['league', 'knockout', 'league_knockout', 'group_playoff', 'double_elimination'], default: 'league' },
+    ballType: { type: String, enum: ['leather', 'tennis', 'hard_tennis', 'rubber', 'tape_ball', 'other'], default: 'leather' },
+    tieBreakerMethod: { type: String, enum: ['super_over', 'bowl_out', 'boundary_count'], default: 'super_over' },
     matchFormat: { type: String, enum: ['T10', 'T20', 'T30', 'ODI', 'custom'], default: 'T20' },
     oversPerMatch: { type: Number, default: 20 },
     totalTeams: { type: Number, default: 8 },
-    
+    minTeamSize: { type: Number, default: 7 },  // min players per team (7-11)
+    maxTeamSize: { type: Number, default: 11 }, // max players per team (7-11)
+    reserveDays: { type: Number, default: 0 },  // extra days reserved for rain delays
+
     // League stage settings (for league_knockout)
     leagueTopTeams: { type: Number, default: 4 }, // teams qualifying from league
 
@@ -117,13 +123,23 @@ const TournamentSchema = new mongoose.Schema({
 
     // Rules
     rules: {
-        maxPlayersPerTeam: { type: Number, default: 25 },
+        minPlayersPerTeam: { type: Number, default: 7 },
+        maxPlayersPerTeam: { type: Number, default: 11 },
         playingXISize: { type: Number, default: 11 },
         substitutes: { type: Number, default: 4 },
         powerplayOvers: { type: Number, default: 6 },
         maxOversBowler: { type: Number, default: 4 },
-        dls: { type: Boolean, default: false }
+        dls: { type: Boolean, default: false },
+        superOver: { type: Boolean, default: true },  // enable super over for ties
+        bonusPoints: { type: Boolean, default: false } // ALWAYS false — no bonus points
     },
+
+    // Control
+    pausedAt: { type: Date },
+    pauseReason: { type: String },
+    archivedAt: { type: Date },
+    startedAt: { type: Date },
+    completedAt: { type: Date },
 
     // Metadata
     visibility: { type: String, enum: ['public', 'private'], default: 'public' },

@@ -68,7 +68,12 @@ router.post('/register-verify', authLimiter, async (req, res) => {
 
         // 3. Create/Update User
         // Sanitize phone — strip non-digits and country code
-        const cleanPhone = (phone || '').replace(/\D/g, '').replace(/^91/, '').slice(-10) || '0000000000';
+        const digits = (phone || '').replace(/\D/g, '');
+        const cleanPhone = ((digits.length === 12 && digits.startsWith('91')) 
+            ? digits.slice(2) 
+            : (digits.length === 11 && digits.startsWith('0')) 
+                ? digits.slice(1) 
+                : digits.slice(-10)) || '0000000000';
 
         let user = await User.findOne({ email: email.toLowerCase() });
         if (user) {
@@ -160,7 +165,12 @@ router.post('/quick-login', authLimiter, async (req, res) => {
         const { phone, name } = req.body;
         if (!phone) return res.status(400).json({ success: false, message: 'Mobile number required.' });
 
-        const cleanPhone = phone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+        const digits = (phone || '').replace(/\D/g, '');
+        const cleanPhone = (digits.length === 12 && digits.startsWith('91')) 
+            ? digits.slice(2) 
+            : (digits.length === 11 && digits.startsWith('0')) 
+                ? digits.slice(1) 
+                : digits.slice(-10);
         let user = await User.findOne({ phone: cleanPhone });
 
         if (!user) {
@@ -213,7 +223,12 @@ router.post('/login', authLimiter, async (req, res) => {
             query = { email: identifier.toLowerCase() };
         } else {
             // Assume phone if no @
-            const cleanPhone = identifier.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            const digits = (identifier || '').replace(/\D/g, '');
+            const cleanPhone = (digits.length === 12 && digits.startsWith('91')) 
+                ? digits.slice(2) 
+                : (digits.length === 11 && digits.startsWith('0')) 
+                    ? digits.slice(1) 
+                    : digits.slice(-10);
             query = { phone: cleanPhone };
         }
 
@@ -297,7 +312,13 @@ router.post('/login', authLimiter, async (req, res) => {
 
         // --- Auto-link bookings on login ---
         if (finalRole === 'PLAYER' && (user.phone || user.mobileNumber)) {
-            const cleanPhone = (user.phone || user.mobileNumber).replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            const userPhoneStr = user.phone || user.mobileNumber || '';
+            const digits = userPhoneStr.replace(/\D/g, '');
+            const cleanPhone = (digits.length === 12 && digits.startsWith('91')) 
+                ? digits.slice(2) 
+                : (digits.length === 11 && digits.startsWith('0')) 
+                    ? digits.slice(1) 
+                    : digits.slice(-10);
             console.log(`[DEBUG] Attempting to auto-link bookings for ${cleanPhone}`);
             try {
                 const Booking = require('../models/Booking');
@@ -587,7 +608,13 @@ router.post('/google', async (req, res) => {
 
         // --- Auto-link bookings on Google login ---
         if (userRole === 'PLAYER' && (user.phone || user.mobileNumber)) {
-            const cleanPhone = (user.phone || user.mobileNumber).replace(/\D/g, '').replace(/^91/, '').slice(-10);
+            const userPhoneStr = user.phone || user.mobileNumber || '';
+            const digits = userPhoneStr.replace(/\D/g, '');
+            const cleanPhone = (digits.length === 12 && digits.startsWith('91')) 
+                ? digits.slice(2) 
+                : (digits.length === 11 && digits.startsWith('0')) 
+                    ? digits.slice(1) 
+                    : digits.slice(-10);
             console.log(`[DEBUG] Attempting to auto-link bookings for ${cleanPhone} (Google)`);
             try {
                 const Booking = require('../models/Booking');

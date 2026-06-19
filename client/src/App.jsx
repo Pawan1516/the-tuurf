@@ -77,7 +77,10 @@ const TeamManagement = lazy(() => import('./pages/tournament/TeamManagement'));
 const QRJoin = lazy(() => import('./pages/tournament/QRJoin'));
 const TournamentAwards = lazy(() => import('./pages/tournament/TournamentAwards'));
 const TournamentRegister = lazy(() => import('./pages/tournament/TournamentRegister'));
+const TournamentPayment = lazy(() => import('./pages/tournament/TournamentPayment'));
 const AdminTournamentDashboard = lazy(() => import('./pages/admin/TournamentDashboard'));
+const AdminTeamManager = lazy(() => import('./pages/admin/TeamManager'));
+const QRLandingPage = lazy(() => import('./pages/QRLandingPage'));
 
 
 /* ─────────────────────────────────────────────
@@ -414,9 +417,13 @@ function App() {
                   <Route path="/tournaments/:id/admin" element={<ProtectedRoute allowedRoles={['admin']}><WrapLayout><TournamentAdmin /></WrapLayout></ProtectedRoute>} />
                   <Route path="/tournaments/:id/teams/create" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><TeamCreate /></WrapLayout></ProtectedRoute>} />
                   <Route path="/tournaments/:id/teams/:teamId" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><TeamManagement /></WrapLayout></ProtectedRoute>} />
-                  <Route path="/tournaments/:id/join" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><QRJoin /></WrapLayout></ProtectedRoute>} />
+                  <Route path="/tournaments/:id/join" element={<WrapLayout><QRJoin /></WrapLayout>} />
+                  {/* Public QR landing — Google Lens opens these directly */}
+                  <Route path="/join/team/:joinCode" element={<QRLandingPage />} />
+                  <Route path="/join/match/:matchCode" element={<QRLandingPage />} />
                   <Route path="/tournaments/:id/awards" element={<WrapLayout><TournamentAwards /></WrapLayout>} />
                   <Route path="/tournaments/:id/register" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><TournamentRegister /></WrapLayout></ProtectedRoute>} />
+                  <Route path="/tournaments/:id/payment" element={<ProtectedRoute allowedRoles={['user', 'player', 'captain', 'admin']}><WrapLayout><TournamentPayment /></WrapLayout></ProtectedRoute>} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
@@ -470,6 +477,7 @@ function App() {
                   <Route path="/admin/cms" element={<ProtectedRoute allowedRoles={['admin']}><CMSHub /></ProtectedRoute>} />
                   <Route path="/admin/slots" element={<ProtectedRoute allowedRoles={['admin']}><AdminSlots /></ProtectedRoute>} />
                   <Route path="/admin/tournaments" element={<ProtectedRoute allowedRoles={['admin']}><AdminTournamentDashboard /></ProtectedRoute>} />
+                  <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeamManager /></ProtectedRoute>} />
                   {/* Pages that do NOT have their own sidebar — keep AdminLayout wrapper */}
                   <Route path="/admin/agent-runner" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminAgentRunner /></AdminLayout></ProtectedRoute>} />
                   {/* removed AdminDashboardV2 route */}
